@@ -173,17 +173,14 @@ const checkUser=asyncHandler(async(req,res)=>{
 })
 
 const logoutUser = asyncHandler(async (req, res) => {
-await User.findByIdAndUpdate(req.user._id, { refreshToken: undefined });
-  const options = {
-    httpOnly: true,
-    secure: true
-  };
+  // Invalidate refresh token (optional but recommended)
+  await User.findByIdAndUpdate(req.user._id, { refreshToken: undefined });
 
-  res.clearCookie("accessToken", options);
-  res.clearCookie("refreshToken", options);
+  // No need to clear cookies as they are not being used
 
   res.status(200).json({ text: "logout" });
 });
+
 
 
 
