@@ -81,7 +81,7 @@ const curruser = await User.findById(user._id).select("-password -refreshToken")
   // };
 
   // Return tokens in the response body for API approach or authorization flow
-  res.status(200).json({ status: 200, curruser: sanitizedUserData, accessToken, refreshToken });
+  res.status(200).json({ status: 200, curruser, accessToken, refreshToken });
 
 // res.status(200)
 //    .cookie("accessToken", accessToken, options)
