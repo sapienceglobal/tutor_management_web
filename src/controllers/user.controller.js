@@ -68,16 +68,26 @@ if(!isPasswordCorrect){
 const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
 const curruser = await User.findById(user._id).select("-password -refreshToken")
 
-const options = {
-  httpOnly: true,
-  secure: true
-}
+// const options = {
+//   httpOnly: true,
+//   secure: true
+// }
+// We won't set cookies directly due to cross-site limitations
+  // (Uncomment and modify options if using cookie approach in the future)
+  // const options = {
+  //   httpOnly: true,
+  //   secure: process.env.NODE_ENV === 'production',
+  //   sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+  // };
 
-res.status(200)
-   .cookie("accessToken", accessToken, options)
-   .cookie("refreshToken", refreshToken, options)
-   .json({ status: 200, curruser, message: "Logged in" });
-})
+  // Return tokens in the response body for API approach or authorization flow
+  res.status(200).json({ status: 200, curruser: sanitizedUserData, accessToken, refreshToken });
+
+// res.status(200)
+//    .cookie("accessToken", accessToken, options)
+//    .cookie("refreshToken", refreshToken, options)
+//    .json({ status: 200, curruser, message: "Logged in" });
+ })
 
 const editUserDetails = asyncHandler(async (req, res) => {
   try {
