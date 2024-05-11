@@ -139,7 +139,7 @@ const editUserDetails = asyncHandler(async (req, res) => {
 
 
 const checkUser=asyncHandler(async(req,res)=>{
-  res.send({curruser:req.user})
+  res.status(200).json({curruser:req.user})
   // const incomingToken = req.cookies.refreshToken
   // console.log(incomingToken);
   // if (!incomingToken) {
