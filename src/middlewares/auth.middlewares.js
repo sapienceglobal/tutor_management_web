@@ -15,17 +15,17 @@ export const verifyjwt = asyncHandler(async (req, res, next) => {
 
         let decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
         if (!decoded) {
-            throw new ApiError(400, "Invalid access token");
+            return res.json({statu:400, message:"Invalid access token"});
         }
 
         const user = await User.findById(decoded._id).select("-password -refreshToken");
         if (!user) {
-            throw new ApiError(401, "Invalid Access Token");
+            return res.json({statu:400, message:"Invalid access token"});
         }
 
         req.user = user;
         next();
     } catch (error) {
-        throw new ApiError(401, error?.message || "Invalid access token");
+        return res.json({status:401, message:error?.message || "Invalid access token"});
     }
 });
