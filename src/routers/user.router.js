@@ -4,7 +4,7 @@ import { Router } from "express"
 import { verifyjwt } from "../middlewares/auth.middlewares.js"
  
 const userRouter=Router()
-userRouter.post("/registerUser",userRegister)
+userRouter.post("/registerUser",upload.single("image"),userRegister)
 userRouter.post("/loginUser",loginUser)
 userRouter.get("/checkuser",verifyjwt,checkUser)
 userRouter.get("/logout",verifyjwt,logoutUser)

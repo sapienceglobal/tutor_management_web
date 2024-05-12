@@ -57,8 +57,6 @@ const generateAccessAndRefreshToken = async (userId) => {
 
 const userRegister = asyncHandler(async (req, res) => {
   console.log(req.file); // Assuming multiple file uploads are allowed
-
-
   const { username, fullName, password, email } = req.body;
 
   // Validate required fields
@@ -83,7 +81,7 @@ const userRegister = asyncHandler(async (req, res) => {
   // Upload image to Cloudinary
   let imageResponse;
   try {
-    imageResponse = await uploadOnCloudinary(imageFile.buffer); // Assuming buffer access
+    imageResponse = await uploadOnCloudinary(imageFile.originalname); // Assuming buffer access
   } catch (error) {
     console.error("Error uploading image to Cloudinary:", error);
     return res.send({ status: 500, message: "Error uploading image" });
