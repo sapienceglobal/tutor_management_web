@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors"
-import { includeCookies } from "./middlewares/cookies.middlewares.js";
 import cookieParser from 'cookie-parser'
 
 const app=express()
@@ -11,7 +10,7 @@ const app=express()
 // }))
 
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'https://sprcbaghpat.vercel.app');
+    res.header('Access-Control-Allow-Origin', 'https://yourfrontenddomain.com');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     res.header('Access-Control-Allow-Credentials', 'true'); // Allow credentials
@@ -22,7 +21,7 @@ app.use((req, res, next) => {
     }
 });
 
-app.use(includeCookies);
+
 
 app.use(express.json({
     limit:'16kb'

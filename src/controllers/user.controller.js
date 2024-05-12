@@ -81,20 +81,12 @@ const curruser = await User.findById(user._id).select("-password -refreshToken")
   // };
 
   // Return tokens in the response body for API approach or authorization flow
-  // res.status(200).json({ status: 200, curruser, accessToken, refreshToken ,message:"Logged In"});
+  res.status(200).json({ status: 200, curruser, accessToken, refreshToken ,message:"Logged In"});
 
- const options = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  domain: 'sprcbaghpat.vercel.app',
-  path: '/',
-}
-
-res.status(200)
-  .cookie("__Secure-accessToken", accessToken, options) // Use __Secure- prefix
-  .cookie("__Secure-refreshToken", refreshToken, options) // Use __Secure- prefix
-  .json({ status: 200, curruser,acess:accessToken,refres:refreshToken, message: "Logged in" });
-
+// res.status(200)
+//    .cookie("accessToken", accessToken, options)
+//    .cookie("refreshToken", refreshToken, options)
+//    .json({ status: 200, curruser, message: "Logged in" });
  })
 
 const editUserDetails = asyncHandler(async (req, res) => {
