@@ -86,7 +86,7 @@ const curruser = await User.findById(user._id).select("-password -refreshToken")
  const options = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  domain: 'https://sprcbaghpat.vercel.app',
+  domain: 'sprcbaghpat.vercel.app',
   path: '/',
 }
 
