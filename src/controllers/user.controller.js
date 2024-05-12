@@ -56,7 +56,8 @@ const generateAccessAndRefreshToken = async (userId) => {
 // })
 
 const userRegister = asyncHandler(async (req, res) => {
-  console.log(req.files); // Assuming multiple file uploads are allowed
+  console.log(req.file); // Assuming multiple file uploads are allowed
+  console.log(req);
 
   const { username, fullName, password, email } = req.body;
 
@@ -72,7 +73,7 @@ const userRegister = asyncHandler(async (req, res) => {
   }
 
   // Access uploaded image file (assuming single file upload)
-  const imageFile = req.files?.image?.[0]; // Adjust based on your framework
+  const imageFile = req.file; // Adjust based on your framework
 
   // Validate image presence (if required)
   if (!imageFile) {
