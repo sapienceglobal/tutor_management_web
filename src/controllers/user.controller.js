@@ -38,6 +38,9 @@ const imagePath = await req.file?.path
     return res.send({status:400, message:"image is required"})
   }
   let imageResponse = await uploadOnCloudinary(imagePath)
+  if(!imageResponse?.url){
+    return res.send({status:400, message:"error while uploading image"})
+  }
 
   const user = await User.create({
     username: username,
