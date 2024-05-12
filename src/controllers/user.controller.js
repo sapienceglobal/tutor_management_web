@@ -167,11 +167,8 @@ const editUserDetails = asyncHandler(async (req, res) => {
    
     let newObj = {};
     const imagePath = req.file;
-    if(!imagePath){
-      return res.send({message:"Image is required"})
-    }
-
-    let imageResponse = await uploadOnCloudinary(imagePath.originalname);
+    
+    let imageResponse = await uploadOnCloudinary(imagePath?.originalname);
     if (imageResponse) {
       newObj.image = imageResponse.url;
     }
