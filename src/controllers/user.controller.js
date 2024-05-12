@@ -22,38 +22,100 @@ const generateAccessAndRefreshToken = async (userId) => {
 }
 
 
-const userRegister=asyncHandler(async(req,res)=>{
-   console.log(req.file)
-const {username,fullName,password,email}=req.body
-if([username,fullName,email,password].some((field)=> field?.trim() == "")){
-  res.send({message:"All feilds required"})
-}
-const existedUser = await User.findOne({ $or: [{ username }, { email }]})
-if (existedUser) {
- return res.send({status:400, message: "User already Exists"})
-}
+// const userRegister=asyncHandler(async(req,res)=>{
+//    console.log(req.file)
+// const {username,fullName,password,email}=req.body
+// if([username,fullName,email,password].some((field)=> field?.trim() == "")){
+//   res.send({message:"All feilds required"})
+// }
+// const existedUser = await User.findOne({ $or: [{ username }, { email }]})
+// if (existedUser) {
+//  return res.send({status:400, message: "User already Exists"})
+// }
 
-const imagePath = await req.file?.path
-  if (!imagePath) {
-    return res.send({status:400, message:"image is required"})
-  }
-  let imageResponse = await uploadOnCloudinary(imagePath)
-  if(!imageResponse?.url){
-    return res.send({status:400, message:"error while uploading image"})
+// const imagePath = await req.file?.path
+//   if (!imagePath) {
+//     return res.send({status:400, message:"image is required"})
+//   }
+//   let imageResponse = await uploadOnCloudinary(imagePath)
+//   if(!imageResponse?.url){
+//     return res.send({status:400, message:"error while uploading image"})
+//   }
+
+//   const user = await User.create({
+//     username: username,
+//     email,
+//     password,
+//     fullName,
+//     image: imageResponse.url,
+    
+//   })
+// await verifyonsignup.findOneAndDelete({email})
+//  res.send({status:200,user,message:"User Registered Succefully"})
+
+// })
+
+const userRegister = asyncHandler(async (req, res) => {
+  console.log(req.file);
+
+  const { username, fullName, password, email } = req.body;
+
+  // Validate required fields
+  if ([username, fullName, email, password].some((field) => field?.trim() === "")) {
+    return res.send({ message: "All fields are required" });
   }
 
+  // Check for existing user with username or email
+  const existedUser = await User.findOne({ $or: [{ username }, { email }] });
+  if (existedUser) {
+    return res.send({ status: 400, message: "User already exists" });
+  }
+
+  // Handle image upload (using in-memory storage)
+  let image;
+  try {
+    if (req.file) {
+      image = await req.file.buffer; // Assuming buffer is available
+    }
+  } catch (error) {
+    console.error("Error reading uploaded image:", error);
+    return res.send({ status: 500, message: "Error processing image" });
+  }
+
+  // Validate image presence (if required)
+  if (!image) {
+    return res.send({ status: 400, message: "Image is required" });
+  }
+
+  // Upload image to Cloudinary
+  let imageResponse;
+  try {
+    imageResponse = await uploadOnCloudinary(image);
+  } catch (error) {
+    console.error("Error uploading image to Cloudinary:", error);
+    return res.send({ status: 500, message: "Error uploading image" });
+  }
+
+  if (!imageResponse?.url) {
+    return res.send({ status: 400, message: "Error uploading image" });
+  }
+
+  // Create user with uploaded image URL
   const user = await User.create({
-    username: username,
+    username,
     email,
     password,
     fullName,
     image: imageResponse.url,
-    
-  })
-await verifyonsignup.findOneAndDelete({email})
- res.send({status:200,user,message:"User Registered Succefully"})
+  });
 
-})
+  await verifyonsignup.findOneAndDelete({email})
+
+  res.send({ status: 200, user, message: "User registered successfully" });
+});
+
+
+
 
 const loginUser=asyncHandler(async(req,res)=>{
 const {email,username,password}=req.body
