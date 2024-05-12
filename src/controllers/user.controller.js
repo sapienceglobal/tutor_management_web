@@ -56,7 +56,7 @@ const generateAccessAndRefreshToken = async (userId) => {
 // })
 
 const userRegister = asyncHandler(async (req, res) => {
-  console.log(req.file);
+  console.log(req.files); // Assuming multiple file uploads are allowed
 
   const { username, fullName, password, email } = req.body;
 
@@ -71,26 +71,18 @@ const userRegister = asyncHandler(async (req, res) => {
     return res.send({ status: 400, message: "User already exists" });
   }
 
-  // Handle image upload (using in-memory storage)
-  let image;
-  try {
-    if (req.file) {
-      image = await req.file.buffer; // Assuming buffer is available
-    }
-  } catch (error) {
-    console.error("Error reading uploaded image:", error);
-    return res.send({ status: 500, message: "Error processing image" });
-  }
+  // Access uploaded image file (assuming single file upload)
+  const imageFile = req.files?.image?.[0]; // Adjust based on your framework
 
   // Validate image presence (if required)
-  if (!image) {
+  if (!imageFile) {
     return res.send({ status: 400, message: "Image is required" });
   }
 
   // Upload image to Cloudinary
   let imageResponse;
   try {
-    imageResponse = await uploadOnCloudinary(image);
+    imageResponse = await uploadOnCloudinary(imageFile.buffer); // Assuming buffer access
   } catch (error) {
     console.error("Error uploading image to Cloudinary:", error);
     return res.send({ status: 500, message: "Error uploading image" });
@@ -113,6 +105,7 @@ const userRegister = asyncHandler(async (req, res) => {
 
   res.send({ status: 200, user, message: "User registered successfully" });
 });
+
 
 
 
