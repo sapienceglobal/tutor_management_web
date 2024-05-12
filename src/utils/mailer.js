@@ -40,7 +40,7 @@ export const sendEmail=async ({email,emailType,userId,verifyemailonsignup})=>{
       });
 
           const mailOption={
-            from: 'adarsh@g.com', // sender address
+            from: '"Maddison Foo Koch 👻" <maddison53@ethereal.email>', // sender address
             to:email, 
             subject:emailType==='VERIFY'?"Verify your email":"Reset your Password",
             // html: `${emailType=="VERIFY" ? verifyEmailHtml : resetPasswordHtml()}` 
