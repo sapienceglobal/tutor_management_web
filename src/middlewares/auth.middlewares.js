@@ -7,7 +7,7 @@ export const verifyjwt = asyncHandler(async (req, res, next) => {
     try {
         const authHeader = req.header("Authorization");
 
-        if (!authHeader ) {
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
             console.log("Unauthorized request");
             return res.json({statu:400, message:"Unauthorized request"});
         }
