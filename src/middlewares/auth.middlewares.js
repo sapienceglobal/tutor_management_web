@@ -13,6 +13,9 @@ export const verifyjwt = asyncHandler(async (req, res, next) => {
         }
 
         const accessToken = authHeader.replace('Bearer ', ''); // Extract the token
+        if(!accessToken){
+            return res.json({statu:400, message:"Unauthorized request barearr waala"});
+        }
 
         let decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
         if (!decoded) {
