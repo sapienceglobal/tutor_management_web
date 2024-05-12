@@ -187,7 +187,7 @@ const editUserDetails = asyncHandler(async (req, res) => {
     }
    
     user = await User.findByIdAndUpdate(user._id, newObj, { new: true });
-    res.send({ message: "Updated", curruser: user });
+    res.send({ message: "Profile Updated Successfully", curruser: user });
   } catch (error) {
     console.error(error);
     res.status(500).send({ message: "Internal server error" });
