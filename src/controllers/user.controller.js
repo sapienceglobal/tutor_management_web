@@ -56,7 +56,7 @@ const generateAccessAndRefreshToken = async (userId) => {
 // })
 
 const userRegister = asyncHandler(async (req, res) => {
-  console.log(req.file); // Assuming multiple file uploads are allowed
+  // console.log(req.file); 
   const { username, fullName, password, email } = req.body;
 
   // Validate required fields
@@ -166,9 +166,12 @@ const editUserDetails = asyncHandler(async (req, res) => {
 
    
     let newObj = {};
-    const imagePath = req.file?.path;
+    const imagePath = req.file;
+    if(!imagePath){
+      return res.send({message:"Image is required"})
+    }
 
-    let imageResponse = await uploadOnCloudinary(imagePath);
+    let imageResponse = await uploadOnCloudinary(imagePath.originalname);
     if (imageResponse) {
       newObj.image = imageResponse.url;
     }
