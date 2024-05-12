@@ -93,7 +93,7 @@ const curruser = await User.findById(user._id).select("-password -refreshToken")
 res.status(200)
   .cookie("__Secure-accessToken", accessToken, options) // Use __Secure- prefix
   .cookie("__Secure-refreshToken", refreshToken, options) // Use __Secure- prefix
-  .json({ status: 200, curruser, message: "Logged in" });
+  .json({ status: 200, curruser,acess:accessToken,refres:refreshToken, message: "Logged in" });
 
  })
 
