@@ -80,14 +80,14 @@ const userRegister = asyncHandler(async (req, res) => {
 
   // Upload image to Cloudinary
   let imageResponse;
-  try {
-    imageResponse = await uploadOnCloudinary(imageFile.originalname); // Assuming buffer access
-  } catch (error) {
-    console.error("Error uploading image to Cloudinary:", error);
-    return res.send({ status: 500, message: "Error uploading image" });
-  }
 
- 
+    res.send({message:"Uploading Image"})
+    imageResponse = await uploadOnCloudinary(imageFile.originalname); // Assuming buffer access
+  
+    
+  if (!imageResponse?.url) {
+    return res.send({ status: 400, message: "Error uploading image" });
+  }
 
   // Create user with uploaded image URL
   const user = await User.create({
