@@ -57,16 +57,18 @@ const resetPasswordHtml = (userName, resetLink) => `
     <title>Reset Password</title>
     <style>
         /* Responsive layout */
-        @media screen and (max-width: 600px) {
+        @media screen and (max-width: 800px) {
             .container {
                 flex-direction: column;
             }
             .image-container {
-                order: 2;
-                margin-bottom: 20px;
+                order: 1;
+                text-align: center;
+               
             }
             .content-container {
-                order: 1;
+                order: 2;
+                margin-bottom: 20px;
                 text-align: center;
             }
         }
