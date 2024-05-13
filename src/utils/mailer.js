@@ -17,7 +17,7 @@ const verifyEmailHtml = (userName, verificationLink) => `
     <table cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff" style="margin: 0 auto; height: 100%; border-collapse: collapse;">
     <tr style="height: 100%;">
         <td style="padding: 20px; text-align: center; vertical-align: middle; width: 50%;">
-            <img src="https://i.ytimg.com/vi/IqKEK4xMJWE/maxresdefault.jpg" alt="Verification Image" style="width: 85%; height: 100%; border-radius: 8px; border: 2px solid #000; object-fit: cover; object-position: center;">
+            <img src="https://i.ytimg.com/vi/IqKEK4xMJWE/maxresdefault.jpg" alt="Verification Image" style="width: 100%; height: 100%; border-radius: 8px; border: 2px solid #000; object-fit: cover; object-position: center;">
         </td>
         <td style="padding: 20px; text-align: left; vertical-align: middle; width: 50%;">
             <h2 style="color: #333333;">Verify Your Email Address</h2>
@@ -46,6 +46,9 @@ const resetPasswordHtml = (userName, resetLink) => `
 
     <table cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff" style="margin: 0 auto; height: 100%; border-collapse: collapse;">
     <tr style="height: 100%;">
+    <td style="padding: 20px; text-align: center; vertical-align: middle; width: 50%;">
+    <img src="https://i.ytimg.com/vi/IqKEK4xMJWE/maxresdefault.jpg" alt="Reset Password Image" style="width: 100%; height: 100%; border-radius: 8px; border: 2px solid #000; object-fit: cover; object-position: center;">
+</td>
         <td style="padding: 20px; text-align: left; vertical-align: middle; width: 50%;">
             <h2 style="color: #333333;">Reset Your Password</h2>
             <p style="color: #666666;">Hello ${userName},</p>
@@ -53,9 +56,7 @@ const resetPasswordHtml = (userName, resetLink) => `
             <p style="text-align: center; margin-top: 30px;"><a href="${resetLink}" style="display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 5px;">Reset Password</a></p>
             <p style="color: #666666;">If you did not request a password reset, please ignore this email.</p>
         </td>
-        <td style="padding: 20px; text-align: center; vertical-align: middle; width: 50%;">
-            <img src="https://i.ytimg.com/vi/IqKEK4xMJWE/maxresdefault.jpg" alt="Reset Password Image" style="width: 85%; height: 100%; border-radius: 8px; border: 2px solid #000; object-fit: cover; object-position: center;">
-        </td>
+       
     </tr>
     </table>
 
@@ -67,37 +68,37 @@ const resetPasswordHtml = (userName, resetLink) => `
 
 
 export const sendEmail = async ({ email, emailType, userId, verifyemailonsignup }) => {
-    try {
-        let hashedToken = await bcrypt.hash(userId?.toString(), 10);
+  try {
+    let hashedToken = await bcrypt.hash(userId?.toString(), 10);
 
-        if (emailType === "VERIFY") {
-            if (verifyemailonsignup) {
-                await verifyonsignup.findByIdAndUpdate(userId, { $set: { verifyToken: hashedToken, verifyTokenExpiry: Date.now() + 3600000 } });
-            } else {
-                await User.findByIdAndUpdate(userId, { $set: { verifyToken: hashedToken, verifyTokenExpiry: Date.now() + 3600000 } });
-            }
-        } else if (emailType === "RESET") {
-            await User.findByIdAndUpdate(userId, { $set: { forgetPasswordToken: hashedToken, forgetPasswordTokenExpiry: Date.now() + 3600000 } });
-        }
-
-        var transport = nodemailer.createTransport({
-          service:'gmail',
-          auth: {
-            user:'adarshsharma7p@gmail.com',
-            pass:'gsgmqzzlifsxjwnj'
-          }
-        });
-
-        const mailOption = {
-            from: 'adarshsharma7p@gmail.com',
-            to: `${email}`,
-            subject: emailType === 'VERIFY' ? "Verify your email" : "Reset your Password",
-            html: emailType === 'VERIFY' ? verifyEmailHtml(email, `${process.env.DOMAIN}/verifyemail?token=${hashedToken}`) : resetPasswordHtml(email, `${process.env.DOMAIN}/forgetpassword?token=${hashedToken}`)
-        };
-
-        const mailResponse = await transport.sendMail(mailOption);
-        return mailResponse;
-    } catch (error) {
-        throw new Error(error.message);
+    if (emailType === "VERIFY") {
+      if (verifyemailonsignup) {
+        await verifyonsignup.findByIdAndUpdate(userId, { $set: { verifyToken: hashedToken, verifyTokenExpiry: Date.now() + 3600000 } });
+      } else {
+        await User.findByIdAndUpdate(userId, { $set: { verifyToken: hashedToken, verifyTokenExpiry: Date.now() + 3600000 } });
+      }
+    } else if (emailType === "RESET") {
+      await User.findByIdAndUpdate(userId, { $set: { forgetPasswordToken: hashedToken, forgetPasswordTokenExpiry: Date.now() + 3600000 } });
     }
+
+    var transport = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'adarshsharma7p@gmail.com',
+        pass: 'gsgmqzzlifsxjwnj'
+      }
+    });
+
+    const mailOption = {
+      from: 'adarshsharma7p@gmail.com',
+      to: `${email}`,
+      subject: emailType === 'VERIFY' ? "Verify your email" : "Reset your Password",
+      html: emailType === 'VERIFY' ? verifyEmailHtml(email, `${process.env.DOMAIN}/verifyemail?token=${hashedToken}`) : resetPasswordHtml(email, `${process.env.DOMAIN}/forgetpassword?token=${hashedToken}`)
+    };
+
+    const mailResponse = await transport.sendMail(mailOption);
+    return mailResponse;
+  } catch (error) {
+    throw new Error(error.message);
+  }
 };
