@@ -16,8 +16,8 @@ const verifyEmailHtml = (userName, verificationLink) => `
 
     <table cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff" style="margin: 0 auto; height: 100%; border-collapse: collapse;">
     <tr style="height: 100%;">
-        <td style="padding: 20px; text-align: center; vertical-align: middle; width: 50%;">
-            <img src="https://i.ytimg.com/vi/IqKEK4xMJWE/maxresdefault.jpg" alt="Verification Image" style="width: 100%; height: 100%; border-radius: 8px; border: 2px solid #000; object-fit: cover; object-position: center;">
+        <td style="padding: 20px; text-align: center; vertical-align: middle; width: 95%;">
+            <img src="https://i.ytimg.com/vi/IqKEK4xMJWE/maxresdefault.jpg" alt="Verification Image" style="width: 100%; height: 80%; border-radius: 8px; border: 2px solid #000; object-fit: cover; object-position: center;">
         </td>
         <td style="padding: 20px; text-align: left; vertical-align: middle; width: 50%;">
             <h2 style="color: #333333;">Verify Your Email Address</h2>
@@ -46,8 +46,8 @@ const resetPasswordHtml = (userName, resetLink) => `
 
     <table cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff" style="margin: 0 auto; height: 100%; border-collapse: collapse;">
     <tr style="height: 100%;">
-    <td style="padding: 20px; text-align: center; vertical-align: middle; width: 50%;">
-    <img src="https://i.ytimg.com/vi/IqKEK4xMJWE/maxresdefault.jpg" alt="Reset Password Image" style="width: 100%; height: 100%; border-radius: 8px; border: 2px solid #000; object-fit: cover; object-position: center;">
+    <td style="padding: 20px; text-align: center; vertical-align: middle; width: 95%;">
+    <img src="https://i.ytimg.com/vi/IqKEK4xMJWE/maxresdefault.jpg" alt="Reset Password Image" style="width: 100%; height: 80%; border-radius: 8px; border: 2px solid #000; object-fit: cover; object-position: center;">
 </td>
         <td style="padding: 20px; text-align: left; vertical-align: middle; width: 50%;">
             <h2 style="color: #333333;">Reset Your Password</h2>
