@@ -18,11 +18,11 @@ const verifyEmailHtml = (userName, verificationLink) => `
                 flex-direction: column;
             }
             .image-container {
-                order: 2;
+                order: 1;
                 margin-bottom: 20px;
             }
             .content-container {
-                order: 1;
+                order: 2;
                 text-align: center;
             }
         }
