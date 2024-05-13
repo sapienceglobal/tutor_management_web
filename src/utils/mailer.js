@@ -31,17 +31,16 @@ export const sendEmail=async ({email,emailType,userId,verifyemailonsignup})=>{
 
 
        var transport = nodemailer.createTransport({
-        host: "live.smtp.mailtrap.io",
-        port: 587,
+        service:'gmail',
         auth: {
-          user: "api",
-          pass: "e5a0909de2e5c0aa2ed0d21be8a9523a"
+          user:'adarshsharma7p@gmail.com',
+          pass:'gsgmqzzlifsxjwnj'
         }
       });
 
           const mailOption={
-            from: '"Maddison Foo Koch 👻" <maddison53@ethereal.email>', // sender address
-            to:email, 
+            from: 'adarshsharma7p@gmail.com', // sender address
+            to:`${email}`, 
             subject:emailType==='VERIFY'?"Verify your email":"Reset your Password",
             // html: `${emailType=="VERIFY" ? verifyEmailHtml : resetPasswordHtml()}` 
             html:emailType==='VERIFY'?`<p>Click<a href="${process.env.DOMAIN}/verifyemail?token=${hashedToken}">Here</a> to Verify your email
