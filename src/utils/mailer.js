@@ -28,7 +28,7 @@ const verifyEmailHtml = (userName, verificationLink) => `
         }
     </style>
     </head>
-    <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; margin: 0;">
+    <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; margin: 0; height: 100%;">
 
     <div class="container" style="display: flex; justify-content: center; align-items: center; height: 100%;">
         <div class="image-container" style="flex: 1; text-align: center;">
