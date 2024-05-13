@@ -13,7 +13,7 @@ const verifyEmailHtml = (userName, verificationLink) => `
     <title>Email Verification</title>
     <style>
         /* Responsive layout */
-        @media screen (max-width: 600px) {
+        @media screen and (max-width: 600px) {
             .container {
                 flex-direction: column;
             }
@@ -57,7 +57,7 @@ const resetPasswordHtml = (userName, resetLink) => `
     <title>Reset Password</title>
     <style>
         /* Responsive layout */
-        @media screen (max-width: 600px) {
+        @media screen and (max-width: 600px) {
             .container {
                 flex-direction: column;
             }
@@ -90,6 +90,7 @@ const resetPasswordHtml = (userName, resetLink) => `
     </body>
     </html>
 `;
+
 
 
 
