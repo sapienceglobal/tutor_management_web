@@ -17,6 +17,7 @@ const verifyEmailHtml = (userName, verificationLink) => `
     <table cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff" style="margin: 0 auto; max-width: 600px; border-collapse: collapse;">
     <tr>
         <td style="padding: 20px;">
+        <img src="https://i.ytimg.com/vi/IqKEK4xMJWE/maxresdefault.jpg" alt="Verification Image" style="display: block; margin: 20px auto;">
             <h2 style="color: #333333;">Verify Your Email Address</h2>
             <p style="color: #666666;">Hello ${userName},</p>
             <p style="color: #666666;">Thank you for signing up! To complete your registration, please click the button below to verify your email address:</p>
@@ -49,6 +50,8 @@ const resetPasswordHtml = (userName, resetLink) => `
             <p style="color: #666666;">You recently requested to reset your password for your account. Click the button below to reset it:</p>
             <p style="text-align: center; margin-top: 30px;"><a href="${resetLink}" style="display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 5px;">Reset Password</a></p>
             <p style="color: #666666;">If you did not request a password reset, please ignore this email.</p>
+            <img src="https://i.ytimg.com/vi/IqKEK4xMJWE/maxresdefault.jpg" alt="Reset Password Image" style="display: block; margin: 20px auto;">
+        </td>
         </td>
     </tr>
     </table>
