@@ -41,7 +41,7 @@ const verifyEmailPage=asyncHandler(async(req,res)=>{
  user.verifyTokenExpiry=undefined
  user.isvarified=true
  await user.save()
-  res.send({message:"email verified successfully",succes:true,isVarified:user.isvarified,status:200})
+  res.send({message:"Email Verified successfully,Now go back to Register Page and Click on Verify",succes:true,isVarified:user.isvarified,status:200})
 
 })
 
