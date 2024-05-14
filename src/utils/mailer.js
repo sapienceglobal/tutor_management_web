@@ -28,6 +28,7 @@ const verifyEmailHtml = (userName, verificationLink) => `
         .content-container {
            min-width: 80%;
             text-align: center;
+            padding-right: 0;
         }
     }
 </style>
@@ -78,6 +79,7 @@ const resetPasswordHtml = (userName, resetLink) => `
         .content-container {
            min-width: 80%;
             text-align: center;
+            padding-right: 0;
         }
     }
 </style>
