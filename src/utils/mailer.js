@@ -11,45 +11,26 @@ const verifyEmailHtml = (userName, verificationLink) => `
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Email Verification</title>
-<style>
-    /* Responsive layout */
-    @media screen and (max-width: 450px) {
-        .container {
-            flex-direction: column;
-        }
-        .image-container {
-            height:200px;
-            min-width: 75%;
-            
-        }
-        .real-image{
-            min-width: 98%;
-        }
-        .content-container {
-           min-width: 80%;
-            text-align: center;
-            padding-right: 0;
-        }
-    }
-</style>
 </head>
-<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 15px; margin: 0; height: 100%;">
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 15px; margin: 0;">
 
-<div class="container" style="display: flex; justify-content: center; align-items: center; min-height: 308px border; border: 2px solid #000;">
-    <div class="image-container" style=" height:290px; width:50%; display:flex; align-items: center; justify-content: center; overflow:hidden;">
-        <img class="real-image" src="https://i.ytimg.com/vi/IqKEK4xMJWE/maxresdefault.jpg" alt="Verification Image" style=" width: 70%; height:95%; border-radius: 8px; border: 2px solid #000; background-position: center; background-size: cover; ">
-    </div>
-    <div class="content-container" style="display:flex; flex-direction: column; width:50%; padding-right: 20px;">
+<div style="max-width: 600px; margin: 0 auto;">
+    <img src="https://i.ytimg.com/vi/IqKEK4xMJWE/maxresdefault.jpg" alt="Verification Image"  style="width: 100%; height: auto; border-radius: 8px; margin-bottom: 20px;">
+    <div style="background-color: #ffffff; border-radius: 8px; padding: 20px;">
         <h2 style="color: #333333; text-align: center;">Verify Your Email Address</h2>
-        <p style="color: #666666; margin: 0;">Hello ${userName},</p>
-        <p style="color: #666666; ">Thank you for signing up! To complete your registration, please click the button below to verify your email address:</p>
-        <p style="text-align: center; margin-top: 30px;"><a href="${verificationLink}" style="display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 5px;">Verify Email</a></p>
-        <p style="color: #666666;">If you did not sign up for an account, you can safely ignore this email.</p>
+        <p style="color: #666666; text-align: center;">Hello ${userName},</p>
+        <p style="color: #666666; text-align: center;">Thank you for signing up! To complete your registration, please click the button below to verify your email address:</p>
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="${verificationLink}" style="display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 5px;">Verify Email</a>
+        </div>
+        <p style="color: #666666; text-align: center; margin-top: 20px;">If you did not sign up for an account, you can safely ignore this email..</p>
     </div>
 </div>
 
 </body>
 </html>
+
+
 `;
 
 
@@ -62,40 +43,19 @@ const resetPasswordHtml = (userName, resetLink) => `
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Email Verification</title>
-<style>
-    /* Responsive layout */
-    @media screen and (max-width: 450px) {
-        .container {
-            flex-direction: column;
-        }
-        .image-container {
-            height:200px;
-            min-width: 75%;
-            
-        }
-        .real-image{
-            min-width: 98%;
-        }
-        .content-container {
-           min-width: 80%;
-            text-align: center;
-            padding-right: 0;
-        }
-    }
-</style>
 </head>
-<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 15px; margin: 0; height: 100%;">
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 15px; margin: 0;">
 
-<div class="container" style="display: flex; justify-content: center; align-items: center; min-height: 308px border; border: 2px solid #000;">
-    <div class="image-container" style=" height:290px; width:50%; display:flex; align-items: center; justify-content: center; overflow:hidden;">
-        <img class="real-image" src="https://i.ytimg.com/vi/IqKEK4xMJWE/maxresdefault.jpg" alt="Reset Password Image"  style=" width: 70%; height:95%; border-radius: 8px; border: 2px solid #000; background-position: center; background-size: cover; ">
-    </div>
-    <div class="content-container" style="display:flex; flex-direction: column; width:50%; padding-right: 20px;">
+<div style="max-width: 600px; margin: 0 auto;">
+    <img src="https://i.ytimg.com/vi/IqKEK4xMJWE/maxresdefault.jpg" alt="Reset Password Image" style="width: 100%; height: auto; border-radius: 8px; margin-bottom: 20px;">
+    <div style="background-color: #ffffff; border-radius: 8px; padding: 20px;">
         <h2 style="color: #333333; text-align: center;">Reset Your Password</h2>
-        <p style="color: #666666; margin: 0;">Hello ${userName},</p>
-        <p style="color: #666666; ">You recently requested to reset your password for your account. Click the button below to reset it:</p>
-        <p style="text-align: center; margin-top: 30px;"><a href="${resetLink}" style="display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 5px;">Verify Email</a></p>
-        <p style="color: #666666;">If you did not sign up for an account, you can safely ignore this email.</p>
+        <p style="color: #666666; text-align: center;">Hello ${userName},</p>
+        <p style="color: #666666; text-align: center;">You recently requested to reset your password for your account. Click the button below to reset it:</p>
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="${resetLink}" style="display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 5px;">Reset Password</a>
+        </div>
+        <p style="color: #666666; text-align: center; margin-top: 20px;">If you did not request a password reset, please ignore this email.</p>
     </div>
 </div>
 
