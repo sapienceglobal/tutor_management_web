@@ -111,7 +111,11 @@ try{
 
 });
 
-
+const updateLocation=asyncHandler(async(req,res)=>{
+  const {latitude,longitude}=req.body
+  await User.findByIdAndUpdate(req.user._id,{latitude:latitude,longitude:longitude})
+  res.send({message:"location Updated"})
+})
 
 
 
@@ -247,4 +251,4 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 
 
-export {userRegister,loginUser,checkUser,logoutUser,editUserDetails}
+export {userRegister,loginUser,checkUser,logoutUser,editUserDetails,updateLocation}
