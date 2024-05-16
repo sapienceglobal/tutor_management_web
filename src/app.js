@@ -23,7 +23,9 @@ app.use(cookieParser())
 
 import userRouter from "./routers/user.router.js";
 import verifyEmailRouter from "./routers/verifyEmail.router.js";
+import userLocation from "./routers/userLocation.router.js";
 app.use("/api/v1/users",userRouter)
 app.use("/api/v1/verifyEmail",verifyEmailRouter)
+app.use("/api/v1/location",userLocation)
 
 export default app

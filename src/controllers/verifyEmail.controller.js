@@ -31,7 +31,7 @@ res.send({message:"Email Sent Succesfully"})
 
 const verifyEmailPage=asyncHandler(async(req,res)=>{
   const {token}=req.body
-  console.log(req.body)
+   console.log(req.body)
  const user= await verifyonsignup.findOne({verifyToken:token,verifyTokenExpiry:{$gt:Date.now()}})
  if(!user){
   return res.send({message:"token is expired or invalid",status:400})

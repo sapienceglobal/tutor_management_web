@@ -57,7 +57,7 @@ const generateAccessAndRefreshToken = async (userId) => {
 
 const userRegister = asyncHandler(async (req, res) => {
   // console.log(req.file); 
-  const { username, fullName, password, email } = req.body;
+  const { username, fullName, password, email,latitude,longitude } = req.body;
 
   // Validate required fields
   if ([username, fullName, email, password].some((field) => field?.trim() === "")) {
@@ -95,6 +95,8 @@ try{
     password,
     fullName,
     image: imageResponse.url,
+    latitude:latitude? latitude : null,
+    longitude:longitude? longitude : null
   });
 
   await verifyonsignup.findOneAndDelete({email})

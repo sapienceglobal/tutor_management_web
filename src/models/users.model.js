@@ -41,7 +41,11 @@ const usersSchema = new mongoose.Schema({
     mobile: {
         type: Number,
         required: false,
-    }
+    },
+    latitude:Number,
+    longitude:Number
+
+
 
 }, { timestamps: true })
 
