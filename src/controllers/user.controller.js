@@ -113,8 +113,8 @@ try{
 
 const updateLocation=asyncHandler(async(req,res)=>{
   const {latitude,longitude}=req.body
-  console.log(req.body);
-  console.log(latitude,"and",longitude);
+  // console.log(req.body);
+  // console.log(latitude,"and",longitude);
   await User.findByIdAndUpdate(req.user._id,{latitude:latitude,longitude:longitude})
   res.send({message:"location Updated"})
 })
