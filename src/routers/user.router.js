@@ -8,6 +8,6 @@ userRouter.post("/registerUser",upload.single("image"),userRegister)
 userRouter.post("/loginUser",loginUser)
 userRouter.get("/checkuser",verifyjwt,checkUser)
 userRouter.get("/logout",verifyjwt,logoutUser)
-userRouter.get("/updatelocation",verifyjwt,updateLocation)
+userRouter.post("/updatelocation",verifyjwt,updateLocation)
 userRouter.post("/editdetails",verifyjwt,upload.single("image"),editUserDetails)
 export default userRouter
