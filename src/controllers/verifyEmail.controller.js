@@ -51,7 +51,7 @@ const user=await User.findOne({$or:[{email},{username}]})
 if(!user){
  return res.send({message:"user not found "})
 }
-if(user.forgetPasswordToken){
+if(user.verifyTokenExpiry>Date.now()){
 return res.send({message:"A Email already sent for Forget password"})
 }
 await sendEmail({email:user.email,emailType:"RESET",userId:user._id,verifyemailonsignup:false})
