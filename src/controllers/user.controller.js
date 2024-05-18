@@ -158,21 +158,21 @@ const curruser = await User.findById(user._id).select("-password -refreshToken")
 //    .json({ status: 200, curruser, message: "Logged in" });
  })
 
-const loginUserByGoogle=asyncHandler(async(req,res)=>{
-  const {email,name,picture}=req.body
-  console.log(email,name,picture);
-  let user=await User.create({
-    fullName:name,
-    email,
-    image:picture,
-    // laptitude:laptitude? laptitude: null,
-    // longitude:longitude? longitude: null
-  },{new:true})
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
-  const curruser = await User.findById(user._id).select("-refreshToken")
-  res.status(200).json({ status: 200, curruser, accessToken ,message:"Logged In"});
+// const loginUserByGoogle=asyncHandler(async(req,res)=>{
+//   const {email,name,picture}=req.body
+//   console.log(email,name,picture);
+//   let user=await User.create({
+//     fullName:name,
+//     email,
+//     image:picture,
+//     // laptitude:laptitude? laptitude: null,
+//     // longitude:longitude? longitude: null
+//   },{new:true})
+//   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
+//   const curruser = await User.findById(user._id).select("-refreshToken")
+//   res.status(200).json({ status: 200, curruser, accessToken ,message:"Logged In"});
 
-})
+// })
 
 
 const editUserDetails = asyncHandler(async (req, res) => {
@@ -270,4 +270,4 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 
 
-export {userRegister,loginUser,loginUserByGoogle,checkUser,logoutUser,editUserDetails,updateLocation}
+export {userRegister,loginUser,checkUser,logoutUser,editUserDetails,updateLocation}

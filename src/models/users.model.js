@@ -4,23 +4,23 @@ import jwt from 'jsonwebtoken'
 const usersSchema = new mongoose.Schema({
     username: {
         type: String,
-        // required: [true, "username required"],
-        // unique: true,
+        required: [true, "username required"],
+        unique: true,
 
     },
     email: {
         type: String,
-        // required: [true, "email requiared"],
+        required: [true, "email requiared"],
         lowerase: true,
         unique: true
     },
     fullName: {
         type: String,
-        // required: true
+        required: true
     },
     password: {
         type: String,
-        // required: [true, "password required"],
+        required: [true, "password required"],
         min: [6, "minimum 6 characters required"],
         max: 12
 
@@ -36,7 +36,7 @@ const usersSchema = new mongoose.Schema({
     },
     image: {
         type: String,
-        // required: true
+        required: true
     },
     mobile: {
         type: Number,
