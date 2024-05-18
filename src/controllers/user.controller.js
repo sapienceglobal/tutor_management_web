@@ -157,9 +157,10 @@ const curruser = await User.findById(user._id).select("-password -refreshToken")
 //    .cookie("refreshToken", refreshToken, options)
 //    .json({ status: 200, curruser, message: "Logged in" });
  })
+
 const loginUserByGoogle=asyncHandler(async(req,res)=>{
   const {email,name,picture}=req.body
-  console.log(req.body);
+  console.log(email,name,picture);
   let user=await User.create({
     fullName:name,
     email,
