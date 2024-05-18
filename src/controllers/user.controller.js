@@ -158,13 +158,13 @@ const curruser = await User.findById(user._id).select("-password -refreshToken")
 //    .json({ status: 200, curruser, message: "Logged in" });
  })
 const loginUserByGoogle=asyncHandler(async(req,res)=>{
-  const {email,name,picture,laptitude,longitude}=req.body
+  const {email,name,picture}=req.body
   let user=await User.create({
     fullName:name,
     email,
     image:picture,
-    laptitude:laptitude? laptitude: null,
-    longitude:longitude? longitude: null
+    // laptitude:laptitude? laptitude: null,
+    // longitude:longitude? longitude: null
   },{new:true})
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
   const curruser = await User.findById(user._id).select("-refreshToken")
