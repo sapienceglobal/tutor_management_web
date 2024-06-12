@@ -65,9 +65,13 @@ const userRegister = asyncHandler(async (req, res) => {
   }
 
   // Check for existing user with username or email
-  const existedUser = await User.findOne({ $or: [{ username }, { email }] });
-  if (existedUser) {
-    return res.send({ status: 400, message: "User already exists" });
+  const existedUserByUsername = await User.findOne({ username });
+  if (existedUserByUsername) {
+    return res.send({ status: 400, message: "Username is already used" });
+  }
+  const existedUserByEmail = await User.findOne({ email });
+  if (existedUserByEmail) {
+    return res.send({ status: 400, message: "User Is Exist By This Email" });
   }
 
   // Access uploaded image file (assuming single file upload)
