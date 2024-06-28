@@ -34,7 +34,7 @@ const verifyEmailPage=asyncHandler(async(req,res)=>{
    console.log(req.body)
  const user= await verifyonsignup.findOne({verifyToken:token,verifyTokenExpiry:{$gt:Date.now()}})
  if(!user){
-  return res.send({message:"token is expired or invalid",status:400})
+  return res.send({message:"token is expired or invalid",status:400,succes:false})
  }
 
  user.verifyToken=undefined
