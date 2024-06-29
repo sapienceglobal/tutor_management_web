@@ -70,6 +70,7 @@ const resetPasswordHtml = (userName, resetLink) => `
 export const sendEmail = async ({ email, emailType, userId, verifyemailonsignup }) => {
   try {
     let hashedToken = await bcrypt.hash(userId?.toString(), 10);
+   let currUser;
 
     if (emailType === "VERIFY") {
       if (verifyemailonsignup) {
@@ -78,7 +79,7 @@ export const sendEmail = async ({ email, emailType, userId, verifyemailonsignup 
         await User.findByIdAndUpdate(userId, { $set: { verifyToken: hashedToken, verifyTokenExpiry: Date.now() + 3600000 } });
       }
     } else if (emailType === "RESET") {
-      await User.findByIdAndUpdate(userId, { $set: { forgetPasswordToken: hashedToken, forgetPasswordTokenExpiry: Date.now() + 3600000 } });
+     currUser= await User.findByIdAndUpdate(userId, { $set: { forgetPasswordToken: hashedToken, forgetPasswordTokenExpiry: Date.now() + 3600000 } },{new:true});
     }
 
     var transport = nodemailer.createTransport({
@@ -93,7 +94,7 @@ export const sendEmail = async ({ email, emailType, userId, verifyemailonsignup 
       from: 'adarshsharma7p@gmail.com',
       to: `${email}`,
       subject: emailType === 'VERIFY' ? "Verify your email" : "Reset your Password",
-      html: emailType === 'VERIFY' ? verifyEmailHtml(email, `${process.env.DOMAIN}/verifyemail?token=${hashedToken}`) : resetPasswordHtml(email, `${process.env.DOMAIN}/forgetpassword?token=${hashedToken}`)
+      html: emailType === 'VERIFY' ? verifyEmailHtml(email, `${process.env.DOMAIN}/verifyemail?token=${hashedToken}`) : resetPasswordHtml(currUser.fullName, `${process.env.DOMAIN}/forgetpassword?token=${hashedToken}`)
     };
 
     const mailResponse = await transport.sendMail(mailOption);
