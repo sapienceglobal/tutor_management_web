@@ -201,7 +201,7 @@ const editUserDetails = asyncHandler(async (req, res) => {
     let newObj = {};
     const imagePath = req.file;
     
-    let imageResponse = await uploadOnCloudinary(imagePath?.originalname);
+    let imageResponse = await uploadOnCloudinary(imagePath?.path);
     if (imageResponse) {
       newObj.image = imageResponse.url;
     }
