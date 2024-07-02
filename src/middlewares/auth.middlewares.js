@@ -9,7 +9,7 @@ export const verifyjwt = asyncHandler(async (req, res, next) => {
 
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             console.log("Unauthorized request");
-            return res.json({statu:400, message:"Unauthorized request"});
+            return res.json({status:400, message:"Unauthorized request"});
         }
 
         const accessToken = authHeader.replace('Bearer ', ''); // Extract the token
