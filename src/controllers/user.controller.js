@@ -230,13 +230,13 @@ const editUserDetails = asyncHandler(async (req, res) => {
 
 const checkUser=asyncHandler(async(req,res)=>{
   const {latitude,longitude}=req.body;
-<<<<<<< HEAD
+
   if(latitude && longitude){
     await User.findByIdAndUpdate(req.user._id,{latitude:latitude,longitude:longitude});
   }
-=======
+
   await User.findByIdAndUpdate(req.user._id,{latitude:latitude,longitude:longitude});
->>>>>>> 35b7a8565934b7b9862b4ad8e18673193d59a598
+
   res.status(200).json({curruser:req.user});
   // const incomingToken = req.cookies.refreshToken
   // console.log(incomingToken);
