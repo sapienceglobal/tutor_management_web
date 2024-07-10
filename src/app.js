@@ -3,9 +3,9 @@ import cors from "cors"
 import cookieParser from 'cookie-parser'
 
 const app=express()
-const allowedOrigins = ['https://sprcbaghpat.vercel.app'];
+
 app.use(cors({
-    origin:allowedOrigins,
+    origin:'https://sprcbaghpat.vercel.app',
     credentials:true,
   
 }))
