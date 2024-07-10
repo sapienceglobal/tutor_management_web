@@ -7,7 +7,7 @@ const allowedOrigins = ['https://sprcbaghpat.vercel.app'];
 app.use(cors({
     origin:allowedOrigins,
     credentials:true,
-    optionsSuccessStatus: 200
+  
 }))
 
 app.use(express.json({
