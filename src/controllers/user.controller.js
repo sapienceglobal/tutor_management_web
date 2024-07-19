@@ -5,7 +5,7 @@ import {User} from "../models/users.model.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import verifyonsignup from "../models/verifyEmail.model.js"
 import jwt from 'jsonwebtoken'
-import admissionForm from "../models/admissionForm.model.js"
+
 
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -271,27 +271,7 @@ const logoutUser = asyncHandler(async (req, res) => {
   res.status(200).json({ text: "logout" });
 });
 
-const admissionForm=asyncHandler(async(req,res)=>{
-const {fullName,FathersName,MobileNo,Location}=req.body;
-if ([fullName, FathersName, MobileNo, Location].some((field) => field?.trim() === "")) {
-  return res.send({ errorMessage: "All fields are required" });
-}
-
-let alreadyByNupmber=await admissionForm.findOne({mobile:MobileNo})
-if(alreadyByNupmber){
-  return res.send({ errorMessage: "Mobile number already register" });
-}
-
-await admissionForm.create({
-  fullName,
-  fathersName:FathersName,
-  mobile:MobileNo,
-  location:Location
-})
-res.send({ message: "Resgistraion Successfull"});
-})
 
 
 
-
-export {userRegister,loginUser,checkUser,logoutUser,editUserDetails,updateLocation,admissionForm}
+export {userRegister,loginUser,checkUser,logoutUser,editUserDetails,updateLocation}
