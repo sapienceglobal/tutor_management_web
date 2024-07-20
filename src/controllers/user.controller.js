@@ -87,7 +87,7 @@ const userRegister = asyncHandler(async (req, res) => {
 try{
 
     let imageResponse = await uploadOnCloudinary(imageFile.path); // Assuming buffer access
-  
+  console.log(imageResponse);
   if (!imageResponse?.url) {
     return res.send({ status: 400, message: "Error uploading image" });
   }
