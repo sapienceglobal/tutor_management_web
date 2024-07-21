@@ -61,7 +61,7 @@ const userRegister = asyncHandler(async (req, res) => {
 
   // Validate required fields
   if ([username, fullName, email, password].some((field) => field?.trim() === "")) {
-    return res.send({ message: "All fields are required" });
+    return res.send({status: 400, message: "All fields are required" });
   }
 
   // Check for existing user with username or email
@@ -128,15 +128,15 @@ const updateLocation=asyncHandler(async(req,res)=>{
 const loginUser=asyncHandler(async(req,res)=>{
 const {email,username,password}=req.body
 if(!email && !username || !password){
-res.send({message:"username/email and Password is required"})
+res.send({status: 400,message:"username/email and Password is required"})
 }
 const user=await User.findOne({$or:[{email},{username}]})
 if(!user){
-  res.send({message:"user not found ,Please Register"})
+  res.send({status: 400,message:"user not found ,Please Register"})
 }
 let isPasswordCorrect=await user.isPasswordCorrect(password)
 if(!isPasswordCorrect){
-  res.send({message:"Password is Invalid"})
+  res.send({status: 400,message:"Password is Invalid"})
 }
 const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
 const curruser = await User.findById(user._id).select("-password -refreshToken")
