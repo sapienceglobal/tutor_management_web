@@ -20,13 +20,13 @@ const verifyEmail=asyncHandler(async(req,res)=>{
     }
 
     if (user) {
-     return res.send({ message: "email is already exists" })
+     return res.send({ message: "Email is already exists" })
     }
     const verifyEmailUser=await verifyonsignup.create({
         email
     })
 await sendEmail({email:email,emailType:"VERIFY",userId:verifyEmailUser._id,verifyemailonsignup:true})
-res.send({message:"Email Sent Succesfully"})
+res.send({message:"Email Sent Succesfully,Check your Email"})
 })
 
 const verifyEmailPage=asyncHandler(async(req,res)=>{
@@ -34,7 +34,7 @@ const verifyEmailPage=asyncHandler(async(req,res)=>{
   //  console.log(req.body)
  const user= await verifyonsignup.findOne({verifyToken:token,verifyTokenExpiry:{$gt:Date.now()}})
  if(!user){
-  return res.send({message:"token is expired or invalid",status:400,succes:false})
+  return res.send({message:"token is invalid or expired",status:400,succes:false})
  }
 
  user.verifyToken=undefined
