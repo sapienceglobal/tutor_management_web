@@ -281,7 +281,7 @@ if(alreadyByNupmber){
   return res.send({ errorMessage: "Mobile number already register" });
 }
 
-await admissionForm.create({
+await AdmissionForm.create({
   fullName,
   fathersName:FathersName,
   mobNo:MobileNo,
