@@ -49,13 +49,13 @@ const forgetPassword=asyncHandler(async(req,res)=>{
 const {username,email}=req.body
 const user=await User.findOne({$or:[{email},{username}]})
 if(!user){
- return res.send({message:"Provide Username or Email "})
+ return res.send({status:400,message:"Provide Username or Email "})
 }
 if(user.forgetPasswordTokenExpiry>Date.now()){
-return res.send({message:"A Email already sent for Forget password"})
+return res.send({status:400,message:"A Email already sent for Forget password"})
 }
 await sendEmail({email:user.email,emailType:"RESET",userId:user._id,verifyemailonsignup:false})
-res.send({message:"A link Sent On Your Email Address for Change Password"})
+res.send({status:200,message:"A link Sent On Your Email Address for Change Password"})
 })
 
 const forgetPasswordPage=asyncHandler(async(req,res)=>{
