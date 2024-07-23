@@ -50,7 +50,7 @@ const {username,email}=req.body
     if(!username && !email){
         return res.send({status:400,message:"Provide Username or Email"})
     }
-const userByEmail=await User.findOne({emai})
+const userByEmail=await User.findOne({email})
 if(!userByEmail){
  return res.send({status:400,message:"User not exist by this Email"})
 }
