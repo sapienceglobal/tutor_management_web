@@ -50,14 +50,19 @@ const {username,email}=req.body
     if(!username && !email){
         return res.send({status:400,message:"Provide Username or Email"})
     }
-const userByEmail=await User.findOne({email})
+    if(email){
+        const userByEmail=await User.findOne({email})
 if(!userByEmail){
  return res.send({status:400,message:"User not exist by this Email"})
 }
+    }
+if(username){
     const userByUsername=await User.findOne({username})
    if(!userByUsername){
  return res.send({status:400,message:"User not exist by this Username"})
    }
+}
+    
     
 if(user.forgetPasswordTokenExpiry>Date.now()){
 return res.send({status:400,message:"A Email already sent for Forget password"})
