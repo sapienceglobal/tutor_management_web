@@ -16,17 +16,17 @@ const verifyEmail=asyncHandler(async(req,res)=>{
 
     }
     if (verifySignupUser) {
-      res.send({ message: "A email is already sent on your email address", userId: verifySignupUser._id, isVarified: verifySignupUser.isvarified })
+      res.send({status:400, message: "A email is already sent on your email address", userId: verifySignupUser._id, isVarified: verifySignupUser.isvarified })
     }
 
     if (user) {
-     return res.send({ message: "Email is already exists" })
+     return res.send({status:400, message: "Email is already exists" })
     }
     const verifyEmailUser=await verifyonsignup.create({
         email
     })
 await sendEmail({email:email,emailType:"VERIFY",userId:verifyEmailUser._id,verifyemailonsignup:true})
-res.send({message:"Email Sent Succesfully,Check your Email"})
+res.send({status:200,message:"Email Sent Succesfully,Check your Email"})
 })
 
 const verifyEmailPage=asyncHandler(async(req,res)=>{
