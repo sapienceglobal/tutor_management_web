@@ -47,10 +47,19 @@ const verifyEmailPage=asyncHandler(async(req,res)=>{
 
 const forgetPassword=asyncHandler(async(req,res)=>{
 const {username,email}=req.body
-const user=await User.findOne({$or:[{email},{username}]})
-if(!user){
- return res.send({status:400,message:"Provide Username or Email "})
+    if(!username && !email){
+        return res.send({status:400,message:"Provide Username or Email"})
+    }
+    }
+const userByEmail=await User.findOne({emai})
+if(!userByEmail){
+ return res.send({status:400,message:"User not exist by this Email"})
 }
+    const userByUsername=await User.findOne({username})
+   if(!userByUsername){
+ return res.send({status:400,message:"User not exist by this Username"})
+   }
+    
 if(user.forgetPasswordTokenExpiry>Date.now()){
 return res.send({status:400,message:"A Email already sent for Forget password"})
 }
