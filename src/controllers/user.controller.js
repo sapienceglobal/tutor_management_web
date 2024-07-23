@@ -275,7 +275,9 @@ const admissionForm=asyncHandler(async(req,res)=>{
 if ([fullName, FathersName, MobileNo, Location].some((field) => field?.trim() === "")) {
   return res.send({ errorMessage: "All fields are required" });
 }
-
+if(typeof MobileNo!= Number){
+  return res.send({ errorMessage: "Incorrect Mobile Number" });
+}
 let alreadyByNupmber=await AdmissionForm.findOne({mobNo:MobileNo})
 if(alreadyByNupmber){
   return res.send({ errorMessage: "Mobile number already register" });
