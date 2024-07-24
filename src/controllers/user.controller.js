@@ -129,9 +129,19 @@ const {email,username,password}=req.body
 if(!email && !username || !password){
 res.send({status: 400,message:"username/email and Password is required"})
 }
-const user=await User.findOne({$or:[{email},{username}]})
-if(!user){
-  res.send({status: 400,message:"user not found ,Please Register"})
+
+let user;
+if (email) {
+  user = await User.findOne({ email })
+  if (!user) {
+    return res.send({ status: 400, message: "User not exist by this Email" })
+  }
+}
+if (username) {
+  user = await User.findOne({ username })
+  if (!user) {
+    return res.send({ status: 400, message: "User not exist by this Username" })
+  }
 }
 let isPasswordCorrect=await user.isPasswordCorrect(password)
 if(!isPasswordCorrect){
