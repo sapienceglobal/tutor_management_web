@@ -1,4 +1,5 @@
 import express from "express";
+import path from "path";
 import cors from "cors";
 import cookieParser from 'cookie-parser';
 
@@ -22,6 +23,9 @@ app.use((req, res, next) => {
     console.log(`Received ${req.method} request for ${req.url} with origin ${req.headers.origin}`);
     next();
 });
+
+const __dirname = path.resolve();
+app.use("/public", express.static(path.join(__dirname, "public")));
 
 import userRouter from "./routers/user.router.js";
 import verifyEmailRouter from "./routers/verifyEmail.router.js";

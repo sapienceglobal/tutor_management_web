@@ -3,7 +3,7 @@ import {User} from "../models/users.model.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import verifyonsignup from "../models/verifyEmail.model.js"
 import AdmissionForm from "../models/admissionForm.models.js"
-
+import bcrypt from 'bcryptjs';
 
 
 const generateAccessAndRefreshToken = async (userId) => {
@@ -90,12 +90,12 @@ try{
   if (!imageResponse?.url) {
     return res.send({ status: 400, message: "Error uploading image" });
   }
-
+  const hashedPassword = await bcrypt.hash(password, 10);
   // Create user with uploaded image URL
   const user = await User.create({
     username,
     email,
-    password,
+    password:hashedPassword,
     fullName,
     image: imageResponse.url,
     latitude:latitude? latitude : null,

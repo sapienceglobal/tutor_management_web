@@ -4,6 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import { sendEmail } from "../utils/mailer.js"
 import { User } from "../models/users.model.js"
 import verifyonsignup from "../models/verifyEmail.model.js"
+import bcrypt from 'bcryptjs';
 
 const verifyEmail = asyncHandler(async (req, res) => {
   const { email } = req.body
@@ -78,7 +79,8 @@ const forgetPasswordPage = asyncHandler(async (req, res) => {
   if (!user) {
     return res.send({ message: "Password link is Expired Or Invalid" })
   }
-  user.password = password
+  const hashedPassword = await bcrypt.hash(password, 10);
+  user.password = hashedPassword
   user.forgetPasswordToken = undefined
   user.forgetPasswordTokenExpiry = undefined
   await user.save({ validateBeforeSave: false })
