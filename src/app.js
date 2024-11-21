@@ -25,7 +25,7 @@ app.use((req, res, next) => {
 });
 
 const __dirname = path.resolve();
-app.use("/public", express.static(path.join(__dirname, "public")));
+app.use("/public", express.static(path.join(__dirname, "src/public")));
 
 import userRouter from "./routers/user.router.js";
 import verifyEmailRouter from "./routers/verifyEmail.router.js";
