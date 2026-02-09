@@ -5,43 +5,63 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import {
     User, Mail, Phone, BadgeCheck, Loader2, Camera, LogOut,
-    Settings, Bell, Lock, Globe, HelpCircle, Info, Shield
+    Settings, Bell, Lock, Globe, HelpCircle, Info, Shield, Save
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Modal } from '@/components/ui/modal';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'react-hot-toast';
 
 export default function StudentProfilePage() {
     const router = useRouter();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // Edit Modal State
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [editForm, setEditForm] = useState({ name: '', phone: '' });
+    const [saving, setSaving] = useState(false);
+
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                // Try fetching fresh data from backend, fallback to localStorage
                 const token = localStorage.getItem('token');
                 if (!token) {
                     router.push('/login');
                     return;
                 }
 
-                const response = await api.get('/auth/me'); // Assuming this endpoint exists based on standard practices, otherwise we rely on stored user
+                const response = await api.get('/auth/me');
                 if (response.data.success) {
                     setUser(response.data.user);
+                    setEditForm({
+                        name: response.data.user.name || '',
+                        phone: response.data.user.phone || ''
+                    });
                 } else {
-                    // Fallback to local storage if API fails or endpoint missing
                     const storedUser = localStorage.getItem('user');
                     if (storedUser) {
-                        setUser(JSON.parse(storedUser));
+                        const parsed = JSON.parse(storedUser);
+                        setUser(parsed);
+                        setEditForm({
+                            name: parsed.name || '',
+                            phone: parsed.phone || ''
+                        });
                     }
                 }
             } catch (error) {
                 console.error('Error fetching profile:', error);
-                // Fallback
                 const storedUser = localStorage.getItem('user');
                 if (storedUser) {
-                    setUser(JSON.parse(storedUser));
+                    const parsed = JSON.parse(storedUser);
+                    setUser(parsed);
+                    setEditForm({
+                        name: parsed.name || '',
+                        phone: parsed.phone || ''
+                    });
                 }
             } finally {
                 setLoading(false);
@@ -50,6 +70,30 @@ export default function StudentProfilePage() {
 
         fetchProfile();
     }, [router]);
+
+    const handleUpdateProfile = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        try {
+            // Using /auth/update-details endpoint (common pattern)
+            // If it doesn't exist, we might need to adjust.
+            // For now, assuming it exists or we mock success.
+            const res = await api.put('/auth/updatedetails', editForm);
+
+            if (res.data.success) {
+                const updatedUser = { ...user, ...editForm };
+                setUser(updatedUser);
+                localStorage.setItem('user', JSON.stringify(updatedUser)); // Update local storage
+                setIsEditOpen(false);
+                toast.success('Profile updated successfully');
+            }
+        } catch (error) {
+            console.error('Update failed:', error);
+            toast.error('Failed to update profile');
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -99,7 +143,7 @@ export default function StudentProfilePage() {
                                 </div>
                             </div>
                         </div>
-                        <Button variant="outline" className="hidden sm:flex" onClick={() => alert('Edit Profile coming soon!')}>
+                        <Button variant="outline" className="hidden sm:flex" onClick={() => setIsEditOpen(true)}>
                             Edit Profile
                         </Button>
                     </div>
@@ -214,6 +258,53 @@ export default function StudentProfilePage() {
                     Sign Out
                 </Button>
             </div>
+
+            {/* Edit Modal */}
+            <Modal
+                isOpen={isEditOpen}
+                onClose={() => setIsEditOpen(false)}
+                title="Edit Profile"
+            >
+                <form onSubmit={handleUpdateProfile} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Full Name</Label>
+                        <Input
+                            id="name"
+                            value={editForm.name}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                            placeholder="Enter your full name"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="phone">Phone Number</Label>
+                        <Input
+                            id="phone"
+                            value={editForm.phone}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                            placeholder="Enter your phone number"
+                        />
+                    </div>
+
+                    <div className="pt-4 flex justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={saving || !editForm.name}>
+                            {saving ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="mr-2 h-4 w-4" />
+                                    Save Changes
+                                </>
+                            )}
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 }

@@ -62,7 +62,7 @@ export default function LessonPlayerModal({
                 }
             }
         } catch (error) {
-            console.log('No previous progress found');
+            console.warn('No previous progress found');
         }
     };
 
