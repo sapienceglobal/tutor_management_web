@@ -20,7 +20,9 @@ import {
     Check,
     X,
     Save,
-    Sparkles
+    Sparkles,
+    Globe,
+    EyeOff
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { Button } from '@/components/ui/button';
@@ -31,24 +33,26 @@ export default function ManageCoursePage({ params }) {
 
     const [course, setCourse] = useState(null);
     const [lessons, setLessons] = useState([]);
-    
+
     const [loading, setLoading] = useState(true);
     const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
     const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
-    
+
     const [currentModuleId, setCurrentModuleId] = useState(null);
     const [moduleTitle, setModuleTitle] = useState('');
-    
+
     const [lessonForm, setLessonForm] = useState({
         title: '',
         videoUrl: '',
         duration: '',
         isFree: false
     });
-    
+
     const [submitting, setSubmitting] = useState(false);
     const [editingModuleId, setEditingModuleId] = useState(null);
     const [editingModuleTitle, setEditingModuleTitle] = useState('');
+    const [editingLessonId, setEditingLessonId] = useState(null);
+    const [publishing, setPublishing] = useState(false);
 
     // Fetch Data
     const loadCourseData = async () => {
@@ -69,7 +73,7 @@ export default function ManageCoursePage({ params }) {
             console.error('Error loading course:', error);
             // Handle error (e.g., redirect if 404 or 403)
             if (error.response?.status === 403 || error.response?.status === 404) {
-                 router.push('/tutor/courses');
+                router.push('/tutor/courses');
             }
         } finally {
             setLoading(false);
@@ -79,6 +83,23 @@ export default function ManageCoursePage({ params }) {
     useEffect(() => {
         loadCourseData();
     }, [id]);
+
+    // --- Course Publishing ---
+    const handlePublishToggle = async () => {
+        if (!confirm(`Are you sure you want to ${course.status === 'published' ? 'unpublish' : 'publish'} this course?`)) return;
+
+        setPublishing(true);
+        try {
+            const newStatus = course.status === 'published' ? 'draft' : 'published';
+            await api.patch(`/courses/${id}`, { status: newStatus });
+            setCourse(prev => ({ ...prev, status: newStatus }));
+        } catch (error) {
+            console.error(error);
+            alert('Failed to update course status');
+        } finally {
+            setPublishing(false);
+        }
+    };
 
     // --- Module Management ---
 
@@ -90,11 +111,11 @@ export default function ManageCoursePage({ params }) {
         try {
             const updatedModules = [...(course.modules || []), { title: moduleTitle }];
             await api.patch(`/courses/${id}`, { modules: updatedModules });
-            
+
             // Refresh to get new module IDs
             const res = await api.get(`/courses/${id}`);
             if (res.data.success) setCourse(res.data.course);
-            
+
             setIsModuleModalOpen(false);
             setModuleTitle('');
         } catch (error) {
@@ -111,13 +132,13 @@ export default function ManageCoursePage({ params }) {
 
     const saveModuleEdit = async () => {
         try {
-            const updatedModules = course.modules.map(m => 
+            const updatedModules = course.modules.map(m =>
                 m._id === editingModuleId ? { ...m, title: editingModuleTitle } : m
             );
-            
+
             await api.patch(`/courses/${id}`, { modules: updatedModules });
-            
-             // Refresh
+
+            // Refresh
             const res = await api.get(`/courses/${id}`);
             if (res.data.success) setCourse(res.data.course);
 
@@ -138,7 +159,7 @@ export default function ManageCoursePage({ params }) {
         try {
             const updatedModules = course.modules.filter(m => m._id !== moduleId);
             await api.patch(`/courses/${id}`, { modules: updatedModules });
-            
+
             const res = await api.get(`/courses/${id}`);
             if (res.data.success) setCourse(res.data.course);
         } catch (error) {
@@ -148,36 +169,62 @@ export default function ManageCoursePage({ params }) {
 
     // --- Lesson Management ---
 
-    const openLessonModal = (moduleId) => {
+    const openLessonModal = (moduleId, lesson = null) => {
         setCurrentModuleId(moduleId);
-        setLessonForm({ title: '', videoUrl: '', duration: '', isFree: false });
+        if (lesson) {
+            setEditingLessonId(lesson._id);
+            setLessonForm({
+                title: lesson.title,
+                videoUrl: lesson.content?.videoUrl || '',
+                duration: Math.round((lesson.content?.duration || 0) / 60).toString(),
+                isFree: lesson.isFree
+            });
+        } else {
+            setEditingLessonId(null);
+            setLessonForm({ title: '', videoUrl: '', duration: '', isFree: false });
+        }
         setIsLessonModalOpen(true);
     };
 
-    const handleCreateLesson = async (e) => {
+    const handleSaveLesson = async (e) => {
         e.preventDefault();
         if (!lessonForm.title || !currentModuleId) return;
 
         setSubmitting(true);
         try {
-            await api.post('/lessons', {
-                courseId: id,
-                moduleId: currentModuleId,
-                title: lessonForm.title,
-                videoUrl: lessonForm.videoUrl, // In real app, this might be from upload
-                duration: Number(lessonForm.duration) * 60, // Convert to seconds
-                isFree: lessonForm.isFree,
-                type: 'video'
-            });
+            const content = {
+                videoUrl: lessonForm.videoUrl,
+                duration: Number(lessonForm.duration) * 60 // Convert to seconds
+            };
+
+            if (editingLessonId) {
+                // Update existing lesson
+                await api.patch(`/lessons/${editingLessonId}`, {
+                    title: lessonForm.title,
+                    content,
+                    isFree: lessonForm.isFree,
+                });
+            } else {
+                // Create new lesson
+                await api.post('/lessons', {
+                    courseId: id,
+                    moduleId: currentModuleId,
+                    title: lessonForm.title,
+                    content,
+                    isFree: lessonForm.isFree,
+                    type: 'video'
+                });
+            }
 
             // Refresh lessons
             const res = await api.get(`/lessons/course/${id}`);
             if (res.data.success) setLessons(res.data.lessons);
 
             setIsLessonModalOpen(false);
+            setEditingLessonId(null);
         } catch (error) {
             console.error(error);
-            alert('Failed to create lesson');
+            alert('Failed to save lesson');
         } finally {
             setSubmitting(false);
         }
@@ -218,7 +265,7 @@ export default function ManageCoursePage({ params }) {
                 {/* Enhanced Header */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 backdrop-blur-sm">
                     <div className="flex items-start gap-4">
-                        <button 
+                        <button
                             onClick={() => router.push('/tutor/courses')}
                             className="mt-1 p-2 hover:bg-slate-100 rounded-lg transition-colors"
                         >
@@ -253,6 +300,28 @@ export default function ManageCoursePage({ params }) {
                         </div>
 
                         <div className="flex gap-2">
+                            <button
+                                onClick={handlePublishToggle}
+                                disabled={publishing}
+                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-2 border shadow-sm ${course.status === 'published'
+                                    ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                    }`}
+                            >
+                                {publishing ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : course.status === 'published' ? (
+                                    <>
+                                        <EyeOff className="w-4 h-4" />
+                                        Unpublish
+                                    </>
+                                ) : (
+                                    <>
+                                        <Globe className="w-4 h-4" />
+                                        Publish
+                                    </>
+                                )}
+                            </button>
                             <button className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all flex items-center gap-2">
                                 <Settings className="w-4 h-4" />
                                 Settings
@@ -293,7 +362,7 @@ export default function ManageCoursePage({ params }) {
                                 <div className="space-y-4">
                                     {course.modules.map((module, index) => {
                                         const moduleLessons = lessons.filter(l => l.moduleId === module._id);
-                                        const moduleDuration = moduleLessons.reduce((acc, l) => acc + (l.duration || 0), 0);
+                                        const moduleDuration = moduleLessons.reduce((acc, l) => acc + (l.content?.duration || 0), 0);
                                         const isEditing = editingModuleId === module._id;
 
                                         return (
@@ -414,13 +483,16 @@ export default function ManageCoursePage({ params }) {
                                                                             <span>•</span>
                                                                             <div className="flex items-center gap-1">
                                                                                 <Clock className="w-3 h-3" />
-                                                                                <span>{Math.round((lesson.duration || 0) / 60)} mins</span>
+                                                                                <span>{Math.round((lesson.content?.duration || 0) / 60)} mins</span>
                                                                             </div>
                                                                         </div>
                                                                     </div>
 
                                                                     <div className="flex items-center gap-2 opacity-0 group-hover/lesson:opacity-100 transition-opacity">
-                                                                        <button className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                                                                        <button
+                                                                            onClick={() => openLessonModal(module._id, lesson)}
+                                                                            className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                                                        >
                                                                             <Edit3 className="w-4 h-4" />
                                                                         </button>
                                                                         <button
@@ -526,7 +598,7 @@ export default function ManageCoursePage({ params }) {
                             <h3 className="text-xl font-bold">Add New Lesson</h3>
                             <p className="text-blue-100 text-sm mt-1">Create a new video lesson</p>
                         </div>
-                        <form onSubmit={handleCreateLesson} className="p-6 space-y-5">
+                        <form onSubmit={handleSaveLesson} className="p-6 space-y-5">
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                                     Lesson Title
@@ -589,7 +661,7 @@ export default function ManageCoursePage({ params }) {
                                     disabled={submitting || !lessonForm.title}
                                     className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                                 >
-                                    {submitting ? 'Adding...' : 'Add Lesson'}
+                                    {submitting ? 'Saving...' : (editingLessonId ? 'Update Lesson' : 'Add Lesson')}
                                 </button>
                             </div>
                         </form>

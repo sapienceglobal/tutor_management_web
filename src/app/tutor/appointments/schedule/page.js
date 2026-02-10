@@ -10,8 +10,10 @@ import {
     Clock,
     AlertCircle,
     Settings,
-    CheckCircle
+    CheckCircle,
+    Star
 } from 'lucide-react';
+import { format, parse } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'react-hot-toast';
@@ -49,7 +51,11 @@ export default function ScheduleManagementPage() {
                 const response = await api.get(`/appointments/schedule/${tutorId}`);
 
                 if (response.data.success) {
-                    setSchedule(response.data.schedule || []);
+                    const validSchedule = (response.data.schedule || []).map(day => ({
+                        ...day,
+                        isActive: day.slots && day.slots.length > 0
+                    }));
+                    setSchedule(validSchedule);
                     setDateOverrides(response.data.dateOverrides || []);
                     setSettings(response.data.bookingSettings || settings);
                 }
@@ -79,9 +85,9 @@ export default function ScheduleManagementPage() {
         setSchedule(prev => {
             const daySchedule = prev.find(d => d.day === day);
             if (daySchedule) {
-                return prev.map(d => d.day === day ? { ...d, slots: [...d.slots, '09:00-10:00'] } : d);
+                return prev.map(d => d.day === day ? { ...d, slots: [...d.slots, '09:00-10:00'], isActive: true } : d);
             } else {
-                return [...prev, { day, slots: ['09:00-10:00'] }];
+                return [...prev, { day, slots: ['09:00-10:00'], isActive: true }];
             }
         });
     };
@@ -101,7 +107,8 @@ export default function ScheduleManagementPage() {
         setSchedule(prev => prev.map(d => {
             if (d.day === day) {
                 const newSlots = d.slots.filter((_, i) => i !== index);
-                return { ...d, slots: newSlots };
+                const isActive = newSlots.length > 0;
+                return { ...d, slots: newSlots, isActive };
             }
             return d;
         }).filter(d => d.slots.length > 0));
@@ -147,6 +154,36 @@ export default function ScheduleManagementPage() {
         }
     };
 
+    const handleSetCustomSlots = async (e) => {
+        e.preventDefault();
+        const date = e.target.date.value;
+        const reason = e.target.reason.value;
+        const slotsStr = e.target.slots.value; // Expecting comma separated or new line
+
+        // Simple parsing: "09:00-10:00, 10:00-11:00"
+        const slots = slotsStr.split(',').map(s => s.trim()).filter(s => /^\d{2}:\d{2}-\d{2}:\d{2}$/.test(s));
+
+        if (slots.length === 0) {
+            toast.error('Please enter valid slots (e.g. 09:00-10:00)');
+            return;
+        }
+
+        try {
+            const response = await api.post('/appointments/schedule/custom-slots', {
+                date,
+                reason,
+                slots
+            });
+            if (response.data.success) {
+                toast.success('Custom slots set successfully');
+                setDateOverrides(response.data.dateOverrides);
+                e.target.reset();
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to set custom slots');
+        }
+    };
+
     if (loading) return <div className="p-8 text-center">Loading schedule...</div>;
 
     return (
@@ -160,6 +197,7 @@ export default function ScheduleManagementPage() {
             <div className="flex border-b">
                 {[
                     { id: 'weekly', label: 'Weekly Schedule', icon: Calendar },
+                    { id: 'custom', label: 'Custom Slots', icon: Star },
                     { id: 'blocked', label: 'Blocked Dates', icon: AlertCircle },
                     { id: 'settings', label: 'Booking Settings', icon: Settings },
                 ].map(tab => (
@@ -233,6 +271,88 @@ export default function ScheduleManagementPage() {
                         <Button size="lg" onClick={handleSaveSchedule} className="shadow-lg">
                             <Save className="w-4 h-4 mr-2" /> Save Weekly Schedule
                         </Button>
+                    </div>
+                </div>
+            )}
+
+            {/* CUSTOM SLOTS TAB */}
+            {activeTab === 'custom' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                    <div className="grid md:grid-cols-2 gap-8">
+                        {/* Form */}
+                        <div className="bg-white p-6 rounded-xl border shadow-sm h-fit">
+                            <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                <Star className="w-5 h-5 text-purple-500" /> Set Custom Availability
+                            </h3>
+                            <form onSubmit={handleSetCustomSlots} className="space-y-4">
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700">Select Date</label>
+                                    <input
+                                        type="date"
+                                        name="date"
+                                        required
+                                        className="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700">Reason (Optional)</label>
+                                    <input
+                                        type="text"
+                                        name="reason"
+                                        placeholder="e.g. Extra Session"
+                                        className="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700">Slots (Comma separated)</label>
+                                    <input
+                                        type="text"
+                                        name="slots"
+                                        placeholder="09:00-10:00, 14:00-15:00"
+                                        required
+                                        className="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">Format: HH:MM-HH:MM</p>
+                                </div>
+                                <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700">
+                                    Set Custom Slots
+                                </Button>
+                            </form>
+                        </div>
+
+                        {/* List */}
+                        <div className="space-y-4">
+                            <h3 className="font-bold text-gray-900">Custom Availability</h3>
+                            {dateOverrides.filter(o => !o.isBlocked && o.customSlots?.length > 0).length === 0 ? (
+                                <p className="text-gray-500 italic">No custom slots set.</p>
+                            ) : (
+                                dateOverrides.filter(o => !o.isBlocked && o.customSlots?.length > 0).map(override => (
+                                    <div key={override.date} className="bg-white p-4 rounded-xl border hover:border-purple-200 transition-colors">
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div>
+                                                <p className="font-bold text-gray-900">{new Date(override.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                                {override.reason && <p className="text-sm text-purple-600">{override.reason}</p>}
+                                            </div>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="text-gray-400 hover:text-red-600 h-8 w-8 p-0"
+                                                onClick={() => handleUnblockDate(override.date)}
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {override.customSlots.map((slot, i) => (
+                                                <span key={i} className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs font-medium border border-purple-100">
+                                                    {slot}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </div>
                 </div>
             )}

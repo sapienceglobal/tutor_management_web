@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -19,13 +19,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils'; // Ensure this exists
 
-export default function CreateExamPage() {
+export default function EditExamPage({ params }) {
+    const { examId } = use(params);
     const router = useRouter();
-    const [step, setStep] = useState(1); // 1: Mode, 2: Details, 3: Questions
-    const [mode, setMode] = useState(null); // 'manual', 'ai', 'blueprint'
-    const [loading, setLoading] = useState(false);
+    const [step, setStep] = useState(2); // Start at Details step
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
 
     // Data State
     const [courses, setCourses] = useState([]);
@@ -33,11 +33,8 @@ export default function CreateExamPage() {
         title: '',
         courseId: '',
         duration: 30, // minutes
-        passingMarks: 10, // Default passing marks
+        passingMarks: 10,
         description: '',
-        difficulty: 'medium', // for AI
-        questionCount: 5, // for AI
-        topic: '', // for AI
         // Advanced Settings
         allowRetake: false,
         maxAttempts: 1,
@@ -51,65 +48,51 @@ export default function CreateExamPage() {
     });
 
     useEffect(() => {
-        // Fetch courses for dropdown
-        const fetchCourses = async () => {
+        const fetchInitialData = async () => {
             try {
-                const res = await api.get('/courses/my-courses');
-                if (res.data.success) {
-                    setCourses(res.data.courses);
+                const [coursesRes, examRes] = await Promise.all([
+                    api.get('/courses/my-courses'),
+                    api.get(`/exams/${examId}`)
+                ]);
+
+                if (coursesRes.data.success) {
+                    setCourses(coursesRes.data.courses);
                 }
-            } catch (err) {
-                console.error('Error fetching courses:', err);
-                if (err.response?.status === 403) {
-                    alert('Access Denied: You must be a Tutor to create exams.');
-                    router.push('/login');
+
+                if (examRes.data.success) {
+                    const exam = examRes.data.exam;
+
+                    // Format dates for datetime-local input (YYYY-MM-DDThh:mm)
+                    const formatDate = (dateString) => {
+                        if (!dateString) return '';
+                        return new Date(dateString).toISOString().slice(0, 16);
+                    };
+
+                    setExamData({
+                        ...exam,
+                        courseId: exam.courseId._id || exam.courseId, // Handle populated or unpopulated
+                        startDate: formatDate(exam.startDate),
+                        endDate: formatDate(exam.endDate),
+                        questions: exam.questions.map(q => ({
+                            ...q,
+                            points: q.points || 1, // Ensure points exist
+                            explanation: q.explanation || ''
+                        }))
+                    });
                 }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                alert('Failed to load exam data.');
+                router.push('/tutor/exams');
+            } finally {
+                setLoading(false);
             }
         };
-        fetchCourses();
-    }, []);
 
-    const handleModeSelect = (selectedMode) => {
-        setMode(selectedMode);
-        setStep(2);
-    };
-
-    const handleGenerateAI = async () => {
-        if (!examData.topic || !examData.courseId) {
-            alert('Please select a course and enter a topic.');
-            return;
+        if (examId) {
+            fetchInitialData();
         }
-
-        setLoading(true);
-        try {
-            const response = await api.post('/ai/generate-questions', {
-                topic: examData.topic,
-                count: Number(examData.questionCount),
-                difficulty: examData.difficulty
-            });
-
-            // Transform backend questions to frontend format
-            const backendQuestions = response.data.questions;
-            const formattedQuestions = backendQuestions.map(q => ({
-                question: q.question,
-                options: q.options.map(opt => ({
-                    text: opt,
-                    isCorrect: opt === q.correctAnswer
-                })),
-                points: 1, // Default points
-                explanation: q.explanation // Store explanation if needed
-            }));
-
-            // Add questions to previous data
-            setExamData(prev => ({ ...prev, questions: [...prev.questions, ...formattedQuestions] }));
-            setStep(3);
-        } catch (error) {
-            console.error('AI Generation Error:', error);
-            alert('Failed to generate questions. ' + (error.response?.data?.message || ''));
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [examId, router]);
 
     const handleAddQuestion = () => {
         setExamData(prev => ({
@@ -139,7 +122,7 @@ export default function CreateExamPage() {
     const handleOptionChange = (qIndex, oIndex, field, value) => {
         const updatedQuestions = [...examData.questions];
         updatedQuestions[qIndex].options[oIndex][field] = value;
-        // Ensure only one correct answer for simplicity (or allow multiples if backend supports)
+        // Ensure only one correct answer for simplicity
         if (field === 'isCorrect' && value === true) {
             updatedQuestions[qIndex].options.forEach((opt, idx) => {
                 if (idx !== oIndex) opt.isCorrect = false;
@@ -153,74 +136,41 @@ export default function CreateExamPage() {
         setExamData({ ...examData, questions: updatedQuestions });
     };
 
-    const handleSaveExam = async (status = 'published') => {
-        setLoading(true);
+    const handleUpdateExam = async (newStatus = null) => {
+        setSaving(true);
         try {
-            await api.post('/exams', {
+            // Prepare payload - ensure dates are handled correctly
+            const payload = {
                 ...examData,
-                status, // Send status to backend
-            });
-            alert(`Exam ${status === 'draft' ? 'Saved as Draft' : 'Published'} Successfully!`);
-            router.push('/tutor/exams');
+                startDate: examData.startDate || null,
+                endDate: examData.endDate || null,
+                status: newStatus || examData.status, // Update status if provided
+            };
+
+            const res = await api.patch(`/exams/${examId}`, payload);
+            if (res.data.success) {
+                // Update local state if status changed without navigation
+                if (newStatus) {
+                    setExamData(prev => ({ ...prev, status: newStatus }));
+                    alert(`Exam ${newStatus === 'published' ? 'Published' : 'Unpublished'} Successfully!`);
+                } else {
+                    alert('Exam Updated Successfully!');
+                    router.push('/tutor/exams');
+                }
+            }
         } catch (error) {
-            console.error('Error saving exam:', error);
-            alert('Failed to save exam. ' + (error.response?.data?.message || ''));
+            console.error('Error updating exam:', error);
+            alert('Failed to update exam. ' + (error.response?.data?.message || ''));
         } finally {
-            setLoading(false);
+            setSaving(false);
         }
     };
-
-    // --- RENDER STEPS ---
-    const renderModeSelection = () => (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-            <button
-                onClick={() => handleModeSelect('ai')}
-                className="group relative flex flex-col items-center p-8 bg-white rounded-2xl border-2 border-transparent hover:border-purple-500 shadow-sm hover:shadow-xl transition-all"
-            >
-                <div className="h-16 w-16 bg-purple-100 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <Sparkles className="w-8 h-8 text-purple-600" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900">AI Generator</h3>
-                <p className="text-center text-sm text-gray-500 mt-2">
-                    Enter a topic and let AI create questions for you instantly.
-                </p>
-                <Badge className="mt-4 bg-purple-100 text-purple-700 pointer-events-none">Recommended</Badge>
-            </button>
-
-            <button
-                onClick={() => handleModeSelect('manual')}
-                className="group relative flex flex-col items-center p-8 bg-white rounded-2xl border-2 border-transparent hover:border-blue-500 shadow-sm hover:shadow-xl transition-all"
-            >
-                <div className="h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <FileText className="w-8 h-8 text-blue-600" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900">Manual Creation</h3>
-                <p className="text-center text-sm text-gray-500 mt-2">
-                    Write your own questions and answers from scratch.
-                </p>
-            </button>
-
-            <button
-                onClick={() => handleModeSelect('blueprint')}
-                className="group relative flex flex-col items-center p-8 bg-white rounded-2xl border-2 border-transparent hover:border-indigo-500 shadow-sm hover:shadow-xl transition-all"
-            >
-                <div className="h-16 w-16 bg-indigo-100 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <Layers className="w-8 h-8 text-indigo-600" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900">Blueprint Mode</h3>
-                <p className="text-center text-sm text-gray-500 mt-2">
-                    Define a structure (e.g. 5 Easy, 2 Hard) and auto-fill.
-                </p>
-            </button>
-        </div>
-    );
 
     const renderDetailsForm = () => (
         <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl border shadow-sm mt-8">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                {mode === 'ai' && <Sparkles className="w-5 h-5 text-purple-600" />}
-                {mode === 'manual' && <Pencil className="w-5 h-5 text-blue-600" />}
-                Configure Exam Details
+                <Pencil className="w-5 h-5 text-blue-600" />
+                Edit Exam Details
             </h2>
 
             <div className="space-y-6">
@@ -230,12 +180,14 @@ export default function CreateExamPage() {
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         value={examData.courseId}
                         onChange={(e) => setExamData({ ...examData, courseId: e.target.value })}
+                        disabled // Typically shouldn't change course of existing exam to avoid data issues
                     >
                         <option value="">-- Choose a Course --</option>
                         {courses.map(c => (
                             <option key={c._id} value={c._id}>{c.title}</option>
                         ))}
                     </select>
+                    <p className="text-xs text-gray-500">Course cannot be changed after creation.</p>
                 </div>
 
                 <div className="grid gap-2">
@@ -265,7 +217,6 @@ export default function CreateExamPage() {
                         />
                     </div>
                 </div>
-
 
                 {/* Advanced Settings Section */}
                 <div className="border-t pt-6 mt-6 space-y-6">
@@ -379,57 +330,8 @@ export default function CreateExamPage() {
                     </div>
                 </div>
 
-                {mode === 'ai' && (
-                    <div className="p-4 bg-purple-50 rounded-lg border border-purple-100 space-y-4">
-                        <div className="grid gap-2">
-                            <Label className="text-purple-900">Topic / Instructions for AI</Label>
-                            <Textarea
-                                placeholder="e.g. Generate questions about React Hooks, specifically useState and useEffect."
-                                className="bg-white"
-                                value={examData.topic}
-                                onChange={(e) => setExamData({ ...examData, topic: e.target.value })}
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label className="text-purple-900">Difficulty</Label>
-                                <select
-                                    className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm"
-                                    value={examData.difficulty}
-                                    onChange={(e) => setExamData({ ...examData, difficulty: e.target.value })}
-                                >
-                                    <option value="easy">Easy</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="hard">Hard</option>
-                                </select>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label className="text-purple-900">Question Count</Label>
-                                <Input
-                                    type="number"
-                                    value={examData.questionCount}
-                                    onChange={(e) => setExamData({ ...examData, questionCount: e.target.value })}
-                                    className="bg-white"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                )}
-
                 <div className="flex justify-end gap-3 pt-4">
-                    <Button variant="ghost" onClick={() => setStep(1)}>Back</Button>
-                    {mode === 'ai' ? (
-                        <Button
-                            onClick={handleGenerateAI}
-                            disabled={loading || !examData.courseId || !examData.topic}
-                            className="bg-purple-600 hover:bg-purple-700"
-                        >
-                            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
-                            Generate Questions
-                        </Button>
-                    ) : (
-                        <Button onClick={() => setStep(3)}>Next: Add Questions</Button>
-                    )}
+                    <Button onClick={() => setStep(3)}>Next: Edit Questions</Button>
                 </div>
             </div>
         </div>
@@ -440,7 +342,7 @@ export default function CreateExamPage() {
             <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold">Review & Edit Questions</h2>
                 <Button onClick={handleAddQuestion} variant="outline" className="border-dashed">
-                    + Add Manually
+                    + Add Question
                 </Button>
             </div>
 
@@ -493,26 +395,47 @@ export default function CreateExamPage() {
             <div className="flex justify-end gap-3 pt-8 border-t">
                 <Button variant="ghost" onClick={() => setStep(2)}>Back</Button>
                 <div className="flex gap-2">
+                    {/* Status Actions */}
+                    {examData.status === 'published' ? (
+                        <Button
+                            onClick={() => handleUpdateExam('draft')}
+                            variant="outline"
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                            disabled={saving}
+                        >
+                            Unpublish (Draft)
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={() => handleUpdateExam('published')}
+                            variant="outline"
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            disabled={saving || examData.questions.length === 0}
+                        >
+                            Publish Exam
+                        </Button>
+                    )}
+
                     <Button
-                        onClick={() => handleSaveExam('draft')}
-                        variant="outline"
-                        disabled={loading || examData.questions.length === 0}
+                        onClick={() => handleUpdateExam()}
+                        className="bg-purple-600 hover:bg-purple-700 min-w-[150px]"
+                        disabled={saving || examData.questions.length === 0}
                     >
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                        Save as Draft
-                    </Button>
-                    <Button
-                        onClick={() => handleSaveExam('published')}
-                        className="bg-green-600 hover:bg-green-700 min-w-[150px]"
-                        disabled={loading || examData.questions.length === 0}
-                    >
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                        Publish Exam
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                        Save Changes
                     </Button>
                 </div>
             </div>
         </div>
     );
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <Loader2 className="w-10 h-10 animate-spin text-purple-600" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -523,16 +446,14 @@ export default function CreateExamPage() {
                     </Button>
                 </Link>
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Create New Exam</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">Edit Exam</h1>
                     <p className="text-gray-500">
-                        {step === 1 && "Choose how you want to create your assessment."}
-                        {step === 2 && "Configure basic details."}
-                        {step === 3 && "Review and edit questions."}
+                        {step === 2 && "Update exam details and settings."}
+                        {step === 3 && "Modify questions and answers."}
                     </p>
                 </div>
             </div>
 
-            {step === 1 && renderModeSelection()}
             {step === 2 && renderDetailsForm()}
             {step === 3 && renderQuestionEditor()}
         </div>

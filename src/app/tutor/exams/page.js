@@ -9,6 +9,8 @@ import {
     MoreVertical,
     Edit,
     Trash2,
+    Eye,
+    EyeOff,
     Sparkles,
     Calendar,
     Filter
@@ -38,6 +40,35 @@ export default function ExamDashboard() {
         };
         fetchExams();
     }, []);
+
+    const handleDelete = async (examId) => {
+        if (!window.confirm('Are you sure you want to delete this exam? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const res = await api.delete(`/exams/${examId}`);
+            if (res.data.success) {
+                setExams(exams.filter(e => e._id !== examId));
+            }
+        } catch (error) {
+            console.error('Error deleting exam:', error);
+            alert('Failed to delete exam');
+        }
+    };
+
+    const toggleStatus = async (examId, currentStatus) => {
+        const newStatus = currentStatus === 'published' ? 'draft' : 'published';
+        try {
+            await api.patch(`/exams/${examId}`, { status: newStatus });
+            setExams(exams.map(e => 
+                e._id === examId ? { ...e, status: newStatus, isPublished: newStatus === 'published' } : e
+            ));
+        } catch (error) {
+            console.error('Error updating status:', error);
+            alert('Failed to update status');
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -94,10 +125,29 @@ export default function ExamDashboard() {
                                         View Results
                                     </Button>
                                 </Link>
-                                <Button variant="ghost" size="icon">
-                                    <Edit className="w-4 h-4 text-gray-500" />
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => toggleStatus(exam._id, exam.status)}
+                                    title={exam.status === 'published' ? 'Unpublish' : 'Publish'}
+                                >
+                                    {exam.status === 'published' ? (
+                                        <Eye className="w-4 h-4 text-green-600" />
+                                    ) : (
+                                        <EyeOff className="w-4 h-4 text-gray-400" />
+                                    )}
                                 </Button>
-                                <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                                <Link href={`/tutor/exams/${exam._id}/edit`}>
+                                    <Button variant="ghost" size="icon">
+                                        <Edit className="w-4 h-4 text-gray-500" />
+                                    </Button>
+                                </Link>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                    onClick={() => handleDelete(exam._id)}
+                                >
                                     <Trash2 className="w-4 h-4" />
                                 </Button>
                             </div>

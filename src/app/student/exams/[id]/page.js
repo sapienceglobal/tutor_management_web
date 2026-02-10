@@ -103,94 +103,101 @@ export default function ExamPlayerPage() {
     const progress = ((currentQuestionIndex + 1) / exam.questions.length) * 100;
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-            {/* Header */}
-            <header className="bg-white border-b px-6 py-4 sticky top-0 z-10 flex justify-between items-center shadow-sm">
-                <div>
-                    <h1 className="font-bold text-lg text-gray-900">{exam.title}</h1>
-                    <p className="text-xs text-gray-500">Question {currentQuestionIndex + 1} of {exam.questions.length}</p>
-                </div>
-                <div className="flex items-center gap-4">
-                    <div className={`flex items-center gap-2 font-mono font-bold text-lg ${timeLeft < 60 ? 'text-red-600' : 'text-purple-600'}`}>
-                        <Timer className="w-5 h-5" />
-                        {formatTime(timeLeft)}
+        <div className="fixed inset-0 z-[9999] bg-gray-50 overflow-y-auto overscroll-contain">
+            <div className="min-h-full flex flex-col">
+                {/* Header - Sticky at top */}
+                <header className="sticky top-0 z-20 bg-white border-b px-6 py-4 flex justify-between items-center shadow-sm">
+                    <div>
+                        <h1 className="font-bold text-lg text-gray-900">{exam.title}</h1>
+                        <p className="text-xs text-gray-500">Question {currentQuestionIndex + 1} of {exam.questions.length}</p>
                     </div>
+                    <div className="flex items-center gap-4">
+                        <Button variant="ghost" size="sm" onClick={() => router.back()} className="text-slate-500 hover:text-slate-700">
+                            Exit
+                        </Button>
+                        <div className={`flex items-center gap-2 font-mono font-bold text-lg ${timeLeft < 60 ? 'text-red-600' : 'text-purple-600'}`}>
+                            <Timer className="w-5 h-5" />
+                            {formatTime(timeLeft)}
+                        </div>
+                    </div>
+                </header>
+
+                {/* Progress Bar - Sticky below header */}
+                <div className="sticky top-[73px] z-20">
+                    <Progress value={progress} className="h-1 rounded-none bg-gray-200" indicatorClassName="bg-purple-600" />
                 </div>
-            </header>
 
-            {/* Progress Bar */}
-            <Progress value={progress} className="h-1 rounded-none bg-gray-200" indicatorClassName="bg-purple-600" />
+                {/* Main Content - Natural Flow */}
+                <main className="flex-1 p-4 md:p-6 pb-24">
+                    <div className="max-w-3xl mx-auto w-full">
+                        <Card className="shadow-lg border-0 min-h-[300px]">
+                            <CardHeader>
+                                <CardTitle className="text-xl leading-relaxed">
+                                    {currentQuestionIndex + 1}. {currentQuestion.question}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                {currentQuestion.options.map((option, idx) => (
+                                    <div
+                                        key={idx}
+                                        onClick={() => handleSelectOption(currentQuestion._id, idx)}
+                                        className={`
+                                            p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4
+                                            ${answers[currentQuestion._id] === idx
+                                                ? 'border-purple-600 bg-purple-50 text-purple-900 shadow-md'
+                                                : 'border-gray-100 hover:border-gray-300 hover:bg-gray-50'
+                                            }
+                                        `}
+                                    >
+                                        <div className={`
+                                            w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs flex-shrink-0
+                                            ${answers[currentQuestion._id] === idx
+                                                ? 'border-purple-600 bg-purple-600 text-white'
+                                                : 'border-gray-300 text-gray-400'
+                                            }
+                                        `}>
+                                            {String.fromCharCode(65 + idx)}
+                                        </div>
+                                        <span className="font-medium">{option.text}</span>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    </div>
+                </main>
 
-            {/* Main Content */}
-            <main className="flex-1 max-w-3xl mx-auto w-full p-6 pb-24">
-                <Card className="shadow-lg border-0 min-h-[400px]">
-                    <CardHeader>
-                        <CardTitle className="text-xl leading-relaxed">
-                            {currentQuestionIndex + 1}. {currentQuestion.question}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        {currentQuestion.options.map((option, idx) => (
-                            <div
-                                key={idx}
-                                onClick={() => handleSelectOption(currentQuestion._id, idx)}
-                                className={`
-                                    p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4
-                                    ${answers[currentQuestion._id] === idx
-                                        ? 'border-purple-600 bg-purple-50 text-purple-900 shadow-md'
-                                        : 'border-gray-100 hover:border-gray-300 hover:bg-gray-50'
-                                    }
-                                `}
+                {/* Footer Navigation - Sticky at bottom */}
+                <footer className="sticky bottom-0 z-20 bg-white border-t p-4 mt-auto">
+                    <div className="max-w-3xl mx-auto flex justify-between items-center">
+                        <Button
+                            variant="outline"
+                            onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
+                            disabled={currentQuestionIndex === 0}
+                        >
+                            Previous
+                        </Button>
+
+                        {isLastQuestion ? (
+                            <Button
+                                className="bg-green-600 hover:bg-green-700 min-w-[150px]"
+                                onClick={() => handleSubmit(false)}
+                                disabled={submitting}
                             >
-                                <div className={`
-                                    w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs
-                                    ${answers[currentQuestion._id] === idx
-                                        ? 'border-purple-600 bg-purple-600 text-white'
-                                        : 'border-gray-300 text-gray-400'
-                                    }
-                                `}>
-                                    {String.fromCharCode(65 + idx)}
-                                </div>
-                                <span className="font-medium">{option.text}</span>
-                            </div>
-                        ))}
-                    </CardContent>
-                </Card>
-            </main>
-
-            {/* Footer Navigation */}
-            <footer className="bg-white border-t p-4 fixed bottom-0 w-full z-10 lg:pl-64">
-                {/* Note: lg:pl-64 accounts for sidebar if present, but this page might be fullscreen. 
-                   If fullscreen layout used, remove lg:pl-64. I'll assume full screen for exam to minimize distraction */}
-                <div className="max-w-3xl mx-auto flex justify-between items-center">
-                    <Button
-                        variant="outline"
-                        onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
-                        disabled={currentQuestionIndex === 0}
-                    >
-                        Previous
-                    </Button>
-
-                    {isLastQuestion ? (
-                        <Button
-                            className="bg-green-600 hover:bg-green-700 min-w-[150px]"
-                            onClick={() => handleSubmit(false)}
-                            disabled={submitting}
-                        >
-                            {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
-                            Submit Exam
-                        </Button>
-                    ) : (
-                        <Button
-                            className="bg-purple-600 hover:bg-purple-700 min-w-[120px]"
-                            onClick={() => setCurrentQuestionIndex(prev => prev + 1)}
-                        >
-                            Next
-                            <ArrowRight className="w-4 h-4 ml-2" />
-                        </Button>
-                    )}
-                </div>
-            </footer>
+                                {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+                                Submit Exam
+                            </Button>
+                        ) : (
+                            <Button
+                                className="bg-purple-600 hover:bg-purple-700 min-w-[120px]"
+                                onClick={() => setCurrentQuestionIndex(prev => prev + 1)}
+                            >
+                                Next
+                                <ArrowRight className="w-4 h-4 ml-2" />
+                            </Button>
+                        )}
+                    </div>
+                </footer>
+            </div>
         </div>
     );
 }

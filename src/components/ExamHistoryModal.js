@@ -111,18 +111,25 @@ export default function ExamHistoryModal({ exam, onClose, onViewAttempt, onStart
                     ) : (
                         <div className="space-y-6">
                             {/* Start Exam Button */}
-                            {exam.canTakeExam && onStartExam && (
-                                <button
-                                    onClick={() => {
-                                        onClose();
-                                        onStartExam();
-                                    }}
-                                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
-                                >
-                                    <PlayCircle className="w-5 h-5" />
-                                    {attempts.length > 0 ? 'Retake Exam' : 'Start Exam'}
-                                </button>
-                            )}
+                            {(() => {
+                                const canTakeExam = onStartExam && (
+                                    attempts.length === 0 ||
+                                    (exam.allowRetake && (!exam.maxAttempts || attempts.length < exam.maxAttempts))
+                                );
+
+                                return canTakeExam && (
+                                    <button
+                                        onClick={() => {
+                                            onClose();
+                                            onStartExam();
+                                        }}
+                                        className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
+                                    >
+                                        <PlayCircle className="w-5 h-5" />
+                                        {attempts.length > 0 ? 'Retake Exam' : 'Start Exam'}
+                                    </button>
+                                );
+                            })()}
 
                             {attempts.length === 0 ? (
                                 <div className="text-center py-16">
@@ -137,8 +144,8 @@ export default function ExamHistoryModal({ exam, onClose, onViewAttempt, onStart
                                     {/* Stats Card */}
                                     {stats && (
                                         <div className={`p-6 rounded-2xl bg-gradient-to-br ${stats.passed
-                                                ? 'from-green-500 to-green-600'
-                                                : 'from-blue-500 to-blue-600'
+                                            ? 'from-green-500 to-green-600'
+                                            : 'from-blue-500 to-blue-600'
                                             } text-white shadow-xl`}>
                                             <div className="grid grid-cols-3 gap-6 mb-6">
                                                 <div className="text-center">
@@ -186,15 +193,15 @@ export default function ExamHistoryModal({ exam, onClose, onViewAttempt, onStart
                                                         key={attempt._id}
                                                         onClick={() => handleViewAttempt(attempt._id)}
                                                         className={`w-full p-5 rounded-xl border-2 transition-all text-left hover:shadow-lg ${isPassed
-                                                                ? 'border-green-300 bg-green-50 hover:bg-green-100'
-                                                                : 'border-slate-200 bg-white hover:border-slate-300'
+                                                            ? 'border-green-300 bg-green-50 hover:bg-green-100'
+                                                            : 'border-slate-200 bg-white hover:border-slate-300'
                                                             }`}
                                                     >
                                                         <div className="flex items-center gap-4">
                                                             {/* Score Circle */}
                                                             <div className={`w-16 h-16 rounded-full flex flex-col items-center justify-center font-bold ${isPassed
-                                                                    ? 'bg-green-100 text-green-700'
-                                                                    : 'bg-orange-100 text-orange-700'
+                                                                ? 'bg-green-100 text-green-700'
+                                                                : 'bg-orange-100 text-orange-700'
                                                                 }`}>
                                                                 <div className="text-xl">{score}%</div>
                                                                 {isPassed ? (

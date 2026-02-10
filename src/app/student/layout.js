@@ -1,6 +1,6 @@
 'use client';
 
-import { LayoutDashboard, BookOpen, PlayCircle, History, UserCircle, Video } from 'lucide-react';
+import { LayoutDashboard, BookOpen, PlayCircle, History, UserCircle, Video, Calendar } from 'lucide-react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 
@@ -26,9 +26,14 @@ const studentNavItems = [
         icon: Video,
     },
     {
-        title: "Quiz History",
+        title: "Exam History",
         href: "/student/history",
         icon: History,
+    },
+    {
+        title: "My Appointments",
+        href: "/student/appointments",
+        icon: Calendar,
     },
     {
         title: "Profile",
