@@ -1,57 +1,58 @@
 'use client';
 
-import { LayoutDashboard, BookOpen, PlayCircle, History, UserCircle, Video, Calendar } from 'lucide-react';
-import { Sidebar } from '@/components/layout/sidebar';
-import { Header } from '@/components/layout/header';
+import { StudentHeader } from '@/components/layout/StudentHeader';
+import { Footer } from '@/components/layout/Footer';
 
-const studentNavItems = [
-    {
-        title: "Dashboard",
-        href: "/student/dashboard",
-        icon: LayoutDashboard,
-    },
-    {
-        title: "Browse Courses",
-        href: "/student/courses",
-        icon: BookOpen,
-    },
-    {
-        title: "My Learning",
-        href: "/student/learning",
-        icon: PlayCircle,
-    },
-    {
-        title: "Live Classes",
-        href: "/student/live-classes",
-        icon: Video,
-    },
-    {
-        title: "Exam History",
-        href: "/student/history",
-        icon: History,
-    },
-    {
-        title: "My Appointments",
-        href: "/student/appointments",
-        icon: Calendar,
-    },
-    {
-        title: "Profile",
-        href: "/student/profile",
-        icon: UserCircle,
-    },
-];
+
+import useLocomotiveScroll from '@/hooks/useLocomotiveScroll';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import api from '@/lib/axios';
+import Cookies from 'js-cookie';
 
 export default function StudentLayout({ children }) {
+    const router = useRouter();
+    // Initialize smooth scrolling for the entire student section
+    useLocomotiveScroll(true);
+
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const res = await api.get('/auth/me');
+                if (res.data.success) {
+                    setUser(res.data.user);
+                }
+            } catch (err) {
+                console.warn("Failed to fetch user in layout", err);
+            }
+        };
+        fetchUser();
+    }, []);
+
+    const handleLogout = () => {
+        // Clear all auth data
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        Cookies.remove('token');
+        Cookies.remove('user_role');
+
+        // Redirect to login
+        router.push('/login');
+    };
+
     return (
-        <div className="min-h-screen bg-gray-50/50">
-            <Sidebar items={studentNavItems} />
-            <div className="lg:pl-64 flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-1 p-6">
-                    {children}
-                </main>
-            </div>
+        <div data-scroll-container className="min-h-screen bg-slate-50 flex flex-col font-sans">
+            <StudentHeader user={user} onLogout={handleLogout} />
+
+            {/* Main Content */}
+            <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8 min-w-0 overflow-x-hidden">
+                {children}
+            </main>
+
+            <Footer />
         </div>
     );
 }

@@ -41,8 +41,10 @@ api.interceptors.response.use(
                 Cookies.remove('token');
                 Cookies.remove('user_role');
 
-                // Redirect to login
-                window.location.href = '/login';
+                // Redirect to login only if not already there
+                if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+                    window.location.href = '/login';
+                }
             }
         }
         return Promise.reject(error);

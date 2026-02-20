@@ -1,0 +1,127 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
+import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import Link from 'next/link';
+import api from '@/lib/axios';
+import { toast } from 'react-hot-toast';
+
+export default function CreateTopicPage() {
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
+    const [courses, setCourses] = useState([]);
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        courseId: ''
+    });
+
+    useEffect(() => {
+        fetchCourses();
+    }, []);
+
+    const fetchCourses = async () => {
+        try {
+            const res = await api.get('/courses/my-courses');
+            if (res.data.success) {
+                setCourses(res.data.courses);
+            }
+        } catch (error) {
+            console.error('Failed to load courses', error);
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!formData.name) {
+            toast.error('Topic Name is required');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const res = await api.post('/taxonomy/topics', formData);
+            if (res.data.success) {
+                toast.success('Topic created successfully!');
+                router.push('/tutor/dashboard');
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error(error.response?.data?.message || 'Failed to create topic');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-slate-50 p-6">
+            <div className="max-w-2xl mx-auto space-y-6">
+                <div className="flex items-center gap-4">
+                    <Link href="/tutor/dashboard">
+                        <Button variant="ghost" size="icon">
+                            <ArrowLeft className="w-4 h-4" />
+                        </Button>
+                    </Link>
+                    <h1 className="text-2xl font-bold text-slate-800">Create New Topic</h1>
+                </div>
+
+                <Card>
+                    <CardContent className="p-6">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="space-y-2">
+                                <Label>Topic Name <span className="text-red-500">*</span></Label>
+                                <Input
+                                    placeholder="e.g. Quadratic Equations"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Associated Course (Optional)</Label>
+                                <Select
+                                    value={formData.courseId}
+                                    onValueChange={(val) => setFormData({ ...formData, courseId: val })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a course to link (optional)" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {courses.map(course => (
+                                            <SelectItem key={course._id} value={course._id}>
+                                                {course.title}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-xs text-slate-500">Linking to a course helps organize topics.</p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Description (Optional)</Label>
+                                <Textarea
+                                    placeholder="Briefly describe this topic..."
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                />
+                            </div>
+
+                            <Button type="submit" disabled={loading} className="w-full bg-[#3b0d46] hover:bg-[#2a0933]">
+                                {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                <Save className="w-4 h-4 mr-2" />
+                                Create Topic
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
+}

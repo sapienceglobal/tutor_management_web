@@ -181,17 +181,24 @@ export default function BookTutorPage({ params }) {
 
         try {
             setBookingLoading(true);
+
+            // Combine date and timeSlot into a proper dateTime
+            // selectedSlot format is like "09:00" or "14:30"
+            const [hours, minutes] = selectedSlot.split(':');
+            const dateTime = new Date(selectedDate);
+            dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
             const response = await api.post('/appointments', {
                 tutorId: id,
-                date: selectedDate,
-                timeSlot: selectedSlot,
-                note: bookingNote
+                dateTime: dateTime.toISOString(),
+                notes: bookingNote
             });
 
             if (response.data.success) {
                 toast.success('Appointment requested successfully!');
                 setBookingNote('');
                 setSelectedSlot(null);
+                fetchTutorSchedule(); // Refresh available slots
                 // Optionally redirect to appointments page
                 // router.push('/student/appointments');
             }

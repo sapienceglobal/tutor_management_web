@@ -43,9 +43,11 @@ export default function ManageCoursePage({ params }) {
 
     const [lessonForm, setLessonForm] = useState({
         title: '',
+        description: '',
         videoUrl: '',
         duration: '',
-        isFree: false
+        isFree: false,
+        attachments: []
     });
 
     const [submitting, setSubmitting] = useState(false);
@@ -175,13 +177,15 @@ export default function ManageCoursePage({ params }) {
             setEditingLessonId(lesson._id);
             setLessonForm({
                 title: lesson.title,
+                description: lesson.description || '',
                 videoUrl: lesson.content?.videoUrl || '',
                 duration: Math.round((lesson.content?.duration || 0) / 60).toString(),
-                isFree: lesson.isFree
+                isFree: lesson.isFree,
+                attachments: lesson.content?.attachments || []
             });
         } else {
             setEditingLessonId(null);
-            setLessonForm({ title: '', videoUrl: '', duration: '', isFree: false });
+            setLessonForm({ title: '', description: '', videoUrl: '', duration: '', isFree: false, attachments: [] });
         }
         setIsLessonModalOpen(true);
     };
@@ -192,15 +196,34 @@ export default function ManageCoursePage({ params }) {
 
         setSubmitting(true);
         try {
+            // Ensure attachments is always an array
+            let attachments = lessonForm.attachments || [];
+            if (typeof attachments === 'string') {
+                try {
+                    attachments = JSON.parse(attachments);
+                } catch (e) {
+                    attachments = [];
+                }
+            }
+
+            // Debug: Log what we're sending
+            console.log('=== DEBUG: Attachments before sending ===');
+            console.log('Type:', typeof attachments);
+            console.log('Is Array:', Array.isArray(attachments));
+            console.log('Value:', attachments);
+            console.log('========================================');
+
             const content = {
                 videoUrl: lessonForm.videoUrl,
-                duration: Number(lessonForm.duration) * 60 // Convert to seconds
+                duration: Number(lessonForm.duration) * 60, // Convert to seconds
+                attachments: Array.isArray(attachments) ? attachments : []
             };
 
             if (editingLessonId) {
                 // Update existing lesson
                 await api.patch(`/lessons/${editingLessonId}`, {
                     title: lessonForm.title,
+                    description: lessonForm.description,
                     content,
                     isFree: lessonForm.isFree,
                 });
@@ -210,6 +233,7 @@ export default function ManageCoursePage({ params }) {
                     courseId: id,
                     moduleId: currentModuleId,
                     title: lessonForm.title,
+                    description: lessonForm.description,
                     content,
                     isFree: lessonForm.isFree,
                     type: 'video'
@@ -239,6 +263,41 @@ export default function ManageCoursePage({ params }) {
         } catch (error) {
             alert('Failed to delete lesson');
         }
+    };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await api.post('/upload/file', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            if (res.data.success) {
+                setLessonForm(prev => ({
+                    ...prev,
+                    attachments: [...prev.attachments, {
+                        name: res.data.name,
+                        url: res.data.fileUrl,
+                        type: res.data.type
+                    }]
+                }));
+            }
+        } catch (error) {
+            console.error('Upload failed:', error);
+            alert('Failed to upload file');
+        }
+    };
+
+    const removeAttachment = (index) => {
+        setLessonForm(prev => ({
+            ...prev,
+            attachments: prev.attachments.filter((_, i) => i !== index)
+        }));
     };
 
     // --- Render Helpers ---
@@ -591,83 +650,149 @@ export default function ManageCoursePage({ params }) {
             )}
 
             {/* Lesson Modal */}
-            {isLessonModalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
-                            <h3 className="text-xl font-bold">Add New Lesson</h3>
-                            <p className="text-blue-100 text-sm mt-1">Create a new video lesson</p>
+            {
+                isLessonModalOpen && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+                            <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white shrink-0">
+                                <h3 className="text-xl font-bold">{editingLessonId ? 'Edit Lesson' : 'Add New Lesson'}</h3>
+                                <p className="text-blue-100 text-sm mt-1">Create a new video lesson</p>
+                            </div>
+                            <form onSubmit={handleSaveLesson} className="flex flex-col flex-1 min-h-0">
+                                <div className="p-6 space-y-5 overflow-y-auto flex-1">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                            Lesson Title
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={lessonForm.title}
+                                            onChange={(e) => setLessonForm(prev => ({ ...prev, title: e.target.value }))}
+                                            placeholder="e.g., Understanding useState Hook"
+                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                            Lesson Overview
+                                        </label>
+                                        <textarea
+                                            value={lessonForm.description}
+                                            onChange={(e) => setLessonForm(prev => ({ ...prev, description: e.target.value }))}
+                                            placeholder="Briefly describe what students will learn in this lesson..."
+                                            rows={3}
+                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                            Resources & Attachments
+                                        </label>
+                                        <div className="space-y-3">
+                                            {lessonForm.attachments.map((file, idx) => (
+                                                <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg group">
+                                                    <div className="flex items-center gap-3 overflow-hidden">
+                                                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
+                                                            <FileText className="w-4 h-4 text-blue-600" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="text-sm font-medium text-slate-700 truncate">{file.name}</p>
+                                                            <p className="text-xs text-slate-500 uppercase">{file.type?.split('/')[1] || 'File'}</p>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeAttachment(idx)}
+                                                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+
+                                            <div className="relative">
+                                                <input
+                                                    type="file"
+                                                    onChange={handleFileUpload}
+                                                    className="hidden"
+                                                    id="resource-upload"
+                                                />
+                                                <label
+                                                    htmlFor="resource-upload"
+                                                    className="flex items-center justify-center gap-2 w-full p-3 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 font-medium hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all cursor-pointer"
+                                                >
+                                                    <Plus className="w-4 h-4" />
+                                                    Upload Resource
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                            Video URL
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={lessonForm.videoUrl}
+                                            onChange={(e) => setLessonForm(prev => ({ ...prev, videoUrl: e.target.value }))}
+                                            placeholder="https://example.com/video.mp4"
+                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                        />
+                                        <p className="text-xs text-slate-500 mt-2">Enter a direct video link (MP4 format)</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                            Duration (minutes)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={lessonForm.duration}
+                                            onChange={(e) => setLessonForm(prev => ({ ...prev, duration: e.target.value }))}
+                                            placeholder="15"
+                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+                                        <input
+                                            type="checkbox"
+                                            id="isFree"
+                                            checked={lessonForm.isFree}
+                                            onChange={(e) => setLessonForm(prev => ({ ...prev, isFree: e.target.checked }))}
+                                            className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        <label htmlFor="isFree" className="text-sm font-medium text-slate-700 cursor-pointer">
+                                            Mark as free preview lesson
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {/* Sticky Footer */}
+                                <div className="p-6 border-t border-slate-200 bg-slate-50 shrink-0">
+                                    <div className="flex gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsLessonModalOpen(false)}
+                                            className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={submitting || !lessonForm.title}
+                                            className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                                        >
+                                            {submitting ? 'Saving...' : (editingLessonId ? 'Update Lesson' : 'Add Lesson')}
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
-                        <form onSubmit={handleSaveLesson} className="p-6 space-y-5">
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                    Lesson Title
-                                </label>
-                                <input
-                                    type="text"
-                                    value={lessonForm.title}
-                                    onChange={(e) => setLessonForm(prev => ({ ...prev, title: e.target.value }))}
-                                    placeholder="e.g., Understanding useState Hook"
-                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                    Video URL
-                                </label>
-                                <input
-                                    type="url"
-                                    value={lessonForm.videoUrl}
-                                    onChange={(e) => setLessonForm(prev => ({ ...prev, videoUrl: e.target.value }))}
-                                    placeholder="https://example.com/video.mp4"
-                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                />
-                                <p className="text-xs text-slate-500 mt-2">Enter a direct video link (MP4 format)</p>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                    Duration (minutes)
-                                </label>
-                                <input
-                                    type="number"
-                                    value={lessonForm.duration}
-                                    onChange={(e) => setLessonForm(prev => ({ ...prev, duration: e.target.value }))}
-                                    placeholder="15"
-                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                />
-                            </div>
-                            <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
-                                <input
-                                    type="checkbox"
-                                    id="isFree"
-                                    checked={lessonForm.isFree}
-                                    onChange={(e) => setLessonForm(prev => ({ ...prev, isFree: e.target.checked }))}
-                                    className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-2 focus:ring-blue-500"
-                                />
-                                <label htmlFor="isFree" className="text-sm font-medium text-slate-700 cursor-pointer">
-                                    Mark as free preview lesson
-                                </label>
-                            </div>
-                            <div className="flex gap-3 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsLessonModalOpen(false)}
-                                    className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={submitting || !lessonForm.title}
-                                    className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                                >
-                                    {submitting ? 'Saving...' : (editingLessonId ? 'Update Lesson' : 'Add Lesson')}
-                                </button>
-                            </div>
-                        </form>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }

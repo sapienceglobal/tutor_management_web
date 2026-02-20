@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,12 +19,14 @@ import {
     ExternalLink,
     Edit,
     PlayCircle,
-    BookOpen
+    BookOpen,
+    Users
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
 
 export default function TutorLiveClassesPage() {
+    const router = useRouter();
     const [classes, setClasses] = useState([]);
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -37,8 +40,11 @@ export default function TutorLiveClassesPage() {
         dateTime: '',
         duration: 60,
         meetingLink: '',
+        meetingId: '',
+        passcode: '',
         recordingLink: '',
-        platform: 'zoom'
+        platform: 'jitsi',
+        autoCreate: true
     };
 
     const [formData, setFormData] = useState(initialFormState);
@@ -83,8 +89,12 @@ export default function TutorLiveClassesPage() {
             dateTime: dateStr,
             duration: cls.duration,
             meetingLink: cls.meetingLink,
+            meetingId: cls.meetingId || '',
+            passcode: cls.passcode || '',
             recordingLink: cls.recordingLink || '',
-            platform: cls.platform
+            materialLink: cls.materialLink || '',
+            platform: cls.platform,
+            autoCreate: false // Default to false when editing so existing details are shown
         });
         setIsCreating(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -205,15 +215,35 @@ export default function TutorLiveClassesPage() {
                                         onChange={e => setFormData({ ...formData, duration: e.target.value })}
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>Meeting Link (Zoom/Meet)</Label>
-                                    <Input
-                                        type="url"
-                                        required
-                                        placeholder="https://zoom.us/j/..."
-                                        value={formData.meetingLink}
-                                        onChange={e => setFormData({ ...formData, meetingLink: e.target.value })}
-                                    />
+                                <div className="md:col-span-2 space-y-4 border-t pt-4 mt-2">
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            id="autoCreate"
+                                            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                            checked={formData.autoCreate}
+                                            onChange={(e) => setFormData({ ...formData, autoCreate: e.target.checked })}
+                                        />
+                                        <Label htmlFor="autoCreate" className="cursor-pointer font-medium text-blue-700">
+                                            Auto-generate Secure Class Room
+                                        </Label>
+                                    </div>
+
+                                    {!formData.autoCreate && (
+                                        <div className="space-y-2">
+                                            <Label>External Meeting Link</Label>
+                                            <Input
+                                                type="url"
+                                                required={!formData.autoCreate}
+                                                placeholder="https://meet.google.com/..."
+                                                value={formData.meetingLink}
+                                                onChange={e => setFormData({ ...formData, meetingLink: e.target.value })}
+                                            />
+                                            <p className="text-xs text-gray-500">
+                                                Uncheck 'Auto-generate' only if you want to use an external link like Google Meet.
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Recording Link (Optional - After Class)</Label>
@@ -222,6 +252,15 @@ export default function TutorLiveClassesPage() {
                                         placeholder="https://drive.google.com/..."
                                         value={formData.recordingLink}
                                         onChange={e => setFormData({ ...formData, recordingLink: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Material/Notes Link (Optional)</Label>
+                                    <Input
+                                        type="url"
+                                        placeholder="https://drive.google.com/..."
+                                        value={formData.materialLink}
+                                        onChange={e => setFormData({ ...formData, materialLink: e.target.value })}
                                     />
                                 </div>
                             </div>
@@ -240,7 +279,8 @@ export default function TutorLiveClassesPage() {
                         </form>
                     </CardContent>
                 </Card>
-            )}
+            )
+            }
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {classes.length === 0 && !isCreating ? (
@@ -303,15 +343,27 @@ export default function TutorLiveClassesPage() {
                                 </div>
 
                                 <div className="pt-4 border-t flex flex-col gap-2">
-                                    <a
-                                        href={cls.meetingLink}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                    <button
+                                        onClick={() => {
+                                            if (cls.meetingId) {
+                                                window.open(`https://meet.jit.si/${cls.meetingId}`, '_blank');
+                                            } else {
+                                                window.open(cls.meetingLink, '_blank');
+                                            }
+                                        }}
                                         className="flex items-center justify-center w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
                                     >
                                         <ExternalLink className="w-4 h-4" />
                                         Start Class
-                                    </a>
+                                    </button>
+
+                                    <button
+                                        onClick={() => router.push(`/tutor/live-classes/${cls._id}/attendance`)}
+                                        className="flex items-center justify-center w-full gap-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 py-2 px-4 rounded-lg font-medium transition-colors"
+                                    >
+                                        <Users className="w-4 h-4" />
+                                        View Attendance
+                                    </button>
                                     {cls.recordingLink && (
                                         <a
                                             href={cls.recordingLink}
@@ -329,6 +381,6 @@ export default function TutorLiveClassesPage() {
                     ))
                 )}
             </div>
-        </div>
+        </div >
     );
 }

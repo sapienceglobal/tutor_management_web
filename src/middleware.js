@@ -24,6 +24,17 @@ export function middleware(request) {
             return NextResponse.redirect(new URL('/student/dashboard', request.url));
         }
 
+        // Admin Route Protection
+        if (pathname.startsWith('/admin') && role !== 'admin') {
+            if (role === 'tutor') return NextResponse.redirect(new URL('/tutor/dashboard', request.url));
+            return NextResponse.redirect(new URL('/student/dashboard', request.url));
+        }
+
+        // Prevent Admin from accessing Tutor/Student dashboards (optional, but good for clarity)
+        if (role === 'admin' && (pathname.startsWith('/tutor') || pathname.startsWith('/student'))) {
+            return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+        }
+
         // If logged in user tries to access auth pages (login/register), redirect to their dashboard
         if (pathname === '/login' || pathname === '/register') {
             if (role === 'tutor') {
@@ -41,6 +52,7 @@ export const config = {
     matcher: [
         '/tutor/:path*',
         '/student/:path*',
+        '/admin/:path*',
         '/login',
         '/register'
     ],

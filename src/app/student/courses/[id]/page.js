@@ -32,8 +32,9 @@ import {
 import api from '@/lib/axios';
 import LessonPlayerModal from '@/components/LessonPlayerModal';
 import ExamHistoryModal from '@/components/ExamHistoryModal';
-import ExamTakingScreen from '@/components/ExamTakingScreen';
+
 import ExamResultModal from '@/components/ExamResultModal';
+import { ReportAbuseModal } from '@/components/shared/ReportAbuseModal';
 import { Button } from '@/components/ui/button';
 
 export default function CourseDetailPage({ params }) {
@@ -60,16 +61,20 @@ export default function CourseDetailPage({ params }) {
     const [currentPage, setCurrentPage] = useState(1);
     const [hasMoreReviews, setHasMoreReviews] = useState(true);
     const [loadingReviews, setLoadingReviews] = useState(false);
-    const [showExamModal, setShowExamModal] = useState(false);
+    const [isWishlisted, setIsWishlisted] = useState(false);
+    const [wishlistLoading, setWishlistLoading] = useState(false);
+
     const [showExamHistoryModal, setShowExamHistoryModal] = useState(false);
     const [showLessonPlayerModal, setShowLessonPlayerModal] = useState(false);
     const [selectedExam, setSelectedExam] = useState(null);
     const [selectedLessonIndex, setSelectedLessonIndex] = useState(0);
     const [showResultModal, setShowResultModal] = useState(false);
     const [selectedResult, setSelectedResult] = useState(null);
+    const [showReportModal, setShowReportModal] = useState(false);
 
     useEffect(() => {
         loadCourseData();
+        checkWishlistStatus();
     }, [id]);
 
     useEffect(() => {
@@ -78,20 +83,66 @@ export default function CourseDetailPage({ params }) {
         }
     }, [activeTab, sortBy]);
 
-    const loadCourseData = async () => {
+    const loadCourseData = async (background = false) => {
         try {
-            setLoading(true);
+            if (!background) setLoading(true);
             const response = await api.get(`/courses/${id}`);
 
             if (response.data.success) {
-                setCourse(response.data.course);
-                setLessons(response.data.lessons || []);
+                // ... (Sorting logic remains same) ...
+                const courseData = response.data.course;
+                let lessonsData = response.data.lessons || [];
+
+                // Sort lessons: Group by module order, then by lesson order
+                if (courseData.modules && courseData.modules.length > 0) {
+                    let sortedLessons = [];
+                    // Helper to safely get module ID string
+                    const getModId = (l) => (l.moduleId?._id || l.moduleId || '').toString();
+
+                    // Group lessons by module
+                    const lessonsByModule = {};
+                    lessonsData.forEach(lesson => {
+                        const modId = getModId(lesson);
+                        if (modId) {
+                            if (!lessonsByModule[modId]) lessonsByModule[modId] = [];
+                            lessonsByModule[modId].push(lesson);
+                        } else {
+                            // Collect orphans
+                            if (!lessonsByModule['orphan']) lessonsByModule['orphan'] = [];
+                            lessonsByModule['orphan'].push(lesson);
+                        }
+                    });
+
+                    // Flatten based on module order
+                    courseData.modules.forEach(module => {
+                        const modId = module._id.toString();
+                        if (lessonsByModule[modId]) {
+                            const modLessons = lessonsByModule[modId].sort((a, b) => (a.order || 0) - (b.order || 0));
+                            sortedLessons = [...sortedLessons, ...modLessons];
+                            delete lessonsByModule[modId];
+                        }
+                    });
+
+                    // Add remaining lessons (orphans or modules not in course.modules list?)
+                    Object.keys(lessonsByModule).forEach(key => {
+                        const list = lessonsByModule[key].sort((a, b) => (a.order || 0) - (b.order || 0));
+                        sortedLessons = [...sortedLessons, ...list];
+                    });
+
+                    lessonsData = sortedLessons;
+                } else {
+                    lessonsData.sort((a, b) => (a.order || 0) - (b.order || 0));
+                }
+
+                setCourse(courseData);
+                setLessons(lessonsData);
                 setIsEnrolled(response.data.isEnrolled || false);
-                const moduleIds = response.data.course.modules?.map(m => m._id) || [];
-                setExpandedModules(moduleIds);
+                const moduleIds = courseData.modules?.map(m => m._id) || [];
+                // Only set expanded modules on first load or if empty
+                setExpandedModules(prev => prev.length ? prev : moduleIds);
             }
 
-            if (response.data.isEnrolled) {
+            if (response.data.isEnrolled && !background) {
                 const [examRes, liveClassRes] = await Promise.all([
                     api.get(`/exams/course/${id}`),
                     api.get(`/live-classes?courseId=${id}`)
@@ -107,7 +158,7 @@ export default function CourseDetailPage({ params }) {
         } catch (error) {
             console.error('Error loading course:', error);
         } finally {
-            setLoading(false);
+            if (!background) setLoading(false);
         }
     };
 
@@ -146,6 +197,34 @@ export default function CourseDetailPage({ params }) {
             console.error('Error loading reviews:', error);
         } finally {
             setLoadingReviews(false);
+        }
+    };
+
+    const checkWishlistStatus = async () => {
+        try {
+            const { data } = await api.get(`/wishlist/${id}/status`);
+            setIsWishlisted(data.inWishlist);
+        } catch (error) {
+            console.error('Failed to check wishlist status', error);
+        }
+    };
+
+    const toggleWishlist = async () => {
+        try {
+            setWishlistLoading(true);
+            if (isWishlisted) {
+                await api.delete(`/wishlist/${id}`);
+                setIsWishlisted(false);
+                // toast.success('Removed from wishlist');
+            } else {
+                await api.post('/wishlist', { courseId: id });
+                setIsWishlisted(true);
+                // toast.success('Added to wishlist');
+            }
+        } catch (error) {
+            console.error('Wishlist toggle failed', error);
+        } finally {
+            setWishlistLoading(false);
         }
     };
 
@@ -252,38 +331,16 @@ export default function CourseDetailPage({ params }) {
     };
 
     const handleStartExam = () => {
-        setShowExamHistoryModal(false);
-        setShowExamModal(true);
-    };
-
-    const handleExamComplete = (attemptData) => {
-        setShowExamModal(false);
-        loadCourseData();
-
-        if (attemptData.answers) {
-            const detailedResults = attemptData.answers.map(ans => ({
-                question: ans.questionData?.question || 'Question',
-                options: ans.questionData?.options?.map(o => o.text) || [],
-                correctIndex: ans.questionData?.correctOption,
-                selectedIndex: ans.selectedOption,
-                isCorrect: ans.isCorrect,
-                explanation: ans.questionData?.explanation,
-                pointsEarned: ans.pointsEarned,
-                pointsPossible: ans.questionData?.points || 1
-            }));
-
-            setSelectedResult({
-                attempt: attemptData,
-                detailedResults
-            });
-            setShowResultModal(true);
-        } else {
-            alert(`Exam completed! Score: ${attemptData.score}%`);
+        if (selectedExam) {
+            setShowExamHistoryModal(false);
+            router.push(`/student/exams/${selectedExam._id}`);
         }
     };
 
+
+
     const handleLessonComplete = async (lessonId) => {
-        await loadCourseData();
+        await loadCourseData(true);
     };
 
     if (loading) {
@@ -318,137 +375,62 @@ export default function CourseDetailPage({ params }) {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-            {/* Hero Section */}
-            <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">
-                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30"></div>
+            {/* Bizdire-style Deep Blue Banner */}
+            <div className="bg-[#0F172A] text-white relative overflow-hidden">
+                {/* Background pattern/overlay */}
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
 
-                <div className="max-w-7xl mx-auto px-6 py-8 lg:py-12 relative z-10">
-                    <button
-                        onClick={() => router.back()}
-                        className="mb-6 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-xl transition-all duration-200 flex items-center gap-2 shadow-lg"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        Back
-                    </button>
-
-                    <div className="grid lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2">
-                            <div className="flex items-center gap-3 mb-4">
-                                <span className="px-4 py-1.5 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-semibold border border-white/30 shadow-lg">
-                                    {course.category?.name}
-                                </span>
-                                <span className="px-4 py-1.5 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-semibold border border-white/30 shadow-lg">
-                                    {course.level}
-                                </span>
-                            </div>
-
-                            <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight drop-shadow-lg">
-                                {course.title}
-                            </h1>
-
-                            <p className="text-indigo-100 text-lg mb-6 leading-relaxed">
-                                {course.description?.substring(0, 200)}...
-                            </p>
-
-                            <div className="flex flex-wrap items-center gap-6 text-white/90">
-                                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl">
-                                    <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-                                    <span className="font-bold">{course.rating?.toFixed(1)}</span>
-                                    <span className="text-indigo-200">({course.reviewCount})</span>
-                                </div>
-                                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl">
-                                    <Users className="w-5 h-5" />
-                                    <span className="font-semibold">{course.enrolledCount?.toLocaleString()}</span>
-                                </div>
-                                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl">
-                                    <Clock className="w-5 h-5" />
-                                    <span className="font-semibold">{Math.round(totalDuration / 3600)}h</span>
-                                </div>
-                            </div>
-
-                            {/* Instructor Card */}
-                            <div className="mt-8 flex items-center gap-4 p-5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl">
-                                <img
-                                    src={course.tutorId?.userId?.profileImage || '/default-avatar.png'}
-                                    alt={course.tutorId?.userId?.name || 'Instructor'}
-                                    className="w-16 h-16 rounded-full border-2 border-white/50 shadow-lg object-cover"
-                                />
-                                <div>
-                                    <p className="text-sm text-indigo-200 font-medium">Instructor</p>
-                                    <p className="font-bold text-white text-xl">{course.tutorId?.userId?.name || 'Unknown'}</p>
-                                    <p className="text-sm text-indigo-200">{course.tutorId?.experience} years experience</p>
-                                </div>
-                            </div>
+                <div className="max-w-7xl mx-auto px-6 py-12 relative z-10 flex flex-col md:flex-row gap-8 items-start">
+                    <div className="flex-1 space-y-4">
+                        {/* Breadcrumbs */}
+                        <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
+                            <span className="hover:text-white cursor-pointer">Home</span>
+                            <span className="text-slate-600">/</span>
+                            <span className="hover:text-white cursor-pointer">Courses</span>
+                            <span className="text-slate-600">/</span>
+                            <span className="text-white font-medium">{course.category?.name || 'General'}</span>
                         </div>
 
-                        {/* Pricing Card */}
-                        <div className="lg:col-span-1">
-                            <div className="bg-white rounded-3xl shadow-2xl overflow-hidden sticky top-6 border-4 border-white/50">
-                                <div className="aspect-video bg-gradient-to-br from-slate-800 to-slate-900 relative group overflow-hidden">
-                                    <img
-                                        src={course.thumbnail}
-                                        alt={course.title}
-                                        className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <button className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform duration-200 group-hover:bg-indigo-600">
-                                            <PlayCircle className="w-10 h-10 text-indigo-600 group-hover:text-white transition-colors" />
-                                        </button>
-                                    </div>
-                                </div>
+                        {/* Title & Badges */}
+                        <h1 className="text-3xl lg:text-5xl font-bold leading-tight">
+                            {course.title}
+                        </h1>
 
-                                <div className="p-6">
-                                    <div className="mb-6">
-                                        <div className="flex items-end gap-3 mb-3">
-                                            <span className="text-5xl font-bold text-slate-900">
-                                                ₹{course.price}
-                                            </span>
-                                            {course.oldPrice && (
-                                                <span className="text-xl text-slate-500 line-through mb-2">
-                                                    ₹{course.oldPrice}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-full text-sm font-bold shadow-lg">
-                                            <TrendingUp className="w-4 h-4" />
-                                            Limited Time Offer
-                                        </div>
-                                    </div>
+                        <div className="flex items-center gap-2 text-yellow-400">
+                            {[...Array(5)].map((_, i) => (
+                                <Star
+                                    key={i}
+                                    className={`w-4 h-4 ${i < Math.round(course.rating || 0) ? 'fill-current' : 'text-slate-600'}`}
+                                />
+                            ))}
+                            <span className="text-white ml-2 text-sm font-medium">{course.rating?.toFixed(1)} ({course.reviewCount} reviews)</span>
+                        </div>
 
-                                    {!isEnrolled ? (
-                                        <Button
-                                            onClick={handleEnroll}
-                                            disabled={enrolling}
-                                            className="w-full h-14 text-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-200"
-                                        >
-                                            {enrolling ? (
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                                                    Enrolling...
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center gap-2">
-                                                    <Sparkles className="w-5 h-5" />
-                                                    Enroll Now
-                                                </div>
-                                            )}
-                                        </Button>
-                                    ) : (
-                                        <div className="w-full h-14 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 shadow-lg">
-                                            <CheckCircle className="w-6 h-6" />
-                                            You're Enrolled!
-                                        </div>
-                                    )}
-
-                                    <p className="text-center text-sm text-slate-500 mt-4 flex items-center justify-center gap-2">
-                                        <Award className="w-4 h-4" />
-                                        30-Day Money-Back Guarantee
-                                    </p>
-                                </div>
-                            </div>
+                        <div className="flex flex-wrap gap-3 mt-6">
+                            <Button
+                                onClick={toggleWishlist}
+                                disabled={wishlistLoading}
+                                className={`${isWishlisted ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-[#0EA5E9] hover:bg-[#0284C7]'} text-white border-none rounded-sm h-10 px-6 font-semibold uppercase text-xs tracking-wide transition-all`}
+                            >
+                                <Sparkles className={`w-4 h-4 mr-2 ${isWishlisted ? 'fill-white' : ''}`} />
+                                {isWishlisted ? 'Wishlisted' : 'Add Wishlist'}
+                            </Button>
+                            <Button className="bg-[#10B981] hover:bg-[#059669] text-white border-none rounded-sm h-10 px-6 font-semibold uppercase text-xs tracking-wide" onClick={() => setShowReviewModal(true)}>
+                                <Star className="w-4 h-4 mr-2" />
+                                Write Review
+                            </Button>
+                            <Button
+                                className="bg-[#EF4444] hover:bg-[#DC2626] text-white border-none rounded-sm h-10 px-6 font-semibold uppercase text-xs tracking-wide"
+                                onClick={() => setShowReportModal(true)}
+                            >
+                                <FileQuestion className="w-4 h-4 mr-2" />
+                                Report Abuse
+                            </Button>
                         </div>
                     </div>
+
+                    {/* Price & Primary Action (Moved from sticky sidebar for mobile, kept for desktop layout but styled differently) */}
+                    {/* We will keep the sticky sidebar logic for the Price/Enroll card below, but the banner is now focused on Title/Intro */}
                 </div>
             </div>
 
@@ -680,7 +662,7 @@ export default function CourseDetailPage({ params }) {
                                     </div>
                                 )}
 
-{activeTab === 'live classes' && (
+                                {activeTab === 'live classes' && (
                                     <div className="space-y-4">
                                         {!isEnrolled ? (
                                             <div className="text-center py-16 bg-slate-50 rounded-2xl">
@@ -954,7 +936,112 @@ export default function CourseDetailPage({ params }) {
                     </div>
 
                     {/* Right Sidebar */}
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-1 space-y-6">
+                        {/* Pricing/Enrollment Card */}
+                        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-slate-200">
+                            <div className="aspect-video bg-slate-100 relative group overflow-hidden">
+                                {/* Thumbnail */}
+                                <img
+                                    src={course.thumbnail}
+                                    alt={course.title}
+                                    className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors cursor-pointer">
+                                    <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
+                                        <PlayCircle className="w-8 h-8 text-indigo-600" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="p-6">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <span className="text-3xl font-bold text-slate-800">
+                                        {course.isFree ? 'Free' : `₹${course.price}`}
+                                    </span>
+                                    {course.oldPrice && !course.isFree && (
+                                        <span className="text-lg text-slate-400 line-through">
+                                            ₹{course.oldPrice}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {!isEnrolled ? (
+                                    <Button
+                                        onClick={handleEnroll}
+                                        disabled={enrolling}
+                                        variant="default" // Using global primary color (Orange)
+                                        className="w-full h-12 text-base font-bold rounded shadow-sm hover:shadow transition-all"
+                                    >
+                                        {enrolling ? 'Enrolling...' : 'Enroll Now'}
+                                    </Button>
+                                ) : (
+                                    <div className="w-full h-12 bg-emerald-500 text-white font-bold rounded flex items-center justify-center gap-2 shadow-sm">
+                                        <CheckCircle className="w-5 h-5" />
+                                        Enrolled
+                                    </div>
+                                )}
+
+                                <p className="text-center text-xs text-slate-500 mt-3">
+                                    30-Day Money-Back Guarantee
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Listing Owner / Instructor Card */}
+                        <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
+                            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">
+                                Listing Owner
+                            </h3>
+                            <div className="flex flex-col items-center text-center">
+                                <div className="w-24 h-24 rounded-full p-1 border border-slate-200 mb-3">
+                                    <img
+                                        src={course.tutorId?.userId?.profileImage || '/default-avatar.png'}
+                                        alt={course.tutorId?.userId?.name}
+                                        className="w-full h-full rounded-full object-cover"
+                                    />
+                                </div>
+                                <h4 className="text-lg font-bold text-slate-900">{course.tutorId?.userId?.name || 'Unknown'}</h4>
+                                <p className="text-xs text-slate-500 mb-4">Member Since 2024</p>
+
+                                <div className="flex gap-2 w-full">
+                                    <Button variant="outline" className="flex-1 text-xs border-indigo-600 text-indigo-600 hover:bg-indigo-50">
+                                        Contact
+                                    </Button>
+                                    <Button variant="outline" className="flex-1 text-xs border-slate-300 text-slate-600 hover:bg-slate-50">
+                                        Timings
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="mt-6 space-y-3">
+                                <div className="flex items-center gap-3 text-sm text-slate-600">
+                                    <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center shrink-0">
+                                        <Globe className="w-4 h-4 text-slate-500" />
+                                    </div>
+                                    <span className="truncate">New York, NY 10012</span>
+                                </div>
+                                <div className="flex items-center gap-3 text-sm text-slate-600">
+                                    <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center shrink-0">
+                                        <Video className="w-4 h-4 text-slate-500" />
+                                    </div>
+                                    <span className="truncate">info@example.com</span>
+                                </div>
+                                <div className="flex items-center gap-3 text-sm text-slate-600">
+                                    <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center shrink-0">
+                                        <Zap className="w-4 h-4 text-orange-500" />
+                                    </div>
+                                    <span className="truncate text-orange-500 font-medium">0-235-657-24587</span>
+                                </div>
+                            </div>
+                            <div className="mt-6 pt-4 border-t border-slate-100 flex gap-2">
+                                <Button className="flex-1 bg-[#0EA5E9] hover:bg-[#0284C7] text-white text-xs h-9">
+                                    Chat
+                                </Button>
+                                <Button variant="default" className="flex-1 text-white text-xs h-9">
+                                    Contact Me
+                                </Button>
+                            </div>
+                        </div>
                         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 sticky top-6">
                             <h3 className="font-bold text-xl mb-6 text-slate-900">This Course Includes</h3>
                             <div className="space-y-4">
@@ -998,6 +1085,8 @@ export default function CourseDetailPage({ params }) {
             {showLessonPlayerModal && lessons[selectedLessonIndex] && (
                 <LessonPlayerModal
                     lessons={lessons}
+                    modules={course.modules}
+                    reviews={reviews}
                     initialIndex={selectedLessonIndex}
                     courseId={id}
                     onClose={() => setShowLessonPlayerModal(false)}
@@ -1018,14 +1107,7 @@ export default function CourseDetailPage({ params }) {
                 />
             )}
 
-            {showExamModal && selectedExam && (
-                <ExamTakingScreen
-                    exam={selectedExam}
-                    courseId={id}
-                    onClose={() => setShowExamModal(false)}
-                    onComplete={handleExamComplete}
-                />
-            )}
+
 
             {showResultModal && selectedResult && (
                 <ExamResultModal
@@ -1129,6 +1211,14 @@ export default function CourseDetailPage({ params }) {
                         </form>
                     </div>
                 </div>
+            )}
+            {course && (
+                <ReportAbuseModal
+                    isOpen={showReportModal}
+                    onClose={() => setShowReportModal(false)}
+                    targetId={course._id}
+                    targetType="Course"
+                />
             )}
         </div>
     );

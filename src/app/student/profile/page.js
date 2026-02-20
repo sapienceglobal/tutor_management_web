@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import {
     User, Mail, Phone, BadgeCheck, Loader2, Camera, LogOut,
-    Settings, Bell, Lock, Globe, HelpCircle, Info, Shield, Save
+    Settings, Bell, Lock, Globe, HelpCircle, Info, Shield, Save, MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,7 @@ import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'react-hot-toast';
+import Cookies from 'js-cookie';
 
 export default function StudentProfilePage() {
     const router = useRouter();
@@ -39,7 +40,9 @@ export default function StudentProfilePage() {
                     setUser(response.data.user);
                     setEditForm({
                         name: response.data.user.name || '',
-                        phone: response.data.user.phone || ''
+                        phone: response.data.user.phone || '',
+                        bio: response.data.user.bio || '',
+                        address: response.data.user.address || {}
                     });
                 } else {
                     const storedUser = localStorage.getItem('user');
@@ -75,21 +78,47 @@ export default function StudentProfilePage() {
         e.preventDefault();
         setSaving(true);
         try {
-            // Using /auth/update-details endpoint (common pattern)
-            // If it doesn't exist, we might need to adjust.
-            // For now, assuming it exists or we mock success.
-            const res = await api.put('/auth/updatedetails', editForm);
+            let imageUrl = user.profileImage;
+
+            // 1. Upload Image if selected
+            const fileInput = document.getElementById('profile-image-input');
+            if (fileInput && fileInput.files[0]) {
+                const formData = new FormData();
+                formData.append('image', fileInput.files[0]);
+
+                try {
+                    const uploadRes = await api.post('/upload/image', formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+                    if (uploadRes.data.success) {
+                        imageUrl = uploadRes.data.imageUrl;
+                    }
+                } catch (err) {
+                    console.error("Image upload failed", err);
+                    toast.error("Failed to upload image");
+                    setSaving(false);
+                    return;
+                }
+            }
+
+            // 2. Update Profile Data
+            const payload = {
+                ...editForm,
+                profileImage: imageUrl
+            };
+
+            const res = await api.patch('/auth/profile', payload);
 
             if (res.data.success) {
-                const updatedUser = { ...user, ...editForm };
+                const updatedUser = res.data.user;
                 setUser(updatedUser);
-                localStorage.setItem('user', JSON.stringify(updatedUser)); // Update local storage
+                localStorage.setItem('user', JSON.stringify(updatedUser));
                 setIsEditOpen(false);
                 toast.success('Profile updated successfully');
             }
         } catch (error) {
             console.error('Update failed:', error);
-            toast.error('Failed to update profile');
+            toast.error(error.response?.data?.message || 'Failed to update profile');
         } finally {
             setSaving(false);
         }
@@ -98,6 +127,8 @@ export default function StudentProfilePage() {
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        Cookies.remove('token'); // Add cookie removal
+        Cookies.remove('user_role');
         router.push('/login');
     };
 
@@ -112,199 +143,236 @@ export default function StudentProfilePage() {
     if (!user) return null;
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8 pb-10">
-            {/* Header Section with Gradient */}
-            <div className="relative rounded-3xl overflow-hidden bg-white shadow-xl">
-                <div className="h-48 bg-gradient-to-r from-purple-600 to-indigo-600"></div>
-                <div className="px-8 pb-8">
-                    <div className="relative flex justify-between items-end -mt-16 mb-6">
-                        <div className="flex items-end gap-6">
-                            <div className="relative">
-                                <div className="h-32 w-32 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center overflow-hidden shadow-lg">
-                                    {user.profileImage ? (
-                                        <img src={user.profileImage} alt={user.name} className="h-full w-full object-cover" />
-                                    ) : (
-                                        <User className="h-16 w-16 text-gray-400" />
-                                    )}
-                                </div>
-                                <button className="absolute bottom-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors text-purple-600">
-                                    <Camera className="w-4 h-4" />
-                                </button>
-                            </div>
-                            <div className="mb-2">
-                                <h1 className="text-3xl font-bold text-gray-900">{user.name}</h1>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 uppercase text-xs px-2 py-0.5">
-                                        {user.role}
-                                    </Badge>
-                                    <span className="text-sm text-gray-500 flex items-center gap-1">
-                                        <Globe className="w-3 h-3" /> {user.language === 'hi' ? 'Hindi' : 'English'}
-                                    </span>
-                                </div>
-                            </div>
+        <div className="max-w-[1600px] mx-auto pb-10">
+            {/* Header / Hero Section (Bizdire Style) */}
+            <div className="relative bg-[#0F172A] py-16 px-8 mb-8 rounded-3xl overflow-hidden mx-4 md:mx-0">
+                <div className="absolute inset-0 opacity-10 bg-[url('/grid-pattern.svg')]"></div>
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                    <div className="relative group">
+                        <div className="w-32 h-32 rounded-full border-4 border-white/10 bg-white/5 backdrop-blur-sm flex items-center justify-center overflow-hidden shadow-2xl">
+                            {user?.profileImage ? (
+                                <img src={user.profileImage} alt={user.name} className="h-full w-full object-cover" />
+                            ) : (
+                                <User className="h-16 w-16 text-slate-400" />
+                            )}
                         </div>
-                        <Button variant="outline" className="hidden sm:flex" onClick={() => setIsEditOpen(true)}>
-                            Edit Profile
-                        </Button>
+                        <button 
+                            type="button"
+                            onClick={() => document.getElementById('profile-image-input')?.click()}
+                            className="absolute bottom-1 right-1 p-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg transition-transform hover:scale-110"
+                        >
+                            <Camera className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    <div className="text-center md:text-left">
+                        <h1 className="text-4xl font-black text-white mb-2">{user?.name || 'Student Name'}</h1>
+                        <p className="text-slate-400 text-lg mb-4 flex items-center justify-center md:justify-start gap-2">
+                            <Mail className="w-4 h-4" /> {user?.email}
+                        </p>
+                        <div className="flex items-center gap-3 justify-center md:justify-start">
+                            <Badge className="bg-orange-500/20 text-orange-500 hover:bg-orange-500/30 border-orange-500/20 px-3 py-1 text-sm uppercase tracking-wide">
+                                {user?.role || 'Student'}
+                            </Badge>
+                            <span className="text-slate-500 text-sm flex items-center gap-1">
+                                <MapPin className="w-3 h-3" /> New York, USA
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Content Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-4 md:px-0">
+                {/* Sidebar Navigation */}
+                <div className="lg:col-span-3">
+                    <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden sticky top-24">
+                        <div className="p-6 border-b border-slate-100">
+                            <h2 className="text-lg font-bold text-slate-800">My Dashboard</h2>
+                        </div>
+                        <nav className="p-3 space-y-1">
+                            {[
+                                { label: 'Edit Profile', icon: User, id: 'edit-profile', active: true },
+                                { label: 'My Courses', icon: BadgeCheck, id: 'courses' },
+                                { label: 'My Favorites', icon: Settings, id: 'favorites' },
+                                { label: 'Change Password', icon: Lock, id: 'password' },
+                                { label: 'Settings', icon: Settings, id: 'settings' },
+                                { label: 'Logout', icon: LogOut, id: 'logout', danger: true },
+                            ].map((item) => (
+                                <button
+                                    key={item.id}
+                                    onClick={item.id === 'logout' ? handleLogout : () => { }}
+                                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium transition-all duration-200 ${item.active
+                                        ? 'bg-orange-50 text-orange-600 shadow-sm'
+                                        : item.danger
+                                            ? 'text-red-500 hover:bg-red-50'
+                                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                        }`}
+                                >
+                                    <item.icon className="w-5 h-5" />
+                                    {item.label}
+                                    {item.active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-500"></div>}
+                                </button>
+                            ))}
+                        </nav>
+                    </div>
+                </div>
 
-                {/* Personal Information */}
-                <Card className="border-none shadow-md">
-                    <CardContent className="p-6 space-y-6">
-                        <h2 className="text-xl font-bold flex items-center gap-2 text-gray-800">
-                            <User className="w-5 h-5 text-purple-600" />
-                            Personal Information
-                        </h2>
-
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-4 p-3 bg-red-50 rounded-xl border border-red-100">
-                                <div className="p-2 bg-red-100 rounded-lg text-red-600">
-                                    <Mail className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <p className="text-xs text-gray-500 uppercase font-semibold">Email</p>
-                                    <p className="text-gray-900 font-medium">{user.email}</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-4 p-3 bg-green-50 rounded-xl border border-green-100">
-                                <div className="p-2 bg-green-100 rounded-lg text-green-600">
-                                    <Phone className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <p className="text-xs text-gray-500 uppercase font-semibold">Phone</p>
-                                    <p className="text-gray-900 font-medium">{user.phone || 'Not provided'}</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-4 p-3 bg-blue-50 rounded-xl border border-blue-100">
-                                <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
-                                    <BadgeCheck className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <p className="text-xs text-gray-500 uppercase font-semibold">Role</p>
-                                    <p className="text-gray-900 font-medium capitalize">{user.role}</p>
-                                </div>
+                {/* Main Content Area */}
+                <div className="lg:col-span-9 space-y-6">
+                    <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 p-8">
+                        <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-100">
+                            <div>
+                                <h2 className="text-2xl font-bold text-slate-900">Edit Profile</h2>
+                                <p className="text-slate-500 mt-1">Update your personal information and address.</p>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
 
-                {/* Settings & Preferences */}
-                <Card className="border-none shadow-md">
-                    <CardContent className="p-6 space-y-6">
-                        <h2 className="text-xl font-bold flex items-center gap-2 text-gray-800">
-                            <Settings className="w-5 h-5 text-gray-600" />
-                            Settings
-                        </h2>
+                        <form onSubmit={handleUpdateProfile} className="space-y-8">
+                            {/* Hidden File Input */}
+                            <input 
+                                type="file" 
+                                id="profile-image-input" 
+                                className="hidden" 
+                                accept="image/*"
+                                onChange={(e) => {
+                                    if (e.target.files?.[0]) {
+                                        // Optional: Preview local image immediately
+                                        const file = e.target.files[0];
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => {
+                                            setUser(prev => ({ ...prev, profileImage: reader.result }));
+                                        };
+                                        reader.readAsDataURL(file);
+                                    }
+                                }}
+                            />
 
-                        <div className="space-y-2">
-                            <button className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition-all group">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-2 bg-orange-100 rounded-lg text-orange-600 group-hover:bg-orange-200 transition-colors">
-                                        <Bell className="w-5 h-5" />
+                            {/* Personal Details */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label className="text-slate-700 font-semibold">Full Name</Label>
+                                    <Input
+                                        className="h-12 bg-slate-50 border-slate-200 focus:border-orange-500 focus:ring-orange-500/20"
+                                        placeholder="Full Name"
+                                        value={editForm.name || ''}
+                                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-slate-700 font-semibold">Email Address</Label>
+                                    <Input
+                                        className="h-12 bg-slate-50 border-slate-200 focus:border-orange-500 focus:ring-orange-500/20"
+                                        placeholder="Email"
+                                        value={user?.email || ''}
+                                        disabled
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-slate-700 font-semibold">Phone Number</Label>
+                                    <Input
+                                        className="h-12 bg-slate-50 border-slate-200 focus:border-orange-500 focus:ring-orange-500/20"
+                                        placeholder="Phone Number"
+                                        value={editForm.phone}
+                                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Address Section */}
+                            <div className="pt-4 border-t border-slate-100">
+                                <h3 className="text-lg font-bold text-slate-900 mb-6">Address</h3>
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <Label className="text-slate-700 font-semibold">Street Address</Label>
+                                        <Input
+                                            className="h-12 bg-slate-50 border-slate-200 focus:border-orange-500 focus:ring-orange-500/20"
+                                            placeholder="Street Address"
+                                            value={editForm.address?.street || ''}
+                                            onChange={(e) => setEditForm({ 
+                                                ...editForm, 
+                                                address: { ...editForm.address, street: e.target.value } 
+                                            })}
+                                        />
                                     </div>
-                                    <div className="text-left">
-                                        <p className="font-semibold text-gray-900">Notifications</p>
-                                        <p className="text-sm text-gray-500">Manage preferences</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-slate-700 font-semibold">City</Label>
+                                            <Input 
+                                                className="h-12 bg-slate-50 border-slate-200" 
+                                                placeholder="City"
+                                                value={editForm.address?.city || ''}
+                                                onChange={(e) => setEditForm({ 
+                                                    ...editForm, 
+                                                    address: { ...editForm.address, city: e.target.value } 
+                                                })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-slate-700 font-semibold">Postal Code</Label>
+                                            <Input 
+                                                className="h-12 bg-slate-50 border-slate-200" 
+                                                placeholder="ZIP Code" 
+                                                value={editForm.address?.zipCode || ''}
+                                                onChange={(e) => setEditForm({ 
+                                                    ...editForm, 
+                                                    address: { ...editForm.address, zipCode: e.target.value } 
+                                                })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-slate-700 font-semibold">Country</Label>
+                                            <Input 
+                                                className="h-12 bg-slate-50 border-slate-200" 
+                                                placeholder="Country" 
+                                                value={editForm.address?.country || ''}
+                                                onChange={(e) => setEditForm({ 
+                                                    ...editForm, 
+                                                    address: { ...editForm.address, country: e.target.value } 
+                                                })}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-white group-hover:shadow-sm">→</div>
-                            </button>
+                            </div>
 
-                            <button className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition-all group">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-2 bg-red-100 rounded-lg text-red-600 group-hover:bg-red-200 transition-colors">
-                                        <Lock className="w-5 h-5" />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="font-semibold text-gray-900">Change Password</p>
-                                        <p className="text-sm text-gray-500">Update security</p>
-                                    </div>
+                            {/* About Me */}
+                            <div className="pt-4 border-t border-slate-100">
+                                <h3 className="text-lg font-bold text-slate-900 mb-6">About Me</h3>
+                                <div className="space-y-2">
+                                    <Label className="text-slate-700 font-semibold">Biography</Label>
+                                    <textarea
+                                        className="min-h-[150px] w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                        placeholder="Tell us about yourself..."
+                                        value={editForm.bio || ''}
+                                        onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                                    />
                                 </div>
-                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-white group-hover:shadow-sm">→</div>
-                            </button>
+                            </div>
 
-                            <button className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition-all group">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-2 bg-purple-100 rounded-lg text-purple-600 group-hover:bg-purple-200 transition-colors">
-                                        <Shield className="w-5 h-5" />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="font-semibold text-gray-900">Privacy Policy</p>
-                                        <p className="text-sm text-gray-500">Read our terms</p>
-                                    </div>
-                                </div>
-                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-white group-hover:shadow-sm">→</div>
-                            </button>
-                        </div>
-                    </CardContent>
-                </Card>
+                            <div className="pt-6 border-t border-slate-100 flex justify-end">
+                                <Button
+                                    type="submit"
+                                    size="lg"
+                                    className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-8 h-12 rounded-xl shadow-lg shadow-orange-500/20"
+                                    disabled={saving}
+                                >
+                                    {saving ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Updating Profile...
+                                        </>
+                                    ) : (
+                                        'Update Profile'
+                                    )}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
 
-            {/* Logout Section */}
-            <div className="flex justify-center pt-6">
-                <Button
-                    variant="destructive"
-                    className="w-full md:w-auto px-12 py-6 rounded-2xl shadow-lg shadow-red-100 hover:shadow-red-200 text-lg gap-3"
-                    onClick={handleLogout}
-                >
-                    <LogOut className="w-5 h-5" />
-                    Sign Out
-                </Button>
-            </div>
-
-            {/* Edit Modal */}
-            <Modal
-                isOpen={isEditOpen}
-                onClose={() => setIsEditOpen(false)}
-                title="Edit Profile"
-            >
-                <form onSubmit={handleUpdateProfile} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
-                        <Input
-                            id="name"
-                            value={editForm.name}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                            placeholder="Enter your full name"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number</Label>
-                        <Input
-                            id="phone"
-                            value={editForm.phone}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                            placeholder="Enter your phone number"
-                        />
-                    </div>
-
-                    <div className="pt-4 flex justify-end gap-2">
-                        <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button type="submit" disabled={saving || !editForm.name}>
-                            {saving ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Saving...
-                                </>
-                            ) : (
-                                <>
-                                    <Save className="mr-2 h-4 w-4" />
-                                    Save Changes
-                                </>
-                            )}
-                        </Button>
-                    </div>
-                </form>
-            </Modal>
         </div>
     );
 }

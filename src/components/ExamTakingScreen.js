@@ -115,8 +115,8 @@ export default function ExamTakingScreen({ exam, courseId, onClose, onComplete }
                 return {
                     questionId: q._id,
                     selectedOption: selectedIndex ?? -1,
-                    selectedOptionText: selectedIndex !== undefined && selectedIndex !== -1 
-                        ? q.options[selectedIndex]?.text 
+                    selectedOptionText: selectedIndex !== undefined && selectedIndex !== -1
+                        ? q.options[selectedIndex]?.text
                         : null
                 };
             });

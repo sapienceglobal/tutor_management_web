@@ -291,6 +291,13 @@ export default function TutorSettingsPage() {
                                     <Bell className="w-4 h-4 mr-2" />
                                     Notifications
                                 </TabsTrigger>
+                                <TabsTrigger
+                                    value="security"
+                                    className="rounded-none border-b-3 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:shadow-none px-0 py-4 font-semibold data-[state=active]:text-indigo-600"
+                                >
+                                    <Lock className="w-4 h-4 mr-2" />
+                                    Security
+                                </TabsTrigger>
                             </TabsList>
 
                             {/* PROFILE TAB */}
@@ -510,10 +517,136 @@ export default function TutorSettingsPage() {
                                     </CardContent>
                                 </Card>
                             </TabsContent>
+
+                            {/* SECURITY TAB */}
+                            <TabsContent value="security" className="space-y-6">
+                                <Card className="border-0 shadow-lg">
+                                    <CardHeader className="bg-gradient-to-r from-slate-50 to-orange-50 border-b">
+                                        <CardTitle className="text-xl">Security Settings</CardTitle>
+                                        <CardDescription className="text-slate-600">Manage your password and security preferences</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-6 lg:p-8 space-y-6">
+                                        <SecuritySettings hasPassword={user?.hasPassword} />
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
                         </Tabs>
                     </div>
                 </div>
             </div>
         </div>
+    );
+}
+
+function SecuritySettings({ hasPassword }) {
+    const [loading, setLoading] = useState(false);
+    const [passwords, setPasswords] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+
+    const handleChange = (e) => {
+        setPasswords({ ...passwords, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+
+        if (passwords.newPassword !== passwords.confirmPassword) {
+            toast.error("New passwords don't match");
+            setLoading(false);
+            return;
+        }
+
+        if (passwords.newPassword.length < 6) {
+             toast.error("Password must be at least 6 characters");
+             setLoading(false);
+             return;
+        }
+
+        try {
+            if (hasPassword) {
+                // Change Password
+                await api.post('/auth/change-password', {
+                    currentPassword: passwords.currentPassword,
+                    newPassword: passwords.newPassword
+                });
+                toast.success('Password changed successfully');
+            } else {
+                // Set Password
+                await api.post('/auth/set-password', {
+                    newPassword: passwords.newPassword
+                });
+                toast.success('Password set successfully');
+                // Refresh to update local state (ideally via callback or context)
+                window.location.reload(); 
+            }
+            setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        } catch (error) {
+            console.error(error);
+            toast.error(error.response?.data?.message || 'Failed to update password');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
+            {hasPassword && (
+                <div className="space-y-2">
+                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                        <Input
+                            id="currentPassword"
+                            name="currentPassword"
+                            type="password"
+                            required
+                            className="pl-10"
+                            value={passwords.currentPassword}
+                            onChange={handleChange}
+                        />
+                    </div>
+                </div>
+            )}
+            <div className="space-y-2">
+                <Label htmlFor="newPassword">{hasPassword ? 'New Password' : 'Create Password'}</Label>
+                <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                    <Input
+                        id="newPassword"
+                        name="newPassword"
+                        type="password"
+                        required
+                        className="pl-10"
+                        placeholder="Min 6 characters"
+                        value={passwords.newPassword}
+                        onChange={handleChange}
+                    />
+                </div>
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                    <Input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type="password"
+                        required
+                        className="pl-10"
+                        value={passwords.confirmPassword}
+                        onChange={handleChange}
+                    />
+                </div>
+            </div>
+            
+            <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                {hasPassword ? 'Update Password' : 'Set Password'}
+            </Button>
+        </form>
     );
 }
