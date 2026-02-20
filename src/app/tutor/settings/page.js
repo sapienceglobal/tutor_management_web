@@ -66,8 +66,8 @@ export default function TutorSettingsPage() {
                         userData.tutor = tutorData;
                         setUser(prev => ({ ...prev, tutorId: tutorData._id, tutor: tutorData }));
                     }
-                } catch (err) {
-                    console.log("Tutor profile not found", err);
+                } catch {
+                    // Optional tutor profile might not exist for newly created tutor accounts.
                 }
             }
 

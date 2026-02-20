@@ -9,7 +9,6 @@ export function Modal({ isOpen, onClose, title, children, className }) {
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = 'unset';
-            console.log("Modal closed, overflow unset");
         }
         return () => {
             document.body.style.overflow = 'unset';

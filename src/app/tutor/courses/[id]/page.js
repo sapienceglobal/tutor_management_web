@@ -206,13 +206,6 @@ export default function ManageCoursePage({ params }) {
                 }
             }
 
-            // Debug: Log what we're sending
-            console.log('=== DEBUG: Attachments before sending ===');
-            console.log('Type:', typeof attachments);
-            console.log('Is Array:', Array.isArray(attachments));
-            console.log('Value:', attachments);
-            console.log('========================================');
-
             const content = {
                 videoUrl: lessonForm.videoUrl,
                 duration: Number(lessonForm.duration) * 60, // Convert to seconds

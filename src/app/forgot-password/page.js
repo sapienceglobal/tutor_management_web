@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Mail, Loader2, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,15 @@ export default function ForgotPasswordPage() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const prefillEmail = new URLSearchParams(window.location.search).get('email');
+            if (prefillEmail) {
+                setEmail(decodeURIComponent(prefillEmail));
+            }
+        }
+    }, []);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
@@ -24,7 +33,7 @@ export default function ForgotPasswordPage() {
             await api.post('/auth/forgot-password', { email });
             setSuccess(true);
         } catch (err) {
-            setError('Failed to send reset email. Please try again.');
+            setError(err.response?.data?.message || 'Failed to send reset email. Please try again.');
         } finally {
             setIsLoading(false);
         }

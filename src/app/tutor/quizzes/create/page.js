@@ -384,8 +384,6 @@ function CreateExamPageClient() {
                 status: status, // Use passed status or default 'draft'
             };
 
-            console.log("Saving Exam Payload:", payload); // Debugging
-
             let response;
             if (examId) {
                 response = await api.patch(`/exams/${examId}`, payload);

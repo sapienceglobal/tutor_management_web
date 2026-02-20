@@ -16,6 +16,7 @@ function LoginPageClient() {
     const searchParams = useSearchParams();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [oauthResetEmail, setOauthResetEmail] = useState('');
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -32,12 +33,14 @@ function LoginPageClient() {
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
         setError('');
+        setOauthResetEmail('');
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
+        setOauthResetEmail('');
 
         try {
             const response = await api.post('/auth/login', formData);
@@ -56,8 +59,12 @@ function LoginPageClient() {
             }
         } catch (err) {
             console.error('Login error:', err);
+            const apiError = err.response?.data;
+            if (apiError?.code === 'OAUTH_PASSWORD_NOT_SET' && formData.email) {
+                setOauthResetEmail(formData.email.trim());
+            }
             setError(
-                err.response?.data?.message || 'Something went wrong. Please try again.'
+                apiError?.message || 'Something went wrong. Please try again.'
             );
         } finally {
             setIsLoading(false);
@@ -132,9 +139,19 @@ function LoginPageClient() {
                             </div>
 
                             {error && (
-                                <div className="mb-6 flex items-center gap-3 rounded-xl bg-red-50/80 backdrop-blur-sm p-4 text-sm font-medium text-red-600 border border-red-100 animate-in fade-in slide-in-from-top-2">
-                                    <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                                    <p>{error}</p>
+                                <div className="mb-6 space-y-3">
+                                    <div className="flex items-center gap-3 rounded-xl bg-red-50/80 backdrop-blur-sm p-4 text-sm font-medium text-red-600 border border-red-100 animate-in fade-in slide-in-from-top-2">
+                                        <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                                        <p>{error}</p>
+                                    </div>
+                                    {oauthResetEmail && (
+                                        <a
+                                            href={`/forgot-password?email=${encodeURIComponent(oauthResetEmail)}`}
+                                            className="inline-flex text-sm font-semibold text-indigo-600 hover:text-indigo-500 hover:underline"
+                                        >
+                                            Set password via email
+                                        </a>
+                                    )}
                                 </div>
                             )}
 
@@ -170,7 +187,6 @@ function LoginPageClient() {
                                             name="password"
                                             placeholder="••••••••"
                                             type="password"
-                                            required
                                             className="pl-12 h-12 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl shadow-sm"
                                             value={formData.password}
                                             onChange={handleChange}
@@ -238,7 +254,7 @@ function LoginPageClient() {
                             </div>
 
                             <p className="text-center text-sm text-slate-600 mt-8">
-                                Don't have an account?{' '}
+                                Don&apos;t have an account?{' '}
                                 <a href="/register" className="font-bold text-indigo-600 hover:text-indigo-500 hover:underline transition-all">
                                     Create free account
                                 </a>

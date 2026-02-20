@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
     // Keep API URL configurable for localhost/VPS
+    // baseURL:'http://localhost:5000/api',
     baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000/api',
     headers: {
         'Content-Type': 'application/json',
