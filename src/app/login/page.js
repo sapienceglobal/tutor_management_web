@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { GraduationCap, Loader2, Mail, Lock, AlertCircle, ArrowRight } from 'lucide-react';
 import api from '@/lib/axios';
@@ -9,9 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const BACKEND_URL = 'http://localhost:5000/api';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://195.35.20.207:5000/api';
 
-export default function LoginPage() {
+function LoginPageClient() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isLoading, setIsLoading] = useState(false);
@@ -253,5 +253,13 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-slate-900" />}>
+            <LoginPageClient />
+        </Suspense>
     );
 }

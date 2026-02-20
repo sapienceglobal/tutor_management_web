@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import Cookies from 'js-cookie';
 import api from '@/lib/axios';
 
-export default function OAuthCallbackPage() {
+function OAuthCallbackPageClient() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [status, setStatus] = useState('loading'); // loading, success, error
@@ -115,5 +115,13 @@ export default function OAuthCallbackPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function OAuthCallbackPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-slate-900" />}>
+            <OAuthCallbackPageClient />
+        </Suspense>
     );
 }

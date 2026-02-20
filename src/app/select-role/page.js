@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { GraduationCap, BookOpen, Users, ArrowRight, Loader2, Sparkles } from 'lucide-react';
 import Cookies from 'js-cookie';
 import api from '@/lib/axios';
 
-export default function SelectRolePage() {
+function SelectRolePageClient() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [selectedRole, setSelectedRole] = useState(null);
@@ -203,5 +203,13 @@ export default function SelectRolePage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function SelectRolePage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-slate-900" />}>
+            <SelectRolePageClient />
+        </Suspense>
     );
 }

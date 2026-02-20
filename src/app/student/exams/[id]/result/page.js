@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import { CheckCircle, XCircle, Home, RotateCcw, Award, ArrowRight, Share2, Download, BarChart2 } from 'lucide-react';
 import api from '@/lib/axios';
@@ -10,7 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 
-export default function ExamResultPage() {
+function ExamResultPageClient() {
     const params = useParams();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -243,5 +243,13 @@ export default function ExamResultPage() {
                 </div>
             </motion.div>
         </div>
+    );
+}
+
+export default function ExamResultPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-[#F8FAFC]" />}>
+            <ExamResultPageClient />
+        </Suspense>
     );
 }

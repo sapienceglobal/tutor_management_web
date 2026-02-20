@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -161,7 +161,7 @@ const RichTextEditor = ({ value, onChange }) => {
     );
 };
 
-export default function CreateExamPage() {
+function CreateExamPageClient() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const defaultType = searchParams.get('type') || 'quiz';
@@ -1167,5 +1167,13 @@ export default function CreateExamPage() {
                 </div>
             </Modal>
         </div>
+    );
+}
+
+export default function CreateExamPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-[#F8F9FC]" />}>
+            <CreateExamPageClient />
+        </Suspense>
     );
 }
