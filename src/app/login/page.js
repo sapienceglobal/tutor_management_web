@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://195.35.20.207:5000/api';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000/api';
 
 function LoginPageClient() {
     const router = useRouter();
