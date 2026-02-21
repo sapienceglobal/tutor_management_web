@@ -14,11 +14,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 export default function StudentAppointmentsPage() {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('upcoming');
+    const { confirmDialog } = useConfirm();
 
     useEffect(() => {
         fetchAppointments();
@@ -46,12 +48,8 @@ export default function StudentAppointmentsPage() {
     };
 
     const handleCancel = async (id) => {
-        // Simple functional confirmation using toast for now to avoid complex modal state overhead in this file
-        // For distinct "industry level", a custom dialog is better, but toast with action is quick and clean.
-        // Reverting to improved window.confirm or implementing a simple inline state if modal.jsx is complex.
-        // Let's stick to standard confirm but styled if possible, or just native for speed unless Modal is easy.
-        // Using native confirm for reliability in this step, but documented as such.
-        if (!window.confirm('Are you sure you want to cancel this appointment?')) return;
+        const isConfirmed = await confirmDialog("Cancel Appointment", "Are you sure you want to cancel this appointment?", { variant: 'destructive' });
+        if (!isConfirmed) return;
 
         try {
             const response = await api.delete(`/appointments/${id}`);

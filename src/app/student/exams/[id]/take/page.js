@@ -14,6 +14,7 @@ import {
 import api from '@/lib/axios';
 import { cn } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 export default function TakeExamPage({ params }) {
     const { id } = use(params);
@@ -27,6 +28,7 @@ export default function TakeExamPage({ params }) {
     const [timeLeft, setTimeLeft] = useState(0);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const { confirmDialog } = useConfirm();
 
     useEffect(() => {
         const fetchExam = async () => {
@@ -161,7 +163,10 @@ export default function TakeExamPage({ params }) {
     };
 
     const handleSubmit = async (autoSubmit = false) => {
-        if (!autoSubmit && !confirm('Are you sure you want to finish the test?')) return;
+        if (!autoSubmit) {
+            const isConfirmed = await confirmDialog("Finish Test", "Are you sure you want to finish the test?");
+            if (!isConfirmed) return;
+        }
 
         try {
             const answers = Object.entries(selections).map(([qIdx, data]) => ({

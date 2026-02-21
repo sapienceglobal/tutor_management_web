@@ -32,6 +32,8 @@ import {
 } from 'lucide-react';
 import api from '@/lib/axios';
 import QuizPlayer from '@/components/courses/QuizPlayer';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
+import { toast } from 'react-hot-toast';
 
 export default function LessonPlayerModal({
     lessons,
@@ -56,6 +58,7 @@ export default function LessonPlayerModal({
     const [loadingComments, setLoadingComments] = useState(false);
     const [user, setUser] = useState(null);
     const [showControls, setShowControls] = useState(false);
+    const { confirmDialog } = useConfirm();
 
     const videoRef = useRef(null);
     const progressIntervalRef = useRef(null);
@@ -127,17 +130,18 @@ export default function LessonPlayerModal({
                 setCommentText('');
             }
         } catch (error) {
-            alert('Failed to post comment');
+            toast.error('Failed to post comment');
         }
     };
 
     const handleDeleteComment = async (commentId) => {
-        if (!confirm('Delete this comment?')) return;
+        const isConfirmed = await confirmDialog("Delete Comment", "Are you sure you want to delete this comment?", { variant: 'destructive' });
+        if (!isConfirmed) return;
         try {
             await api.delete(`/comments/${commentId}`);
             setComments(prev => prev.filter(c => c._id !== commentId));
         } catch (error) {
-            alert('Failed to delete comment');
+            toast.error('Failed to delete comment');
         }
     };
 
@@ -243,11 +247,11 @@ export default function LessonPlayerModal({
             if (currentIndex < lessons.length - 1) {
                 setCurrentIndex(currentIndex + 1);
             } else {
-                alert('Course Completed! 🎉');
+                toast.success('Course Completed! 🎉');
                 onClose(true);
             }
         } catch (error) {
-            alert('Failed to update progress');
+            toast.error('Failed to update progress');
         } finally {
             setIsCompleting(false);
         }
@@ -450,10 +454,10 @@ export default function LessonPlayerModal({
                         {/* Tab Content */}
                         <div className="p-8 max-h-96 overflow-y-auto relative">
                             {/* Overview Tab */}
-                            <div className={`transition-all duration-300 ${activeTab === 'overview' 
-                                ? 'opacity-100 translate-y-0 relative' 
+                            <div className={`transition-all duration-300 ${activeTab === 'overview'
+                                ? 'opacity-100 translate-y-0 relative'
                                 : 'opacity-0 -translate-y-4 absolute inset-0 pointer-events-none'
-                            }`}>
+                                }`}>
                                 <h2 className="text-2xl font-bold text-white mb-4">About This Lesson</h2>
                                 {currentLesson?.description ? (
                                     <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">
@@ -467,10 +471,10 @@ export default function LessonPlayerModal({
                             </div>
 
                             {/* Resources Tab */}
-                            <div className={`transition-all duration-300 ${activeTab === 'resources' 
-                                ? 'opacity-100 translate-y-0 relative' 
+                            <div className={`transition-all duration-300 ${activeTab === 'resources'
+                                ? 'opacity-100 translate-y-0 relative'
                                 : 'opacity-0 -translate-y-4 absolute inset-0 pointer-events-none'
-                            }`}>
+                                }`}>
                                 <h2 className="text-2xl font-bold text-white mb-4">Resources</h2>
                                 {currentLesson?.content?.attachments?.length > 0 ? (
                                     <div className="space-y-3">
@@ -511,10 +515,10 @@ export default function LessonPlayerModal({
                             </div>
 
                             {/* Discussion Tab */}
-                            <div className={`transition-all duration-300 ${activeTab === 'discussion' 
-                                ? 'opacity-100 translate-y-0 relative' 
+                            <div className={`transition-all duration-300 ${activeTab === 'discussion'
+                                ? 'opacity-100 translate-y-0 relative'
                                 : 'opacity-0 -translate-y-4 absolute inset-0 pointer-events-none'
-                            }`}>
+                                }`}>
                                 <h2 className="text-2xl font-bold text-white mb-6">Discussion</h2>
 
                                 {/* Comment Form */}
@@ -562,8 +566,8 @@ export default function LessonPlayerModal({
                                 ) : comments.length > 0 ? (
                                     <div className="space-y-6">
                                         {comments.map((comment, idx) => (
-                                            <div 
-                                                key={comment._id} 
+                                            <div
+                                                key={comment._id}
                                                 className="flex gap-4 group animate-in slide-in-from-bottom duration-300"
                                                 style={{ animationDelay: `${idx * 50}ms` }}
                                             >

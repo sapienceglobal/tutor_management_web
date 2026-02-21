@@ -18,12 +18,11 @@ import {
     Award,
     X,
     BookOpen,
-    Zap,
-    ChevronRight,
     Grid3x3,
     List
 } from 'lucide-react';
 import api from '@/lib/axios';
+import { toast } from 'react-hot-toast';
 
 export default function ExamTakingScreen({ exam, courseId, onClose, onComplete }) {
     const [questions, setQuestions] = useState([]);
@@ -101,7 +100,7 @@ export default function ExamTakingScreen({ exam, courseId, onClose, onComplete }
     };
 
     const handleAutoSubmit = async () => {
-        alert('Time is up! Auto-submitting your exam...');
+        toast.error('Time is up! Auto-submitting your exam...');
         await submitExam();
     };
 
@@ -133,12 +132,12 @@ export default function ExamTakingScreen({ exam, courseId, onClose, onComplete }
                 if (showResults) {
                     onComplete(response.data.attempt);
                 } else {
-                    alert('Exam submitted successfully! Results will be published by your instructor.');
+                    toast.success('Exam submitted successfully! Results will be published by your instructor.');
                     onClose();
                 }
             }
         } catch (error) {
-            alert(error.response?.data?.message || 'Failed to submit exam');
+            toast.error(error.response?.data?.message || 'Failed to submit exam');
         } finally {
             setIsSubmitting(false);
         }

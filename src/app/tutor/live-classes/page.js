@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 export default function TutorLiveClassesPage() {
     const router = useRouter();
@@ -32,6 +33,7 @@ export default function TutorLiveClassesPage() {
     const [loading, setLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    const { confirmDialog } = useConfirm();
 
     const initialFormState = {
         title: '',
@@ -108,6 +110,30 @@ export default function TutorLiveClassesPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Frontend Validation: Past Date Check
+        const classStart = new Date(formData.dateTime);
+        if (classStart < new Date() && !editingId) { // Only strict past check for new classes
+            toast.error("Cannot schedule a class in the past.");
+            return;
+        }
+
+        // Frontend Validation: Overlap Check
+        const classEnd = new Date(classStart.getTime() + formData.duration * 60000);
+        const hasOverlap = classes.some(cls => {
+            if (editingId && cls._id === editingId) return false; // Exclude current when editing
+
+            const existingStart = new Date(cls.dateTime);
+            const existingEnd = new Date(existingStart.getTime() + (cls.duration || 60) * 60000);
+
+            return (classStart < existingEnd && classEnd > existingStart);
+        });
+
+        if (hasOverlap) {
+            toast.error("Scheduling Conflict: This time overlaps with another of your classes.");
+            return;
+        }
+
         try {
             const payload = { ...formData };
             if (payload.courseId === 'none') delete payload.courseId;
@@ -131,7 +157,8 @@ export default function TutorLiveClassesPage() {
     };
 
     const handleDeleteClass = async (id) => {
-        if (!confirm('Are you sure you want to cancel this class?')) return;
+        const isConfirmed = await confirmDialog("Cancel Class", "Are you sure you want to cancel this class?", { variant: 'destructive' });
+        if (!isConfirmed) return;
 
         try {
             const response = await api.delete(`/live-classes/${id}`);
@@ -201,6 +228,7 @@ export default function TutorLiveClassesPage() {
                                     <Input
                                         type="datetime-local"
                                         required
+                                        min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
                                         value={formData.dateTime}
                                         onChange={e => setFormData({ ...formData, dateTime: e.target.value })}
                                     />

@@ -18,11 +18,13 @@ import {
     FolderInput
 } from 'lucide-react';
 import api from '@/lib/axios';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 export default function QuestionBankPage() {
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const { confirmDialog } = useConfirm();
 
     useEffect(() => {
         fetchQuestions();
@@ -42,7 +44,8 @@ export default function QuestionBankPage() {
     };
 
     const handleDelete = async (id) => {
-        if (!confirm('Are you sure you want to delete this question?')) return;
+        const isConfirmed = await confirmDialog("Delete Question", "Are you sure you want to delete this question?", { variant: 'destructive' });
+        if (!isConfirmed) return;
         try {
             await api.delete(`/question-bank/questions/${id}`);
             setQuestions(questions.filter(q => q._id !== id));
@@ -119,8 +122,8 @@ export default function QuestionBankPage() {
                                                 {q.type}
                                             </Badge>
                                             <Badge className={`uppercase text-xs font-semibold ${q.difficulty === 'easy' ? 'bg-green-100 text-green-700 hover:bg-green-100' :
-                                                    q.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100' :
-                                                        'bg-red-100 text-red-700 hover:bg-red-100'
+                                                q.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100' :
+                                                    'bg-red-100 text-red-700 hover:bg-red-100'
                                                 }`}>
                                                 {q.difficulty}
                                             </Badge>

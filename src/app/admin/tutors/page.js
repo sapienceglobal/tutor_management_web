@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation';
 import { Loader2, Trash2, Search, GraduationCap, Eye } from 'lucide-react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 export default function AdminTutorsPage() {
     const router = useRouter();
     const [tutors, setTutors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const { confirmDialog } = useConfirm();
 
     useEffect(() => {
         fetchTutors();
@@ -31,7 +33,8 @@ export default function AdminTutorsPage() {
     };
 
     const handleDelete = async (id) => {
-        if (!confirm('Are you sure you want to delete this tutor? This action cannot be undone.')) return;
+        const isConfirmed = await confirmDialog("Delete Tutor", "Are you sure you want to delete this tutor? This action cannot be undone.", { variant: 'destructive' });
+        if (!isConfirmed) return;
 
         try {
             await api.delete(`/admin/users/${id}`);

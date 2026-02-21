@@ -25,6 +25,8 @@ import {
     EyeOff
 } from 'lucide-react';
 import api from '@/lib/axios';
+import { toast } from 'react-hot-toast';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { Button } from '@/components/ui/button';
 
 export default function ManageCoursePage({ params }) {
@@ -55,6 +57,7 @@ export default function ManageCoursePage({ params }) {
     const [editingModuleTitle, setEditingModuleTitle] = useState('');
     const [editingLessonId, setEditingLessonId] = useState(null);
     const [publishing, setPublishing] = useState(false);
+    const { confirmDialog } = useConfirm();
 
     // Fetch Data
     const loadCourseData = async () => {
@@ -88,16 +91,18 @@ export default function ManageCoursePage({ params }) {
 
     // --- Course Publishing ---
     const handlePublishToggle = async () => {
-        if (!confirm(`Are you sure you want to ${course.status === 'published' ? 'unpublish' : 'publish'} this course?`)) return;
+        const isConfirmed = await confirmDialog("Change Publish Status", `Are you sure you want to ${course.status === 'published' ? 'unpublish' : 'publish'} this course?`);
+        if (!isConfirmed) return;
 
         setPublishing(true);
         try {
             const newStatus = course.status === 'published' ? 'draft' : 'published';
             await api.patch(`/courses/${id}`, { status: newStatus });
             setCourse(prev => ({ ...prev, status: newStatus }));
+            toast.success(`Course ${newStatus} successfully`);
         } catch (error) {
             console.error(error);
-            alert('Failed to update course status');
+            toast.error('Failed to update course status');
         } finally {
             setPublishing(false);
         }
@@ -120,8 +125,9 @@ export default function ManageCoursePage({ params }) {
 
             setIsModuleModalOpen(false);
             setModuleTitle('');
+            toast.success("Module created");
         } catch (error) {
-            alert('Failed to create module');
+            toast.error('Failed to create module');
         } finally {
             setSubmitting(false);
         }
@@ -145,8 +151,9 @@ export default function ManageCoursePage({ params }) {
             if (res.data.success) setCourse(res.data.course);
 
             setEditingModuleId(null);
+            toast.success("Module updated");
         } catch (error) {
-            alert('Failed to update module');
+            toast.error('Failed to update module');
         }
     };
 
@@ -156,7 +163,8 @@ export default function ManageCoursePage({ params }) {
     };
 
     const deleteModule = async (moduleId) => {
-        if (!confirm('Delete this module? Associated lessons will be unlinked (or you should delete them first).')) return;
+        const isConfirmed = await confirmDialog("Delete Module", "Delete this module? Associated lessons will be unlinked (or you should delete them first).", { variant: 'destructive' });
+        if (!isConfirmed) return;
 
         try {
             const updatedModules = course.modules.filter(m => m._id !== moduleId);
@@ -164,8 +172,9 @@ export default function ManageCoursePage({ params }) {
 
             const res = await api.get(`/courses/${id}`);
             if (res.data.success) setCourse(res.data.course);
+            toast.success("Module deleted");
         } catch (error) {
-            alert('Failed to delete module');
+            toast.error('Failed to delete module');
         }
     };
 
@@ -239,22 +248,25 @@ export default function ManageCoursePage({ params }) {
 
             setIsLessonModalOpen(false);
             setEditingLessonId(null);
+            toast.success(editingLessonId ? "Lesson updated" : "Lesson added");
         } catch (error) {
             console.error(error);
-            alert('Failed to save lesson');
+            toast.error('Failed to save lesson');
         } finally {
             setSubmitting(false);
         }
     };
 
     const deleteLesson = async (lessonId) => {
-        if (!confirm('Delete this lesson? This action cannot be undone.')) return;
+        const isConfirmed = await confirmDialog("Delete Lesson", "Delete this lesson? This action cannot be undone.", { variant: 'destructive' });
+        if (!isConfirmed) return;
 
         try {
             await api.delete(`/lessons/${lessonId}`);
             setLessons(prev => prev.filter(l => l._id !== lessonId));
+            toast.success("Lesson deleted");
         } catch (error) {
-            alert('Failed to delete lesson');
+            toast.error('Failed to delete lesson');
         }
     };
 
@@ -279,10 +291,11 @@ export default function ManageCoursePage({ params }) {
                         type: res.data.type
                     }]
                 }));
+                toast.success("File uploaded");
             }
         } catch (error) {
             console.error('Upload failed:', error);
-            alert('Failed to upload file');
+            toast.error('Failed to upload file');
         }
     };
 

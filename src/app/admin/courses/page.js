@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation';
 import { Loader2, Trash2, Search, BookOpen, Eye, ExternalLink } from 'lucide-react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 export default function AdminCoursesPage() {
     const router = useRouter();
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const { confirmDialog } = useConfirm();
 
     useEffect(() => {
         fetchCourses();
@@ -31,7 +33,8 @@ export default function AdminCoursesPage() {
     };
 
     const handleDelete = async (id) => {
-        if (!confirm('Are you sure you want to delete this course? This action cannot be undone.')) return;
+        const isConfirmed = await confirmDialog("Delete Course", "Are you sure you want to delete this course? This action cannot be undone.", { variant: 'destructive' });
+        if (!isConfirmed) return;
 
         try {
             await api.delete(`/admin/courses/${id}`);

@@ -12,6 +12,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 export default function ExamPlayerPage() {
     const params = useParams();
@@ -29,6 +31,7 @@ export default function ExamPlayerPage() {
     const [isPaused, setIsPaused] = useState(false);
     const [startedAt, setStartedAt] = useState(null);
     const [sidebarView, setSidebarView] = useState('grid'); // 'grid' | 'list'
+    const { confirmDialog } = useConfirm();
 
     // Helper to strip HTML for preview
     const stripHtml = (html) => {
@@ -54,7 +57,7 @@ export default function ExamPlayerPage() {
                 }
             } catch (error) {
                 console.error('Error fetching exam:', error);
-                alert('Failed to load exam.');
+                toast.error('Failed to load exam.');
                 router.back();
             } finally {
                 setLoading(false);
@@ -122,7 +125,10 @@ export default function ExamPlayerPage() {
     };
 
     const handleSubmit = async (auto = false) => {
-        if (!auto && !confirm('Are you sure you want to Submit Test?')) return;
+        if (!auto) {
+            const isConfirmed = await confirmDialog("Submit Test", "Are you sure you want to Submit Test?");
+            if (!isConfirmed) return;
+        }
 
         setSubmitting(true);
         try {
@@ -143,7 +149,7 @@ export default function ExamPlayerPage() {
             }
         } catch (error) {
             console.error('Error submitting exam:', error);
-            alert('Submission failed. Please try again.');
+            toast.error('Submission failed. Please try again.');
         } finally {
             setSubmitting(false);
         }

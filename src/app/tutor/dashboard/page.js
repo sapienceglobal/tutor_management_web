@@ -11,11 +11,13 @@ import QuickLinksWidget from '@/components/widgets/QuickLinksWidget';
 import DataTable from '@/components/widgets/DataTable';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 export default function TutorDashboard() {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
+    const { confirmDialog } = useConfirm();
 
     useEffect(() => {
         fetchDashboardData();
@@ -94,7 +96,8 @@ export default function TutorDashboard() {
     };
 
     const handleDeleteEnrollment = async (row) => {
-        if (!confirm('Are you sure you want to remove this enrollment?')) return;
+        const isConfirmed = await confirmDialog("Remove Enrollment", "Are you sure you want to remove this enrollment?", { variant: 'destructive' });
+        if (!isConfirmed) return;
 
         try {
             const res = await api.delete(`/enrollments/tutor/${row.originalId}`);

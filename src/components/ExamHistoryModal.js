@@ -16,6 +16,7 @@ import {
     PlayCircle
 } from 'lucide-react';
 import api from '@/lib/axios';
+import { toast } from 'react-hot-toast';
 
 export default function ExamHistoryModal({ exam, onClose, onViewAttempt, onStartExam }) {
     const [attempts, setAttempts] = useState([]);
@@ -76,7 +77,7 @@ export default function ExamHistoryModal({ exam, onClose, onViewAttempt, onStart
                 });
             }
         } catch (error) {
-            alert('Failed to load attempt details');
+            toast.error('Failed to load attempt details');
         }
     };
 

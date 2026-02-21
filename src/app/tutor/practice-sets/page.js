@@ -13,16 +13,22 @@ import {
     EyeOff,
     Sparkles,
     Calendar,
-    Filter
+    Filter,
+    Edit2,
+    PlayCircle
 } from 'lucide-react';
 import api from '@/lib/axios';
+import { toast } from 'react-hot-toast';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
 export default function PracticeSetsPage() {
-    const [exams, setExams] = useState([]);
+    const [practiceSets, setPracticeSets] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const { confirmDialog } = useConfirm();
 
     useEffect(() => {
         const fetchExams = async () => {
@@ -30,7 +36,7 @@ export default function PracticeSetsPage() {
                 const res = await api.get('/exams/tutor/all');
                 if (res.data.success) {
                     // Filter for Practice Sets
-                    setExams(res.data.exams.filter(e => e.type === 'practice'));
+                    setPracticeSets(res.data.exams.filter(e => e.type === 'practice'));
                 }
             } catch (error) {
                 console.error('Error fetching exams:', error);
@@ -41,19 +47,21 @@ export default function PracticeSetsPage() {
         fetchExams();
     }, []);
 
-    const handleDelete = async (examId) => {
-        if (!window.confirm('Are you sure you want to delete this practice set?')) {
+    const handleDelete = async (id) => {
+        const isConfirmed = await confirmDialog("Delete Practice Set", "Are you sure you want to delete this practice set?", { variant: 'destructive' });
+        if (!isConfirmed) {
             return;
         }
 
         try {
-            const res = await api.delete(`/exams/${examId}`);
+            const res = await api.delete(`/exams/${id}`);
             if (res.data.success) {
-                setExams(exams.filter(e => e._id !== examId));
+                setPracticeSets(practiceSets.filter(set => set._id !== id));
+                toast.success('Practice set deleted');
             }
         } catch (error) {
-            console.error('Error deleting exam:', error);
-            alert('Failed to delete');
+            console.error('Error deleting practice set:', error);
+            toast.error('Failed to delete');
         }
     };
 

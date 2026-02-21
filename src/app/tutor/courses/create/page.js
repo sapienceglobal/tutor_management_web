@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
+import { toast } from 'react-hot-toast';
 
 export default function CreateCoursePage() {
     const router = useRouter();
@@ -53,7 +54,7 @@ export default function CreateCoursePage() {
         e.preventDefault();
 
         if (!formData.title || !formData.description || !formData.category || !formData.price) {
-            alert('Please fill in all required fields');
+            toast.error('Please fill in all required fields');
             return;
         }
 
@@ -80,7 +81,7 @@ export default function CreateCoursePage() {
             }
         } catch (error) {
             console.error('Error creating course:', error);
-            alert(error.response?.data?.message || 'Failed to create course');
+            toast.error(error.response?.data?.message || 'Failed to create course');
         } finally {
             setLoading(false);
         }

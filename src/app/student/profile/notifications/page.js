@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch'; // You might need to check if this component exists or create a simple one
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { toast } from 'react-hot-toast';
 
 export default function NotificationSettingsPage() {
     const router = useRouter();
@@ -23,7 +24,7 @@ export default function NotificationSettingsPage() {
 
     const handleSave = () => {
         // Save to backend or local storage
-        alert('Notification preferences saved!');
+        toast.success('Notification preferences saved!');
         router.back();
     };
 

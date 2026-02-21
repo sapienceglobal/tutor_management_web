@@ -41,6 +41,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 import {
     Select,
     SelectContent,
@@ -170,6 +171,7 @@ function CreateExamPageClient() {
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState("details");
     const [examId, setExamId] = useState(null);
+    const { confirmDialog } = useConfirm();
 
     // Data State
     const [courses, setCourses] = useState([]);
@@ -287,8 +289,9 @@ function CreateExamPageClient() {
         setIsAddOpen(true);
     };
 
-    const handleDeleteQuestion = (idx) => {
-        if (confirm("Are you sure you want to delete this question?")) {
+    const handleDeleteQuestion = async (idx) => {
+        const isConfirmed = await confirmDialog("Delete Question", "Are you sure you want to delete this question?", { variant: 'destructive' });
+        if (isConfirmed) {
             const newQuestions = examData.questions.filter((_, i) => i !== idx);
             setExamData({ ...examData, questions: newQuestions });
             toast.success("Question deleted");

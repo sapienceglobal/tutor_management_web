@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import api from '@/lib/axios';
+import { toast } from 'react-hot-toast';
 
 export default function ChangePasswordPage() {
     const router = useRouter();
@@ -44,13 +45,13 @@ export default function ChangePasswordPage() {
         setLoading(true);
 
         if (formData.newPassword !== formData.confirmPassword) {
-            alert("New passwords don't match!");
+            toast.error("New passwords don't match!");
             setLoading(false);
             return;
         }
 
         if (formData.newPassword.length < 6) {
-            alert('Password must be at least 6 characters!');
+            toast.error('Password must be at least 6 characters!');
             setLoading(false);
             return;
         }
@@ -63,12 +64,12 @@ export default function ChangePasswordPage() {
             const response = await api.post(endpoint, payload);
 
             if (response.data.success) {
-                alert(hasPassword ? 'Password updated successfully!' : 'Password set successfully!');
+                toast.success(hasPassword ? 'Password updated successfully!' : 'Password set successfully!');
                 router.back();
             }
         } catch (error) {
             console.error('Error changing password:', error);
-            alert(error.response?.data?.message || 'Failed to update password');
+            toast.error(error.response?.data?.message || 'Failed to update password');
         } finally {
             setLoading(false);
         }

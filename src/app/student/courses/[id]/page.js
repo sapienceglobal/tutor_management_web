@@ -36,6 +36,8 @@ import ExamHistoryModal from '@/components/ExamHistoryModal';
 import ExamResultModal from '@/components/ExamResultModal';
 import { ReportAbuseModal } from '@/components/shared/ReportAbuseModal';
 import { Button } from '@/components/ui/button';
+import { toast } from 'react-hot-toast';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 export default function CourseDetailPage({ params }) {
     const router = useRouter();
@@ -71,6 +73,7 @@ export default function CourseDetailPage({ params }) {
     const [showResultModal, setShowResultModal] = useState(false);
     const [selectedResult, setSelectedResult] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
+    const { confirmDialog } = useConfirm();
 
     useEffect(() => {
         loadCourseData();
@@ -237,7 +240,7 @@ export default function CourseDetailPage({ params }) {
                 loadCourseData();
             }
         } catch (error) {
-            alert(error.response?.data?.message || 'Failed to enroll');
+            toast.error(error.response?.data?.message || 'Failed to enroll');
         } finally {
             setEnrolling(false);
         }
@@ -246,11 +249,11 @@ export default function CourseDetailPage({ params }) {
     const handleSubmitReview = async (e) => {
         e.preventDefault();
         if (reviewForm.rating === 0) {
-            alert('Please select a rating');
+            toast.error('Please select a rating');
             return;
         }
         if (reviewForm.comment.trim().length < 10) {
-            alert('Review must be at least 10 characters');
+            toast.error('Review must be at least 10 characters');
             return;
         }
 
@@ -273,20 +276,22 @@ export default function CourseDetailPage({ params }) {
             loadReviews();
             setReviewForm({ rating: 0, comment: '' });
         } catch (error) {
-            alert(error.response?.data?.message || 'Failed to submit review');
+            toast.error(error.response?.data?.message || 'Failed to submit review');
         } finally {
             setSubmittingReview(false);
         }
     };
 
     const handleDeleteReview = async () => {
-        if (!confirm('Delete your review?')) return;
+        const isConfirmed = await confirmDialog("Delete Review", "Delete your review?", { variant: 'destructive' });
+        if (!isConfirmed) return;
         try {
             await api.delete(`/reviews/${myReview._id}`);
             setMyReview(null);
             loadReviews();
+            toast.success("Review deleted");
         } catch (error) {
-            alert('Failed to delete review');
+            toast.error('Failed to delete review');
         }
     };
 
@@ -317,7 +322,7 @@ export default function CourseDetailPage({ params }) {
 
     const handleLessonClick = (lesson) => {
         if (isLessonLocked(lesson)) {
-            alert('Enroll to access this lesson');
+            toast.error('Enroll to access this lesson');
             return;
         }
         const lessonIndex = lessons.findIndex(l => l._id === lesson._id);

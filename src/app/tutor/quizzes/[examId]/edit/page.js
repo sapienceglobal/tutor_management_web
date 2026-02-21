@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'react-hot-toast';
 
 export default function EditExamPage({ params }) {
     const { examId } = use(params);
@@ -82,7 +83,7 @@ export default function EditExamPage({ params }) {
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);
-                alert('Failed to load exam data.');
+                toast.error('Failed to load exam data.');
                 router.push('/tutor/quizzes');
             } finally {
                 setLoading(false);
@@ -152,15 +153,15 @@ export default function EditExamPage({ params }) {
                 // Update local state if status changed without navigation
                 if (newStatus) {
                     setExamData(prev => ({ ...prev, status: newStatus }));
-                    alert(`Exam ${newStatus === 'published' ? 'Published' : 'Unpublished'} Successfully!`);
+                    toast.success(`Exam ${newStatus === 'published' ? 'Published' : 'Unpublished'} Successfully!`);
                 } else {
-                    alert('Exam Updated Successfully!');
+                    toast.success('Exam Updated Successfully!');
                     router.push('/tutor/quizzes');
                 }
             }
         } catch (error) {
             console.error('Error updating exam:', error);
-            alert('Failed to update exam. ' + (error.response?.data?.message || ''));
+            toast.error('Failed to update exam. ' + (error.response?.data?.message || ''));
         } finally {
             setSaving(false);
         }

@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import { toast } from 'react-hot-toast';
 
 function ExamResultPageClient() {
     const params = useParams();
@@ -164,7 +165,7 @@ function ExamResultPageClient() {
                                 <Button
                                     variant="outline"
                                     className="flex-1 border-2 border-slate-200 hover:border-emerald-200 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-xl h-12 font-bold"
-                                    onClick={() => alert('Certificate download coming soon!')}
+                                    onClick={() => toast('Certificate download coming soon!', { icon: '🎓' })}
                                 >
                                     <ArrowRight className="w-5 h-5 mr-2" />
                                     Next Module

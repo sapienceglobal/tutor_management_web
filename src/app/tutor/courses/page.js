@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plus, Search, Edit, Trash2, Eye, MoreVertical, TrendingUp, Users, PlayCircle, DollarSign, BookOpen, Settings, Filter, Grid, List, Star } from 'lucide-react';
 import api from '@/lib/axios';
+import { toast } from 'react-hot-toast';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,6 +16,7 @@ export default function MyCoursesPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
     const [viewMode, setViewMode] = useState('grid');
+    const { confirmDialog } = useConfirm();
 
     useEffect(() => {
         fetchMyCourses();
@@ -33,13 +36,15 @@ export default function MyCoursesPage() {
     };
 
     const handleDeleteCourse = async (courseId) => {
-        if (!confirm('Are you sure you want to delete this course? This action cannot be undone.')) return;
+        const isConfirmed = await confirmDialog("Delete Course", "Are you sure you want to delete this course? This action cannot be undone.", { variant: 'destructive' });
+        if (!isConfirmed) return;
 
         try {
             await api.delete(`/courses/${courseId}`);
             setCourses(prev => prev.filter(c => c._id !== courseId));
+            toast.success("Course deleted successfully");
         } catch (error) {
-            alert('Failed to delete course');
+            toast.error('Failed to delete course');
         }
     };
 

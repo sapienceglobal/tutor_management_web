@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Loader2, CheckCircle, XCircle, Clock, AlertCircle, RefreshCcw } from 'lucide-react';
 import api from '@/lib/axios';
+import { toast } from 'react-hot-toast';
 
 export default function QuizPlayer({ lesson, onComplete }) {
     const [status, setStatus] = useState('intro'); // intro, loading, active, submitting, result
@@ -67,7 +68,7 @@ export default function QuizPlayer({ lesson, onComplete }) {
             console.error('Failed to start quiz:', error);
             // Handle error (e.g., max attempts reached)
             if (error.response?.status === 403) {
-                alert(error.response.data.message || "Cannot start quiz.");
+                toast.error(error.response.data.message || "Cannot start quiz.");
                 setStatus('intro'); // Or error state
             }
         }
@@ -121,7 +122,7 @@ export default function QuizPlayer({ lesson, onComplete }) {
             }
         } catch (error) {
             console.error('Failed to submit quiz:', error);
-            alert('Failed to submit quiz. Please try again.');
+            toast.error('Failed to submit quiz. Please try again.');
             setStatus('active');
         }
     };

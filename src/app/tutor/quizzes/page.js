@@ -5,17 +5,21 @@ import Link from 'next/link';
 import {
     Plus,
     Search,
-    FileQuestion,
+    BookOpen,
+    Clock,
     MoreVertical,
-    Edit,
+    Edit2,
     Trash2,
-    Eye,
-    EyeOff,
-    Sparkles,
-    Calendar,
-    Filter
+    PlayCircle,
+    Copy,
+    FileQuestion, // Keeping FileQuestion as it's used in JSX
+    Eye, // Keeping Eye as it's used in JSX
+    EyeOff, // Keeping EyeOff as it's used in JSX
+    Sparkles // Keeping Sparkles as it's used in JSX
 } from 'lucide-react';
 import api from '@/lib/axios';
+import { toast } from 'react-hot-toast';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +28,7 @@ import { cn } from '@/lib/utils';
 export default function ExamDashboard() {
     const [exams, setExams] = useState([]);
     const [loading, setLoading] = useState(true);
+    const { confirmDialog } = useConfirm();
 
     useEffect(() => {
         const fetchExams = async () => {
@@ -41,19 +46,21 @@ export default function ExamDashboard() {
         fetchExams();
     }, []);
 
-    const handleDelete = async (examId) => {
-        if (!window.confirm('Are you sure you want to delete this exam? This action cannot be undone.')) {
+    const handleDelete = async (id) => {
+        const isConfirmed = await confirmDialog("Delete Exam", "Are you sure you want to delete this exam? This action cannot be undone.", { variant: 'destructive' });
+        if (!isConfirmed) {
             return;
         }
 
         try {
-            const res = await api.delete(`/exams/${examId}`);
+            const res = await api.delete(`/exams/${id}`);
             if (res.data.success) {
-                setExams(exams.filter(e => e._id !== examId));
+                setExams(exams.filter(exam => exam._id !== id));
+                toast.success('Exam deleted successfully');
             }
         } catch (error) {
             console.error('Error deleting exam:', error);
-            alert('Failed to delete exam');
+            toast.error('Failed to delete exam');
         }
     };
 
@@ -64,9 +71,10 @@ export default function ExamDashboard() {
             setExams(exams.map(e =>
                 e._id === examId ? { ...e, status: newStatus, isPublished: newStatus === 'published' } : e
             ));
+            toast.success(`Exam ${newStatus} successfully!`);
         } catch (error) {
             console.error('Error updating status:', error);
-            alert('Failed to update status');
+            toast.error('Failed to update status');
         }
     };
 
