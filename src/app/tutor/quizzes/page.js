@@ -15,7 +15,8 @@ import {
     FileQuestion, // Keeping FileQuestion as it's used in JSX
     Eye, // Keeping Eye as it's used in JSX
     EyeOff, // Keeping EyeOff as it's used in JSX
-    Sparkles // Keeping Sparkles as it's used in JSX
+    Sparkles, // Keeping Sparkles as it's used in JSX
+    Edit
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';

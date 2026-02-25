@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Trash2, Search, GraduationCap, Eye } from 'lucide-react';
+import { Loader2, Trash2, Search, GraduationCap, Eye, Plus, Edit, Ban, CheckCircle } from 'lucide-react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
+import UserModal from '@/components/admin/UserModal';
 
 export default function AdminTutorsPage() {
     const router = useRouter();
@@ -13,6 +14,8 @@ export default function AdminTutorsPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const { confirmDialog } = useConfirm();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState(null);
 
     useEffect(() => {
         fetchTutors();
@@ -43,6 +46,43 @@ export default function AdminTutorsPage() {
         } catch (error) {
             console.error('Delete error:', error);
             toast.error('Failed to delete tutor');
+        }
+    };
+
+    const handleBlock = async (id, currentStatus) => {
+        const action = currentStatus ? "Unblock" : "Block";
+        const isConfirmed = await confirmDialog(`${action} Tutor`, `Are you sure you want to ${action.toLowerCase()} this tutor?`, { variant: currentStatus ? 'default' : 'destructive' });
+        if (!isConfirmed) return;
+
+        try {
+            await api.put(`/admin/users/${id}/status`, { isBlocked: !currentStatus });
+            setTutors(tutors.map(t => t._id === id ? { ...t, isBlocked: !currentStatus } : t));
+            toast.success(`Tutor ${action.toLowerCase()}ed successfully`);
+        } catch (error) {
+            console.error('Block error:', error);
+            toast.error(`Failed to ${action.toLowerCase()} tutor`);
+        }
+    };
+
+    const handleSubmitUser = async (formData, id) => {
+        try {
+            if (id) {
+                // Edit
+                const res = await api.put(`/admin/users/${id}`, formData);
+                setTutors(tutors.map(t => t._id === id ? res.data.user : t));
+                toast.success('Tutor updated successfully');
+            } else {
+                // Create
+                const res = await api.post('/admin/users', formData);
+                setTutors([res.data.user, ...tutors]);
+                toast.success('Tutor created successfully');
+            }
+            setIsModalOpen(false);
+            setEditingUser(null);
+            fetchTutors(); // Refresh to ensure backend sync
+        } catch (error) {
+            console.error('Submit user error:', error);
+            toast.error(error.response?.data?.message || 'Failed to save tutor');
         }
     };
 
@@ -77,6 +117,13 @@ export default function AdminTutorsPage() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
+                <button
+                    onClick={() => { setEditingUser(null); setIsModalOpen(true); }}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                >
+                    <Plus className="w-4 h-4" />
+                    Add Tutor
+                </button>
             </div>
 
             {/* List */}
@@ -105,7 +152,14 @@ export default function AdminTutorsPage() {
                                                     </div>
                                                 )}
                                                 <div>
-                                                    <div className="font-medium text-slate-900">{tutor.name}</div>
+                                                    <div className="font-medium text-slate-900 flex items-center gap-2">
+                                                        {tutor.name}
+                                                        {tutor.isBlocked && (
+                                                            <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-600">
+                                                                Blocked
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <div className="text-xs text-slate-500 capitalize">{tutor.authProvider || 'Email'} User</div>
                                                 </div>
                                             </div>
@@ -121,14 +175,31 @@ export default function AdminTutorsPage() {
                                             <div className="flex items-center justify-end gap-2">
                                                 <button
                                                     onClick={() => router.push(`/admin/tutors/${tutor._id}`)}
-                                                    className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                                                     title="View Details"
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
                                                 <button
+                                                    onClick={() => { setEditingUser(tutor); setIsModalOpen(true); }}
+                                                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                    title="Edit Tutor"
+                                                >
+                                                    <Edit className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleBlock(tutor._id, tutor.isBlocked)}
+                                                    className={`p-1.5 rounded-lg transition-colors ${tutor.isBlocked
+                                                            ? 'text-red-500 bg-red-50 hover:bg-red-100'
+                                                            : 'text-slate-400 hover:text-orange-600 hover:bg-orange-50'
+                                                        }`}
+                                                    title={tutor.isBlocked ? "Unblock Tutor" : "Block Tutor"}
+                                                >
+                                                    {tutor.isBlocked ? <CheckCircle className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
+                                                </button>
+                                                <button
                                                     onClick={() => handleDelete(tutor._id)}
-                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                     title="Delete User"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
@@ -148,6 +219,14 @@ export default function AdminTutorsPage() {
                     </table>
                 </div>
             </div>
+
+            <UserModal
+                isOpen={isModalOpen}
+                onClose={() => { setIsModalOpen(false); setEditingUser(null); }}
+                onSubmit={handleSubmitUser}
+                user={editingUser}
+                defaultRole="tutor"
+            />
         </div>
     );
 }

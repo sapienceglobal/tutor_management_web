@@ -6,7 +6,8 @@ import {
     Settings,
     DollarSign,
     Shield,
-    BarChart3
+    BarChart3,
+    Tags
 } from 'lucide-react';
 
 export const adminNavItems = [
@@ -54,6 +55,12 @@ export const adminNavItems = [
                 title: "Courses",
                 icon: BookOpen,
                 href: "/admin/courses",
+                type: "link"
+            },
+            {
+                title: "Categories",
+                icon: Tags,
+                href: "/admin/categories",
                 type: "link"
             }
         ]

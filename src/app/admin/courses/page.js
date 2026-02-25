@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Trash2, Search, BookOpen, Eye, ExternalLink } from 'lucide-react';
+import { Loader2, Trash2, Search, BookOpen, Eye, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban } from 'lucide-react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
@@ -43,6 +43,25 @@ export default function AdminCoursesPage() {
         } catch (error) {
             console.error('Delete error:', error);
             toast.error('Failed to delete course');
+        }
+    };
+
+    const handleStatusChange = async (id, newStatus) => {
+        const actionMap = { 'published': 'Approve', 'rejected': 'Reject', 'suspended': 'Suspend' };
+        const actionName = actionMap[newStatus] || newStatus;
+
+        const isConfirmed = await confirmDialog(`${actionName} Course`, `Are you sure you want to ${actionName.toLowerCase()} this course?`, { variant: newStatus === 'rejected' || newStatus === 'suspended' ? 'destructive' : 'default' });
+        if (!isConfirmed) return;
+
+        try {
+            const res = await api.put(`/admin/courses/${id}/status`, { status: newStatus });
+            if (res.data.success) {
+                setCourses(courses.map(c => c._id === id ? { ...c, status: newStatus } : c));
+                toast.success(`Course ${actionName.toLowerCase()}ed successfully`);
+            }
+        } catch (error) {
+            console.error('Status update error:', error);
+            toast.error(`Failed to update course status`);
         }
     };
 
@@ -133,14 +152,46 @@ export default function AdminCoursesPage() {
                                             <div className="flex items-center justify-end gap-2">
                                                 <button
                                                     onClick={() => router.push(`/admin/courses/${course._id}`)}
-                                                    className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                                    title="View Course"
+                                                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                                    title="View Detailed Info"
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
+
+                                                {/* Moderation Actions Based on Status */}
+                                                {course.status !== 'published' && (
+                                                    <button
+                                                        onClick={() => handleStatusChange(course._id, 'published')}
+                                                        className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors"
+                                                        title="Approve & Publish Course"
+                                                    >
+                                                        <CheckCircle className="w-4 h-4" />
+                                                    </button>
+                                                )}
+
+                                                {course.status !== 'rejected' && course.status === 'draft' && (
+                                                    <button
+                                                        onClick={() => handleStatusChange(course._id, 'rejected')}
+                                                        className="p-1.5 text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
+                                                        title="Reject Course"
+                                                    >
+                                                        <XCircle className="w-4 h-4" />
+                                                    </button>
+                                                )}
+
+                                                {course.status === 'published' && (
+                                                    <button
+                                                        onClick={() => handleStatusChange(course._id, 'suspended')}
+                                                        className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
+                                                        title="Suspend Course"
+                                                    >
+                                                        <Ban className="w-4 h-4" />
+                                                    </button>
+                                                )}
+
                                                 <button
                                                     onClick={() => handleDelete(course._id)}
-                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                                     title="Delete Course"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
