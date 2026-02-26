@@ -84,7 +84,7 @@ export default function FindTutorsPage() {
                                             )}
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-lg text-gray-900 line-clamp-1">{tutor.userId?.name}</h3>
+                                            <h3 className="font-bold text-lg text-gray-900 line-clamp-1">{tutor.userId?.name || 'Unknown Tutor'}</h3>
                                             <p className="text-sm text-indigo-600 font-medium">{tutor.categoryId?.name || 'General Tutor'}</p>
                                         </div>
                                     </div>
@@ -101,7 +101,7 @@ export default function FindTutorsPage() {
                                 <div className="flex items-center gap-4 text-sm text-gray-500 mb-6">
                                     <div className="flex items-center gap-1">
                                         <Award className="w-4 h-4" />
-                                        <span>{tutor.experience} years exp</span>
+                                        <span>{tutor.experience || 0} years exp</span>
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <MapPin className="w-4 h-4" />
@@ -112,7 +112,7 @@ export default function FindTutorsPage() {
                                 <div className="flex items-center justify-between pt-4 border-t">
                                     <div>
                                         <span className="text-xs text-gray-500 uppercase font-semibold">Hourly Rate</span>
-                                        <p className="text-xl font-bold text-gray-900">₹{tutor.hourlyRate}</p>
+                                        <p className="text-xl font-bold text-gray-900">₹{tutor.hourlyRate || 0}</p>
                                     </div>
                                     <Link href={`/student/tutors/${tutor._id}`}>
                                         <Button className="group-hover:translate-x-1 transition-transform">

@@ -27,7 +27,9 @@ import {
     Video,
     Sparkles,
     Trophy,
-    Globe
+    Globe,
+    ShieldAlert,
+    Eye
 } from 'lucide-react';
 import api from '@/lib/axios';
 import LessonPlayerModal from '@/components/LessonPlayerModal';
@@ -50,6 +52,7 @@ export default function CourseDetailPage({ params }) {
     const [myReview, setMyReview] = useState(null);
     const [ratingDistribution, setRatingDistribution] = useState([]);
     const [isEnrolled, setIsEnrolled] = useState(false);
+    const [isInstructor, setIsInstructor] = useState(false);
     const [loading, setLoading] = useState(true);
     const [enrolling, setEnrolling] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
@@ -140,12 +143,13 @@ export default function CourseDetailPage({ params }) {
                 setCourse(courseData);
                 setLessons(lessonsData);
                 setIsEnrolled(response.data.isEnrolled || false);
+                setIsInstructor(response.data.isInstructor || false);
                 const moduleIds = courseData.modules?.map(m => m._id) || [];
                 // Only set expanded modules on first load or if empty
                 setExpandedModules(prev => prev.length ? prev : moduleIds);
             }
 
-            if (response.data.isEnrolled && !background) {
+            if ((response.data.isEnrolled || response.data.isInstructor) && !background) {
                 const [examRes, liveClassRes] = await Promise.all([
                     api.get(`/exams/course/${id}`),
                     api.get(`/live-classes?courseId=${id}`)
@@ -160,6 +164,10 @@ export default function CourseDetailPage({ params }) {
             }
         } catch (error) {
             console.error('Error loading course:', error);
+            if (error.response?.status === 403 && error.response?.data?.message?.includes('Tutors can only preview their own')) {
+                toast.error(error.response.data.message);
+                router.push('/tutor/dashboard');
+            }
         } finally {
             if (!background) setLoading(false);
         }
@@ -317,6 +325,7 @@ export default function CourseDetailPage({ params }) {
     };
 
     const isLessonLocked = (lesson) => {
+        if (isInstructor) return false;
         return !isEnrolled && !lesson.isFree;
     };
 
@@ -377,9 +386,21 @@ export default function CourseDetailPage({ params }) {
 
     const totalLessons = lessons.length;
     const totalDuration = lessons.reduce((acc, l) => acc + (l.duration || 0), 0);
+    
+    // Determine if the course was suspended or tutor was blocked/unverified
+    const isTutorVerified = course.tutorId?.isVerified;
+    const isTutorBlocked = course.tutorId?.userId?.isBlocked;
+    const isCourseSuspended = course.status !== 'published' || !isTutorVerified || isTutorBlocked;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+            {isInstructor && (
+                <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-3 flex items-center justify-center gap-2 font-semibold text-sm shadow-md z-50 relative">
+                    <Eye className="w-5 h-5 shrink-0" />
+                    <span>Preview Mode: You are viewing your custom course page as a student. Note: Videos and content are fully unlocked for you.</span>
+                </div>
+            )}
+
             {/* Bizdire-style Deep Blue Banner */}
             <div className="bg-[#0F172A] text-white relative overflow-hidden">
                 {/* Background pattern/overlay */}
@@ -438,6 +459,21 @@ export default function CourseDetailPage({ params }) {
                     {/* We will keep the sticky sidebar logic for the Price/Enroll card below, but the banner is now focused on Title/Intro */}
                 </div>
             </div>
+
+            {/* Suspended Course Banner (Only visible to retained students) */}
+            {isCourseSuspended && isEnrolled && (
+                <div className="max-w-7xl mx-auto px-6 mt-6">
+                    <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start gap-3 shadow-sm">
+                        <ShieldAlert className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                        <div>
+                            <h4 className="text-amber-800 font-semibold mb-1">Course Suspended</h4>
+                            <p className="text-amber-700 text-sm">
+                                This course is no longer publicly available. Because you are an enrolled student, you retain full access to all materials.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Main Content */}
             <div className="max-w-7xl mx-auto px-6 py-12">
@@ -614,7 +650,7 @@ export default function CourseDetailPage({ params }) {
                                                 </div>
                                             )
                                         ) : (
-                                            !isEnrolled ? (
+                                            (!isEnrolled && !isInstructor) ? (
                                                 <div className="text-center py-16 bg-slate-50 rounded-2xl">
                                                     <Lock className="w-16 h-16 mx-auto mb-4 text-slate-400" />
                                                     <p className="text-slate-600 font-medium mb-4">Enroll to access exams</p>
@@ -669,7 +705,7 @@ export default function CourseDetailPage({ params }) {
 
                                 {activeTab === 'live classes' && (
                                     <div className="space-y-4">
-                                        {!isEnrolled ? (
+                                        {(!isEnrolled && !isInstructor) ? (
                                             <div className="text-center py-16 bg-slate-50 rounded-2xl">
                                                 <Lock className="w-16 h-16 mx-auto mb-4 text-slate-400" />
                                                 <p className="text-slate-600 font-medium mb-4">Enroll to access live classes</p>
@@ -970,21 +1006,30 @@ export default function CourseDetailPage({ params }) {
                                     )}
                                 </div>
 
-                                {!isEnrolled ? (
-                                    <Button
-                                        onClick={handleEnroll}
-                                        disabled={enrolling}
-                                        variant="default" // Using global primary color (Orange)
-                                        className="w-full h-12 text-base font-bold rounded shadow-sm hover:shadow transition-all"
-                                    >
-                                        {enrolling ? 'Enrolling...' : 'Enroll Now'}
-                                    </Button>
-                                ) : (
-                                    <div className="w-full h-12 bg-emerald-500 text-white font-bold rounded flex items-center justify-center gap-2 shadow-sm">
-                                        <CheckCircle className="w-5 h-5" />
-                                        Enrolled
-                                    </div>
-                                )}
+                                        {isInstructor ? (
+                                            <Button
+                                                onClick={() => router.push(`/tutor/courses/${id}`)}
+                                                variant="default"
+                                                className="w-full h-12 text-base font-bold rounded shadow-sm hover:shadow transition-all bg-indigo-600 hover:bg-indigo-700 text-white"
+                                            >
+                                                <Edit3 className="w-5 h-5 mr-2" />
+                                                Edit Course
+                                            </Button>
+                                        ) : !isEnrolled ? (
+                                            <Button
+                                                onClick={handleEnroll}
+                                                disabled={enrolling}
+                                                variant="default"
+                                                className="w-full h-12 text-base font-bold rounded shadow-sm hover:shadow transition-all"
+                                            >
+                                                {enrolling ? 'Enrolling...' : 'Enroll Now'}
+                                            </Button>
+                                        ) : (
+                                            <div className="w-full h-12 bg-emerald-500 text-white font-bold rounded flex items-center justify-center gap-2 shadow-sm">
+                                                <CheckCircle className="w-5 h-5" />
+                                                Enrolled
+                                            </div>
+                                        )}
 
                                 <p className="text-center text-xs text-slate-500 mt-3">
                                     30-Day Money-Back Guarantee

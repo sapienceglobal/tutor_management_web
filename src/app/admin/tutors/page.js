@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Trash2, Search, GraduationCap, Eye, Plus, Edit, Ban, CheckCircle } from 'lucide-react';
+import { Loader2, Trash2, Search, GraduationCap, Eye, Plus, Edit, Ban, CheckCircle, CheckCircle2, XCircle, ShieldAlert } from 'lucide-react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
@@ -61,6 +61,23 @@ export default function AdminTutorsPage() {
         } catch (error) {
             console.error('Block error:', error);
             toast.error(`Failed to ${action.toLowerCase()} tutor`);
+        }
+    };
+
+    const handleVerify = async (tutorId, currentStatus) => {
+        try {
+            const action = currentStatus ? "Revoke Verification" : "Verify";
+            const isConfirmed = await confirmDialog(`${action} Tutor`, `Are you sure you want to ${action.toLowerCase()} this tutor?`, { variant: currentStatus ? 'destructive' : 'default' });
+            if (!isConfirmed) return;
+
+            const res = await api.put(`/admin/tutors/${tutorId}/verify`, { isVerified: !currentStatus });
+            if (res.data.success) {
+                toast.success(res.data.message);
+                fetchTutors();
+            }
+        } catch (error) {
+            console.error('Verify error:', error);
+            toast.error(error.response?.data?.message || 'Failed to update verification status');
         }
     };
 
@@ -154,8 +171,21 @@ export default function AdminTutorsPage() {
                                                 <div>
                                                     <div className="font-medium text-slate-900 flex items-center gap-2">
                                                         {tutor.name}
+                                                        {!tutor.isVerified && (
+                                                            <span 
+                                                                title="Unverified tutors cannot be seen by new students. They can still log in and existing students retain access."
+                                                                className="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 flex items-center gap-1 cursor-help"
+                                                            >
+                                                                <ShieldAlert className="w-3 h-3" />
+                                                                Pending Verification
+                                                            </span>
+                                                        )}
                                                         {tutor.isBlocked && (
-                                                            <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-600">
+                                                            <span 
+                                                                title="Blocked tutors cannot log in. Their courses are hidden. Existing students retain read-only access."
+                                                                className="px-2 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-600 flex items-center gap-1 cursor-help"
+                                                            >
+                                                                <Ban className="w-3 h-3" />
                                                                 Blocked
                                                             </span>
                                                         )}
@@ -181,9 +211,19 @@ export default function AdminTutorsPage() {
                                                     <Eye className="w-4 h-4" />
                                                 </button>
                                                 <button
+                                                    onClick={() => handleVerify(tutor.tutorId, tutor.isVerified)}
+                                                    className={`p-1.5 rounded-lg transition-colors ${tutor.isVerified
+                                                            ? 'text-emerald-500 bg-emerald-50 hover:bg-emerald-100'
+                                                            : 'text-amber-500 bg-amber-50 hover:bg-amber-100'
+                                                        }`}
+                                                    title={tutor.isVerified ? "Revoke Verification (Hides tutor from public search. Login stays active)" : "Verify Tutor (Makes tutor publicly visible)"}
+                                                >
+                                                    {tutor.isVerified ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                                                </button>
+                                                <button
                                                     onClick={() => { setEditingUser(tutor); setIsModalOpen(true); }}
                                                     className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                    title="Edit Tutor"
+                                                    title="Edit Tutor Details"
                                                 >
                                                     <Edit className="w-4 h-4" />
                                                 </button>
@@ -193,7 +233,7 @@ export default function AdminTutorsPage() {
                                                             ? 'text-red-500 bg-red-50 hover:bg-red-100'
                                                             : 'text-slate-400 hover:text-orange-600 hover:bg-orange-50'
                                                         }`}
-                                                    title={tutor.isBlocked ? "Unblock Tutor" : "Block Tutor"}
+                                                    title={tutor.isBlocked ? "Unblock Tutor (Restores login access)" : "Block Tutor (Strips login access & hides public content)"}
                                                 >
                                                     {tutor.isBlocked ? <CheckCircle className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
                                                 </button>

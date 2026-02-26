@@ -142,10 +142,14 @@ export default function AdminCoursesPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full
-                                                ${course.status === 'published' ? 'bg-emerald-100 text-emerald-700' :
-                                                    course.status === 'draft' ? 'bg-slate-100 text-slate-600' : 'bg-amber-100 text-amber-700'
+                                                ${
+                                                    course.status === 'published' ? 'bg-emerald-100 text-emerald-700' :
+                                                    course.status === 'pending' ? 'bg-cyan-100 text-cyan-700' :
+                                                    course.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                                    course.status === 'draft' ? 'bg-slate-100 text-slate-600' :
+                                                    'bg-amber-100 text-amber-700'
                                                 }`}>
-                                                {course.status || 'Draft'}
+                                                {course.status ? course.status.charAt(0).toUpperCase() + course.status.slice(1) : 'Draft'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
@@ -159,21 +163,21 @@ export default function AdminCoursesPage() {
                                                 </button>
 
                                                 {/* Moderation Actions Based on Status */}
-                                                {course.status !== 'published' && (
+                                                {(course.status === 'pending' || course.status === 'suspended' || course.status === 'rejected') && (
                                                     <button
                                                         onClick={() => handleStatusChange(course._id, 'published')}
                                                         className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors"
-                                                        title="Approve & Publish Course"
+                                                        title="Approve & Publish (Makes course visible to all new students)"
                                                     >
                                                         <CheckCircle className="w-4 h-4" />
                                                     </button>
                                                 )}
 
-                                                {course.status !== 'rejected' && course.status === 'draft' && (
+                                                {(course.status === 'pending' || course.status === 'published') && (
                                                     <button
                                                         onClick={() => handleStatusChange(course._id, 'rejected')}
                                                         className="p-1.5 text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
-                                                        title="Reject Course"
+                                                        title="Reject Course (Sends back to tutor for fixes. Unseen by students)"
                                                     >
                                                         <XCircle className="w-4 h-4" />
                                                     </button>
@@ -183,7 +187,7 @@ export default function AdminCoursesPage() {
                                                     <button
                                                         onClick={() => handleStatusChange(course._id, 'suspended')}
                                                         className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
-                                                        title="Suspend Course"
+                                                        title="Suspend Course (Hides from public search. Enrolled students retain access)"
                                                     >
                                                         <Ban className="w-4 h-4" />
                                                     </button>

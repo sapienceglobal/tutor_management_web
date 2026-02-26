@@ -1,18 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Save, Loader2, Globe, Shield, Bell, Wrench } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import api from '@/lib/axios';
 
 export default function AdminSettingsPage() {
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
     const [settings, setSettings] = useState({
         siteName: 'TutorApp',
         supportEmail: 'support@tutorapp.com',
         maintenanceMode: false,
         allowRegistration: true,
-        defaultLanguage: 'English'
+        defaultLanguage: 'English',
+        autoApproveCourses: false,
+        allowGuestBrowsing: true,
+        platformCommission: 10,
+        supportPhone: '',
+        facebookLink: '',
+        twitterLink: ''
     });
+
+    useEffect(() => {
+        fetchSettings();
+    }, []);
+
+    const fetchSettings = async () => {
+        try {
+            const response = await api.get('/admin/settings');
+            if (response.data.success) {
+                setSettings(response.data.settings);
+            }
+        } catch (error) {
+            console.error('Failed to fetch settings:', error);
+            toast.error('Failed to load settings');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleChange = (e) => {
         const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -20,13 +46,27 @@ export default function AdminSettingsPage() {
     };
 
     const handleSave = async () => {
-        setLoading(true);
-        // Simulate API call
-        setTimeout(() => {
-            setLoading(false);
-            toast.success('Settings updated successfully');
-        }, 1000);
+        setSaving(true);
+        try {
+            const response = await api.put('/admin/settings', settings);
+            if (response.data.success) {
+                toast.success('Settings updated successfully');
+            }
+        } catch (error) {
+            console.error('Failed to update settings:', error);
+            toast.error('Failed to save settings');
+        } finally {
+            setSaving(false);
+        }
     };
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center min-h-[400px]">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -126,6 +166,81 @@ export default function AdminSettingsPage() {
                                 <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                             </label>
                         </div>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <div className="font-medium text-slate-900">Auto-Approve Courses</div>
+                                <div className="text-sm text-slate-500">Publish tutor courses automatically without review</div>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    name="autoApproveCourses"
+                                    checked={settings.autoApproveCourses}
+                                    onChange={handleChange}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <div className="font-medium text-slate-900">Auto-Approve Tutors</div>
+                                <div className="text-sm text-slate-500">Publish tutor profiles automatically without review</div>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    name="autoApproveTutors"
+                                    checked={settings.autoApproveTutors}
+                                    onChange={handleChange}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <div className="font-medium text-slate-900">Allow Guest Browsing</div>
+                                <div className="text-sm text-slate-500">Let public users browse published courses</div>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    name="allowGuestBrowsing"
+                                    checked={settings.allowGuestBrowsing}
+                                    onChange={handleChange}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Financial Settings */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:col-span-2">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600">
+                            <Shield className="w-5 h-5" />
+                        </div>
+                        <h2 className="text-lg font-semibold text-slate-800">Financial & Security</h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Platform Commission (%)</label>
+                            <p className="text-sm text-slate-500 mb-3">Percentage cut taken from tutor sales.</p>
+                            <input
+                                type="number"
+                                name="platformCommission"
+                                value={settings.platformCommission}
+                                onChange={handleChange}
+                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                min="0"
+                                max="100"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -133,10 +248,10 @@ export default function AdminSettingsPage() {
             <div className="flex justify-end">
                 <button
                     onClick={handleSave}
-                    disabled={loading}
+                    disabled={saving}
                     className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-indigo-200 disabled:opacity-50"
                 >
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                     Save Changes
                 </button>
             </div>

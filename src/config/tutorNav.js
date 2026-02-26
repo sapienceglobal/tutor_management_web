@@ -7,7 +7,8 @@ import {
     Settings,       // Configuration
     Users,
     ClipboardList,
-    HelpCircle
+    HelpCircle,
+    DollarSign
 } from 'lucide-react';
 
 export const tutorNavItems = [
@@ -73,6 +74,12 @@ export const tutorNavItems = [
                 title: "Analytics",
                 icon: LayoutDashboard, // Reusing icon or need BarChart
                 href: "/tutor/analytics",
+                type: "link"
+            },
+            {
+                title: "Earnings & Payouts",
+                icon: DollarSign,
+                href: "/tutor/earnings",
                 type: "link"
             }
         ]

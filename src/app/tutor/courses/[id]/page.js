@@ -97,9 +97,16 @@ export default function ManageCoursePage({ params }) {
         setPublishing(true);
         try {
             const newStatus = course.status === 'published' ? 'draft' : 'published';
-            await api.patch(`/courses/${id}`, { status: newStatus });
-            setCourse(prev => ({ ...prev, status: newStatus }));
-            toast.success(`Course ${newStatus} successfully`);
+            const res = await api.patch(`/courses/${id}`, { status: newStatus });
+            const updatedStatus = res.data.course.status;
+            
+            setCourse(prev => ({ ...prev, status: updatedStatus }));
+            
+            if (updatedStatus === 'pending') {
+                toast.success('Course submitted for Admin Approval');
+            } else {
+                toast.success(`Course ${updatedStatus} successfully`);
+            }
         } catch (error) {
             console.error(error);
             toast.error('Failed to update course status');
@@ -340,11 +347,16 @@ export default function ManageCoursePage({ params }) {
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                                 <h1 className="text-3xl font-bold text-slate-900">{course.title}</h1>
-                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${course.status === 'published'
-                                    ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
-                                    : 'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                    course.status === 'published' ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200' :
+                                    course.status === 'pending' ? 'bg-cyan-100 text-cyan-700 ring-1 ring-cyan-200' :
+                                    course.status === 'rejected' ? 'bg-red-100 text-red-700 ring-1 ring-red-200' :
+                                    'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
                                     }`}>
-                                    {course.status === 'published' ? '● Published' : '● Draft'}
+                                    {course.status === 'published' ? '● Published' : 
+                                     course.status === 'pending' ? '● Pending Approval' :
+                                     course.status === 'rejected' ? '● Rejected' :
+                                     '● Draft'}
                                 </span>
                             </div>
 
@@ -368,14 +380,15 @@ export default function ManageCoursePage({ params }) {
                             <button
                                 onClick={handlePublishToggle}
                                 disabled={publishing}
-                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-2 border shadow-sm ${course.status === 'published'
+                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-2 border shadow-sm ${
+                                    course.status === 'published' || course.status === 'pending'
                                     ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
                                     : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                                     }`}
                             >
                                 {publishing ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : course.status === 'published' ? (
+                                ) : course.status === 'published' || course.status === 'pending' ? (
                                     <>
                                         <EyeOff className="w-4 h-4" />
                                         Unpublish
@@ -383,7 +396,7 @@ export default function ManageCoursePage({ params }) {
                                 ) : (
                                     <>
                                         <Globe className="w-4 h-4" />
-                                        Publish
+                                        {course.status === 'rejected' ? 'Resubmit' : 'Publish'}
                                     </>
                                 )}
                             </button>

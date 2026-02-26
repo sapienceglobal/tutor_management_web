@@ -75,99 +75,97 @@ export default function MyCoursesPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-            <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8">
-                {/* Header */}
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                    <div>
-                        <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent mb-2">
-                            My Courses
-                        </h1>
-                        <p className="text-slate-600 text-lg">Manage your courses and track their performance</p>
+        <div className="min-h-screen bg-slate-50 font-sans overflow-hidden">
+            {/* 1. Hero Section (Bizdire Style) */}
+            <div className="relative bg-[#0F172A] pt-12 pb-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
+                <div className="absolute inset-0 opacity-10 bg-[url('/grid-pattern.svg')]"></div>
+                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-500/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
+                
+                <div className="relative max-w-7xl mx-auto z-10">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                        <div>
+                            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-2">
+                                My <span className="text-orange-500">Courses</span>
+                            </h1>
+                            <p className="text-lg text-slate-300">Manage your courses, lectures, and track performance</p>
+                        </div>
+                        <Button
+                            asChild
+                            className="bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/30 hover:shadow-xl transition-all duration-300 h-14 px-8 rounded-xl font-bold text-lg"
+                        >
+                            <Link href="/tutor/courses/create" className="flex items-center gap-2">
+                                <Plus className="w-5 h-5" />
+                                Create New Course
+                            </Link>
+                        </Button>
                     </div>
-                    <Button
-                        asChild
-                        className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-200 h-12 px-6"
-                    >
-                        <Link href="/tutor/courses/create" className="flex items-center gap-2">
-                            <Plus className="w-5 h-5" />
-                            Create New Course
-                        </Link>
-                    </Button>
                 </div>
+            </div>
 
-                {/* Stats Grid */}
+            {/* 2. Stats & Overview (Overlapping Cards) */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-20 mb-8">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-500 to-blue-600">
-                        <CardContent className="p-6">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
-                                    <BookOpen className="w-6 h-6 text-white" />
-                                </div>
-                            </div>
-                            <h3 className="text-4xl font-bold text-white mb-2">{stats.total}</h3>
-                            <p className="text-blue-100 font-medium">Total Courses</p>
-                        </CardContent>
-                    </Card>
+                    {/* Stat Card 1 */}
+                    <div className="bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 text-center flex flex-col items-center group cursor-default">
+                        <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <BookOpen className="w-8 h-8 text-blue-600" />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-800 mb-1">Total Courses</h3>
+                        <span className="text-4xl font-black text-slate-800 group-hover:text-blue-600 transition-colors">{stats.total}</span>
+                    </div>
 
-                    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-emerald-500 to-emerald-600">
-                        <CardContent className="p-6">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
-                                    <TrendingUp className="w-6 h-6 text-white" />
-                                </div>
-                            </div>
-                            <h3 className="text-4xl font-bold text-white mb-2">{stats.published}</h3>
-                            <p className="text-emerald-100 font-medium">Published</p>
-                        </CardContent>
-                    </Card>
+                    {/* Stat Card 2 */}
+                    <div className="bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 text-center flex flex-col items-center group cursor-default">
+                        <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <TrendingUp className="w-8 h-8 text-emerald-600" />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-800 mb-1">Published</h3>
+                        <span className="text-4xl font-black text-slate-800 group-hover:text-emerald-600 transition-colors">{stats.published}</span>
+                    </div>
 
-                    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-amber-500 to-amber-600">
-                        <CardContent className="p-6">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
-                                    <Settings className="w-6 h-6 text-white" />
-                                </div>
-                            </div>
-                            <h3 className="text-4xl font-bold text-white mb-2">{stats.draft}</h3>
-                            <p className="text-amber-100 font-medium">Drafts</p>
-                        </CardContent>
-                    </Card>
+                    {/* Stat Card 3 */}
+                    <div className="bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 text-center flex flex-col items-center group cursor-default">
+                        <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <Settings className="w-8 h-8 text-amber-600" />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-800 mb-1">Drafts</h3>
+                        <span className="text-4xl font-black text-slate-800 group-hover:text-amber-600 transition-colors">{stats.draft}</span>
+                    </div>
 
-                    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-purple-500 to-purple-600">
-                        <CardContent className="p-6">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
-                                    <Users className="w-6 h-6 text-white" />
-                                </div>
-                            </div>
-                            <h3 className="text-4xl font-bold text-white mb-2">{stats.totalStudents}</h3>
-                            <p className="text-purple-100 font-medium">Total Students</p>
-                        </CardContent>
-                    </Card>
+                    {/* Stat Card 4 */}
+                    <div className="bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 text-center flex flex-col items-center group cursor-default">
+                        <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <Users className="w-8 h-8 text-purple-600" />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-800 mb-1">Total Students</h3>
+                        <span className="text-4xl font-black text-slate-800 group-hover:text-purple-600 transition-colors">{stats.totalStudents}</span>
+                    </div>
                 </div>
+            </div>
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32 space-y-8">
 
                 {/* Filters & Search */}
-                <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+                <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-4">
                     <div className="flex flex-col lg:flex-row gap-4">
                         <div className="relative flex-1">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                             <Input
                                 placeholder="Search your courses..."
-                                className="pl-12 h-12 bg-slate-50 border-slate-200 focus:bg-white"
+                                className="pl-12 h-14 bg-slate-50 border-slate-200 focus:bg-white rounded-2xl text-base"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
 
-                        <div className="flex gap-2 bg-slate-100 p-1 rounded-lg">
+                        <div className="flex gap-2 bg-slate-50 border border-slate-100 p-1.5 rounded-2xl overflow-x-auto custom-scrollbar">
                             {['all', 'published', 'draft'].map(status => (
                                 <button
                                     key={status}
                                     onClick={() => setFilterStatus(status)}
-                                    className={`px-4 py-2 rounded-lg font-medium transition-all ${filterStatus === status
-                                        ? 'bg-white text-indigo-600 shadow-sm'
-                                        : 'text-slate-600 hover:text-slate-900'
+                                    className={`px-6 py-2.5 rounded-xl font-bold transition-all whitespace-nowrap ${filterStatus === status
+                                        ? 'bg-white text-orange-600 shadow-md border border-slate-100'
+                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                                         }`}
                                 >
                                     {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -175,7 +173,7 @@ export default function MyCoursesPage() {
                             ))}
                         </div>
 
-                        <div className="flex gap-2 bg-slate-100 p-1 rounded-lg">
+                        <div className="flex gap-2 bg-slate-50 border border-slate-100 p-1.5 rounded-2xl hidden md:flex">
                             <button
                                 onClick={() => setViewMode('grid')}
                                 className={`p-2 rounded-lg transition-all ${viewMode === 'grid'
@@ -227,18 +225,26 @@ export default function MyCoursesPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredCourses.map((course) => (
                             <Card key={course._id} className="group border-0 shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden">
-                                <div className="aspect-video relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900">
+                                <div className="aspect-video relative overflow-hidden bg-slate-100">
                                     <img
                                         src={course.thumbnail || 'https://via.placeholder.com/400x225'}
                                         alt={course.title}
-                                        className="w-full h-full object-cover opacity-90 group-hover:scale-110 transition-transform duration-500"
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                     />
-                                    <div className="absolute top-3 right-3">
-                                        <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${course.status === 'published'
-                                            ? 'bg-emerald-500 text-white'
-                                            : 'bg-amber-500 text-white'
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent opacity-60"></div>
+                                    <div className="absolute top-4 right-4">
+                                        <span className={`px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-md border ${
+                                            course.status === 'published' ? 'bg-emerald-500/90 text-white border-emerald-400/50' :
+                                            course.status === 'pending' ? 'bg-cyan-500/90 text-white border-cyan-400/50' :
+                                            course.status === 'rejected' ? 'bg-red-500/90 text-white border-red-400/50' :
+                                            course.status === 'suspended' ? 'bg-indigo-500/90 text-white border-indigo-400/50' :
+                                            'bg-amber-500/90 text-white border-amber-400/50'
                                             }`}>
-                                            {course.status === 'published' ? '● Published' : '● Draft'}
+                                            {course.status === 'published' ? '● Published' : 
+                                             course.status === 'pending' ? '● Pending Approval' :
+                                             course.status === 'rejected' ? '● Rejected' :
+                                             course.status === 'suspended' ? '● Suspended' :
+                                             '● Draft'}
                                         </span>
                                     </div>
                                 </div>
@@ -272,11 +278,10 @@ export default function MyCoursesPage() {
                                     <div className="flex gap-2">
                                         <Button
                                             asChild
-                                            size="sm"
-                                            className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                                            className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold h-10 shadow-sm transition-colors"
                                         >
                                             <Link href={`/tutor/courses/${course._id}`}>
-                                                <Edit className="w-4 h-4 mr-1" />
+                                                <Edit className="w-4 h-4 mr-2" />
                                                 Manage
                                             </Link>
                                         </Button>
@@ -334,15 +339,22 @@ export default function MyCoursesPage() {
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${course.status === 'published'
-                                                    ? 'bg-emerald-100 text-emerald-700'
-                                                    : 'bg-amber-100 text-amber-700'
+                                                <span className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${
+                                                    course.status === 'published' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                                                    course.status === 'pending' ? 'bg-cyan-50 text-cyan-600 border-cyan-200' :
+                                                    course.status === 'rejected' ? 'bg-red-50 text-red-600 border-red-200' :
+                                                    course.status === 'suspended' ? 'bg-indigo-50 text-indigo-600 border-indigo-200' :
+                                                    'bg-amber-50 text-amber-600 border-amber-200'
                                                     }`}>
-                                                    {course.status === 'published' ? '● Published' : '● Draft'}
+                                                    {course.status === 'published' ? '● Published' : 
+                                                     course.status === 'pending' ? '● Pending' :
+                                                     course.status === 'rejected' ? '● Rejected' :
+                                                     course.status === 'suspended' ? '● Suspended' :
+                                                     '● Draft'}
                                                 </span>
                                             </div>
 
-                                            <p className="text-slate-600 text-sm mb-4 line-clamp-2">
+                                            <p className="text-slate-600 text-sm mb-4 line-clamp-2 leading-relaxed">
                                                 {course.description}
                                             </p>
 
@@ -353,11 +365,10 @@ export default function MyCoursesPage() {
                                                 <div className="flex gap-2">
                                                     <Button
                                                         asChild
-                                                        size="sm"
-                                                        className="bg-indigo-600 hover:bg-indigo-700"
+                                                        className="bg-orange-500 hover:bg-orange-600 text-white font-bold h-10 shadow-sm transition-colors"
                                                     >
                                                         <Link href={`/tutor/courses/${course._id}`}>
-                                                            <Edit className="w-4 h-4 mr-1" />
+                                                            <Edit className="w-4 h-4 mr-2" />
                                                             Manage
                                                         </Link>
                                                     </Button>

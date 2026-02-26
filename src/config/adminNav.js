@@ -7,7 +7,9 @@ import {
     DollarSign,
     Shield,
     BarChart3,
-    Tags
+    Tags,
+    CreditCard,
+    Activity
 } from 'lucide-react';
 
 export const adminNavItems = [
@@ -28,9 +30,15 @@ export const adminNavItems = [
                 type: "link"
             },
             {
-                title: "Financials",
+                title: "Earnings Overview",
                 icon: DollarSign,
                 href: "/admin/earnings",
+                type: "link"
+            },
+            {
+                title: "Payout Requests",
+                icon: CreditCard,
+                href: "/admin/payouts",
                 type: "link"
             }
         ]

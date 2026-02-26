@@ -327,10 +327,16 @@ export default function StudentDashboard() {
                                             i % 3 === 1 ? 'from-purple-500 to-pink-600' :
                                                 'from-emerald-500 to-teal-600'
                                             }`}></div>
-                                        <div className="absolute top-4 left-4">
+                                        <div className="absolute top-4 left-4 flex flex-col gap-2 items-start">
                                             <span className="bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-lg border border-white/20">
-                                                Module 2
+                                                Course
                                             </span>
+                                            {/* Add suspended badge if course or tutor is no longer active */}
+                                            {(enrollment.courseId?.status !== 'published' || enrollment.courseId?.tutorId?.isVerified === false) && (
+                                                <span className="bg-red-600 text-white text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md shadow-lg border border-red-700">
+                                                    Suspended
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="absolute bottom-4 right-4">
                                             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-indigo-600 shadow-lg group-hover:scale-110 transition-transform">

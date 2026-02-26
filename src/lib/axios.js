@@ -48,6 +48,14 @@ api.interceptors.response.use(
                 }
             }
         }
+        
+        // Handle Maintenance Mode (503)
+        if (error.response && error.response.status === 503 && error.response.data?.isMaintenanceMode) {
+             if (typeof window !== 'undefined' && !window.location.pathname.includes('/maintenance')) {
+                 window.location.href = '/maintenance';
+             }
+        }
+
         return Promise.reject(error);
     }
 );

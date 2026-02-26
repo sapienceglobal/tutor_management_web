@@ -34,9 +34,11 @@ export async function middleware(request) {
         }
 
         // 3. Strict Role-based Routing Checks
-        // If Tutor tries to access Student routes
+        // If Tutor tries to access Student routes (allow `/student/courses/` and `/student/exams/` for Preview Mode)
         if (role === 'tutor' && pathname.startsWith('/student')) {
-            return NextResponse.redirect(new URL('/tutor/dashboard', request.url));
+            if (!pathname.startsWith('/student/courses/') && !pathname.startsWith('/student/exams/')) {
+                return NextResponse.redirect(new URL('/tutor/dashboard', request.url));
+            }
         }
 
         // If Student tries to access Tutor routes

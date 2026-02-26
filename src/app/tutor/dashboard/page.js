@@ -9,7 +9,7 @@ import TopItemsWidget from '@/components/widgets/TopItemsWidget';
 import FeedbackWidget from '@/components/widgets/FeedbackWidget';
 import QuickLinksWidget from '@/components/widgets/QuickLinksWidget';
 import DataTable from '@/components/widgets/DataTable';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ShieldAlert } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 
@@ -136,6 +136,19 @@ export default function TutorDashboard() {
                     </div>
                 </div>
             </div>
+
+            {/* Verification Banner */}
+            {stats && !stats.isVerified && (
+                <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start gap-3 shadow-sm">
+                    <ShieldAlert className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                    <div>
+                        <h4 className="text-amber-800 font-semibold mb-1">Your profile is pending verification</h4>
+                        <p className="text-amber-700 text-sm">
+                            Your profile is currently under review by an administrator. You will not appear in public search results until verified. You can still create and manage courses in the meantime.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Stats Cards Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
