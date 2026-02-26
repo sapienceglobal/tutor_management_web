@@ -386,7 +386,7 @@ export default function CourseDetailPage({ params }) {
 
     const totalLessons = lessons.length;
     const totalDuration = lessons.reduce((acc, l) => acc + (l.duration || 0), 0);
-    
+
     // Determine if the course was suspended or tutor was blocked/unverified
     const isTutorVerified = course.tutorId?.isVerified;
     const isTutorBlocked = course.tutorId?.userId?.isBlocked;
@@ -983,7 +983,7 @@ export default function CourseDetailPage({ params }) {
                             <div className="aspect-video bg-slate-100 relative group overflow-hidden">
                                 {/* Thumbnail */}
                                 <img
-                                    src={course.thumbnail}
+                                    src={course.thumbnail || 'https://via.placeholder.com/800x450?text=Course+Thumbnail'}
                                     alt={course.title}
                                     className="w-full h-full object-cover"
                                 />
@@ -1006,30 +1006,30 @@ export default function CourseDetailPage({ params }) {
                                     )}
                                 </div>
 
-                                        {isInstructor ? (
-                                            <Button
-                                                onClick={() => router.push(`/tutor/courses/${id}`)}
-                                                variant="default"
-                                                className="w-full h-12 text-base font-bold rounded shadow-sm hover:shadow transition-all bg-indigo-600 hover:bg-indigo-700 text-white"
-                                            >
-                                                <Edit3 className="w-5 h-5 mr-2" />
-                                                Edit Course
-                                            </Button>
-                                        ) : !isEnrolled ? (
-                                            <Button
-                                                onClick={handleEnroll}
-                                                disabled={enrolling}
-                                                variant="default"
-                                                className="w-full h-12 text-base font-bold rounded shadow-sm hover:shadow transition-all"
-                                            >
-                                                {enrolling ? 'Enrolling...' : 'Enroll Now'}
-                                            </Button>
-                                        ) : (
-                                            <div className="w-full h-12 bg-emerald-500 text-white font-bold rounded flex items-center justify-center gap-2 shadow-sm">
-                                                <CheckCircle className="w-5 h-5" />
-                                                Enrolled
-                                            </div>
-                                        )}
+                                {isInstructor ? (
+                                    <Button
+                                        onClick={() => router.push(`/tutor/courses/${id}`)}
+                                        variant="default"
+                                        className="w-full h-12 text-base font-bold rounded shadow-sm hover:shadow transition-all bg-indigo-600 hover:bg-indigo-700 text-white"
+                                    >
+                                        <Edit3 className="w-5 h-5 mr-2" />
+                                        Edit Course
+                                    </Button>
+                                ) : !isEnrolled ? (
+                                    <Button
+                                        onClick={handleEnroll}
+                                        disabled={enrolling}
+                                        variant="default"
+                                        className="w-full h-12 text-base font-bold rounded shadow-sm hover:shadow transition-all"
+                                    >
+                                        {enrolling ? 'Enrolling...' : 'Enroll Now'}
+                                    </Button>
+                                ) : (
+                                    <div className="w-full h-12 bg-emerald-500 text-white font-bold rounded flex items-center justify-center gap-2 shadow-sm">
+                                        <CheckCircle className="w-5 h-5" />
+                                        Enrolled
+                                    </div>
+                                )}
 
                                 <p className="text-center text-xs text-slate-500 mt-3">
                                     30-Day Money-Back Guarantee
