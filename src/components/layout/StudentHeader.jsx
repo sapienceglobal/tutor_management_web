@@ -11,8 +11,8 @@ import {
     LogOut,
     User,
     Settings,
-    ChevronLeft,
-    ChevronRight,
+    PanelLeftClose,
+    PanelLeftOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,8 +49,9 @@ export function StudentHeader({ user, onLogout, onMenuClick, onSidebarCollapse, 
                     <button
                         onClick={onSidebarCollapse}
                         className="hidden lg:flex p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                        title={isSidebarCollapsed ? 'Open sidebar' : 'Close sidebar'}
                     >
-                        {isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+                        {isSidebarCollapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
                     </button>
                     <h1 className="text-lg font-bold text-slate-800 hidden sm:block">Student Panel</h1>
                 </div>

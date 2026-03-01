@@ -1,37 +1,66 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import api from '@/lib/axios';
 import {
     Search,
     Star,
-    MapPin,
     Award,
+    MapPin,
     ArrowRight,
-    Filter
+    ChevronDown,
+    CheckCircle,
+    BookOpen,
+    Filter,
 } from 'lucide-react';
+import api from '@/lib/axios';
 import { Button } from '@/components/ui/button';
+
+const RATE_OPTIONS = [
+    { label: 'Any rate', value: '' },
+    { label: 'Under ₹500/hr', value: '500' },
+    { label: 'Under ₹1000/hr', value: '1000' },
+    { label: 'Under ₹2000/hr', value: '2000' },
+];
 
 export default function FindTutorsPage() {
     const [tutors, setTutors] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [categoryId, setCategoryId] = useState('');
+    const [maxRate, setMaxRate] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
+
+    useEffect(() => {
+        fetchCategories();
+    }, []);
 
     useEffect(() => {
         fetchTutors();
-    }, []);
+    }, [categoryId, maxRate]);
 
-    const fetchTutors = async (search = '') => {
+    const fetchCategories = async () => {
+        try {
+            const res = await api.get('/categories');
+            if (res.data.success) setCategories(res.data.categories || []);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const fetchTutors = async () => {
         setLoading(true);
         try {
-            const query = search ? `?search=${search}` : '';
-            const response = await api.get(`/tutors${query}`);
-            if (response.data.success) {
-                setTutors(response.data.tutors);
-            }
+            const params = new URLSearchParams();
+            if (searchTerm) params.set('search', searchTerm);
+            if (categoryId) params.set('categoryId', categoryId);
+            if (maxRate) params.set('maxRate', maxRate);
+            const res = await api.get(`/tutors?${params.toString()}`);
+            if (res.data.success) setTutors(res.data.tutors || []);
         } catch (error) {
             console.error('Error fetching tutors:', error);
+            setTutors([]);
         } finally {
             setLoading(false);
         }
@@ -39,96 +68,177 @@ export default function FindTutorsPage() {
 
     const handleSearch = (e) => {
         e.preventDefault();
-        fetchTutors(searchTerm);
+        fetchTutors();
     };
 
+    const hasActiveFilters = categoryId || maxRate;
+
     return (
-        <div className="max-w-7xl mx-auto p-6 space-y-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Find a Tutor</h1>
-                    <p className="text-gray-500 mt-2">Connect with expert tutors for 1-on-1 learning.</p>
+        <div className="min-h-screen bg-[#f0f2f8]">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+                {/* Header */}
+                <div className="flex flex-col gap-4">
+                    <h1 className="text-2xl font-bold text-slate-900">Find a Tutor</h1>
+                    <p className="text-slate-600">Connect with verified tutors for 1-on-1 learning. Book a session that fits your schedule.</p>
                 </div>
 
-                <form onSubmit={handleSearch} className="flex gap-2 w-full md:w-auto">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <input
-                            type="text"
-                            placeholder="Search by name or subject..."
-                            className="pl-10 pr-4 py-2 border rounded-lg w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    <Button type="submit">Search</Button>
-                </form>
-            </div>
+                {/* Search + Filters */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                    <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Search by name or subject..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white text-slate-800 placeholder:text-slate-400"
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                                Search
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={`border-slate-200 ${showFilters ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : ''}`}
+                            >
+                                <Filter className="w-4 h-4 mr-2" />
+                                Filters
+                                {hasActiveFilters && (
+                                    <span className="ml-1.5 w-5 h-5 bg-indigo-600 text-white text-xs font-bold rounded-full inline-flex items-center justify-center">
+                                        {[categoryId, maxRate].filter(Boolean).length}
+                                    </span>
+                                )}
+                            </Button>
+                        </div>
+                    </form>
 
-            {loading ? (
-                <div className="text-center py-12">Loading tutors...</div>
-            ) : tutors.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {tutors.map(tutor => (
-                        <div key={tutor._id} className="bg-white rounded-2xl border hover:shadow-lg transition-all overflow-hidden group">
-                            <div className="p-6">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-16 h-16 rounded-full bg-gray-100 overflow-hidden">
+                    {showFilters && (
+                        <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                                <select
+                                    value={categoryId}
+                                    onChange={(e) => setCategoryId(e.target.value)}
+                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 focus:ring-2 focus:ring-indigo-500"
+                                >
+                                    <option value="">All categories</option>
+                                    {categories.map((c) => (
+                                        <option key={c._id} value={c._id}>{c.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Max hourly rate</label>
+                                <select
+                                    value={maxRate}
+                                    onChange={(e) => setMaxRate(e.target.value)}
+                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 focus:ring-2 focus:ring-indigo-500"
+                                >
+                                    {RATE_OPTIONS.map((o) => (
+                                        <option key={o.value || 'any'} value={o.value}>{o.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex items-end">
+                                <Button variant="outline" onClick={() => { setCategoryId(''); setMaxRate(''); }} className="border-slate-200">
+                                    Clear filters
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Results */}
+                {loading ? (
+                    <div className="flex justify-center py-16">
+                        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                ) : tutors.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {tutors.map((tutor) => (
+                            <div
+                                key={tutor._id}
+                                className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md hover:border-indigo-100 transition-all flex flex-col"
+                            >
+                                <div className="p-6 flex-1 flex flex-col">
+                                    <div className="flex items-start gap-4 mb-4">
+                                        <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-slate-100 shrink-0 bg-slate-100">
                                             {tutor.userId?.profileImage ? (
                                                 <img src={tutor.userId.profileImage} alt="" className="w-full h-full object-cover" />
                                             ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-xl font-bold text-gray-400">
+                                                <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-slate-400">
                                                     {tutor.userId?.name?.[0] || 'T'}
                                                 </div>
                                             )}
                                         </div>
-                                        <div>
-                                            <h3 className="font-bold text-lg text-gray-900 line-clamp-1">{tutor.userId?.name || 'Unknown Tutor'}</h3>
-                                            <p className="text-sm text-indigo-600 font-medium">{tutor.categoryId?.name || 'General Tutor'}</p>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <h3 className="font-bold text-slate-900 truncate">{tutor.userId?.name || 'Tutor'}</h3>
+                                                {tutor.isVerified && (
+                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-xs font-medium">
+                                                        <CheckCircle className="w-3.5 h-3.5" /> Verified
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-sm font-medium text-indigo-600 mt-0.5">{tutor.categoryId?.name || 'Expert'}</p>
+                                            <div className="flex items-center gap-1.5 mt-2">
+                                                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                                                <span className="font-semibold text-slate-800">{tutor.rating?.toFixed(1) || 'New'}</span>
+                                                <span className="text-slate-500 text-sm">({tutor.reviewCount || 0})</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg">
-                                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                                        <span className="font-bold text-yellow-700">{tutor.rating || 'New'}</span>
-                                    </div>
-                                </div>
 
-                                <p className="text-gray-600 text-sm line-clamp-2 mb-4 min-h-[40px]">
-                                    {tutor.bio || 'No bio available.'}
-                                </p>
+                                    <p className="text-slate-600 text-sm line-clamp-2 mb-4 min-h-[40px]">
+                                        {tutor.bio || 'Expert tutor ready to help you achieve your goals.'}
+                                    </p>
 
-                                <div className="flex items-center gap-4 text-sm text-gray-500 mb-6">
-                                    <div className="flex items-center gap-1">
-                                        <Award className="w-4 h-4" />
-                                        <span>{tutor.experience || 0} years exp</span>
+                                    <div className="flex flex-wrap gap-3 text-sm text-slate-500 mb-4">
+                                        <span className="flex items-center gap-1.5">
+                                            <Award className="w-4 h-4 text-indigo-500" />
+                                            {tutor.experience || 0} yrs exp
+                                        </span>
+                                        <span className="flex items-center gap-1.5">
+                                            <BookOpen className="w-4 h-4 text-indigo-500" />
+                                            {tutor.studentsCount || 0} students
+                                        </span>
+                                        <span className="flex items-center gap-1.5">
+                                            <MapPin className="w-4 h-4 text-slate-400" />
+                                            Online
+                                        </span>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                        <MapPin className="w-4 h-4" />
-                                        <span>Online</span>
-                                    </div>
-                                </div>
 
-                                <div className="flex items-center justify-between pt-4 border-t">
-                                    <div>
-                                        <span className="text-xs text-gray-500 uppercase font-semibold">Hourly Rate</span>
-                                        <p className="text-xl font-bold text-gray-900">₹{tutor.hourlyRate || 0}</p>
+                                    <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between gap-4">
+                                        <div>
+                                            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Hourly rate</p>
+                                            <p className="text-xl font-bold text-slate-900">₹{tutor.hourlyRate ?? 0}</p>
+                                        </div>
+                                        <Link href={`/student/tutors/${tutor._id}`} className="shrink-0">
+                                            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5">
+                                                Book session
+                                                <ArrowRight className="w-4 h-4" />
+                                            </Button>
+                                        </Link>
                                     </div>
-                                    <Link href={`/student/tutors/${tutor._id}`}>
-                                        <Button className="group-hover:translate-x-1 transition-transform">
-                                            Book Now <ArrowRight className="w-4 h-4 ml-2" />
-                                        </Button>
-                                    </Link>
                                 </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center py-12 border-2 border-dashed rounded-xl">
-                    <p className="text-gray-500">No tutors found matching your search.</p>
-                </div>
-            )}
+                        ))}
+                    </div>
+                ) : (
+                    <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+                        <Search className="w-14 h-14 text-slate-300 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-slate-800 mb-2">No tutors found</h3>
+                        <p className="text-slate-500 mb-4">Try adjusting your search or filters.</p>
+                        <Button variant="outline" onClick={() => { setSearchTerm(''); setCategoryId(''); setMaxRate(''); fetchTutors(); }}>
+                            Clear all
+                        </Button>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

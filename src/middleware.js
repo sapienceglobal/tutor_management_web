@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-// Secret must match the backend JWT_SECRET. Next.js Edge requires it to be encoded.
-const secretKey = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'fallback_secret_for_dev_only'
-);
+// Secret must match the backend JWT_SECRET. In production, JWT_SECRET is required (no fallback).
+const rawSecret = process.env.JWT_SECRET;
+if (process.env.NODE_ENV === 'production' && !rawSecret) {
+    throw new Error('JWT_SECRET is required in production. Set it in your environment.');
+}
+const secretKey = new TextEncoder().encode(rawSecret || 'fallback_secret_for_dev_only');
 
 // Helper: Get dashboard URL for a role
 function getDashboard(role) {

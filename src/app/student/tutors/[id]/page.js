@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
+import Link from 'next/link';
 import api from '@/lib/axios';
 import {
     Calendar as CalendarIcon,
@@ -9,17 +10,17 @@ import {
     Star,
     Award,
     CheckCircle,
-    ChevronRight,
     Loader2,
     BookOpen,
-    MessageSquare
+    MessageSquare,
+    ArrowLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'react-hot-toast';
-import { format, addDays, startOfToday, isSameDay, parse, addMinutes } from 'date-fns';
+import { format, addDays, startOfToday, isSameDay, parse } from 'date-fns';
 
-export default function BookTutorPage({ params }) {
+export default function TutorDetailPage({ params }) {
     const { id } = use(params);
 
     const [tutor, setTutor] = useState(null);
@@ -30,39 +31,27 @@ export default function BookTutorPage({ params }) {
     const [loadingCourses, setLoadingCourses] = useState(false);
     const [loadingReviews, setLoadingReviews] = useState(false);
 
-    // Booking State
     const [selectedDate, setSelectedDate] = useState(null);
     const [availableSlots, setAvailableSlots] = useState([]);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [bookingNote, setBookingNote] = useState('');
     const [bookingLoading, setBookingLoading] = useState(false);
-    const [tutorFullSchedule, setTutorFullSchedule] = useState(null);
     const [datesWithSlots, setDatesWithSlots] = useState([]);
 
     useEffect(() => {
-        const init = async () => {
+        (async () => {
             await fetchTutorProfile();
-            // Load other data in background
             fetchTutorFullSchedule();
             fetchTutorCourses();
             fetchTutorReviews();
-        };
-        init();
+        })();
     }, [id]);
 
     const fetchTutorCourses = async () => {
         try {
             setLoadingCourses(true);
-            // Assuming we have an endpoint to filter courses by tutorId
-            // If not, we might need to filter client-side or add endpoint
-            // Using existing general search with tutorId param if supported, or assuming a new endpoint/param
-            // Let's assume /courses?tutorId={id} works or we filter in /tutors/{id}/courses
-            // Based on list_dir earlier, we only saw general course controllers. 
-            // Checking existing patterns, usually `api.get('/courses?tutorId=...')`
             const response = await api.get(`/courses?tutorId=${id}`);
-            if (response.data.success) {
-                setTutorCourses(response.data.courses || []);
-            }
+            if (response.data.success) setTutorCourses(response.data.courses || []);
         } catch (error) {
             console.error('Error fetching tutor courses:', error);
         } finally {
@@ -73,10 +62,8 @@ export default function BookTutorPage({ params }) {
     const fetchTutorReviews = async () => {
         try {
             setLoadingReviews(true);
-            const response = await api.get(`/reviews/tutor/${id}/public?limit=5`);
-            if (response.data.success) {
-                setTutorReviews(response.data.reviews || []);
-            }
+            const response = await api.get(`/reviews/tutor/${id}/public?limit=10`);
+            if (response.data.success) setTutorReviews(response.data.reviews || []);
         } catch (error) {
             console.error('Error fetching reviews:', error);
         } finally {
@@ -87,12 +74,10 @@ export default function BookTutorPage({ params }) {
     const fetchTutorProfile = async () => {
         try {
             const response = await api.get(`/tutors/${id}`);
-            if (response.data.success) {
-                setTutor(response.data.tutor);
-            }
+            if (response.data.success) setTutor(response.data.tutor);
         } catch (error) {
             console.error('Error fetching tutor profile:', error);
-            toast.error('Failed to load tutor data');
+            toast.error('Failed to load tutor');
         } finally {
             setLoading(false);
         }
@@ -100,462 +85,421 @@ export default function BookTutorPage({ params }) {
 
     const fetchTutorFullSchedule = async () => {
         try {
-            // Fetch full schedule without date param to get weekly schedule + overrides
             const response = await api.get(`/appointments/schedule/${id}`);
             if (response.data.success) {
-                setTutorFullSchedule({
-                    schedule: response.data.schedule || [],
-                    dateOverrides: response.data.dateOverrides || [],
-                    bookingSettings: response.data.bookingSettings || {}
-                });
-                // Calculate which dates have slots
-                calculateAvailableDates(response.data.schedule, response.data.dateOverrides);
+                calculateAvailableDates(response.data.schedule || [], response.data.dateOverrides || []);
             }
         } catch (error) {
-            console.error('Error fetching full schedule:', error);
+            console.error('Error fetching schedule:', error);
         }
     };
 
     const calculateAvailableDates = (schedule, overrides) => {
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const available = [];
-
-        // Check next 14 days
         for (let i = 0; i < 14; i++) {
             const date = addDays(startOfToday(), i);
             const dateStr = format(date, 'yyyy-MM-dd');
             const dayName = days[date.getDay()];
-
-            // Check if date is overridden
             const override = overrides?.find(o => o.date === dateStr);
-
             if (override) {
-                if (!override.isBlocked && override.customSlots?.length > 0) {
-                    available.push(dateStr);
-                }
+                if (!override.isBlocked && override.customSlots?.length > 0) available.push(dateStr);
             } else {
-                // Check weekly schedule
                 const daySchedule = schedule?.find(d => d.day === dayName);
-                if (daySchedule && daySchedule.isActive !== false && daySchedule.slots?.length > 0) {
-                    available.push(dateStr);
-                }
+                if (daySchedule && daySchedule.isActive !== false && daySchedule.slots?.length > 0) available.push(dateStr);
             }
         }
-
         setDatesWithSlots(available);
-
-        // Auto-select first available date if none selected
         if (!selectedDate && available.length > 0) {
-            const firstAvailableDate = parse(available[0], 'yyyy-MM-dd', new Date());
-            setSelectedDate(firstAvailableDate);
+            setSelectedDate(parse(available[0], 'yyyy-MM-dd', new Date()));
         }
     };
 
-    const fetchTutorSchedule = async () => {
+    const fetchSlotsForDate = async () => {
         if (!selectedDate) return;
-
         try {
-            // Fetch slots for the selected date
             const dateStr = format(selectedDate, 'yyyy-MM-dd');
             const response = await api.get(`/appointments/schedule/${id}?date=${dateStr}`);
-            if (response.data.success) {
-                setAvailableSlots(response.data.slots || []);
-            } else {
-                setAvailableSlots([]);
-            }
+            if (response.data.success) setAvailableSlots(response.data.slots || []);
+            else setAvailableSlots([]);
         } catch (error) {
-            console.error('Error fetching schedule:', error);
             setAvailableSlots([]);
         }
     };
 
-    // Re-fetch schedule when date changes
     useEffect(() => {
-        if (id) {
-            fetchTutorSchedule();
-        }
+        if (id && selectedDate) fetchSlotsForDate();
     }, [selectedDate, id]);
+
+    // Slot format from API can be "10:00-11:00"; use start time for booking
+    const getSlotStartTime = (slot) => (slot && slot.includes('-') ? slot.split('-')[0] : slot);
 
     const handleBookAppointment = async () => {
         if (!selectedSlot) return;
+        const startTime = getSlotStartTime(selectedSlot);
+        const [hours, minutes] = startTime.split(':').map(Number);
+        const dateTime = new Date(selectedDate);
+        dateTime.setHours(hours, minutes || 0, 0, 0);
 
         try {
             setBookingLoading(true);
-
-            // Combine date and timeSlot into a proper dateTime
-            // selectedSlot format is like "09:00" or "14:30"
-            const [hours, minutes] = selectedSlot.split(':');
-            const dateTime = new Date(selectedDate);
-            dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
             const response = await api.post('/appointments', {
                 tutorId: id,
                 dateTime: dateTime.toISOString(),
-                notes: bookingNote
+                notes: bookingNote,
             });
-
             if (response.data.success) {
                 toast.success('Appointment requested successfully!');
                 setBookingNote('');
                 setSelectedSlot(null);
-                fetchTutorSchedule(); // Refresh available slots
-                // Optionally redirect to appointments page
-                // router.push('/student/appointments');
+                fetchSlotsForDate();
             }
         } catch (error) {
-            console.error('Booking error:', error);
             toast.error(error.response?.data?.message || 'Failed to book appointment');
         } finally {
             setBookingLoading(false);
         }
     };
 
-    // ... (rendering logic)
-
-    // Helper to render stars
-    const renderStars = (rating) => {
-        return [...Array(5)].map((_, i) => (
-            <Star key={i} className={`w-4 h-4 ${i < Math.round(rating || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+    const renderStars = (rating) =>
+        [...Array(5)].map((_, i) => (
+            <Star key={i} className={`w-4 h-4 ${i < Math.round(rating || 0) ? 'text-amber-500 fill-amber-500' : 'text-slate-200'}`} />
         ));
-    };
 
-    if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
-    if (!tutor) return <div className="p-8 text-center bg-gray-50 border-2 border-dashed rounded-xl m-8">Tutor not found</div>;
-
-    const calendarDays = Array.from({ length: 14 }, (_, i) => addDays(startOfToday(), i));
-
-    return (
-        <div className="max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Col: Tutor Profile & Tabs */}
-            <div className="lg:col-span-2 space-y-8">
-                {/* Profile Header */}
-                <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-xl shadow-gray-100/50 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-indigo-600 to-purple-600 opacity-10"></div>
-
-                    <div className="relative flex flex-col md:flex-row gap-8 items-start">
-                        <div className="w-32 h-32 rounded-full border-4 border-white shadow-2xl shrink-0 overflow-hidden bg-white">
-                            {tutor.userId?.profileImage ? (
-                                <img src={tutor.userId.profileImage} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-gray-400 bg-gray-50">
-                                    {tutor.userId?.name?.[0]}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="flex-1 pt-2">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <div>
-                                    <h1 className="text-3xl font-bold text-gray-900">{tutor.userId?.name}</h1>
-                                    <p className="text-indigo-600 font-medium text-lg">{tutor.categoryId?.name || 'Expert'} Tutor</p>
-                                </div>
-                                <div className="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-xl border border-yellow-100 shadow-sm">
-                                    <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                                    <span className="font-bold text-yellow-800 text-lg">{tutor.rating || 'New'}</span>
-                                    <span className="text-yellow-600 text-sm">({tutor.reviewCount || 0} reviews)</span>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-4 text-sm text-gray-500 mt-6">
-                                <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border">
-                                    <Award className="w-4 h-4 text-indigo-500" />
-                                    {tutor.experience} Years Experience
-                                </div>
-                                <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border">
-                                    <MapPin className="w-4 h-4 text-indigo-500" />
-                                    Online
-                                </div>
-                                <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border">
-                                    <CheckCircle className="w-4 h-4 text-green-500" />
-                                    Verified Tutor
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Tabs Navigation */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="flex border-b">
-                        {['about', 'courses', 'reviews', 'schedule'].map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={`flex-1 py-4 font-semibold text-sm transition-all relative ${activeTab === tab
-                                    ? 'text-indigo-600 bg-indigo-50/50'
-                                    : 'text-gray-500 hover:bg-gray-50'
-                                    }`}
-                            >
-                                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                                {activeTab === tab && (
-                                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600"></div>
-                                )}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="p-6 md:p-8 min-h-[400px]">
-                        {/* Tab Content: About */}
-                        {activeTab === 'about' && (
-                            <div className="space-y-6 animate-in fade-in">
-                                <h3 className="text-xl font-bold text-gray-900">About Me</h3>
-                                <p className="text-gray-600 leading-relaxed whitespace-pre-line text-lg">
-                                    {tutor.bio || "Passionate tutor dedicated to helping students achieve their academic goals."}
-                                </p>
-
-                                <div className="grid grid-cols-2 gap-4 mt-8">
-                                    <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
-                                        <p className="text-indigo-600 font-bold text-2xl">{tutorCourses.length || '-'}</p>
-                                        <p className="text-sm text-gray-600 font-medium">Active Courses</p>
-                                    </div>
-                                    <div className="p-4 bg-purple-50 rounded-xl border border-purple-100">
-                                        <p className="text-purple-600 font-bold text-2xl">{tutor.hourlyRate}</p>
-                                        <p className="text-sm text-gray-600 font-medium">Hourly Rate (INR)</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Tab Content: Courses */}
-                        {activeTab === 'courses' && (
-                            <div className="space-y-6 animate-in fade-in">
-                                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                    <BookOpen className="w-5 h-5 text-indigo-600" />
-                                    Courses by {tutor.userId?.name}
-                                </h3>
-
-                                {loadingCourses ? (
-                                    <div className="flex justify-center py-12"><Loader2 className="animate-spin text-indigo-600" /></div>
-                                ) : tutorCourses.length > 0 ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {tutorCourses.map(course => (
-                                            <a
-                                                key={course._id}
-                                                href={`/student/courses/${course._id}`}
-                                                className="group block bg-white border rounded-xl overflow-hidden hover:shadow-lg transition-all"
-                                            >
-                                                <div className="aspect-video bg-gray-100 relative overflow-hidden">
-                                                    <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                                    <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-bold shadow-sm">
-                                                        ₹{course.price}
-                                                    </div>
-                                                </div>
-                                                <div className="p-4">
-                                                    <div className="flex items-center gap-1 mb-2">
-                                                        <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                                                        <span className="text-xs font-bold text-gray-700">{course.rating?.toFixed(1) || '0.0'}</span>
-                                                    </div>
-                                                    <h4 className="font-bold text-gray-900 line-clamp-2 group-hover:text-indigo-600 transition-colors">{course.title}</h4>
-                                                    <div className="flex items-center gap-2 mt-3 text-xs text-gray-500">
-                                                        <span className="bg-gray-100 px-2 py-1 rounded-md">{course.level}</span>
-                                                        <span>{course.lessons?.length || 0} Lessons</span>
-                                                    </div>
-                                                </div>
-                                            </a>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed">
-                                        <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                                        <p className="text-gray-500">No courses available yet.</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Tab Content: Reviews */}
-                        {activeTab === 'reviews' && (
-                            <div className="space-y-6 animate-in fade-in">
-                                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                    <Star className="w-5 h-5 text-indigo-600" />
-                                    Student Reviews ({tutor.reviewCount})
-                                </h3>
-
-                                {loadingReviews ? (
-                                    <div className="flex justify-center py-12"><Loader2 className="animate-spin text-indigo-600" /></div>
-                                ) : tutorReviews.length > 0 ? (
-                                    <div className="space-y-4">
-                                        {tutorReviews.map(review => (
-                                            <div key={review._id} className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                                                <div className="flex items-start justify-between mb-2">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border">
-                                                            {review.studentId?.profileImage ? (
-                                                                <img src={review.studentId.profileImage} alt="" className="w-full h-full object-cover" />
-                                                            ) : (
-                                                                <span className="font-bold text-gray-400">{review.studentId?.name?.[0]}</span>
-                                                            )}
-                                                        </div>
-                                                        <div>
-                                                            <p className="font-bold text-gray-900">{review.studentId?.name}</p>
-                                                            <div className="flex gap-0.5">
-                                                                {renderStars(review.rating)}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <span className="text-xs text-gray-500">{new Date(review.createdAt).toLocaleDateString()}</span>
-                                                </div>
-
-                                                <div className="ml-13 pl-13">
-                                                    <p className="text-gray-700 leading-relaxed text-sm mb-3">{review.comment}</p>
-                                                    <Badge variant="outline" className="text-xs font-normal text-gray-500 bg-white">
-                                                        Course: {review.courseId?.title}
-                                                    </Badge>
-
-                                                    {review.tutorResponse && (
-                                                        <div className="mt-3 p-3 bg-indigo-50 border-l-2 border-indigo-400 rounded-r-lg">
-                                                            <p className="text-xs font-bold text-indigo-900 mb-1">Tutor Reply</p>
-                                                            <p className="text-xs text-indigo-800">{review.tutorResponse.comment}</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed">
-                                        <MessageSquare className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                                        <p className="text-gray-500">No reviews yet.</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Tab Content: Schedule */}
-                        {activeTab === 'schedule' && (
-                            <div className="animate-in fade-in space-y-8">
-                                <div className="space-y-4">
-                                    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                        <CalendarIcon className="w-5 h-5 text-indigo-600" /> Select Date
-                                    </h2>
-                                    <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
-                                        {calendarDays.map((date) => {
-                                            const isSelected = selectedDate && isSameDay(date, selectedDate);
-                                            const dateStr = format(date, 'yyyy-MM-dd');
-                                            const hasSlots = datesWithSlots.includes(dateStr);
-
-                                            return (
-                                                <button
-                                                    key={date.toString()}
-                                                    onClick={() => {
-                                                        setSelectedDate(date);
-                                                        setSelectedSlot(null);
-                                                    }}
-                                                    disabled={!hasSlots}
-                                                    className={`
-                                                        relative flex flex-col items-center justify-center min-w-[70px] h-20 rounded-xl border transition-all shrink-0
-                                                        ${isSelected
-                                                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-md transform scale-105'
-                                                            : hasSlots
-                                                                ? 'bg-white text-gray-600 hover:border-indigo-300 hover:bg-indigo-50 border-gray-200'
-                                                                : 'bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed opacity-60'
-                                                        }
-                                                    `}
-                                                >
-                                                    <span className="text-xs font-medium uppercase">{format(date, 'EEE')}</span>
-                                                    <span className="text-xl font-bold">{format(date, 'd')}</span>
-                                                    {hasSlots && !isSelected && (
-                                                        <div className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full"></div>
-                                                    )}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                        <Clock className="w-5 h-5 text-indigo-600" /> Available Slots
-                                    </h2>
-
-                                    {availableSlots.length > 0 ? (
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                            {availableSlots.map((slot) => (
-                                                <button
-                                                    key={slot}
-                                                    onClick={() => setSelectedSlot(slot)}
-                                                    className={`
-                                                        py-3 px-4 rounded-lg border text-sm font-medium transition-all
-                                                        ${selectedSlot === slot
-                                                            ? 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-1 ring-indigo-500'
-                                                            : 'bg-white hover:border-gray-300 text-gray-700'
-                                                        }
-                                                    `}
-                                                >
-                                                    {slot}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed text-gray-500">
-                                            No available slots for this date.
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </div>
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[#f0f2f8] flex items-center justify-center">
+                <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+    if (!tutor) {
+        return (
+            <div className="min-h-screen bg-[#f0f2f8] flex items-center justify-center p-4">
+                <div className="bg-white rounded-xl border border-slate-200 p-8 text-center max-w-md">
+                    <p className="text-slate-600 mb-4">Tutor not found.</p>
+                    <Link href="/student/tutors"><Button variant="outline">Back to Find a Tutor</Button></Link>
                 </div>
             </div>
+        );
+    }
 
-            {/* Right Col: Booking Summary & Sticky Action */}
-            <div className="lg:col-span-1">
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/50 p-6 sticky top-6 space-y-6">
-                    <div className="text-center pb-6 border-b">
-                        <p className="text-gray-500 font-medium mb-1">Hourly Rate</p>
-                        <h2 className="text-4xl font-bold text-gray-900">₹{tutor.hourlyRate}</h2>
-                    </div>
+    const calendarDays = Array.from({ length: 14 }, (_, i) => addDays(startOfToday(), i));
+    const tabs = [
+        { id: 'about', label: 'About', icon: null },
+        { id: 'courses', label: 'Courses', icon: BookOpen },
+        { id: 'reviews', label: 'Reviews', icon: MessageSquare },
+        { id: 'schedule', label: 'Schedule', icon: CalendarIcon },
+    ];
 
-                    <div className="space-y-4">
-                        <div className="bg-gray-50 p-4 rounded-xl">
-                            <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                <CheckCircle className="w-4 h-4 text-green-500" /> Booking Details
-                            </h3>
-                            <div className="space-y-3 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500">Date</span>
-                                    <span className="font-medium text-gray-900">{format(selectedDate, 'PPP')}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500">Time</span>
-                                    <span className={`font-medium ${selectedSlot ? 'text-indigo-600 font-bold' : 'text-gray-400'}`}>
-                                        {selectedSlot || 'Select slot'}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500">Duration</span>
-                                    <span className="font-medium text-gray-900">60 mins</span>
+    return (
+        <div className="min-h-screen bg-[#f0f2f8]">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+                <Link href="/student/tutors" className="inline-flex items-center gap-2 text-slate-600 hover:text-indigo-600 text-sm font-medium mb-6">
+                    <ArrowLeft className="w-4 h-4" /> Back to Find a Tutor
+                </Link>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                    {/* Left: Profile + Tabs */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Profile card */}
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="h-24 bg-gradient-to-r from-indigo-600 to-indigo-700" />
+                            <div className="px-6 pb-6 -mt-12 relative">
+                                <div className="flex flex-col sm:flex-row gap-4 items-start">
+                                    <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg shrink-0 overflow-hidden bg-slate-100">
+                                        {tutor.userId?.profileImage ? (
+                                            <img src={tutor.userId.profileImage} alt="" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-slate-400">
+                                                {tutor.userId?.name?.[0] || 'T'}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <h1 className="text-xl font-bold text-slate-900">{tutor.userId?.name}</h1>
+                                            {tutor.isVerified && (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
+                                                    <CheckCircle className="w-3.5 h-3.5" /> Verified
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-indigo-600 font-medium mt-0.5">{tutor.categoryId?.name || 'Expert'} Tutor</p>
+                                        <div className="flex items-center gap-4 mt-3 text-sm text-slate-600">
+                                            <span className="flex items-center gap-1.5">
+                                                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                                                <strong className="text-slate-800">{tutor.rating?.toFixed(1) || 'New'}</strong>
+                                                ({tutor.reviewCount || 0} reviews)
+                                            </span>
+                                            <span className="flex items-center gap-1.5">
+                                                <Award className="w-4 h-4 text-indigo-500" />
+                                                {tutor.experience ?? 0} yrs exp
+                                            </span>
+                                            <span className="flex items-center gap-1.5">
+                                                <MapPin className="w-4 h-4 text-slate-400" />
+                                                Online
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase text-gray-500 tracking-wider">Note for Tutor</label>
-                            <textarea
-                                className="w-full text-sm p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none resize-none bg-white transition-all"
-                                rows="3"
-                                placeholder="What would you like to focus on?"
-                                value={bookingNote}
-                                onChange={(e) => setBookingNote(e.target.value)}
-                            />
-                        </div>
+                        {/* Tabs */}
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="flex border-b border-slate-100 overflow-x-auto">
+                                {tabs.map((tab) => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`flex items-center gap-2 px-4 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                                            activeTab === tab.id
+                                                ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50'
+                                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                                        }`}
+                                    >
+                                        {tab.icon && <tab.icon className="w-4 h-4" />}
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="p-6 min-h-[320px]">
+                                {activeTab === 'about' && (
+                                    <div className="space-y-4">
+                                        <h3 className="text-lg font-bold text-slate-900">About</h3>
+                                        <p className="text-slate-600 leading-relaxed whitespace-pre-line">
+                                            {tutor.bio || 'Passionate tutor dedicated to helping students achieve their goals.'}
+                                        </p>
+                                        <div className="grid grid-cols-2 gap-4 mt-6">
+                                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                                <p className="text-2xl font-bold text-indigo-600">{tutorCourses.length}</p>
+                                                <p className="text-sm text-slate-600">Active Courses</p>
+                                            </div>
+                                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                                <p className="text-2xl font-bold text-slate-900">₹{tutor.hourlyRate ?? 0}</p>
+                                                <p className="text-sm text-slate-600">Hourly rate</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
-                        <Button
-                            className="w-full py-6 text-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-200 transform hover:-translate-y-0.5 transition-all"
-                            disabled={!selectedSlot || bookingLoading}
-                            onClick={handleBookAppointment}
-                        >
-                            {bookingLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Confirming...
-                                </>
-                            ) : (
-                                'Confirm Booking'
-                            )}
-                        </Button>
-                        <p className="text-xs text-center text-gray-400">
-                            Free cancellation up to 24 hours before class.
-                        </p>
+                                {activeTab === 'courses' && (
+                                    <div className="space-y-4">
+                                        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                            <BookOpen className="w-5 h-5 text-indigo-600" />
+                                            Courses
+                                        </h3>
+                                        {loadingCourses ? (
+                                            <div className="flex justify-center py-12">
+                                                <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                                            </div>
+                                        ) : tutorCourses.length > 0 ? (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                {tutorCourses.map((course) => (
+                                                    <Link
+                                                        key={course._id}
+                                                        href={`/student/courses/${course._id}`}
+                                                        className="block bg-slate-50 rounded-xl border border-slate-100 overflow-hidden hover:border-indigo-200 hover:shadow-sm transition-all"
+                                                    >
+                                                        <div className="aspect-video bg-slate-200 relative">
+                                                            {course.thumbnail ? (
+                                                                <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
+                                                            ) : null}
+                                                            <div className="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded text-xs font-bold">₹{course.price ?? 0}</div>
+                                                        </div>
+                                                        <div className="p-3">
+                                                            <div className="flex items-center gap-1 mb-1">
+                                                                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                                                                <span className="text-sm font-semibold text-slate-800">{course.rating?.toFixed(1) || '—'}</span>
+                                                            </div>
+                                                            <h4 className="font-semibold text-slate-900 line-clamp-2">{course.title}</h4>
+                                                            <p className="text-xs text-slate-500 mt-1">{course.lessons?.length || 0} lessons</p>
+                                                        </div>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                                <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                                                <p className="text-slate-500">No courses yet.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeTab === 'reviews' && (
+                                    <div className="space-y-4">
+                                        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                            <Star className="w-5 h-5 text-indigo-600" />
+                                            Reviews ({tutor.reviewCount || 0})
+                                        </h3>
+                                        {loadingReviews ? (
+                                            <div className="flex justify-center py-12">
+                                                <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                                            </div>
+                                        ) : tutorReviews.length > 0 ? (
+                                            <div className="space-y-4">
+                                                {tutorReviews.map((review) => (
+                                                    <div key={review._id} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                                        <div className="flex items-start justify-between gap-2 mb-2">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center overflow-hidden text-slate-500 font-bold">
+                                                                    {review.studentId?.name?.[0] || '?'}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-semibold text-slate-900">{review.studentId?.name}</p>
+                                                                    <div className="flex gap-0.5">{renderStars(review.rating)}</div>
+                                                                </div>
+                                                            </div>
+                                                            <span className="text-xs text-slate-400">{new Date(review.createdAt).toLocaleDateString()}</span>
+                                                        </div>
+                                                        <p className="text-slate-600 text-sm mt-2">{review.comment}</p>
+                                                        {review.courseId?.title && (
+                                                            <Badge variant="outline" className="mt-2 text-xs bg-white border-slate-200">
+                                                                {review.courseId.title}
+                                                            </Badge>
+                                                        )}
+                                                        {review.tutorResponse?.comment && (
+                                                            <div className="mt-3 p-3 bg-indigo-50 border-l-2 border-indigo-400 rounded-r-lg">
+                                                                <p className="text-xs font-semibold text-indigo-900 mb-1">Tutor reply</p>
+                                                                <p className="text-sm text-indigo-800">{review.tutorResponse.comment}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                                <MessageSquare className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                                                <p className="text-slate-500">No reviews yet.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeTab === 'schedule' && (
+                                    <div className="space-y-6">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                                                <CalendarIcon className="w-5 h-5 text-indigo-600" />
+                                                Select date
+                                            </h3>
+                                            <div className="flex gap-2 overflow-x-auto pb-2">
+                                                {calendarDays.map((date) => {
+                                                    const dateStr = format(date, 'yyyy-MM-dd');
+                                                    const hasSlots = datesWithSlots.includes(dateStr);
+                                                    const isSelected = selectedDate && isSameDay(date, selectedDate);
+                                                    return (
+                                                        <button
+                                                            key={dateStr}
+                                                            type="button"
+                                                            onClick={() => { setSelectedDate(date); setSelectedSlot(null); }}
+                                                            disabled={!hasSlots}
+                                                            className={`min-w-[64px] py-3 px-2 rounded-xl border text-center shrink-0 transition-all ${
+                                                                isSelected
+                                                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                                                    : hasSlots
+                                                                        ? 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50'
+                                                                        : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
+                                                            }`}
+                                                        >
+                                                            <span className="block text-xs font-medium uppercase">{format(date, 'EEE')}</span>
+                                                            <span className="block text-lg font-bold">{format(date, 'd')}</span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                                                <Clock className="w-5 h-5 text-indigo-600" />
+                                                Available slots
+                                            </h3>
+                                            {availableSlots.length > 0 ? (
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                                    {availableSlots.map((slot) => (
+                                                        <button
+                                                            key={slot}
+                                                            type="button"
+                                                            onClick={() => setSelectedSlot(slot)}
+                                                            className={`py-2.5 px-3 rounded-lg border text-sm font-medium transition-all ${
+                                                                selectedSlot === slot
+                                                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                                                    : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300'
+                                                            }`}
+                                                        >
+                                                            {slot}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p className="text-slate-500 py-6 text-center bg-slate-50 rounded-xl border border-dashed">
+                                                    {selectedDate ? 'No slots for this date.' : 'Select a date.'}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right: Sticky booking card */}
+                    <div className="lg:col-span-1">
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sticky top-6 space-y-6">
+                            <div className="text-center pb-4 border-b border-slate-100">
+                                <p className="text-sm font-medium text-slate-500">Hourly rate</p>
+                                <p className="text-3xl font-bold text-slate-900">₹{tutor.hourlyRate ?? 0}</p>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                    <h4 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                                        <CheckCircle className="w-4 h-4 text-emerald-500" />
+                                        Booking details
+                                    </h4>
+                                    <dl className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <dt className="text-slate-500">Date</dt>
+                                            <dd className="font-medium text-slate-900">{selectedDate ? format(selectedDate, 'PPP') : '—'}</dd>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <dt className="text-slate-500">Time</dt>
+                                            <dd className={selectedSlot ? 'font-semibold text-indigo-600' : 'text-slate-400'}>{selectedSlot || 'Select slot'}</dd>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <dt className="text-slate-500">Duration</dt>
+                                            <dd className="font-medium text-slate-900">60 min</dd>
+                                        </div>
+                                    </dl>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Note for tutor (optional)</label>
+                                    <textarea
+                                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                                        rows={3}
+                                        placeholder="What would you like to focus on?"
+                                        value={bookingNote}
+                                        onChange={(e) => setBookingNote(e.target.value)}
+                                    />
+                                </div>
+                                <Button
+                                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+                                    disabled={!selectedSlot || bookingLoading}
+                                    onClick={handleBookAppointment}
+                                >
+                                    {bookingLoading ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            Confirming...
+                                        </>
+                                    ) : (
+                                        'Confirm booking'
+                                    )}
+                                </Button>
+                                <p className="text-xs text-center text-slate-400">Free cancellation up to 24 hours before.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

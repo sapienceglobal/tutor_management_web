@@ -18,6 +18,7 @@ import {
     FolderInput
 } from 'lucide-react';
 import api from '@/lib/axios';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 export default function QuestionBankPage() {
@@ -135,7 +136,7 @@ export default function QuestionBankPage() {
                                         </div>
                                         <div
                                             className="prose prose-sm max-w-none text-slate-800 font-medium"
-                                            dangerouslySetInnerHTML={{ __html: q.question }}
+                                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(q.question) }}
                                         />
                                         <div className="text-sm text-slate-500">
                                             {q.options?.length} Options • {q.points} Points

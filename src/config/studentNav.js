@@ -39,7 +39,7 @@ export const studentNavItems = [
             {
                 title: "Assignments",
                 icon: ClipboardList,
-                href: "/student/learning",
+                href: "/student/assignments",
                 type: "link"
             },
             {
@@ -47,6 +47,7 @@ export const studentNavItems = [
                 icon: FileText,
                 submenu: [
                     { title: "My Exams", href: "/student/exams" },
+                    { title: "Exam History", href: "/student/history" },
                     { title: "Practice Sets", href: "/student/practice-sets" },
                 ]
             },
@@ -59,7 +60,7 @@ export const studentNavItems = [
             {
                 title: "AI Tutor",
                 icon: Brain,
-                href: "/student/ai-analytics",
+                href: "/student/ai-tutor",
                 type: "link"
             },
         ]
@@ -77,7 +78,7 @@ export const studentNavItems = [
             {
                 title: "Upcoming Exams",
                 icon: Calendar,
-                href: "/student/exams",
+                href: "/student/upcoming-exams",
                 type: "link"
             },
             {
@@ -95,7 +96,7 @@ export const studentNavItems = [
             {
                 title: "Results & Analytics",
                 icon: BarChart3,
-                href: "/student/history",
+                href: "/student/ai-analytics",
                 type: "link"
             },
             {

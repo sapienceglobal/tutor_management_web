@@ -37,6 +37,7 @@ import {
 import { Modal } from '@/components/ui/modal';
 import { Textarea } from '@/components/ui/textarea';
 import api from '@/lib/axios';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -867,7 +868,7 @@ function CreateExamPageClient() {
                                                             </span>
                                                         </div>
 
-                                                        <div dangerouslySetInnerHTML={{ __html: q.question }} className="font-medium text-slate-800 mb-4 prose prose-sm max-w-none line-clamp-2" />
+                                                        <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(q.question) }} className="font-medium text-slate-800 mb-4 prose prose-sm max-w-none line-clamp-2" />
 
                                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                             {q.options.map((opt, i) => (

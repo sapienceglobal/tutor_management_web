@@ -1,23 +1,39 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Search, Filter, Star, TrendingUp, BookOpen, Users, Clock, Grid, List, SlidersHorizontal, X, ChevronDown, Sparkles } from 'lucide-react';
+import Link from 'next/link';
+import {
+    Search,
+    FolderOpen,
+    FileCheck,
+    Video,
+    ChevronRight,
+    ChevronDown,
+    FileText,
+    Sparkles,
+    Megaphone,
+    Users,
+    PlayCircle,
+    Pencil,
+    Trash2,
+} from 'lucide-react';
 import api from '@/lib/axios';
-import { Input } from '@/components/ui/input';
-import { CourseCard } from '@/components/courses/CourseCard';
 import { Button } from '@/components/ui/button';
-import { motion, AnimatePresence } from 'framer-motion';
 
-export default function CoursesPage() {
-    const [courses, setCourses] = useState([]);
-    const [categories, setCategories] = useState([]);
+const COURSES_PER_PAGE = 8;
+
+export default function MyCoursesPage() {
+    const [enrollments, setEnrollments] = useState([]);
+    const [upcomingExamsCount, setUpcomingExamsCount] = useState(0);
+    const [liveClassesCount, setLiveClassesCount] = useState(0);
+    const [batches, setBatches] = useState([]);
+    const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('all');
-    const [selectedLevel, setSelectedLevel] = useState('all');
-    const [sortBy, setSortBy] = useState('popular');
-    const [viewMode, setViewMode] = useState('grid');
-    const [showFilters, setShowFilters] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [aiRecommendationsOpen, setAiRecommendationsOpen] = useState(true);
+    const [announcementsOpen, setAnnouncementsOpen] = useState(true);
+    const [batchDetailsOpen, setBatchDetailsOpen] = useState(true);
 
     useEffect(() => {
         fetchData();
@@ -25,17 +41,41 @@ export default function CoursesPage() {
 
     const fetchData = async () => {
         try {
-            const [coursesRes, categoriesRes] = await Promise.all([
-                api.get('/courses'),
-                api.get('/categories')
+            setLoading(true);
+            const [enrollRes, examsRes, liveRes, batchesRes] = await Promise.all([
+                api.get('/enrollments/my-enrollments'),
+                api.get('/student/exams/all').catch(() => ({ data: { exams: [] } })),
+                api.get('/live-classes').catch(() => ({ data: { liveClasses: [] } })),
+                api.get('/batches/my').catch(() => ({ data: { batches: [] } })),
             ]);
 
-            if (coursesRes.data.success) {
-                setCourses(coursesRes.data.courses);
+            if (enrollRes.data.success && enrollRes.data.enrollments) {
+                setEnrollments(enrollRes.data.enrollments);
             }
-            if (categoriesRes.data.success) {
-                setCategories(categoriesRes.data.categories || []);
+
+            if (examsRes.data?.exams) {
+                const upcoming = examsRes.data.exams.filter(
+                    (e) => e.endDate && new Date(e.endDate) >= new Date() && !e.isCompleted
+                );
+                setUpcomingExamsCount(upcoming.length);
             }
+
+            if (liveRes.data?.liveClasses) {
+                const upcoming = liveRes.data.liveClasses.filter(
+                    (c) => c.dateTime && new Date(c.dateTime) >= new Date()
+                );
+                setLiveClassesCount(upcoming.length);
+            }
+
+            if (batchesRes.data?.batches) {
+                setBatches(batchesRes.data.batches);
+            }
+
+            // Placeholder announcements (from batch announcements if API exists later)
+            setAnnouncements([
+                { id: '1', title: 'Physics Mock Test scheduled on April 25th - Review the materials.', icon: FileText },
+                { id: '2', title: 'New Biology Quiz added to your course - Prepare for the upcoming test.', icon: FileText },
+            ]);
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -43,205 +83,316 @@ export default function CoursesPage() {
         }
     };
 
-    const filteredCourses = courses
-        .filter(course => {
-            const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                course.description?.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesCategory = selectedCategory === 'all' || course.categoryId?._id === selectedCategory;
-            const matchesLevel = selectedLevel === 'all' || course.level === selectedLevel;
-            return matchesSearch && matchesCategory && matchesLevel;
-        })
-        .sort((a, b) => {
-            switch (sortBy) {
-                case 'popular':
-                    return (b.enrolledCount || 0) - (a.enrolledCount || 0);
-                case 'rating':
-                    return (b.rating || 0) - (a.rating || 0);
-                case 'newest':
-                    return new Date(b.createdAt) - new Date(a.createdAt);
-                case 'price-low':
-                    return (a.price || 0) - (b.price || 0);
-                case 'price-high':
-                    return (b.price || 0) - (a.price || 0);
-                default:
-                    return 0;
-            }
-        });
+    const filteredEnrollments = enrollments.filter((e) => {
+        const course = e.courseId;
+        if (!course) return false;
+        const matchSearch =
+            !searchQuery ||
+            course.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            course.tutorId?.userId?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchSearch;
+    });
 
-    const activeFiltersCount = [selectedCategory !== 'all', selectedLevel !== 'all'].filter(Boolean).length;
+    const totalPages = Math.max(1, Math.ceil(filteredEnrollments.length / COURSES_PER_PAGE));
+    const startIdx = (currentPage - 1) * COURSES_PER_PAGE;
+    const paginatedEnrollments = filteredEnrollments.slice(startIdx, startIdx + COURSES_PER_PAGE);
+
+    const aiRecommendations = [
+        { id: '1', title: 'Algebra Practice Session', icon: FileText },
+        { id: '2', title: 'Biology Test Flashcards', icon: FileText },
+    ];
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+            <div className="min-h-screen flex items-center justify-center bg-[#f0f2f8]">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-slate-500 font-medium animate-pulse">Loading amazing courses...</p>
+                    <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-slate-500 font-medium">Loading your courses...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC]">
-            <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8">
-                {/* Premium Header */}
-                <div className="relative overflow-hidden bg-white/60 backdrop-blur-3xl rounded-[2.5rem] p-8 lg:p-12 border border-white/50 shadow-xl shadow-indigo-100/50">
-                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
-                    <div className="relative z-10">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-4 border border-indigo-100">
-                            <Sparkles className="w-3 h-3" />
-                            Explore Library
-                        </div>
-                        <h1 className="text-4xl lg:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight leading-tight">
-                            Unlock Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Potential</span>
-                        </h1>
-                        <p className="text-slate-600 text-lg lg:text-xl max-w-2xl leading-relaxed">
-                            Dive into expert-led courses designed to elevate your skills. From coding to creative arts, find your passion today.
-                        </p>
-                    </div>
-                </div>
-
-                {/* Search & Filters Bar */}{/* Reusing existing logic but with better styling */} 
-                <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200/60 p-2 pl-6 flex flex-col lg:flex-row gap-4 items-center">
-                    <div className="relative flex-1 w-full">
-                        <Search className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                        <input
-                            placeholder="Search for courses..."
-                            className="w-full h-12 bg-transparent border-none focus:ring-0 text-base placeholder:text-slate-400 text-slate-700 pl-8"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-2 w-full lg:w-auto p-1">
-                        <Button
-                            onClick={() => setShowFilters(!showFilters)}
-                            variant="ghost"
-                            className={`h-10 px-4 rounded-xl transition-all ${showFilters ? 'bg-indigo-50 text-indigo-600' : 'text-slate-600 hover:bg-slate-50'}`}
-                        >
-                            <SlidersHorizontal className="w-4 h-4 mr-2" />
-                            Filters
-                            {activeFiltersCount > 0 && (
-                                <span className="ml-2 w-5 h-5 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                                    {activeFiltersCount}
-                                </span>
-                            )}
-                        </Button>
-
-                        <div className="h-8 w-px bg-slate-200 mx-2 hidden lg:block"></div>
-
-                        <div className="flex bg-slate-100/80 p-1 rounded-xl">
-                            <button
-                                onClick={() => setViewMode('grid')}
-                                className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                            >
-                                <Grid className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={() => setViewMode('list')}
-                                className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                            >
-                                <List className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Expandable Filters */}
-                <AnimatePresence>
-                    {showFilters && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="bg-white rounded-[2rem] border border-slate-200/60 p-6 grid grid-cols-1 md:grid-cols-3 gap-6 shadow-sm">
-                                {/* Category Filter */}
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-slate-700">Category</label>
-                                    <select
-                                        value={selectedCategory}
-                                        onChange={(e) => setSelectedCategory(e.target.value)}
-                                        className="w-full h-11 px-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50 hover:bg-white transition-colors cursor-pointer"
-                                    >
-                                        <option value="all">All Categories</option>
-                                        {categories.map(cat => (
-                                            <option key={cat._id} value={cat._id}>{cat.name}</option>
-                                        ))}
-                                    </select>
+        <div className="min-h-screen bg-[#f0f2f8]">
+            <div className="flex flex-col lg:flex-row gap-6">
+                {/* Main content */}
+                <div className="flex-1 min-w-0 space-y-6">
+                    {/* My Courses header + summary cards */}
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                        <h1 className="text-2xl font-bold text-slate-900">My Courses</h1>
+                        <div className="flex items-center gap-4 flex-wrap">
+                            <div className="flex items-center gap-3 bg-white rounded-xl shadow-sm border border-slate-200/60 p-4 min-w-[140px]">
+                                <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                                    <FolderOpen className="w-5 h-5 text-indigo-600" />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-slate-700">Level</label>
-                                    <select
-                                        value={selectedLevel}
-                                        onChange={(e) => setSelectedLevel(e.target.value)}
-                                        className="w-full h-11 px-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50 hover:bg-white transition-colors cursor-pointer"
-                                    >
-                                        <option value="all">All Levels</option>
-                                        <option value="beginner">Beginner</option>
-                                        <option value="intermediate">Intermediate</option>
-                                        <option value="advanced">Advanced</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-slate-700">Sort By</label>
-                                    <select
-                                        value={sortBy}
-                                        onChange={(e) => setSortBy(e.target.value)}
-                                        className="w-full h-11 px-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50 hover:bg-white transition-colors cursor-pointer"
-                                    >
-                                        <option value="popular">Most Popular</option>
-                                        <option value="rating">Highest Rated</option>
-                                        <option value="newest">Newest First</option>
-                                    </select>
+                                <div>
+                                    <p className="text-xs text-slate-500 font-medium">Enrolled Courses</p>
+                                    <p className="text-xl font-bold text-slate-900">{enrollments.length}</p>
                                 </div>
                             </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Content Grid */}
-                {filteredCourses.length > 0 ? (
-                    <motion.div
-                        layout
-                        className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6' : 'space-y-4'}
-                    >
-                        <AnimatePresence>
-                            {filteredCourses.map((course) => (
-                                <motion.div
-                                    key={course._id}
-                                    layout
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.9 }}
-                                    transition={{ duration: 0.2 }}
-                                >
-                                    <CourseCard course={course} viewMode={viewMode} />
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
-                    </motion.div>
-                ) : (
-                    <div className="text-center py-24">
-                        <div className="w-24 h-24 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <Search className="h-10 w-10 text-indigo-300" />
+                            <Link href="/student/upcoming-exams" className="flex items-center gap-3 bg-white rounded-xl shadow-sm border border-slate-200/60 p-4 min-w-[140px] hover:border-indigo-200 transition-colors">
+                                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                                    <FileCheck className="w-5 h-5 text-amber-600" />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-slate-500 font-medium">Upcoming Exams</p>
+                                    <p className="text-xl font-bold text-slate-900">{upcomingExamsCount}</p>
+                                </div>
+                            </Link>
+                            <Link href="/student/live-classes" className="flex items-center gap-3 bg-white rounded-xl shadow-sm border border-slate-200/60 p-4 min-w-[140px] hover:border-indigo-200 transition-colors">
+                                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                                    <Video className="w-5 h-5 text-emerald-600" />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-slate-500 font-medium">Live Classes</p>
+                                    <p className="text-xl font-bold text-slate-900">{liveClassesCount}</p>
+                                </div>
+                            </Link>
+                            <Link href="/student/upcoming-exams" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
+                                View All <ChevronRight className="w-4 h-4" />
+                            </Link>
                         </div>
-                        <h3 className="text-2xl font-bold text-slate-900">No courses found</h3>
-                        <p className="text-slate-500 mt-2">Try adjusting your filters or search terms.</p>
-                        <Button
-                            onClick={() => {
-                                setSearchQuery('');
-                                setSelectedCategory('all');
-                                setSelectedLevel('all');
-                            }}
-                            variant="link"
-                            className="mt-4 text-indigo-600 font-semibold"
-                        >
-                            Clear all filters
-                        </Button>
                     </div>
-                )}
+
+                    {/* Search */}
+                    <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Search courses, tests..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-12 pr-12 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-slate-800 placeholder:text-slate-400"
+                        />
+                        <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    </div>
+
+                    {/* Performance Overview */}
+                    <div>
+                        <h2 className="text-lg font-bold text-slate-900 mb-4">Performance Overview</h2>
+                        {filteredEnrollments.length > 0 ? (
+                            <>
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                    {paginatedEnrollments.map((enrollment) => {
+                                        const course = enrollment.courseId;
+                                        if (!course) return null;
+                                        const progress = enrollment.progress?.percentage ?? 0;
+                                        const instructorName = course.tutorId?.userId?.name || 'Instructor';
+                                        const isNew = enrollment.enrolledAt && (Date.now() - new Date(enrollment.enrolledAt).getTime()) < 14 * 24 * 60 * 60 * 1000;
+                                        const isCertified = progress >= 100;
+
+                                        return (
+                                            <div
+                                                key={enrollment._id}
+                                                className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow"
+                                            >
+                                                <div className="relative aspect-video bg-slate-100">
+                                                    <img
+                                                        src={course.thumbnail || 'https://images.unsplash.com/photo-1546374823-74e2d36d4bd2?auto=format&fit=crop&q=80&w=600'}
+                                                        alt={course.title}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                    {isNew && (
+                                                        <span className="absolute top-3 left-3 bg-indigo-500 text-white text-xs font-bold px-2 py-1 rounded">
+                                                            NEW
+                                                        </span>
+                                                    )}
+                                                    {isCertified && (
+                                                        <span className="absolute top-3 left-3 bg-emerald-500 text-white text-xs font-bold px-2 py-1 rounded">
+                                                            CERTIFIED
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="p-4">
+                                                    <p className="font-semibold text-slate-900 line-clamp-1 mb-1">{course.title}</p>
+                                                    <p className="text-sm text-slate-500 mb-3">{instructorName}</p>
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                            <div
+                                                                className="h-full bg-indigo-500 rounded-full transition-all"
+                                                                style={{ width: `${progress}%` }}
+                                                            />
+                                                        </div>
+                                                        <span className="text-xs font-semibold text-slate-600 whitespace-nowrap">{progress}% Complete</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <Link href={`/student/courses/${course._id}`}>
+                                                            <Button
+                                                                size="sm"
+                                                                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium"
+                                                            >
+                                                                Resume
+                                                            </Button>
+                                                        </Link>
+                                                        <div className="flex items-center gap-1">
+                                                            <button
+                                                                type="button"
+                                                                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                                                aria-label="Edit"
+                                                            >
+                                                                <Pencil className="w-4 h-4" />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                                aria-label="Remove"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Pagination */}
+                                {totalPages > 1 && (
+                                    <div className="flex items-center justify-center gap-2 mt-8">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={currentPage === 1}
+                                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                            className="rounded-lg"
+                                        >
+                                            Previous
+                                        </Button>
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                                            <button
+                                                key={p}
+                                                onClick={() => setCurrentPage(p)}
+                                                className={`w-9 h-9 rounded-lg font-medium text-sm transition-colors ${
+                                                    currentPage === p
+                                                        ? 'bg-indigo-600 text-white'
+                                                        : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                                                }`}
+                                            >
+                                                {p}
+                                            </button>
+                                        ))}
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={currentPage === totalPages}
+                                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                            className="rounded-lg"
+                                        >
+                                            Next
+                                        </Button>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+                                <FolderOpen className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                                <h3 className="text-lg font-semibold text-slate-700 mb-2">No enrolled courses</h3>
+                                <p className="text-slate-500 mb-4">Enroll in courses to see them here.</p>
+                                <Link href="/student/dashboard">
+                                    <Button className="bg-indigo-600 hover:bg-indigo-700">Go to Dashboard</Button>
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Right sidebar */}
+                <div className="w-full lg:w-80 shrink-0 space-y-4">
+                    {/* AI Recommendations */}
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <button
+                            type="button"
+                            onClick={() => setAiRecommendationsOpen(!aiRecommendationsOpen)}
+                            className="w-full flex items-center justify-between p-4 text-left font-semibold text-slate-900 hover:bg-slate-50 transition-colors"
+                        >
+                            AI Recommendations
+                            <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform ${aiRecommendationsOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {aiRecommendationsOpen && (
+                            <div className="px-4 pb-4 space-y-2">
+                                {aiRecommendations.map((rec) => (
+                                    <div
+                                        key={rec.id}
+                                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer"
+                                    >
+                                        <rec.icon className="w-5 h-5 text-indigo-500 shrink-0" />
+                                        <span className="text-sm font-medium text-slate-700">{rec.title}</span>
+                                    </div>
+                                ))}
+                                <Link href="/student/ai-analytics" className="block mt-3">
+                                    <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium flex items-center justify-center gap-2">
+                                        <Sparkles className="w-4 h-4" />
+                                        Start AI Study Plan
+                                    </Button>
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Instructor Announcements */}
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <button
+                            type="button"
+                            onClick={() => setAnnouncementsOpen(!announcementsOpen)}
+                            className="w-full flex items-center justify-between p-4 text-left font-semibold text-slate-900 hover:bg-slate-50 transition-colors"
+                        >
+                            Instructor Announcements
+                            <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform ${announcementsOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {announcementsOpen && (
+                            <div className="px-4 pb-4 space-y-2">
+                                {announcements.map((a) => (
+                                    <div key={a.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-50">
+                                        <FileText className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
+                                        <span className="text-sm text-slate-700">{a.title}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Batch Details */}
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <button
+                            type="button"
+                            onClick={() => setBatchDetailsOpen(!batchDetailsOpen)}
+                            className="w-full flex items-center justify-between p-4 text-left font-semibold text-slate-900 hover:bg-slate-50 transition-colors"
+                        >
+                            Batch Details
+                            <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform ${batchDetailsOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {batchDetailsOpen && (
+                            <div className="px-4 pb-4 space-y-3">
+                                {batches.length > 0 ? (
+                                    batches.slice(0, 5).map((batch) => {
+                                        const courseId = batch.courseId?._id || batch.courseId;
+                                        const courseName = batch.courseId?.title || batch.name || 'Course';
+                                        const instructorName = batch.tutorId?.userId?.name || 'Instructor';
+                                        const enrollmentForBatch = enrollments.find(
+                                            (e) => (e.courseId?._id ?? e.courseId)?.toString() === courseId?.toString()
+                                        );
+                                        const pct = enrollmentForBatch?.progress?.percentage ?? 0;
+                                        return (
+                                            <Link key={batch._id} href={courseId ? `/student/courses/${courseId}` : '#'} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50">
+                                                <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 text-indigo-600 font-semibold text-sm">
+                                                    {instructorName.charAt(0)}
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm font-medium text-slate-800 truncate">{courseName}</p>
+                                                    <p className="text-xs text-slate-500">{pct}% • {instructorName}</p>
+                                                </div>
+                                            </Link>
+                                        );
+                                    })
+                                ) : (
+                                    <p className="text-sm text-slate-500 py-2">No batches yet.</p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );

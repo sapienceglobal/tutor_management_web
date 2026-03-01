@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Calendar, Clock, ArrowLeft, Tag, User, Share2 } from 'lucide-react';
 import api from '@/lib/axios';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 export default function BlogDetailPage() {
     const { slug } = useParams();
@@ -158,7 +159,7 @@ export default function BlogDetailPage() {
                         prose-blockquote:border-indigo-500 prose-blockquote:bg-indigo-50 prose-blockquote:rounded-r-xl prose-blockquote:py-1 prose-blockquote:px-4
                         prose-code:bg-slate-100 prose-code:px-2 prose-code:py-0.5 prose-code:rounded
                         prose-pre:bg-[#0F172A] prose-pre:rounded-xl"
-                    dangerouslySetInnerHTML={{ __html: blog.content }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(blog.content) }}
                 />
 
                 {/* Tags footer */}

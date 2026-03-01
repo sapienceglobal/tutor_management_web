@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, FileText } from 'lucide-react';
 import api from '@/lib/axios';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 export default function DynamicPage() {
     const { slug } = useParams();
@@ -87,7 +88,7 @@ export default function DynamicPage() {
                             prose-blockquote:border-indigo-500 prose-blockquote:bg-indigo-50 prose-blockquote:rounded-r-xl
                             prose-table:border-collapse prose-td:border prose-td:border-slate-200 prose-td:p-3
                             prose-th:border prose-th:border-slate-200 prose-th:bg-slate-50 prose-th:p-3"
-                        dangerouslySetInnerHTML={{ __html: page.content }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(page.content) }}
                     />
                 </div>
 

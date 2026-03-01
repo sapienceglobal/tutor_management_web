@@ -1,15 +1,15 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
+// Use Next.js API proxy so API key stays server-side (never sent from browser).
 const api = axios.create({
-    baseURL: 'http://localhost:4000/api',
-    // baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000/api',
+    baseURL: '/api/proxy',
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-// Add a request interceptor to inject the token and API key
+// Add a request interceptor to inject the token (API key is added by server proxy).
 api.interceptors.request.use(
     (config) => {
         if (typeof window !== 'undefined') {
@@ -17,7 +17,6 @@ api.interceptors.request.use(
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
             }
-            config.headers['x-api-key'] = process.env.NEXT_PUBLIC_API_KEY || '';
         }
         return config;
     },
