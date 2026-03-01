@@ -1,11 +1,7 @@
 'use client';
 
 import { StudentHeader } from '@/components/layout/StudentHeader';
-import { Footer } from '@/components/layout/Footer';
-
-
-import useLocomotiveScroll from '@/hooks/useLocomotiveScroll';
-
+import { StudentSidebar } from '@/components/layout/StudentSidebar';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
@@ -13,9 +9,8 @@ import Cookies from 'js-cookie';
 
 export default function StudentLayout({ children }) {
     const router = useRouter();
-    // Initialize smooth scrolling for the entire student section
-    useLocomotiveScroll(true);
-
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [user, setUser] = useState(null);
 
     useEffect(() => {
@@ -33,26 +28,39 @@ export default function StudentLayout({ children }) {
     }, []);
 
     const handleLogout = () => {
-        // Clear all auth data
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         Cookies.remove('token');
         Cookies.remove('user_role');
-
-        // Redirect to login
         router.push('/login');
     };
 
     return (
-        <div data-scroll-container className="min-h-screen bg-slate-50 flex flex-col font-sans">
-            <StudentHeader user={user} onLogout={handleLogout} />
+        <div className="min-h-screen bg-[#f0f2f8] relative">
+            {/* Sidebar */}
+            <StudentSidebar
+                isOpen={sidebarOpen}
+                setIsOpen={setSidebarOpen}
+                isCollapsed={sidebarCollapsed}
+                setIsCollapsed={setSidebarCollapsed}
+            />
 
-            {/* Main Content */}
-            <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8 min-w-0 overflow-x-hidden">
-                {children}
-            </main>
+            {/* Main Content Area */}
+            <div className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
+                {/* Header */}
+                <StudentHeader
+                    user={user}
+                    onLogout={handleLogout}
+                    onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+                    onSidebarCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    isSidebarCollapsed={sidebarCollapsed}
+                />
 
-            <Footer />
+                {/* Page Content */}
+                <main className="p-4 lg:p-6">
+                    {children}
+                </main>
+            </div>
         </div>
     );
 }
