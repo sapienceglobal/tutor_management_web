@@ -29,9 +29,14 @@ import {
     Trophy,
     Globe,
     ShieldAlert,
-    Eye
+    Eye,
+    ClipboardList,
+    Brain,
+    FileText,
+    Loader2
 } from 'lucide-react';
 import api from '@/lib/axios';
+import assignmentService from '@/services/assignmentService';
 import LessonPlayerModal from '@/components/LessonPlayerModal';
 import ExamHistoryModal from '@/components/ExamHistoryModal';
 
@@ -60,6 +65,7 @@ export default function CourseDetailPage({ params }) {
     const [sortBy, setSortBy] = useState('recent');
     const [expandedModules, setExpandedModules] = useState([]);
     const [liveClasses, setLiveClasses] = useState([]);
+    const [assignments, setAssignments] = useState([]);
     const [showReviewModal, setShowReviewModal] = useState(false);
     const [reviewForm, setReviewForm] = useState({ rating: 0, comment: '' });
     const [submittingReview, setSubmittingReview] = useState(false);
@@ -77,6 +83,11 @@ export default function CourseDetailPage({ params }) {
     const [selectedResult, setSelectedResult] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
     const { confirmDialog } = useConfirm();
+
+    // AI Features State
+    const [aiLoading, setAiLoading] = useState(null); // 'summarize' | 'revision' | null
+    const [aiResult, setAiResult] = useState(null); // { type, content }
+    const [showAiPanel, setShowAiPanel] = useState(false);
 
     useEffect(() => {
         loadCourseData();
@@ -150,9 +161,10 @@ export default function CourseDetailPage({ params }) {
             }
 
             if ((response.data.isEnrolled || response.data.isInstructor) && !background) {
-                const [examRes, liveClassRes] = await Promise.all([
+                const [examRes, liveClassRes, assignmentRes] = await Promise.all([
                     api.get(`/exams/course/${id}`),
-                    api.get(`/live-classes?courseId=${id}`)
+                    api.get(`/live-classes?courseId=${id}`),
+                    assignmentService.getCourseAssignments(id).catch(e => ({ success: false }))
                 ]);
 
                 if (examRes.data.success) {
@@ -160,6 +172,9 @@ export default function CourseDetailPage({ params }) {
                 }
                 if (liveClassRes.data.success) {
                     setLiveClasses(liveClassRes.data.liveClasses || []);
+                }
+                if (assignmentRes.success) {
+                    setAssignments(assignmentRes.assignments || []);
                 }
             }
         } catch (error) {
@@ -357,6 +372,46 @@ export default function CourseDetailPage({ params }) {
         await loadCourseData(true);
     };
 
+    // AI Summarize
+    const handleAISummarize = async () => {
+        if (!course) return;
+        setAiLoading('summarize');
+        setShowAiPanel(true);
+        try {
+            const res = await api.post('/ai/summarize-lesson', {
+                courseId: course._id,
+                lessonTitle: course.title,
+                content: course.description
+            });
+            setAiResult({ type: 'Summary', content: res.data.summary || res.data.data });
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to generate summary');
+            setShowAiPanel(false);
+        } finally {
+            setAiLoading(null);
+        }
+    };
+
+    // AI Revision Notes
+    const handleAIRevisionNotes = async () => {
+        if (!course) return;
+        setAiLoading('revision');
+        setShowAiPanel(true);
+        try {
+            const res = await api.post('/ai/revision-notes', {
+                courseId: course._id,
+                lessonTitle: course.title,
+                content: course.description
+            });
+            setAiResult({ type: 'Revision Notes', content: res.data.notes || res.data.data });
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to generate revision notes');
+            setShowAiPanel(false);
+        } finally {
+            setAiLoading(null);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
@@ -483,7 +538,7 @@ export default function CourseDetailPage({ params }) {
                         {/* Tabs */}
                         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
                             <div className="flex border-b border-slate-200 overflow-x-auto">
-                                {['overview', 'curriculum', 'live classes', 'reviews'].map(tab => (
+                                {['overview', 'curriculum', 'live classes', 'assignments', 'reviews'].map(tab => (
                                     <button
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}
@@ -542,6 +597,59 @@ export default function CourseDetailPage({ params }) {
                                                         </li>
                                                     ))}
                                                 </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* AI Tools (only for enrolled students) */}
+                                {activeTab === 'overview' && isEnrolled && (
+                                    <div className="mt-6 pt-6 border-t border-slate-200">
+                                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                            <Brain className="h-5 w-5 text-purple-500" />
+                                            AI Study Tools
+                                        </h3>
+                                        <div className="flex flex-wrap gap-3">
+                                            <Button
+                                                onClick={handleAISummarize}
+                                                disabled={aiLoading === 'summarize'}
+                                                className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-600 hover:to-indigo-700 rounded-xl"
+                                            >
+                                                {aiLoading === 'summarize' ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                                                ✨ Summarize Course
+                                            </Button>
+                                            <Button
+                                                onClick={handleAIRevisionNotes}
+                                                disabled={aiLoading === 'revision'}
+                                                className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 rounded-xl"
+                                            >
+                                                {aiLoading === 'revision' ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileText className="h-4 w-4 mr-2" />}
+                                                📝 Generate Revision Notes
+                                            </Button>
+                                        </div>
+
+                                        {/* AI Result Panel */}
+                                        {showAiPanel && (
+                                            <div className="mt-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-200 p-6">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h4 className="font-bold text-purple-900 flex items-center gap-2">
+                                                        <Brain className="h-5 w-5" />
+                                                        {aiResult?.type || 'Generating...'}
+                                                    </h4>
+                                                    <button onClick={() => setShowAiPanel(false)} className="text-slate-400 hover:text-slate-600">
+                                                        <X className="h-5 w-5" />
+                                                    </button>
+                                                </div>
+                                                {aiLoading ? (
+                                                    <div className="flex items-center gap-3 py-8 justify-center">
+                                                        <Loader2 className="h-6 w-6 animate-spin text-purple-500" />
+                                                        <span className="text-purple-600 font-medium">AI is thinking...</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="prose prose-sm max-w-none text-slate-700 whitespace-pre-wrap">
+                                                        {aiResult?.content}
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -793,6 +901,80 @@ export default function CourseDetailPage({ params }) {
                                             <div className="text-center py-16 bg-slate-50 rounded-2xl">
                                                 <Video className="w-16 h-16 mx-auto mb-4 text-slate-400" />
                                                 <p className="text-slate-600 font-medium">No live classes scheduled yet</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeTab === 'assignments' && (
+                                    <div className="space-y-4">
+                                        {(!isEnrolled && !isInstructor) ? (
+                                            <div className="text-center py-16 bg-slate-50 rounded-2xl">
+                                                <Lock className="w-16 h-16 mx-auto mb-4 text-slate-400" />
+                                                <p className="text-slate-600 font-medium mb-4">Enroll to access assignments</p>
+                                                <Button onClick={handleEnroll} className="bg-indigo-600 hover:bg-indigo-700">
+                                                    Enroll Now
+                                                </Button>
+                                            </div>
+                                        ) : assignments.length > 0 ? (
+                                            <div className="space-y-4">
+                                                {assignments.map(assignment => {
+                                                    const submission = assignment.mySubmission;
+                                                    const isGraded = submission?.status === 'graded';
+                                                    const isSubmitted = submission?.status === 'submitted';
+
+                                                    return (
+                                                        <div
+                                                            key={assignment._id}
+                                                            onClick={() => router.push(`/student/courses/${id}/assignments/${assignment._id}`)}
+                                                            className="p-5 border-2 border-slate-200 rounded-2xl hover:border-indigo-300 hover:shadow-lg transition-all cursor-pointer group"
+                                                        >
+                                                            <div className="flex items-start gap-4">
+                                                                <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-white shadow-lg ${isGraded ? 'bg-gradient-to-br from-emerald-500 to-emerald-600' :
+                                                                    isSubmitted ? 'bg-gradient-to-br from-amber-500 to-amber-600' :
+                                                                        'bg-gradient-to-br from-indigo-500 to-indigo-600'
+                                                                    }`}>
+                                                                    <ClipboardList className="w-7 h-7" />
+                                                                </div>
+                                                                <div className="flex-1">
+                                                                    <div className="flex items-center justify-between mb-2">
+                                                                        <h4 className="font-bold text-lg text-slate-900 group-hover:text-indigo-600 transition-colors">{assignment.title}</h4>
+                                                                        {isGraded ? (
+                                                                            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full border border-emerald-200">
+                                                                                {submission.grade} / {assignment.totalMarks} Graded
+                                                                            </span>
+                                                                        ) : isSubmitted ? (
+                                                                            <span className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-full border border-amber-200">
+                                                                                Submitted
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-full border border-slate-200">
+                                                                                Pending
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex items-center gap-4 text-sm text-slate-600">
+                                                                        {assignment.dueDate && (
+                                                                            <span className="flex items-center gap-1">
+                                                                                <Calendar className="w-4 h-4 text-slate-400" />
+                                                                                Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                                                                            </span>
+                                                                        )}
+                                                                        <span className="flex items-center gap-1">
+                                                                            <Award className="w-4 h-4 text-indigo-400" />
+                                                                            {assignment.totalMarks} Points
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-16 bg-slate-50 rounded-2xl">
+                                                <ClipboardList className="w-16 h-16 mx-auto mb-4 text-slate-400" />
+                                                <p className="text-slate-600 font-medium">No assignments available yet</p>
                                             </div>
                                         )}
                                     </div>

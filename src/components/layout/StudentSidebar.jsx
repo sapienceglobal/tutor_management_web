@@ -1,103 +1,197 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import {
-    LayoutDashboard,
-    BookOpen,
-    Calendar,
-    Heart,
-    CreditCard,
-    FileQuestion,
-    Settings,
-    LogOut,
-    Search,
-    User,
-    Edit
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ChevronRight, X, GraduationCap } from 'lucide-react';
+import { studentNavItems } from '@/config/studentNav';
+import { useSettings } from '@/components/providers/SettingsProvider';
 
-export function StudentSidebar({ user, onLogout, className }) {
+export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
     const pathname = usePathname();
+    const [expandedMenu, setExpandedMenu] = useState(null);
+    const [isHovering, setIsHovering] = useState(false);
+    const { settings } = useSettings();
 
-    const menuItems = [
-        { label: 'My Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
-        { label: 'Find a Tutor', href: '/student/tutors', icon: Search },
-        { label: 'My Appointments', href: '/student/appointments', icon: Calendar }, // Check if exists
-        { label: 'My Courses', href: '/student/courses', icon: BookOpen },
-        { label: 'My Wishlist', href: '/student/wishlist', icon: Heart },
-        { label: 'My Exams', href: '/student/exams', icon: FileQuestion },
-        { label: 'Payments', href: '/student/payments', icon: CreditCard }, // Check if exists
-        { label: 'Settings', href: '/student/settings', icon: Settings },
-    ];
+    const toggleSubmenu = (title) => {
+        setExpandedMenu(expandedMenu === title ? null : title);
+    };
+
+    const showFull = !isCollapsed || isHovering;
+
+    // Auto-expand the section containing the active page
+    useEffect(() => {
+        studentNavItems.forEach(section => {
+            if (section.type === 'section') {
+                section.children?.forEach(child => {
+                    if (child.submenu) {
+                        const isActive = child.submenu.some(sub => pathname === sub.href || pathname.startsWith(sub.href));
+                        if (isActive) setExpandedMenu(child.title);
+                    }
+                });
+            }
+        });
+    }, [pathname]);
 
     return (
-        <aside className={cn("w-64 bg-white border-r border-slate-200 hidden lg:flex flex-col h-[calc(100vh-64px)] sticky top-16", className)}>
-            {/* Profile Card Section (Bizdire Style) */}
-            <div className="p-6 border-b border-slate-100 flex flex-col items-center text-center">
-                <div className="relative w-24 h-24 mb-4 group">
-                    <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg">
-                        <img
-                            src={user?.profileImage || "/default-avatar.png"}
-                            alt={user?.name}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
+        <>
+            {/* Mobile Backdrop */}
+            <div
+                className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                onClick={() => setIsOpen(false)}
+            />
+
+            {/* Sidebar */}
+            <aside
+                onMouseEnter={() => isCollapsed && setIsHovering(true)}
+                onMouseLeave={() => isCollapsed && setIsHovering(false)}
+                className={`fixed top-0 left-0 z-50 h-screen transition-all duration-300 ease-in-out
+                    ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                    ${showFull ? 'w-64' : 'w-20'}
+                `}
+                style={{ background: 'linear-gradient(180deg, #1e1b4b 0%, #1a1647 100%)' }}
+            >
+                {/* Logo Area */}
+                <div className="h-16 flex items-center px-5 border-b border-white/10 overflow-hidden">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 flex-shrink-0 bg-indigo-500/30 rounded-xl flex items-center justify-center">
+                            <GraduationCap className="w-5 h-5 text-indigo-300" />
+                        </div>
+                        {showFull && (
+                            <span className="text-lg font-bold text-white tracking-tight whitespace-nowrap">
+                                {settings.siteName || 'SapienceLMS'}
+                            </span>
+                        )}
                     </div>
-                    <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full"></div>
+                    {showFull && (
+                        <button
+                            onClick={() => setIsOpen(false)}
+                            className="ml-auto lg:hidden text-white/50 hover:text-white"
+                        >
+                            <X size={20} />
+                        </button>
+                    )}
                 </div>
 
-                <h3 className="font-bold text-lg text-slate-800 mb-1">{user?.name || 'Student Name'}</h3>
-                <p className="text-xs text-slate-500 mb-4">{user?.email || 'student@example.com'}</p>
+                {/* Navigation */}
+                <div className="h-[calc(100vh-64px)] overflow-y-auto py-4 px-3 custom-scrollbar">
+                    <nav className="space-y-5">
+                        {/* Direct Links (Dashboard) */}
+                        <div className="space-y-1">
+                            {studentNavItems.filter(item => item.type !== 'section').map((item) => {
+                                const isActive = pathname === item.href;
+                                const Icon = item.icon;
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        onClick={() => setIsOpen(false)}
+                                        title={!showFull ? item.title : ''}
+                                        className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group
+                                            ${isActive
+                                                ? 'bg-indigo-500/30 text-white shadow-lg shadow-indigo-500/10'
+                                                : 'text-indigo-200 hover:bg-white/5 hover:text-white'
+                                            }
+                                            ${!showFull && 'justify-center'}`}
+                                    >
+                                        <Icon className={`w-5 h-5 ${showFull ? 'mr-3' : ''} flex-shrink-0
+                                            ${isActive ? 'text-indigo-300' : 'text-indigo-400 group-hover:text-indigo-300'}`}
+                                        />
+                                        {showFull && <span className="truncate">{item.title}</span>}
+                                    </Link>
+                                );
+                            })}
+                        </div>
 
-                <Link
-                    href="/student/profile"
-                    className="text-orange-500 text-sm font-bold flex items-center gap-1 hover:text-orange-600 transition-colors"
-                >
-                    <Edit className="w-3 h-3" /> Edit Profile
-                </Link>
-            </div>
+                        {/* Section Links */}
+                        {studentNavItems.filter(item => item.type === 'section').map((section, idx) => (
+                            <div key={idx}>
+                                <div className="my-3 border-t border-white/5"></div>
 
-            {/* Navigation Menu */}
-            <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1 scrollbar-hide">
-                {menuItems.map((item, idx) => (
-                    <Link
-                        key={idx}
-                        href={item.href}
-                        className={cn(
-                            "flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden",
-                            pathname === item.href || pathname.startsWith(item.href) && item.href !== '/student/dashboard'
-                                ? "text-white bg-indigo-600 shadow-md shadow-indigo-200"
-                                : "text-slate-600 hover:bg-slate-50 hover:text-indigo-600"
-                        )}
-                    >
-                        {pathname === item.href && (
-                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white/20 rounded-r-full"></div>
-                        )}
-                        <item.icon className={cn(
-                            "w-5 h-5 transition-colors",
-                            pathname === item.href ? "text-white" : "text-slate-400 group-hover:text-indigo-600"
-                        )} />
-                        {item.label}
+                                {showFull && (
+                                    <h3 className="px-3 text-[10px] font-bold text-indigo-400/60 uppercase tracking-[0.15em] mb-2">
+                                        {section.title}
+                                    </h3>
+                                )}
+                                <div className="space-y-0.5">
+                                    {section.children.map((child) => {
+                                        const Icon = child.icon;
+                                        const hasSubmenu = child.submenu && child.submenu.length > 0;
+                                        const isExpanded = expandedMenu === child.title;
+                                        const isSubmenuActive = hasSubmenu && child.submenu.some(sub => pathname === sub.href || pathname.startsWith(sub.href));
+                                        const isChildActive = pathname === child.href || pathname.startsWith(child.href + '/');
+                                        const isActive = isChildActive || isSubmenuActive;
 
-                        {/* Badge for Wishlist/Notifications (Mock) */}
-                        {item.label === 'My Wishlist' && (
-                            <span className="ml-auto bg-orange-100 text-orange-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">New</span>
-                        )}
-                    </Link>
-                ))}
-            </nav>
+                                        return (
+                                            <div key={child.title}>
+                                                {hasSubmenu ? (
+                                                    <button
+                                                        onClick={() => showFull && toggleSubmenu(child.title)}
+                                                        title={!showFull ? child.title : ''}
+                                                        className={`flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group
+                                                            ${isActive || isExpanded
+                                                                ? 'text-white bg-white/5'
+                                                                : 'text-indigo-200 hover:bg-white/5 hover:text-white'
+                                                            }
+                                                            ${!showFull && 'justify-center'}`}
+                                                    >
+                                                        <Icon className={`w-5 h-5 ${showFull ? 'mr-3' : ''} flex-shrink-0
+                                                            ${isActive ? 'text-indigo-300' : 'text-indigo-400 group-hover:text-indigo-300'}`}
+                                                        />
+                                                        {showFull && (
+                                                            <>
+                                                                <span className="flex-1 text-left truncate">{child.title}</span>
+                                                                <ChevronRight className={`w-4 h-4 text-indigo-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                ) : (
+                                                    <Link
+                                                        href={child.href}
+                                                        onClick={() => setIsOpen(false)}
+                                                        title={!showFull ? child.title : ''}
+                                                        className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group
+                                                            ${isActive
+                                                                ? 'bg-indigo-500/30 text-white'
+                                                                : 'text-indigo-200 hover:bg-white/5 hover:text-white'
+                                                            }
+                                                            ${!showFull && 'justify-center'}`}
+                                                    >
+                                                        <Icon className={`w-5 h-5 ${showFull ? 'mr-3' : ''} flex-shrink-0
+                                                            ${isActive ? 'text-indigo-300' : 'text-indigo-400 group-hover:text-indigo-300'}`}
+                                                        />
+                                                        {showFull && <span className="truncate">{child.title}</span>}
+                                                    </Link>
+                                                )}
 
-            {/* Footer / Logout */}
-            <div className="p-4 border-t border-slate-100">
-                <button
-                    onClick={onLogout}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors"
-                >
-                    <LogOut className="w-5 h-5" />
-                    Logout
-                </button>
-            </div>
-        </aside>
+                                                {/* Submenu */}
+                                                {hasSubmenu && isExpanded && showFull && (
+                                                    <div className="ml-8 mt-1 space-y-0.5 border-l-2 border-indigo-500/20 pl-3">
+                                                        {child.submenu.map((sub) => (
+                                                            <Link
+                                                                key={sub.title}
+                                                                href={sub.href}
+                                                                onClick={() => setIsOpen(false)}
+                                                                className={`block px-3 py-2 text-sm rounded-lg transition-colors
+                                                                    ${pathname === sub.href || pathname.startsWith(sub.href + '/')
+                                                                        ? 'text-indigo-300 font-semibold bg-indigo-500/10'
+                                                                        : 'text-indigo-300/60 hover:text-indigo-200 hover:bg-white/5'
+                                                                    }`}
+                                                            >
+                                                                {sub.title}
+                                                            </Link>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </nav>
+                </div>
+            </aside>
+        </>
     );
 }

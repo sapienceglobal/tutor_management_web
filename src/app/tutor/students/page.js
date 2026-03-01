@@ -20,9 +20,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Search, Mail, BookOpen, Calendar, MoreVertical, User } from 'lucide-react';
+import { Search, Mail, BookOpen, Calendar, User, ShieldBan, ShieldCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import toast from 'react-hot-toast';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 export default function TutorStudentsPage() {
     const [students, setStudents] = useState([]);
@@ -30,6 +32,8 @@ export default function TutorStudentsPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [courseFilter, setCourseFilter] = useState('all');
     const [courses, setCourses] = useState([]);
+    const [blockingId, setBlockingId] = useState(null);
+    const { confirmDialog } = useConfirm();
 
     useEffect(() => {
         fetchData();
@@ -38,36 +42,46 @@ export default function TutorStudentsPage() {
     const fetchData = async () => {
         try {
             setLoading(true);
-            // In a real scenario, we might need a dedicated endpoint like /api/tutor/students
-            // For now, let's try to fetch courses and then potentially aggregate or use a new endpoint.
-            // Assuming we have an endpoint or we mock it for now until backend is ready.
-
-            // Strategy: Fetch my courses first to populate filter
             const coursesRes = await api.get('/courses/my-courses');
-
             if (coursesRes.data.success) {
                 setCourses(coursesRes.data.courses);
             }
 
-            // Correct endpoint based on backend route structure: /api/tutor/dashboard/students
             const studentsRes = await api.get('/tutor/dashboard/students');
-
             if (studentsRes.data.success) {
-                // Backend returns: { success: true, totalStudents, students: [...], byCourse: [...] }
-                // We use the 'students' array which contains the list of unique students
                 setStudents(studentsRes.data.students);
             } else {
-                // Fallback or empty if not successful
                 setStudents([]);
             }
-
         } catch (error) {
             console.error('Error fetching students:', error);
-            // If API fails (e.g. 404), we keep students empty for now
-            // In a real app, we'd show an error or a "feature coming soon" state if backend missing
             setStudents([]);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleBlockStudent = async (studentId, studentName, isBlocked) => {
+        const action = isBlocked ? 'unblock' : 'block';
+        const confirmed = await confirmDialog(
+            `${isBlocked ? 'Unblock' : 'Block'} Student`,
+            `Are you sure you want to ${action} ${studentName}? ${!isBlocked ? 'This student will no longer see you as a tutor anywhere.' : 'This student will be able to see you again.'}`,
+            { variant: isBlocked ? 'default' : 'destructive' }
+        );
+        if (!confirmed) return;
+
+        try {
+            setBlockingId(studentId);
+            await api.post(`/tutor/dashboard/students/${studentId}/${action}`);
+            toast.success(`Student ${action}ed successfully`);
+            // Update local state
+            setStudents(prev => prev.map(s =>
+                s._id === studentId ? { ...s, isBlockedByTutor: !isBlocked } : s
+            ));
+        } catch (error) {
+            toast.error(error.response?.data?.message || `Failed to ${action} student`);
+        } finally {
+            setBlockingId(null);
         }
     };
 
@@ -85,8 +99,8 @@ export default function TutorStudentsPage() {
 
     // Stats
     const totalStudents = students.length;
-    // Mocking active calculation for now
     const activeStudents = students.filter(s => s.lastActive && new Date(s.lastActive) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length;
+    const blockedStudents = students.filter(s => s.isBlockedByTutor).length;
 
     if (loading) {
         return <div className="p-8 text-center text-gray-500">Loading students...</div>;
@@ -100,7 +114,7 @@ export default function TutorStudentsPage() {
             </div>
 
             {/* Stats Overview */}
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Total Students</CardTitle>
@@ -131,6 +145,16 @@ export default function TutorStudentsPage() {
                         <p className="text-xs text-muted-foreground">Active courses</p>
                     </CardContent>
                 </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Blocked</CardTitle>
+                        <ShieldBan className="h-4 w-4 text-red-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{blockedStudents}</div>
+                        <p className="text-xs text-muted-foreground">Students blocked by you</p>
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Filters and Search */}
@@ -159,9 +183,6 @@ export default function TutorStudentsPage() {
                         </SelectContent>
                     </Select>
                 </div>
-                <Button variant="outline">
-                    Export CSV
-                </Button>
             </div>
 
             {/* Students Table */}
@@ -173,16 +194,17 @@ export default function TutorStudentsPage() {
                             <TableHead>Enrolled Courses</TableHead>
                             <TableHead>Joined</TableHead>
                             <TableHead>Progress</TableHead>
+                            <TableHead>Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {filteredStudents.length > 0 ? (
                             filteredStudents.map((student) => (
-                                <TableRow key={student._id}>
+                                <TableRow key={student._id} className={student.isBlockedByTutor ? 'bg-red-50/50' : ''}>
                                     <TableCell>
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${student.isBlockedByTutor ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'}`}>
                                                 {student.name.charAt(0)}
                                             </div>
                                             <div>
@@ -222,16 +244,33 @@ export default function TutorStudentsPage() {
                                             </div>
                                         </div>
                                     </TableCell>
+                                    <TableCell>
+                                        {student.isBlockedByTutor ? (
+                                            <Badge variant="destructive" className="text-xs">Blocked</Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="text-xs text-green-700 border-green-300 bg-green-50">Active</Badge>
+                                        )}
+                                    </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon">
-                                            <MoreVertical className="w-4 h-4 text-gray-500" />
+                                        <Button
+                                            variant={student.isBlockedByTutor ? "outline" : "destructive"}
+                                            size="sm"
+                                            disabled={blockingId === student._id}
+                                            onClick={() => handleBlockStudent(student._id, student.name, student.isBlockedByTutor)}
+                                            className="gap-1.5"
+                                        >
+                                            {student.isBlockedByTutor ? (
+                                                <><ShieldCheck className="w-3.5 h-3.5" /> Unblock</>
+                                            ) : (
+                                                <><ShieldBan className="w-3.5 h-3.5" /> Block</>
+                                            )}
                                         </Button>
                                     </TableCell>
                                 </TableRow>
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center text-gray-500">
+                                <TableCell colSpan={6} className="h-24 text-center text-gray-500">
                                     {students.length === 0 ? "No students found." : "No matching students."}
                                 </TableCell>
                             </TableRow>

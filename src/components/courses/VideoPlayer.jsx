@@ -1,5 +1,7 @@
 import { Lock, PlayCircle } from 'lucide-react';
 import { cn } from '@/lib/utils'; // Assuming you have this utility
+import { useRef, useEffect } from 'react';
+import Hls from 'hls.js';
 
 export function VideoPlayer({
     videoUrl,
@@ -32,16 +34,40 @@ export function VideoPlayer({
         );
     }
 
+    const videoRef = useRef(null);
+
+    useEffect(() => {
+        let hls = null;
+        if (videoRef.current && videoUrl) {
+            if (videoUrl.includes('.m3u8')) {
+                if (Hls.isSupported()) {
+                    hls = new Hls();
+                    hls.loadSource(videoUrl);
+                    hls.attachMedia(videoRef.current);
+                } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+                    videoRef.current.src = videoUrl;
+                }
+            } else {
+                videoRef.current.src = videoUrl;
+            }
+        }
+        return () => {
+            if (hls) {
+                hls.destroy();
+            }
+        };
+    }, [videoUrl]);
+
     return (
         <div className="relative aspect-video w-full bg-black rounded-xl overflow-hidden shadow-2xl border border-gray-800">
             {videoUrl ? (
                 <video
+                    ref={videoRef}
                     controls
                     className="w-full h-full"
                     poster={thumbnail}
                     onPlay={onPlay}
                 >
-                    <source src={videoUrl} type="video/mp4" />
                     Your browser does not support the video tag.
                 </video>
             ) : (

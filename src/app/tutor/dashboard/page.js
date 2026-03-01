@@ -9,9 +9,10 @@ import TopItemsWidget from '@/components/widgets/TopItemsWidget';
 import FeedbackWidget from '@/components/widgets/FeedbackWidget';
 import QuickLinksWidget from '@/components/widgets/QuickLinksWidget';
 import DataTable from '@/components/widgets/DataTable';
-import { Loader2, ShieldAlert } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
+import { UpcomingExamsWidget } from '@/components/calendar/UpcomingExamsWidget';
+import { Loader2 } from 'lucide-react';
 
 export default function TutorDashboard() {
     const [stats, setStats] = useState(null);
@@ -169,7 +170,8 @@ export default function TutorDashboard() {
 
             {/* Ratings & Quick Links */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-1">
+                <div className="md:col-span-1 space-y-6">
+                    <UpcomingExamsWidget isTutor={true} />
                     <FeedbackWidget title="Ratings Overview" data={ratingsData} />
                 </div>
                 <div className="md:col-span-2">

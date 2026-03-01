@@ -11,7 +11,8 @@ import {
     Calendar,
     ArrowLeft,
     Share2,
-    Download
+    Download,
+    TrendingUp
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { cn } from '@/lib/utils';
@@ -102,7 +103,7 @@ export default function ExamResultPage({ params }) {
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center border-t border-slate-100 pt-8">
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center border-t border-slate-100 pt-8">
                             <div className="p-4 rounded-xl bg-slate-50">
                                 <p className="text-slate-500 text-sm font-medium mb-1">Time Taken</p>
                                 <p className="text-slate-900 font-bold flex items-center justify-center gap-2">
@@ -129,6 +130,14 @@ export default function ExamResultPage({ params }) {
                                 <p className="text-slate-900 font-bold flex items-center justify-center gap-2">
                                     <AlertCircle className="w-4 h-4 text-slate-400" />
                                     {result.unansweredCount}
+                                </p>
+                            </div>
+                            {/* Percentile Rank */}
+                            <div className="p-4 rounded-xl bg-indigo-50">
+                                <p className="text-indigo-600 text-sm font-medium mb-1">Percentile</p>
+                                <p className="text-indigo-900 font-bold flex items-center justify-center gap-2">
+                                    <TrendingUp className="w-4 h-4" />
+                                    {result.percentile != null ? `Top ${100 - result.percentile}%` : 'N/A'}
                                 </p>
                             </div>
                         </div>

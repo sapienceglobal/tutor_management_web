@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useCallback, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,7 +9,9 @@ import {
     Minimize,
     ChevronRight,
     Menu,
-    Lock
+    Lock,
+    Zap,
+    Loader2
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { cn } from '@/lib/utils';
@@ -20,6 +22,8 @@ export default function TakeExamPage({ params }) {
     const { id } = use(params);
     const router = useRouter();
 
+    const AUTOSAVE_KEY = `exam_autosave_${id}`;
+
     const [exam, setExam] = useState(null);
     const [loading, setLoading] = useState(true);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -29,14 +33,100 @@ export default function TakeExamPage({ params }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const { confirmDialog } = useConfirm();
+    const timeLeftRef = useRef(0);
+
+    // --- Section-based timing state ---
+    const [sectionTimers, setSectionTimers] = useState({}); // { sectionIndex: secondsLeft }
+    const [activeSection, setActiveSection] = useState(0);
+    const [lockedSections, setLockedSections] = useState(new Set());
+    const hasSections = exam?.sections?.length > 0;
+
+    // --- Adaptive testing state ---
+    const [adaptiveQuestion, setAdaptiveQuestion] = useState(null);
+    const [adaptiveAnswered, setAdaptiveAnswered] = useState([]);
+    const [adaptiveSelection, setAdaptiveSelection] = useState(null);
+    const [adaptiveFinished, setAdaptiveFinished] = useState(false);
+    const [adaptiveLoading, setAdaptiveLoading] = useState(false);
+    const [lastCorrect, setLastCorrect] = useState(null);
+    const isAdaptive = exam?.isAdaptive || false;
+
+    // --- Tab-switch detection ---
+    const [tabSwitchCount, setTabSwitchCount] = useState(0);
+    const attemptIdRef = useRef(null);
+
+    // Keep ref in sync for auto-save interval
+    useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
+
+    // Tab-switch detection for test integrity
+    useEffect(() => {
+        const handleVisibilityChange = async () => {
+            if (document.hidden && exam && !loading) {
+                const newCount = tabSwitchCount + 1;
+                setTabSwitchCount(newCount);
+                toast.error(`⚠️ Tab switch detected (${newCount})! This is being recorded.`, { duration: 4000 });
+
+                // Log to backend if we have an attempt ID
+                if (attemptIdRef.current) {
+                    try {
+                        await api.post(`/student/exams/${attemptIdRef.current}/tab-switch`);
+                    } catch (err) {
+                        console.error('Tab switch log failed:', err);
+                    }
+                }
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, [exam, loading, tabSwitchCount]);
 
     useEffect(() => {
         const fetchExam = async () => {
             try {
                 const res = await api.get(`/student/exams/${id}`);
                 if (res.data.success) {
-                    setExam(res.data.exam);
-                    setTimeLeft(res.data.exam.duration * 60);
+                    const fetchedExam = res.data.exam;
+                    setExam(fetchedExam);
+
+                    // --- Auto-Save Restore ---
+                    try {
+                        const saved = localStorage.getItem(AUTOSAVE_KEY);
+                        if (saved) {
+                            const parsed = JSON.parse(saved);
+                            if (parsed.examId === id) {
+                                setSelections(parsed.selections || {});
+                                setCurrentQuestionIndex(parsed.currentQuestionIndex || 0);
+                                setVisitedQuestions(new Set(parsed.visitedQuestions || [0]));
+                                const savedTime = parsed.timeLeft;
+                                if (typeof savedTime === 'number' && savedTime > 0 && savedTime <= fetchedExam.duration * 60) {
+                                    setTimeLeft(savedTime);
+                                } else {
+                                    setTimeLeft(fetchedExam.duration * 60);
+                                }
+                                toast.success('Your previous progress has been restored.', { icon: '💾' });
+                            } else {
+                                setTimeLeft(fetchedExam.duration * 60);
+                            }
+                        } else {
+                            setTimeLeft(fetchedExam.duration * 60);
+                        }
+                    } catch {
+                        setTimeLeft(fetchedExam.duration * 60);
+                    }
+
+                    // Initialize section timers
+                    if (fetchedExam.sections && fetchedExam.sections.length > 0) {
+                        const timers = {};
+                        fetchedExam.sections.forEach((sec, idx) => {
+                            timers[idx] = sec.duration * 60;
+                        });
+                        setSectionTimers(timers);
+                    }
+
+                    // If adaptive, fetch first question
+                    if (fetchedExam.isAdaptive) {
+                        fetchNextAdaptiveQuestion([], null);
+                    }
                 }
             } catch (error) {
                 console.error('Failed to load exam', error);
@@ -49,8 +139,119 @@ export default function TakeExamPage({ params }) {
         fetchExam();
     }, [id, router]);
 
+    // --- Adaptive: fetch next question ---
+    const fetchNextAdaptiveQuestion = async (answeredIds, wasCorrect) => {
+        setAdaptiveLoading(true);
+        try {
+            const res = await api.post(`/student/exams/${id}/next-question`, {
+                answeredQuestionIds: answeredIds,
+                lastAnswerCorrect: wasCorrect,
+            });
+            if (res.data.success) {
+                if (res.data.finished) {
+                    setAdaptiveFinished(true);
+                } else {
+                    setAdaptiveQuestion(res.data.question);
+                    setAdaptiveSelection(null);
+                }
+            }
+        } catch (err) {
+            console.error('Adaptive fetch error:', err);
+            toast.error('Failed to load next question.');
+        } finally {
+            setAdaptiveLoading(false);
+        }
+    };
+
+    // --- Adaptive: submit current answer and fetch next ---
+    const handleAdaptiveSubmitAnswer = async () => {
+        if (adaptiveSelection === null) {
+            toast.error('Please select an option.');
+            return;
+        }
+        const q = adaptiveQuestion;
+        const newAnswered = [...adaptiveAnswered, { questionId: q._id, selectedOption: adaptiveSelection }];
+        setAdaptiveAnswered(newAnswered);
+
+        // We don't know if it's correct client-side; pass null and let backend decide difficulty
+        // For now, we'll just alternate. The backend handles difficulty selection.
+        await fetchNextAdaptiveQuestion(newAnswered.map(a => a.questionId), lastCorrect);
+    };
+
+    // --- Section timer effect ---
+    useEffect(() => {
+        if (loading || !exam || !hasSections) return;
+
+        const sectionTimer = setInterval(() => {
+            setSectionTimers(prev => {
+                const updated = { ...prev };
+                let anyChanged = false;
+                Object.keys(updated).forEach(secIdx => {
+                    const idx = Number(secIdx);
+                    if (!lockedSections.has(idx) && updated[idx] > 0) {
+                        updated[idx] -= 1;
+                        anyChanged = true;
+                        if (updated[idx] <= 0) {
+                            // Lock this section
+                            setLockedSections(prevLocked => {
+                                const newLocked = new Set(prevLocked);
+                                newLocked.add(idx);
+                                return newLocked;
+                            });
+                            toast.error(`Section "${exam.sections[idx]?.name}" time is up!`);
+                        }
+                    }
+                });
+                return anyChanged ? updated : prev;
+            });
+        }, 1000);
+
+        return () => clearInterval(sectionTimer);
+    }, [loading, exam, hasSections, lockedSections]);
+
+    // Helper: get section index for a question index
+    const getSectionForQuestion = (qIdx) => {
+        if (!hasSections) return -1;
+        return exam.sections.findIndex(s => qIdx >= s.questionStartIndex && qIdx <= s.questionEndIndex);
+    };
+
+    // Helper: is current question in a locked section?
+    const isQuestionLocked = (qIdx) => {
+        if (!hasSections) return false;
+        const secIdx = getSectionForQuestion(qIdx);
+        return secIdx !== -1 && lockedSections.has(secIdx);
+    };
+
+    // --- Auto-Save Effect: save every 10 seconds ---
     useEffect(() => {
         if (loading || !exam) return;
+
+        const autoSaveInterval = setInterval(() => {
+            try {
+                const dataToSave = {
+                    examId: id,
+                    selections,
+                    currentQuestionIndex,
+                    visitedQuestions: [...visitedQuestions],
+                    timeLeft: timeLeftRef.current,
+                    savedAt: Date.now(),
+                };
+                localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(dataToSave));
+            } catch (e) {
+                // localStorage full or unavailable — silently ignore
+            }
+        }, 10000);
+
+        return () => clearInterval(autoSaveInterval);
+    }, [loading, exam, selections, currentQuestionIndex, visitedQuestions, id]);
+
+    // Helper to clear auto-save data
+    const clearAutoSave = useCallback(() => {
+        try { localStorage.removeItem(AUTOSAVE_KEY); } catch { }
+    }, [AUTOSAVE_KEY]);
+
+    useEffect(() => {
+        if (loading || !exam || isAdaptive) return;
 
         const timer = setInterval(() => {
             setTimeLeft((prev) => {
@@ -64,7 +265,7 @@ export default function TakeExamPage({ params }) {
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [loading, exam]);
+    }, [loading, exam, isAdaptive]);
 
     useEffect(() => {
         setVisitedQuestions(prev => {
@@ -120,6 +321,10 @@ export default function TakeExamPage({ params }) {
     };
 
     const handleOptionSelect = (optionIndex) => {
+        if (isQuestionLocked(currentQuestionIndex)) {
+            toast.error('This section\'s time has expired.');
+            return;
+        }
         setSelections(prev => {
             const current = prev[currentQuestionIndex] || {};
             return {
@@ -133,6 +338,7 @@ export default function TakeExamPage({ params }) {
     };
 
     const handleClearResponse = () => {
+        if (isQuestionLocked(currentQuestionIndex)) return;
         setSelections(prev => {
             const newSelections = { ...prev };
             const current = newSelections[currentQuestionIndex];
@@ -169,20 +375,24 @@ export default function TakeExamPage({ params }) {
         }
 
         try {
-            const answers = Object.entries(selections).map(([qIdx, data]) => ({
-                questionId: exam.questions[qIdx]._id,
-                selectedOption: data.optionIndex ?? -1,
-            }));
+            // For adaptive exams, use adaptiveAnswered
+            const answersToSubmit = isAdaptive
+                ? adaptiveAnswered
+                : Object.entries(selections).map(([qIdx, data]) => ({
+                    questionId: exam.questions[qIdx]._id,
+                    selectedOption: data.optionIndex ?? -1,
+                }));
 
             const timeSpent = (exam.duration * 60) - timeLeft;
 
             const res = await api.post(`/student/exams/${id}/submit`, {
-                answers,
+                answers: answersToSubmit,
                 timeSpent,
                 startedAt: new Date(Date.now() - (timeSpent * 1000)).toISOString()
             });
 
             if (res.data.success) {
+                clearAutoSave();
                 toast.success('Test Submitted Successfully!');
                 router.replace(`/student/exams/attempt/${res.data.attemptId}`);
             }
@@ -196,6 +406,97 @@ export default function TakeExamPage({ params }) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900"></div>
+            </div>
+        );
+    }
+
+    // --- ADAPTIVE MODE RENDER ---
+    if (isAdaptive) {
+        return (
+            <div className="h-screen flex flex-col bg-white overflow-hidden font-sans">
+                <header className="h-14 bg-gradient-to-r from-indigo-700 to-purple-700 text-white flex items-center justify-between px-6 shadow-md z-30 shrink-0">
+                    <div className="flex items-center gap-3">
+                        <Zap className="w-5 h-5 text-amber-300" />
+                        <span className="font-semibold text-base">{exam.title}</span>
+                        <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">ADAPTIVE</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="bg-white/10 px-4 py-2 rounded-md text-sm font-medium">
+                            {adaptiveAnswered.length} / {exam.questions?.length || '?'} Answered
+                        </div>
+                        <div className="bg-white/10 px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            {formatTime(timeLeft)}
+                        </div>
+                    </div>
+                </header>
+
+                <div className="flex-1 flex items-center justify-center p-8">
+                    {adaptiveLoading ? (
+                        <div className="text-center space-y-4">
+                            <Loader2 className="w-12 h-12 animate-spin text-indigo-500 mx-auto" />
+                            <p className="text-slate-500">Loading next question...</p>
+                        </div>
+                    ) : adaptiveFinished ? (
+                        <div className="text-center space-y-6 max-w-md">
+                            <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+                                <Zap className="w-10 h-10 text-emerald-600" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-slate-800">All Questions Completed!</h2>
+                            <p className="text-slate-500">You've answered all adaptive questions. Click below to submit your test.</p>
+                            <Button onClick={() => handleSubmit(false)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-3 text-lg font-semibold">
+                                Submit Test
+                            </Button>
+                        </div>
+                    ) : adaptiveQuestion ? (
+                        <div className="max-w-3xl w-full">
+                            <div className="mb-4 flex items-center gap-3">
+                                <span className="text-sm font-medium text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
+                                    Difficulty: {adaptiveQuestion.difficulty?.charAt(0).toUpperCase() + adaptiveQuestion.difficulty?.slice(1)}
+                                </span>
+                                <span className="text-sm text-slate-400">
+                                    {adaptiveQuestion.points || 1} point{(adaptiveQuestion.points || 1) > 1 ? 's' : ''}
+                                </span>
+                            </div>
+                            <div className="mb-8">
+                                <p className="text-slate-700 text-xl leading-relaxed font-medium">{adaptiveQuestion.question}</p>
+                            </div>
+                            <div className="grid gap-3">
+                                {adaptiveQuestion.options.map((opt, idx) => (
+                                    <div
+                                        key={idx}
+                                        onClick={() => setAdaptiveSelection(idx)}
+                                        className={cn(
+                                            "flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all",
+                                            adaptiveSelection === idx
+                                                ? "border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200"
+                                                : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
+                                            adaptiveSelection === idx ? "bg-indigo-500 text-white" : "bg-slate-100 text-slate-600"
+                                        )}>
+                                            {['A', 'B', 'C', 'D'][idx]}
+                                        </div>
+                                        <span className={cn("text-base", adaptiveSelection === idx ? "text-indigo-900 font-medium" : "text-slate-600")}>
+                                            {opt.text}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="mt-8 flex justify-end">
+                                <Button
+                                    onClick={handleAdaptiveSubmitAnswer}
+                                    disabled={adaptiveSelection === null}
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 h-12 font-semibold text-base disabled:opacity-50"
+                                >
+                                    Next Question <ChevronRight className="w-5 h-5 ml-1" />
+                                </Button>
+                            </div>
+                        </div>
+                    ) : null}
+                </div>
             </div>
         );
     }
@@ -235,10 +536,45 @@ export default function TakeExamPage({ params }) {
                 {/* Left: Question Area */}
                 <main className="flex-1 flex flex-col overflow-hidden relative bg-white">
 
+                    {/* Section Tabs (if sections exist) */}
+                    {hasSections && (
+                        <div className="h-10 border-b border-slate-200 flex items-center gap-1 px-4 bg-slate-50 shrink-0 overflow-x-auto">
+                            {exam.sections.map((sec, secIdx) => (
+                                <button
+                                    key={secIdx}
+                                    onClick={() => {
+                                        setActiveSection(secIdx);
+                                        setCurrentQuestionIndex(sec.questionStartIndex);
+                                    }}
+                                    className={cn(
+                                        "px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap flex items-center gap-1.5",
+                                        activeSection === secIdx
+                                            ? "bg-indigo-100 text-indigo-700"
+                                            : lockedSections.has(secIdx)
+                                                ? "bg-red-50 text-red-400 line-through"
+                                                : "text-slate-500 hover:bg-slate-100"
+                                    )}
+                                >
+                                    {lockedSections.has(secIdx) && <Lock className="w-3 h-3" />}
+                                    {sec.name}
+                                    <span className={cn(
+                                        "text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-mono",
+                                        lockedSections.has(secIdx) ? "bg-red-100 text-red-500" : "bg-slate-200 text-slate-600"
+                                    )}>
+                                        {lockedSections.has(secIdx) ? '00:00' : formatTime(sectionTimers[secIdx] || 0)}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     {/* Top Bar */}
                     <div className="h-14 border-b border-slate-200 flex items-center px-6 justify-between bg-white shrink-0">
                         <h2 className="font-semibold text-slate-700 text-base">
                             Q{currentQuestionIndex + 1} of {exam.questions.length} <span className="text-slate-300 mx-2">|</span> <span className="text-slate-400 uppercase text-sm">{exam.courseTitle || 'GENERAL'}</span>
+                            {isQuestionLocked(currentQuestionIndex) && (
+                                <span className="ml-3 text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">LOCKED</span>
+                            )}
                         </h2>
                     </div>
 
@@ -262,9 +598,12 @@ export default function TakeExamPage({ params }) {
                                         return (
                                             <div
                                                 key={idx}
-                                                onClick={() => handleOptionSelect(idx)}
+                                                onClick={() => !isQuestionLocked(currentQuestionIndex) && handleOptionSelect(idx)}
                                                 className={cn(
-                                                    "flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-all",
+                                                    "flex items-center gap-4 p-4 rounded-lg border transition-all",
+                                                    isQuestionLocked(currentQuestionIndex)
+                                                        ? "opacity-50 cursor-not-allowed bg-slate-50"
+                                                        : "cursor-pointer",
                                                     isSelected
                                                         ? "border-sky-400 bg-sky-50/50 ring-1 ring-sky-400/20"
                                                         : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"

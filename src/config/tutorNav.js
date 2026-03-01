@@ -31,10 +31,19 @@ export const tutorNavItems = [
                 ]
             },
             {
+                title: "Question Bank",
+                icon: Library,
+                submenu: [
+                    { title: "All Questions", href: "/tutor/questions" },
+                    { title: "AI Bulk Generator", href: "/tutor/questions/ai-generator" },
+                ]
+            },
+            {
                 title: "Manage Courses",
                 icon: BookOpen,
                 submenu: [
                     { title: "My Courses", href: "/tutor/courses" },
+                    { title: "Student Batches", href: "/tutor/batches" },
                     { title: "Live Classes", href: "/tutor/live-classes" },
                 ]
             },
@@ -56,6 +65,12 @@ export const tutorNavItems = [
                 title: "Students",
                 icon: Users,
                 href: "/tutor/students",
+                type: "link"
+            },
+            {
+                title: "Leave Requests",
+                icon: FileText,
+                href: "/tutor/leaves",
                 type: "link"
             },
             {

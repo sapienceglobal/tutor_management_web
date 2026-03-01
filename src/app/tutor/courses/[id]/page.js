@@ -22,7 +22,8 @@ import {
     Save,
     Sparkles,
     Globe,
-    EyeOff
+    EyeOff,
+    ClipboardList
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
@@ -57,6 +58,7 @@ export default function ManageCoursePage({ params }) {
     const [editingModuleTitle, setEditingModuleTitle] = useState('');
     const [editingLessonId, setEditingLessonId] = useState(null);
     const [publishing, setPublishing] = useState(false);
+    const [isUploadingVideo, setIsUploadingVideo] = useState(false);
     const { confirmDialog } = useConfirm();
 
     // Fetch Data
@@ -99,9 +101,9 @@ export default function ManageCoursePage({ params }) {
             const newStatus = course.status === 'published' ? 'draft' : 'published';
             const res = await api.patch(`/courses/${id}`, { status: newStatus });
             const updatedStatus = res.data.course.status;
-            
+
             setCourse(prev => ({ ...prev, status: updatedStatus }));
-            
+
             if (updatedStatus === 'pending') {
                 toast.success('Course submitted for Admin Approval');
             } else {
@@ -192,16 +194,29 @@ export default function ManageCoursePage({ params }) {
         if (lesson) {
             setEditingLessonId(lesson._id);
             setLessonForm({
+                type: lesson.type || 'video',
                 title: lesson.title,
                 description: lesson.description || '',
                 videoUrl: lesson.content?.videoUrl || '',
                 duration: Math.round((lesson.content?.duration || 0) / 60).toString(),
+                documents: lesson.content?.documents || [],
+                quiz: lesson.content?.quiz || { passingScore: 70, timeLimit: '', questions: [] },
                 isFree: lesson.isFree,
                 attachments: lesson.content?.attachments || []
             });
         } else {
             setEditingLessonId(null);
-            setLessonForm({ title: '', description: '', videoUrl: '', duration: '', isFree: false, attachments: [] });
+            setLessonForm({
+                type: 'video',
+                title: '',
+                description: '',
+                videoUrl: '',
+                duration: '',
+                documents: [],
+                quiz: { passingScore: 70, timeLimit: '', questions: [] },
+                isFree: false,
+                attachments: []
+            });
         }
         setIsLessonModalOpen(true);
     };
@@ -223,16 +238,29 @@ export default function ManageCoursePage({ params }) {
             }
 
             const content = {
-                videoUrl: lessonForm.videoUrl,
-                duration: Number(lessonForm.duration) * 60, // Convert to seconds
                 attachments: Array.isArray(attachments) ? attachments : []
             };
+
+            if (lessonForm.type === 'video') {
+                content.videoUrl = lessonForm.videoUrl;
+                content.duration = Number(lessonForm.duration) * 60; // Convert to seconds
+            } else if (lessonForm.type === 'document') {
+                content.documents = lessonForm.documents;
+                content.duration = Number(lessonForm.duration) * 60 || 0;
+            } else if (lessonForm.type === 'quiz') {
+                content.quiz = {
+                    ...lessonForm.quiz,
+                    timeLimit: lessonForm.quiz.timeLimit ? Number(lessonForm.quiz.timeLimit) : null
+                };
+                content.duration = Number(lessonForm.duration) * 60 || 0;
+            }
 
             if (editingLessonId) {
                 // Update existing lesson
                 await api.patch(`/lessons/${editingLessonId}`, {
                     title: lessonForm.title,
                     description: lessonForm.description,
+                    type: lessonForm.type,
                     content,
                     isFree: lessonForm.isFree,
                 });
@@ -243,9 +271,9 @@ export default function ManageCoursePage({ params }) {
                     moduleId: currentModuleId,
                     title: lessonForm.title,
                     description: lessonForm.description,
+                    type: lessonForm.type,
                     content,
                     isFree: lessonForm.isFree,
-                    type: 'video'
                 });
             }
 
@@ -306,6 +334,71 @@ export default function ManageCoursePage({ params }) {
         }
     };
 
+    const handleDocumentUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await api.post('/upload/file', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            if (res.data.success) {
+                setLessonForm(prev => ({
+                    ...prev,
+                    documents: [...prev.documents, {
+                        name: res.data.name,
+                        url: res.data.fileUrl,
+                        type: res.data.type
+                    }]
+                }));
+                toast.success('Document uploaded');
+            }
+        } catch (error) {
+            console.error('Upload failed:', error);
+            toast.error('Failed to upload document');
+        }
+    };
+
+    const removeDocument = (index) => {
+        setLessonForm(prev => ({
+            ...prev,
+            documents: prev.documents.filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleVideoUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('video', file);
+
+        setIsUploadingVideo(true);
+        try {
+            const res = await api.post('/upload/video-hls', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            if (res.data.success) {
+                // Prepend base URL for the playlist
+                const baseUrl = api.defaults.baseURL.replace('/api', '');
+                const fullUrl = baseUrl + res.data.estimatedPlaylistUrl;
+
+                setLessonForm(prev => ({ ...prev, videoUrl: fullUrl }));
+                toast.success("Video uploaded and is processing for HLS!");
+            }
+        } catch (error) {
+            console.error('Video upload failed:', error);
+            toast.error(error.response?.data?.message || 'Failed to upload video');
+        } finally {
+            setIsUploadingVideo(false);
+        }
+    };
+
     const removeAttachment = (index) => {
         setLessonForm(prev => ({
             ...prev,
@@ -347,16 +440,15 @@ export default function ManageCoursePage({ params }) {
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                                 <h1 className="text-3xl font-bold text-slate-900">{course.title}</h1>
-                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                    course.status === 'published' ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200' :
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${course.status === 'published' ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200' :
                                     course.status === 'pending' ? 'bg-cyan-100 text-cyan-700 ring-1 ring-cyan-200' :
-                                    course.status === 'rejected' ? 'bg-red-100 text-red-700 ring-1 ring-red-200' :
-                                    'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
+                                        course.status === 'rejected' ? 'bg-red-100 text-red-700 ring-1 ring-red-200' :
+                                            'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
                                     }`}>
-                                    {course.status === 'published' ? '● Published' : 
-                                     course.status === 'pending' ? '● Pending Approval' :
-                                     course.status === 'rejected' ? '● Rejected' :
-                                     '● Draft'}
+                                    {course.status === 'published' ? '● Published' :
+                                        course.status === 'pending' ? '● Pending Approval' :
+                                            course.status === 'rejected' ? '● Rejected' :
+                                                '● Draft'}
                                 </span>
                             </div>
 
@@ -380,8 +472,7 @@ export default function ManageCoursePage({ params }) {
                             <button
                                 onClick={handlePublishToggle}
                                 disabled={publishing}
-                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-2 border shadow-sm ${
-                                    course.status === 'published' || course.status === 'pending'
+                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-2 border shadow-sm ${course.status === 'published' || course.status === 'pending'
                                     ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
                                     : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                                     }`}
@@ -399,6 +490,13 @@ export default function ManageCoursePage({ params }) {
                                         {course.status === 'rejected' ? 'Resubmit' : 'Publish'}
                                     </>
                                 )}
+                            </button>
+                            <button
+                                onClick={() => router.push(`/tutor/courses/${id}/assignments`)}
+                                className="px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-all flex items-center gap-2"
+                            >
+                                <ClipboardList className="w-4 h-4" />
+                                Assignments
                             </button>
                             <button className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all flex items-center gap-2">
                                 <Settings className="w-4 h-4" />
@@ -555,27 +653,43 @@ export default function ManageCoursePage({ params }) {
                                                                         </div>
                                                                         <div className="flex items-center gap-3 text-xs text-slate-500">
                                                                             <div className="flex items-center gap-1">
-                                                                                <Video className="w-3 h-3" />
-                                                                                <span>Video</span>
+                                                                                {lesson.type === 'document' ? (
+                                                                                    <FileText className="w-3 h-3 text-amber-500" />
+                                                                                ) : lesson.type === 'quiz' ? (
+                                                                                    <AlertCircle className="w-3 h-3 text-purple-500" />
+                                                                                ) : (
+                                                                                    <Video className="w-3 h-3 text-indigo-500" />
+                                                                                )}
+                                                                                <span className="capitalize">{lesson.type || 'video'}</span>
                                                                             </div>
                                                                             <span>•</span>
                                                                             <div className="flex items-center gap-1">
                                                                                 <Clock className="w-3 h-3" />
-                                                                                <span>{Math.round((lesson.content?.duration || 0) / 60)} mins</span>
+                                                                                <span>{lesson.type === 'quiz' ? (lesson.content?.quiz?.timeLimit ? `${lesson.content.quiz.timeLimit} mins` : 'No Limit') : `${Math.round((lesson.content?.duration || 0) / 60)} mins`}</span>
                                                                             </div>
                                                                         </div>
                                                                     </div>
 
                                                                     <div className="flex items-center gap-2 opacity-0 group-hover/lesson:opacity-100 transition-opacity">
+                                                                        {lesson.type === 'quiz' && (
+                                                                            <button
+                                                                                onClick={() => router.push(`/tutor/courses/${id}/modules/${module._id}/lessons/${lesson._id}/quiz`)}
+                                                                                className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors border border-purple-200"
+                                                                                title="Manage Quiz Questions"
+                                                                            >
+                                                                                <FileText className="w-4 h-4" />
+                                                                                <span className="sr-only">Manage Quiz</span>
+                                                                            </button>
+                                                                        )}
                                                                         <button
                                                                             onClick={() => openLessonModal(module._id, lesson)}
-                                                                            className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                                                            className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors border border-transparent"
                                                                         >
                                                                             <Edit3 className="w-4 h-4" />
                                                                         </button>
                                                                         <button
                                                                             onClick={() => deleteLesson(lesson._id)}
-                                                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent"
                                                                         >
                                                                             <Trash2 className="w-4 h-4" />
                                                                         </button>
@@ -675,10 +789,28 @@ export default function ManageCoursePage({ params }) {
                         <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
                             <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white shrink-0">
                                 <h3 className="text-xl font-bold">{editingLessonId ? 'Edit Lesson' : 'Add New Lesson'}</h3>
-                                <p className="text-blue-100 text-sm mt-1">Create a new video lesson</p>
+                                <p className="text-blue-100 text-sm mt-1">Add content to your module</p>
                             </div>
                             <form onSubmit={handleSaveLesson} className="flex flex-col flex-1 min-h-0">
                                 <div className="p-6 space-y-5 overflow-y-auto flex-1">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">Lesson Type</label>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {['video', 'document', 'quiz'].map(type => (
+                                                <button
+                                                    key={type}
+                                                    type="button"
+                                                    onClick={() => setLessonForm(prev => ({ ...prev, type }))}
+                                                    className={`py-2 px-3 rounded-lg border-2 text-sm font-bold capitalize transition-all ${lessonForm.type === type
+                                                        ? 'border-blue-600 bg-blue-50 text-blue-700'
+                                                        : 'border-slate-200 text-slate-600 hover:border-blue-300'
+                                                        }`}
+                                                >
+                                                    {type}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                     <div>
                                         <label className="block text-sm font-semibold text-slate-700 mb-2">
                                             Lesson Title
@@ -749,43 +881,158 @@ export default function ManageCoursePage({ params }) {
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                            Video URL
-                                        </label>
-                                        <input
-                                            type="url"
-                                            value={lessonForm.videoUrl}
-                                            onChange={(e) => setLessonForm(prev => ({ ...prev, videoUrl: e.target.value }))}
-                                            placeholder="https://example.com/video.mp4"
-                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                        />
-                                        <p className="text-xs text-slate-500 mt-2">Enter a direct video link (MP4 format)</p>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                            Duration (minutes)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={lessonForm.duration}
-                                            onChange={(e) => setLessonForm(prev => ({ ...prev, duration: e.target.value }))}
-                                            placeholder="15"
-                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                        />
-                                    </div>
-                                    <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
-                                        <input
-                                            type="checkbox"
-                                            id="isFree"
-                                            checked={lessonForm.isFree}
-                                            onChange={(e) => setLessonForm(prev => ({ ...prev, isFree: e.target.checked }))}
-                                            className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-2 focus:ring-blue-500"
-                                        />
-                                        <label htmlFor="isFree" className="text-sm font-medium text-slate-700 cursor-pointer">
-                                            Mark as free preview lesson
-                                        </label>
-                                    </div>
+                                    {lessonForm.type === 'video' && (
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                                Video Content
+                                            </label>
+
+                                            <div className="space-y-4">
+                                                {/* File Upload Option */}
+                                                <div className="relative">
+                                                    <input
+                                                        type="file"
+                                                        onChange={handleVideoUpload}
+                                                        accept="video/mp4,video/x-m4v,video/*"
+                                                        className="hidden"
+                                                        id="video-upload"
+                                                        disabled={isUploadingVideo}
+                                                    />
+                                                    <label
+                                                        htmlFor="video-upload"
+                                                        className={`flex items-center justify-center gap-2 w-full p-4 border-2 border-dashed border-blue-300 bg-blue-50/50 rounded-lg text-blue-700 font-medium hover:border-blue-500 hover:bg-blue-100 transition-all ${isUploadingVideo ? 'opacity-50 cursor-wait' : 'cursor-pointer'}`}
+                                                    >
+                                                        {isUploadingVideo ? (
+                                                            <><Loader2 className="w-5 h-5 animate-spin" /> Uploading & Processing...</>
+                                                        ) : (
+                                                            <><Video className="w-5 h-5" /> Upload Video (Auto HLS Conversion)</>
+                                                        )}
+                                                    </label>
+                                                </div>
+
+                                                <div className="flex items-center gap-4 text-xs text-slate-400 font-medium uppercase tracking-wider before:h-px before:flex-1 before:bg-slate-200 after:h-px after:flex-1 after:bg-slate-200">
+                                                    OR PASTE URL
+                                                </div>
+
+                                                {/* Direct URL Option */}
+                                                <div>
+                                                    <input
+                                                        type="url"
+                                                        value={lessonForm.videoUrl}
+                                                        onChange={(e) => setLessonForm(prev => ({ ...prev, videoUrl: e.target.value }))}
+                                                        placeholder="https://example.com/video.mp4"
+                                                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                                    />
+                                                    <p className="text-xs text-slate-500 mt-2">Enter a direct video link or YouTube URL</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {lessonForm.type === 'document' && (
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                                Upload Documents (PDF, Word, PPT)
+                                            </label>
+                                            <div className="space-y-3">
+                                                {lessonForm.documents?.map((file, idx) => (
+                                                    <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                                                        <div className="flex items-center gap-3 overflow-hidden">
+                                                            <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center shrink-0">
+                                                                <FileText className="w-4 h-4 text-amber-600" />
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <p className="text-sm font-medium text-slate-700 truncate">{file.name}</p>
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeDocument(idx)}
+                                                            className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg transition-colors"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+
+                                                <div className="relative">
+                                                    <input
+                                                        type="file"
+                                                        onChange={handleDocumentUpload}
+                                                        className="hidden"
+                                                        id="document-upload"
+                                                        accept=".pdf,.doc,.docx,.ppt,.pptx"
+                                                    />
+                                                    <label
+                                                        htmlFor="document-upload"
+                                                        className="flex items-center justify-center gap-2 w-full p-4 border-2 border-dashed border-amber-300 bg-amber-50/50 rounded-lg text-amber-700 font-medium hover:border-amber-500 hover:bg-amber-100 transition-all cursor-pointer"
+                                                    >
+                                                        <Upload className="w-5 h-5" />
+                                                        Upload Document File
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {lessonForm.type === 'quiz' && (
+                                        <div className="bg-purple-50 p-4 border border-purple-200 rounded-lg flex flex-col items-center justify-center text-center">
+                                            <AlertCircle className="w-8 h-8 text-purple-500 mb-2" />
+                                            <h4 className="font-bold text-purple-900">Quiz Builder</h4>
+                                            <p className="text-sm text-purple-700 mt-1 mb-4">Quiz questions are managed in the Quiz Builder interface after creation. Basic info is saved here.</p>
+
+                                            <div className="w-full grid grid-cols-2 gap-4 text-left">
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-700 mb-1">Passing Score (%)</label>
+                                                    <input
+                                                        type="number"
+                                                        value={lessonForm.quiz?.passingScore || 70}
+                                                        onChange={(e) => setLessonForm(p => ({ ...p, quiz: { ...p.quiz, passingScore: e.target.value } }))}
+                                                        className="w-full px-3 py-2 border border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-700 mb-1">Time Limit (mins)</label>
+                                                    <input
+                                                        type="number"
+                                                        placeholder="No limit"
+                                                        value={lessonForm.quiz?.timeLimit || ''}
+                                                        onChange={(e) => setLessonForm(p => ({ ...p, quiz: { ...p.quiz, timeLimit: e.target.value } }))}
+                                                        className="w-full px-3 py-2 border border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {lessonForm.type !== 'quiz' && (
+                                        <>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                                    Duration (minutes)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={lessonForm.duration}
+                                                    onChange={(e) => setLessonForm(prev => ({ ...prev, duration: e.target.value }))}
+                                                    placeholder="15"
+                                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+                                                <input
+                                                    type="checkbox"
+                                                    id="isFree"
+                                                    checked={lessonForm.isFree}
+                                                    onChange={(e) => setLessonForm(prev => ({ ...prev, isFree: e.target.checked }))}
+                                                    className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-2 focus:ring-blue-500"
+                                                />
+                                                <label htmlFor="isFree" className="text-sm font-medium text-slate-700 cursor-pointer">
+                                                    Mark as free preview lesson
+                                                </label>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
 
                                 {/* Sticky Footer */}

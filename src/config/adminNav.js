@@ -54,6 +54,12 @@ export const adminNavItems = [
                 type: "link"
             },
             {
+                title: "Leave Requests",
+                icon: BookOpen,
+                href: "/admin/leaves",
+                type: "link"
+            },
+            {
                 title: "Students",
                 icon: Users,
                 href: "/admin/students",
@@ -63,6 +69,12 @@ export const adminNavItems = [
                 title: "Courses",
                 icon: BookOpen,
                 href: "/admin/courses",
+                type: "link"
+            },
+            {
+                title: "Batches",
+                icon: Users,
+                href: "/admin/batches",
                 type: "link"
             },
             {

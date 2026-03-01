@@ -20,15 +20,22 @@ import {
 import Link from 'next/link';
 import { tutorNavItems } from '@/config/tutorNav';
 import { adminNavItems } from '@/config/adminNav';
+import { superadminNavItems } from '@/config/superadminNav';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
+import { useTenant } from '@/components/providers/TenantProvider';
+import { useSettings } from '@/components/providers/SettingsProvider';
 
 export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
     const pathname = usePathname();
     const [expandedMenu, setExpandedMenu] = useState(null);
     const [role, setRole] = useState(null);
     const [isHovering, setIsHovering] = useState(false);
+
+    // Add Tenant Context
+    const { tenant } = useTenant() || { tenant: null };
+    const { settings } = useSettings();
 
     useEffect(() => {
         const userRole = Cookies.get('user_role');
@@ -37,7 +44,9 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
 
     if (!role) return null;
 
-    const navItems = role === 'admin' ? adminNavItems : tutorNavItems;
+    let navItems = tutorNavItems;
+    if (role === 'admin') navItems = adminNavItems;
+    if (role === 'superadmin') navItems = superadminNavItems;
 
     const toggleSubmenu = (title) => {
         setExpandedMenu(expandedMenu === title ? null : title);
@@ -66,14 +75,18 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                 {/* Logo Area */}
                 <div className="h-16 flex items-center px-6 border-b border-slate-100 overflow-hidden">
                     <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center">
-                            <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8 text-indigo-600" stroke="currentColor" strokeWidth="2">
-                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                        </div>
+                        {tenant?.logo ? (
+                            <img src={tenant.logo} alt="Logo" className="w-8 h-8 object-contain flex-shrink-0" />
+                        ) : (
+                            <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8 text-brand-primary" stroke="currentColor" strokeWidth="2">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </div>
+                        )}
                         {showFull && (
                             <span className="text-xl font-bold text-slate-800 tracking-tight whitespace-nowrap">
-                                {role === 'admin' ? 'Admin Panel' : 'TutorApp'}
+                                {role === 'superadmin' ? 'Super Admin' : role === 'admin' ? (settings.siteName || 'Admin Panel') : tenant?.name || settings.siteName || 'TutorApp'}
                             </span>
                         )}
                     </div>
@@ -101,8 +114,8 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                                         href={item.href}
                                         title={!showFull ? item.title : ''}
                                         className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors group ${isActive
-                                                ? 'text-orange-500 bg-orange-50'
-                                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                            ? 'text-orange-500 bg-orange-50'
+                                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                                             } ${!showFull && 'justify-center'}`}
                                     >
                                         <Icon className={`w-5 h-5 ${showFull ? 'mr-3' : ''} flex-shrink-0 ${isActive ? 'text-orange-500' : 'text-slate-400 group-hover:text-slate-600'
@@ -140,8 +153,8 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                                                         onClick={() => showFull && toggleSubmenu(child.title)}
                                                         title={!showFull ? child.title : ''}
                                                         className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors group ${isActive || isExpanded
-                                                                ? 'text-slate-800 bg-slate-50'
-                                                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                                            ? 'text-slate-800 bg-slate-50'
+                                                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                                                             } ${!showFull && 'justify-center'}`}
                                                     >
                                                         <Icon className={`w-5 h-5 ${showFull ? 'mr-3' : ''} flex-shrink-0 ${isActive || isExpanded ? 'text-orange-500' : 'text-slate-400 group-hover:text-slate-600'
@@ -161,8 +174,8 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                                                         href={child.href}
                                                         title={!showFull ? child.title : ''}
                                                         className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors group ${isActive
-                                                                ? 'text-orange-500 bg-orange-50'
-                                                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                                            ? 'text-orange-500 bg-orange-50'
+                                                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                                                             } ${!showFull && 'justify-center'}`}
                                                     >
                                                         <Icon className={`w-5 h-5 ${showFull ? 'mr-3' : ''} flex-shrink-0 ${isActive ? 'text-orange-500' : 'text-slate-400 group-hover:text-slate-600'
@@ -179,8 +192,8 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                                                                 key={sub.title}
                                                                 href={sub.href}
                                                                 className={`block px-3 py-2 text-sm rounded-md transition-colors ${pathname === sub.href
-                                                                        ? 'text-orange-600 font-medium bg-orange-50/50'
-                                                                        : 'text-slate-500 hover:text-orange-500 hover:bg-slate-50'
+                                                                    ? 'text-orange-600 font-medium bg-orange-50/50'
+                                                                    : 'text-slate-500 hover:text-orange-500 hover:bg-slate-50'
                                                                     }`}
                                                             >
                                                                 {sub.title}

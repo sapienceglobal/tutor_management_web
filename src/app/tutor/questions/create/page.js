@@ -25,6 +25,7 @@ export default function CreateQuestionPage() {
             { text: '', isCorrect: false },
             { text: '', isCorrect: false }
         ],
+        idealAnswer: '',
         explanation: '',
         points: 1,
         difficulty: 'medium',
@@ -71,8 +72,13 @@ export default function CreateQuestionPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.question) return toast.error('Question text is required');
-        if (formData.options.some(o => !o.text)) return toast.error('All options must have text');
-        if (!formData.options.some(o => o.isCorrect)) return toast.error('Select at least one correct answer');
+
+        if (formData.type === 'mcq') {
+            if (formData.options.some(o => !o.text)) return toast.error('All options must have text');
+            if (!formData.options.some(o => o.isCorrect)) return toast.error('Select at least one correct answer');
+        } else if (formData.type === 'subjective') {
+            if (!formData.idealAnswer) return toast.error('Ideal Answer grading rubric is required');
+        }
 
         setLoading(true);
         try {
@@ -93,7 +99,8 @@ export default function CreateQuestionPage() {
     const [aiParams, setAiParams] = useState({
         topic: '',
         count: 1, // Default to 1 for this single question page
-        difficulty: 'medium'
+        difficulty: 'medium',
+        type: 'mcq'
     });
     const [aiLoading, setAiLoading] = useState(false);
 
@@ -114,7 +121,9 @@ export default function CreateQuestionPage() {
                 setFormData({
                     ...formData,
                     question: q.question,
-                    options: q.options.map((opt, i) => ({
+                    idealAnswer: q.idealAnswer || '',
+                    type: aiParams.type,
+                    options: aiParams.type === 'subjective' ? [] : q.options.map((opt, i) => ({
                         text: opt,
                         isCorrect: opt === q.correctAnswer // AI returns string answer
                     })),
@@ -162,6 +171,18 @@ export default function CreateQuestionPage() {
                     <CardContent className="p-6">
                         <form onSubmit={handleSubmit} className="space-y-6">
 
+                            {/* Question Type */}
+                            <div className="space-y-2">
+                                <Label>Question Type</Label>
+                                <Select value={formData.type} onValueChange={(val) => setFormData({ ...formData, type: val })}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="mcq">Multiple Choice (MCQ)</SelectItem>
+                                        <SelectItem value="subjective">Subjective / Open-Ended</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
                             {/* Question Text */}
                             <div className="space-y-2">
                                 <Label>Question Text <span className="text-red-500">*</span></Label>
@@ -172,39 +193,51 @@ export default function CreateQuestionPage() {
                                 />
                             </div>
 
-                            {/* Options */}
-                            <div className="space-y-3">
-                                <Label>Options</Label>
-                                {formData.options.map((option, index) => (
-                                    <div key={index} className="flex items-center gap-3">
-                                        <input
-                                            type="radio"
-                                            name="correctOption"
-                                            checked={option.isCorrect}
-                                            onChange={() => {
-                                                const newOpts = formData.options.map((o, i) => ({
-                                                    ...o, isCorrect: i === index
-                                                }));
-                                                setFormData({ ...formData, options: newOpts });
-                                            }}
-                                            className="w-4 h-4 text-emerald-600 focus:ring-emerald-500"
-                                        />
-                                        <Input
-                                            value={option.text}
-                                            onChange={(e) => handleOptionChange(index, 'text', e.target.value)}
-                                            placeholder={`Option ${index + 1}`}
-                                        />
-                                        {formData.options.length > 2 && (
-                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeOption(index)}>
-                                                <Trash className="w-4 h-4 text-red-500" />
-                                            </Button>
-                                        )}
-                                    </div>
-                                ))}
-                                <Button type="button" variant="outline" size="sm" onClick={addOption} className="mt-2">
-                                    <Plus className="w-4 h-4 mr-2" /> Add Option
-                                </Button>
-                            </div>
+                            {/* Conditional Rendering base on type */}
+                            {formData.type === 'mcq' ? (
+                                <div className="space-y-3">
+                                    <Label>Options <span className="text-red-500">*</span></Label>
+                                    {formData.options.map((option, index) => (
+                                        <div key={index} className="flex items-center gap-3">
+                                            <input
+                                                type="radio"
+                                                name="correctOption"
+                                                checked={option.isCorrect}
+                                                onChange={() => {
+                                                    const newOpts = formData.options.map((o, i) => ({
+                                                        ...o, isCorrect: i === index
+                                                    }));
+                                                    setFormData({ ...formData, options: newOpts });
+                                                }}
+                                                className="w-4 h-4 text-emerald-600 focus:ring-emerald-500"
+                                            />
+                                            <Input
+                                                value={option.text}
+                                                onChange={(e) => handleOptionChange(index, 'text', e.target.value)}
+                                                placeholder={`Option ${index + 1}`}
+                                            />
+                                            {formData.options.length > 2 && (
+                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeOption(index)}>
+                                                    <Trash className="w-4 h-4 text-red-500" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    ))}
+                                    <Button type="button" variant="outline" size="sm" onClick={addOption} className="mt-2">
+                                        <Plus className="w-4 h-4 mr-2" /> Add Option
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    <Label>Ideal Answer / Grading Rubric <span className="text-red-500">*</span></Label>
+                                    <textarea
+                                        className="w-full min-h-[120px] p-3 rounded-md border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-y"
+                                        value={formData.idealAnswer}
+                                        onChange={(e) => setFormData({ ...formData, idealAnswer: e.target.value })}
+                                        placeholder="Enter the expected answer or grading points for auto-evaluation..."
+                                    />
+                                </div>
+                            )}
 
                             {/* Metadata Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -287,19 +320,34 @@ export default function CreateQuestionPage() {
                                     onChange={(e) => setAiParams({ ...aiParams, topic: e.target.value })}
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label>Difficulty</Label>
-                                <Select
-                                    value={aiParams.difficulty}
-                                    onValueChange={(val) => setAiParams({ ...aiParams, difficulty: val })}
-                                >
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="easy">Easy</SelectItem>
-                                        <SelectItem value="medium">Medium</SelectItem>
-                                        <SelectItem value="hard">Hard</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Question Type</Label>
+                                    <Select
+                                        value={aiParams.type}
+                                        onValueChange={(val) => setAiParams({ ...aiParams, type: val })}
+                                    >
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="mcq">MCQ</SelectItem>
+                                            <SelectItem value="subjective">Subjective</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Difficulty</Label>
+                                    <Select
+                                        value={aiParams.difficulty}
+                                        onValueChange={(val) => setAiParams({ ...aiParams, difficulty: val })}
+                                    >
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="easy">Easy</SelectItem>
+                                            <SelectItem value="medium">Medium</SelectItem>
+                                            <SelectItem value="hard">Hard</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                             <Button onClick={handleAIGenerate} disabled={aiLoading} className="w-full bg-purple-600 hover:bg-purple-700 text-white mt-4">
                                 {aiLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Generate"}

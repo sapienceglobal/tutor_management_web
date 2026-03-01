@@ -1,35 +1,4 @@
-<<<<<<< HEAD
-
-.env
-# Node modules
-node_modules
-
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Firebase files
-.firebase-tools.json
-.update-notifier-firebase.json
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Other unwanted files
-*.rdb
-*.log
-*.old
-id_rsa*
-known_hosts*
-.vscode/
-=======
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
+# Dependencies
 /node_modules
 /.pnp
 .pnp.*
@@ -39,33 +8,44 @@ known_hosts*
 !.yarn/releases
 !.yarn/versions
 
-# testing
+# Testing
 /coverage
 
-# next.js
+# Next.js
 /.next/
 /out/
 
-# production
+# Production
 /build
 
-# misc
-.DS_Store
-*.pem
+# Environment Variables (NEVER commit)
+.env
+.env.*
+!.env.example
 
-# debug
+# Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# OS
+.DS_Store
+Thumbs.db
 
-# vercel
-.vercel
+# IDE
+.vscode/
 
-# typescript
+# Misc
+*.pem
 *.tsbuildinfo
 next-env.d.ts
->>>>>>> b2b83d2 (Improvement)
+*.rdb
+*.old
+
+# Vercel
+.vercel
+
+# Firebase
+.firebase-tools.json
+.update-notifier-firebase.json

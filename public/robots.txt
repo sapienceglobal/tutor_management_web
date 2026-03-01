@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /tutor/
+Disallow: /student/
+Disallow: /superadmin/
+Disallow: /suspended
+Disallow: /blocked
+Disallow: /maintenance
+Disallow: /api/
+
+# Update this to your production domain when deploying
+# Sitemap: https://yourdomain.com/sitemap.xml

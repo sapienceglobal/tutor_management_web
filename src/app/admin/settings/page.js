@@ -1,13 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Save, Loader2, Globe, Shield, Bell, Wrench } from 'lucide-react';
+import { Save, Loader2, Globe, Shield, Bell, Wrench, Palette } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '@/lib/axios';
 
 export default function AdminSettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [instituteData, setInstituteData] = useState({
+        logo: '',
+        primaryColor: '#4f46e5',
+        secondaryColor: '#f8fafc'
+    });
     const [settings, setSettings] = useState({
         siteName: 'TutorApp',
         supportEmail: 'support@tutorapp.com',
@@ -28,9 +33,20 @@ export default function AdminSettingsPage() {
 
     const fetchSettings = async () => {
         try {
-            const response = await api.get('/admin/settings');
-            if (response.data.success) {
-                setSettings(response.data.settings);
+            const [settingsRes, instituteRes] = await Promise.all([
+                api.get('/admin/settings'),
+                api.get('/institutes/me') // Requires institute specific backend
+            ]);
+
+            if (settingsRes.data.success) {
+                setSettings(settingsRes.data.settings);
+            }
+            if (instituteRes.data?.success && instituteRes.data.institute) {
+                setInstituteData({
+                    logo: instituteRes.data.institute.logo || '',
+                    primaryColor: instituteRes.data.institute.brandColors?.primary || '#4f46e5',
+                    secondaryColor: instituteRes.data.institute.brandColors?.secondary || '#f8fafc'
+                });
             }
         } catch (error) {
             console.error('Failed to fetch settings:', error);
@@ -45,12 +61,26 @@ export default function AdminSettingsPage() {
         setSettings({ ...settings, [e.target.name]: value });
     };
 
+    const handleInstituteChange = (e) => {
+        setInstituteData({ ...instituteData, [e.target.name]: e.target.value });
+    };
+
     const handleSave = async () => {
         setSaving(true);
         try {
-            const response = await api.put('/admin/settings', settings);
-            if (response.data.success) {
-                toast.success('Settings updated successfully');
+            const [settingsRes, instRes] = await Promise.all([
+                api.put('/admin/settings', settings),
+                api.put('/institutes/me', {
+                    logo: instituteData.logo,
+                    brandColors: {
+                        primary: instituteData.primaryColor,
+                        secondary: instituteData.secondaryColor
+                    }
+                })
+            ]);
+
+            if (settingsRes.data.success && instRes.data.success) {
+                toast.success('Settings and Branding updated successfully');
             }
         } catch (error) {
             console.error('Failed to update settings:', error);
@@ -240,6 +270,76 @@ export default function AdminSettingsPage() {
                                 min="0"
                                 max="100"
                             />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Theme & Branding */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:col-span-2">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-pink-100 rounded-lg text-pink-600">
+                            <Palette className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-semibold text-slate-800">Tenant Branding</h2>
+                            <p className="text-sm text-slate-500">Customize the appearance of your institute</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-3">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Logo URL</label>
+                            <input
+                                type="url"
+                                name="logo"
+                                value={instituteData.logo}
+                                onChange={handleInstituteChange}
+                                placeholder="https://example.com/logo.png"
+                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                            {instituteData.logo && (
+                                <div className="mt-3 p-4 border border-slate-100 rounded-lg flex justify-center bg-slate-50">
+                                    <img src={instituteData.logo} alt="Institute Logo Preview" className="h-12 object-contain" />
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Primary Color</label>
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="color"
+                                    name="primaryColor"
+                                    value={instituteData.primaryColor}
+                                    onChange={handleInstituteChange}
+                                    className="w-12 h-10 p-1 border border-slate-200 rounded cursor-pointer"
+                                />
+                                <input
+                                    type="text"
+                                    name="primaryColor"
+                                    value={instituteData.primaryColor}
+                                    onChange={handleInstituteChange}
+                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm uppercase"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Secondary Color</label>
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="color"
+                                    name="secondaryColor"
+                                    value={instituteData.secondaryColor}
+                                    onChange={handleInstituteChange}
+                                    className="w-12 h-10 p-1 border border-slate-200 rounded cursor-pointer"
+                                />
+                                <input
+                                    type="text"
+                                    name="secondaryColor"
+                                    value={instituteData.secondaryColor}
+                                    onChange={handleInstituteChange}
+                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm uppercase"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>

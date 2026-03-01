@@ -28,10 +28,12 @@ import {
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useSettings } from '@/components/providers/SettingsProvider';
 
 export function StudentHeader({ user, onLogout }) {
     const pathname = usePathname();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const { settings } = useSettings();
 
     const navItems = [
         { label: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
@@ -42,6 +44,7 @@ export function StudentHeader({ user, onLogout }) {
             icon: BookOpen,
             children: [
                 { label: 'My Courses', href: '/student/courses' },
+                { label: 'My Batches', href: '/student/batches' },
                 { label: 'Live Classes', href: '/student/live-classes' },
                 { label: 'My Wishlist', href: '/student/wishlist' },
             ]
@@ -63,6 +66,7 @@ export function StudentHeader({ user, onLogout }) {
             children: [
                 { label: 'Appointments', href: '/student/appointments' },
                 { label: 'Payments', href: '/student/payments' },
+                { label: 'Leave Requests', href: '/student/leaves' },
             ]
         },
     ];
@@ -77,7 +81,7 @@ export function StudentHeader({ user, onLogout }) {
                         <Brain className="w-8 h-8 text-orange-500 relative z-10" />
                     </div>
                     <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300">
-                        YaadKaro
+                        {settings.siteName || 'Sapience'}
                     </span>
                 </Link>
 

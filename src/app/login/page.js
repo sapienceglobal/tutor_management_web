@@ -52,7 +52,11 @@ function LoginPageClient() {
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
 
-            if (user.role === 'tutor') {
+            if (user.role === 'superadmin') {
+                router.push('/superadmin');
+            } else if (user.role === 'admin') {
+                router.push('/admin/dashboard');
+            } else if (user.role === 'tutor') {
                 router.push('/tutor/dashboard');
             } else {
                 router.push('/student/dashboard');

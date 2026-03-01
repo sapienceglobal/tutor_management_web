@@ -142,6 +142,15 @@
   --brand-green: 158 64% 52%;
 }
 
+.text-brand-primary {
+  color: var(--primary-color, #4f46e5);
+  /* Fallbacks to indigo-600 */
+}
+
+.bg-brand-primary {
+  background-color: var(--primary-color, #4f46e5);
+}
+
 @layer base {
   * {
     @apply border-border;
