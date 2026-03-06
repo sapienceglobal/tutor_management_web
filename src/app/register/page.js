@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { GraduationCap, Loader2, Mail, Lock, User, Phone, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react';
 import api from '@/lib/axios';
@@ -14,6 +14,12 @@ export default function RegisterPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showOtpModal, setShowOtpModal] = useState(false);
+    const [otp, setOtp] = useState('');
+    const [otpSending, setOtpSending] = useState(false);
+    const [otpVerifying, setOtpVerifying] = useState(false);
+    const [otpRequired, setOtpRequired] = useState(false);
+    const [otpError, setOtpError] = useState(''); // Separate error for OTP modal
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -21,7 +27,43 @@ export default function RegisterPage() {
         password: '',
         confirmPassword: '',
         role: 'student', // Default role
+        inviteToken: '', // For invite-based registration
+        registrationType: 'independent', // 'independent' | 'invite'
     });
+
+    useEffect(() => {
+        // Check for invite token in URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const inviteToken = urlParams.get('invite');
+        const email = urlParams.get('email');
+        const name = urlParams.get('name');
+        const role = urlParams.get('role');
+        const otpRequiredParam = urlParams.get('otpRequired');
+
+        if (inviteToken) {
+            setFormData(prev => ({
+                ...prev,
+                inviteToken,
+                registrationType: 'invite' // Switch to invite mode
+            }));
+
+            // Auto-fill email, name, and role if provided
+            if (email) {
+                setFormData(prev => ({ ...prev, email }));
+            }
+            if (name) {
+                setFormData(prev => ({ ...prev, name }));
+            }
+            if (role) {
+                setFormData(prev => ({ ...prev, role }));
+            }
+
+            // Check if OTP is required
+            if (otpRequiredParam === 'true') {
+                setOtpRequired(true);
+            }
+        }
+    }, []);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -32,6 +74,10 @@ export default function RegisterPage() {
         setFormData({ ...formData, role });
     };
 
+    const handleRegistrationTypeSelect = (type) => {
+        setFormData({ ...formData, registrationType: type });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -40,12 +86,142 @@ export default function RegisterPage() {
             return;
         }
 
+        // Industry-level validation - Updated for dual registration system
+        if (formData.registrationType === 'invite' && !formData.inviteToken) {
+            setError("Invite token is required for invite-based registration.");
+            return;
+        }
+
+        if (formData.registrationType === 'invite' && formData.role === 'tutor' && !formData.inviteToken) {
+            setError("Tutors must have an invite token to register.");
+            return;
+        }
+
+        if (formData.registrationType === 'invite' && formData.role === 'student' && !formData.inviteToken) {
+            setError("Students must have an invite token to register.");
+            return;
+        }
+
+        // If OTP is required, send OTP first
+        if (otpRequired) {
+            await sendOtpForRegistration();
+            return;
+        }
+
+        // Normal registration without OTP
+        await performRegistration();
+    };
+
+    const sendOtpForRegistration = async () => {
+        setOtpSending(true);
+        setOtpError(''); // Clear previous OTP errors
+        try {
+            const res = await api.post('/auth/send-otp', {
+                email: formData.email,
+                purpose: 'invite-registration'
+            });
+
+            if (res.data?.success) {
+                setShowOtpModal(true);
+            }
+        } catch (err) {
+            setOtpError(err.response?.data?.message || 'Failed to send OTP');
+        } finally {
+            setOtpSending(false);
+        }
+    };
+
+    const verifyOtpAndRegister = async () => {
+        if (!otp || otp.length !== 6) {
+            setOtpError('Please enter a valid 6-digit OTP');
+            return;
+        }
+
+        setOtpVerifying(true);
+        setOtpError(''); // Clear previous OTP errors
+        try {
+            const res = await api.post('/auth/verify-otp-and-register', {
+                name: formData.name,
+                email: formData.email,
+                password: formData.password,
+                role: formData.role,
+                inviteToken: formData.inviteToken,
+                otp: otp
+            });
+
+            if (res.data?.success) {
+                // Save token and user info to both Cookies and localStorage
+                const { token, user } = res.data;
+
+                Cookies.set('token', token, { expires: 7 });
+                Cookies.set('user_role', user.role, { expires: 7 });
+
+                localStorage.setItem('token', token);
+                localStorage.setItem('user', JSON.stringify(user));
+
+                setShowOtpModal(false);
+                setOtp(''); // Clear OTP
+
+                // Show success message
+                console.log('✅ Account created successfully!');
+
+                // Accept the invite and redirect
+                await acceptInviteAndRedirect();
+            }
+        } catch (err) {
+            setOtpError(err.response?.data?.message || 'OTP verification failed');
+        } finally {
+            setOtpVerifying(false);
+        }
+    };
+
+    const acceptInviteAndRedirect = async () => {
+        // Invite is now accepted in the OTP verification process
+        // Just redirect to dashboard
+        if (formData.role === 'tutor') {
+            router.push('/tutor/dashboard');
+        } else {
+            router.push('/student/dashboard');
+        }
+    };
+
+    const performRegistration = async () => {
         setIsLoading(true);
         setError('');
 
         try {
             const { confirmPassword, ...payload } = formData;
-            const response = await api.post('/auth/register', payload);
+
+            // Prepare payload based on registration type
+            let finalPayload;
+
+            if (formData.registrationType === 'independent') {
+                // Independent registration - send only independent data
+                finalPayload = {
+                    name: payload.name,
+                    email: payload.email,
+                    phone: payload.phone,
+                    password: payload.password,
+                    role: payload.role,
+                    registrationType: 'independent'
+                    // No inviteToken, no instituteId
+                };
+            } else {
+                // Invite-based registration - send invite data
+                finalPayload = {
+                    name: payload.name,
+                    email: payload.email,
+                    phone: payload.phone,
+                    password: payload.password,
+                    role: payload.role,
+                    registrationType: 'invite',
+                    inviteToken: payload.inviteToken
+                    // Backend will extract instituteId from invite
+                };
+            }
+
+            // Use dual registration system
+            const response = await api.post('/auth/register', finalPayload);
             const { token, user } = response.data;
 
             Cookies.set('token', token, { expires: 7 });
@@ -131,6 +307,46 @@ export default function RegisterPage() {
                             )}
 
                             <form onSubmit={handleSubmit} className="space-y-5">
+                                {/* Registration Type Selection */}
+                                <div className="space-y-3">
+                                    <Label className="text-sm font-semibold text-slate-700">Registration Type</Label>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div
+                                            onClick={() => handleRegistrationTypeSelect('independent')}
+                                            className={cn(
+                                                "cursor-pointer relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 p-4 transition-all hover:scale-[1.02] duration-200",
+                                                formData.registrationType === 'independent'
+                                                    ? "border-green-500 bg-green-50/80 shadow-md ring-1 ring-green-500/20"
+                                                    : "border-white/50 bg-white/40 hover:bg-white/80 hover:border-green-200"
+                                            )}
+                                        >
+                                            <div className={cn("p-2 rounded-full transition-colors", formData.registrationType === 'independent' ? "bg-green-100" : "bg-white/50")}>
+                                                <User className={cn("h-5 w-5", formData.registrationType === 'independent' ? "text-green-600" : "text-slate-500")} />
+                                            </div>
+                                            <span className={cn("font-bold text-sm", formData.registrationType === 'independent' ? "text-green-900" : "text-slate-600")}>Independent User</span>
+                                            <span className="text-xs text-slate-500">Register without institute</span>
+                                            {formData.registrationType === 'independent' && <div className="absolute top-2 right-2 text-green-600"><CheckCircle className="h-4 w-4 fill-green-100" /></div>}
+                                        </div>
+
+                                        <div
+                                            onClick={() => handleRegistrationTypeSelect('invite')}
+                                            className={cn(
+                                                "cursor-pointer relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 p-4 transition-all hover:scale-[1.02] duration-200",
+                                                formData.registrationType === 'invite'
+                                                    ? "border-blue-500 bg-blue-50/80 shadow-md ring-1 ring-blue-500/20"
+                                                    : "border-white/50 bg-white/40 hover:bg-white/80 hover:border-blue-200"
+                                            )}
+                                        >
+                                            <div className={cn("p-2 rounded-full transition-colors", formData.registrationType === 'invite' ? "bg-blue-100" : "bg-white/50")}>
+                                                <Mail className={cn("h-5 w-5", formData.registrationType === 'invite' ? "text-blue-600" : "text-slate-500")} />
+                                            </div>
+                                            <span className={cn("font-bold text-sm", formData.registrationType === 'invite' ? "text-blue-900" : "text-slate-600")}>Invite Based</span>
+                                            <span className="text-xs text-slate-500">Join with institute invite</span>
+                                            {formData.registrationType === 'invite' && <div className="absolute top-2 right-2 text-blue-600"><CheckCircle className="h-4 w-4 fill-blue-100" /></div>}
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* Role Selection */}
                                 <div className="space-y-3">
                                     <Label className="text-sm font-semibold text-slate-700">I want to...</Label>
@@ -191,9 +407,48 @@ export default function RegisterPage() {
                                         <Label htmlFor="email" className="text-xs font-medium text-slate-600 ml-1">Email</Label>
                                         <div className="relative group">
                                             <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                                            <Input id="email" name="email" placeholder="name@example.com" type="email" required className="pl-9 h-10 text-sm bg-white/50 border-slate-200 focus:bg-white rounded-lg" value={formData.email} onChange={handleChange} />
+                                            <Input
+                                                id="email"
+                                                name="email"
+                                                placeholder="name@example.com"
+                                                type="email"
+                                                required
+                                                className={cn(
+                                                    "pl-9 h-10 text-sm bg-white/50 border-slate-200 focus:bg-white rounded-lg",
+                                                    formData.registrationType === 'invite' ? "bg-gray-100 border-gray-300 cursor-not-allowed" : ""
+                                                )}
+                                                value={formData.email}
+                                                onChange={handleChange}
+                                                disabled={formData.registrationType === 'invite'}
+                                            />
+                                            {formData.registrationType === 'invite' && (
+                                                <p className="text-xs text-gray-500 mt-1">Email cannot be changed for invite-based registration</p>
+                                            )}
                                         </div>
                                     </div>
+
+                                    {/* Invite Token Field - Only for invite-based registration */}
+                                    {formData.registrationType === 'invite' && (
+                                        <div className="space-y-1">
+                                            <Label htmlFor="inviteToken" className="text-xs font-medium text-slate-600 ml-1">
+                                                Invite Token (Required)
+                                            </Label>
+                                            <div className="relative group">
+                                                <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                                                <Input
+                                                    id="inviteToken"
+                                                    name="inviteToken"
+                                                    placeholder="Enter your invite token..."
+                                                    className="pl-9 h-10 text-sm bg-white/50 border-slate-200 focus:bg-white rounded-lg"
+                                                    value={formData.inviteToken}
+                                                    onChange={handleChange}
+                                                    required
+                                                />
+                                            </div>
+                                            <p className="text-xs text-amber-600 ml-1">Invite token is required for invite-based registration</p>
+                                        </div>
+                                    )}
+
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-1">
@@ -216,12 +471,22 @@ export default function RegisterPage() {
                                 <Button
                                     type="submit"
                                     className="w-full h-11 text-base font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-200 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] mt-2"
-                                    disabled={isLoading}
+                                    disabled={isLoading || otpSending}
                                 >
                                     {isLoading ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                             Creating...
+                                        </>
+                                    ) : otpSending ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Sending OTP...
+                                        </>
+                                    ) : otpRequired ? (
+                                        <>
+                                            Send OTP
+                                            <ArrowRight className="ml-2 h-4 w-4" />
                                         </>
                                     ) : (
                                         <>
@@ -248,6 +513,84 @@ export default function RegisterPage() {
                     </div>
                 </div>
             </div>
+
+            {/* OTP Verification Modal */}
+            {showOtpModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm">
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Mail className="w-8 h-8 text-indigo-600" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Verify Your Email</h3>
+                            <p className="text-gray-600">
+                                We've sent a 6-digit OTP to <strong>{formData.email}</strong>
+                            </p>
+                        </div>
+
+                        <div className="space-y-4">
+                            {/* OTP Error Display */}
+                            {otpError && (
+                                <div className="flex items-center gap-3 rounded-xl bg-red-50/80 backdrop-blur-sm p-4 text-sm font-medium text-red-600 border border-red-100">
+                                    <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                                    <p>{otpError}</p>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Enter OTP
+                                </label>
+                                <input
+                                    type="text"
+                                    value={otp}
+                                    onChange={(e) => {
+                                        setOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
+                                        setOtpError(''); // Clear error when user types
+                                    }}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-2xl font-mono"
+                                    placeholder="000000"
+                                    maxLength={6}
+                                />
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowOtpModal(false)}
+                                    className="flex-1 py-2 px-4 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={verifyOtpAndRegister}
+                                    disabled={otpVerifying || otp.length !== 6}
+                                    className="flex-1 py-2 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {otpVerifying ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Verifying...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ArrowRight className="w-4 h-4" />
+                                            Verify & Create
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+
+                            <button
+                                onClick={sendOtpForRegistration}
+                                disabled={otpSending}
+                                className="w-full py-2 px-4 text-indigo-600 hover:text-indigo-700 text-sm transition-colors disabled:opacity-50"
+                            >
+                                {otpSending ? 'Resending...' : 'Resend OTP'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

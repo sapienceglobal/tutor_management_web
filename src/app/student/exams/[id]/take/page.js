@@ -298,7 +298,7 @@ export default function TakeExamPage({ params }) {
 
     const getQuestionStatus = (index) => {
         const sel = selections[index] || {};
-        const hasAnswer = sel.optionIndex !== undefined && sel.optionIndex !== null;
+        const hasAnswer = (sel.optionIndex !== undefined && sel.optionIndex !== null) || (sel.textAnswer && sel.textAnswer.trim().length > 0);
         const isMarked = !!sel.isMarked;
         const isVisited = visitedQuestions.has(index);
 
@@ -381,6 +381,7 @@ export default function TakeExamPage({ params }) {
                 : Object.entries(selections).map(([qIdx, data]) => ({
                     questionId: exam.questions[qIdx]._id,
                     selectedOption: data.optionIndex ?? -1,
+                    textAnswer: data.textAnswer || '',
                 }));
 
             const timeSpent = (exam.duration * 60) - timeLeft;
@@ -588,45 +589,72 @@ export default function TakeExamPage({ params }) {
                             </div>
 
                             <div className="space-y-4">
-                                <p className="text-sm text-slate-500 bg-slate-50 inline-block px-3 py-1.5 rounded border border-slate-200">
-                                    Choose one from below options
-                                </p>
+                                {currentQ.options && currentQ.options.length > 0 ? (
+                                    <>
+                                        <p className="text-sm text-slate-500 bg-slate-50 inline-block px-3 py-1.5 rounded border border-slate-200">
+                                            Choose one from below options
+                                        </p>
 
-                                <div className="grid gap-3 mt-6">
-                                    {currentQ.options.map((opt, idx) => {
-                                        const isSelected = currentSel?.optionIndex === idx;
-                                        return (
-                                            <div
-                                                key={idx}
-                                                onClick={() => !isQuestionLocked(currentQuestionIndex) && handleOptionSelect(idx)}
-                                                className={cn(
-                                                    "flex items-center gap-4 p-4 rounded-lg border transition-all",
-                                                    isQuestionLocked(currentQuestionIndex)
-                                                        ? "opacity-50 cursor-not-allowed bg-slate-50"
-                                                        : "cursor-pointer",
-                                                    isSelected
-                                                        ? "border-sky-400 bg-sky-50/50 ring-1 ring-sky-400/20"
-                                                        : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-                                                )}
-                                            >
-                                                <div className={cn(
-                                                    "w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0",
-                                                    isSelected
-                                                        ? "bg-sky-500 text-white"
-                                                        : "bg-slate-100 text-slate-600"
-                                                )}>
-                                                    {idx + 1}
-                                                </div>
-                                                <span className={cn(
-                                                    "text-base",
-                                                    isSelected ? "text-slate-900 font-medium" : "text-slate-600"
-                                                )}>
-                                                    {opt.text}
-                                                </span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                                        <div className="grid gap-3 mt-6">
+                                            {currentQ.options.map((opt, idx) => {
+                                                const isSelected = currentSel?.optionIndex === idx;
+                                                return (
+                                                    <div
+                                                        key={idx}
+                                                        onClick={() => !isQuestionLocked(currentQuestionIndex) && handleOptionSelect(idx)}
+                                                        className={cn(
+                                                            "flex items-center gap-4 p-4 rounded-lg border transition-all",
+                                                            isQuestionLocked(currentQuestionIndex)
+                                                                ? "opacity-50 cursor-not-allowed bg-slate-50"
+                                                                : "cursor-pointer",
+                                                            isSelected
+                                                                ? "border-sky-400 bg-sky-50/50 ring-1 ring-sky-400/20"
+                                                                : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                                                        )}
+                                                    >
+                                                        <div className={cn(
+                                                            "w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0",
+                                                            isSelected
+                                                                ? "bg-sky-500 text-white"
+                                                                : "bg-slate-100 text-slate-600"
+                                                        )}>
+                                                            {idx + 1}
+                                                        </div>
+                                                        <span className={cn(
+                                                            "text-base",
+                                                            isSelected ? "text-slate-900 font-medium" : "text-slate-600"
+                                                        )}>
+                                                            {opt.text}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="mt-4">
+                                        <p className="text-sm text-slate-500 bg-amber-50 inline-flex items-center gap-2 px-3 py-1.5 rounded border border-amber-200 mb-4">
+                                            ✍️ Write your answer below
+                                        </p>
+                                        <textarea
+                                            value={currentSel?.textAnswer || ''}
+                                            onChange={(e) => {
+                                                if (isQuestionLocked(currentQuestionIndex)) return;
+                                                setSelections(prev => ({
+                                                    ...prev,
+                                                    [currentQuestionIndex]: {
+                                                        ...prev[currentQuestionIndex],
+                                                        textAnswer: e.target.value
+                                                    }
+                                                }));
+                                            }}
+                                            disabled={isQuestionLocked(currentQuestionIndex)}
+                                            placeholder="Type your detailed answer here..."
+                                            className="w-full min-h-[200px] p-4 rounded-xl border border-slate-200 bg-white text-slate-700 text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 resize-y disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-slate-400"
+                                        />
+                                        <p className="text-xs text-slate-400 mt-2">This question will be reviewed and graded by your instructor.</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

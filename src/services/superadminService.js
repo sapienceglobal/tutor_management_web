@@ -39,3 +39,89 @@ export const updateInstituteStatus = async (id, isActive) => {
         throw new Error(normalizeError(error, 'Failed to update institute status'));
     }
 };
+
+/**
+ * Get plan limits and features for a specific plan
+ */
+export const getPlanDetails = (plan) => {
+    const planConfigs = {
+        free: {
+            name: 'Free',
+            price: '$0/month',
+            features: [
+                '👥 2 Tutors',
+                '👥 10 Students',
+                '📚 Basic Course Management',
+                '🔒 Standard Security'
+            ],
+            limits: {
+                tutors: 2,
+                students: 10,
+                storage: '1GB'
+            }
+        },
+        basic: {
+            name: 'Basic',
+            price: '$49/month',
+            features: [
+                '👥 10 Tutors',
+                '👥 100 Students',
+                '📚 Advanced Course Management',
+                '🎥 HLS Video Streaming',
+                '🔒 Enhanced Security',
+                '📊 Basic Analytics'
+            ],
+            limits: {
+                tutors: 10,
+                students: 100,
+                storage: '10GB'
+            }
+        },
+        pro: {
+            name: 'Pro',
+            price: '$149/month',
+            features: [
+                '👥 50 Tutors',
+                '👥 500 Students',
+                '📚 Advanced Course Management',
+                '🎥 HLS Video Streaming',
+                '🎨 Custom Branding',
+                '📹 Zoom Integration',
+                '🤖 AI Tutor Basic',
+                '🔒 Enterprise Security',
+                '📊 Advanced Analytics',
+                '🌐 Custom Domain'
+            ],
+            limits: {
+                tutors: 50,
+                students: 500,
+                storage: '100GB'
+            }
+        },
+        enterprise: {
+            name: 'Enterprise',
+            price: 'Custom',
+            features: [
+                '👥 Unlimited Tutors',
+                '👥 Unlimited Students',
+                '📚 Full Course Management',
+                '🎥 HLS Video Streaming',
+                '🎨 Custom Branding',
+                '📹 Zoom Integration',
+                '🤖 AI Tutor Advanced',
+                '🔒 Enterprise Security',
+                '📊 Advanced Analytics',
+                '🌐 Custom Domain',
+                '🔌 API Access',
+                '📞 Priority Support'
+            ],
+            limits: {
+                tutors: 'Unlimited',
+                students: 'Unlimited',
+                storage: 'Unlimited'
+            }
+        }
+    };
+
+    return planConfigs[plan] || planConfigs.free;
+};

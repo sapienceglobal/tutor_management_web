@@ -32,7 +32,7 @@ export default function CreateSkillPage() {
             const res = await api.post('/taxonomy/skills', formData);
             if (res.data.success) {
                 toast.success('Skill created successfully!');
-                router.push('/tutor/dashboard');
+                router.push('/tutor/taxonomy/skills');
             }
         } catch (error) {
             console.error(error);
@@ -46,7 +46,7 @@ export default function CreateSkillPage() {
         <div className="min-h-screen bg-slate-50 p-6">
             <div className="max-w-2xl mx-auto space-y-6">
                 <div className="flex items-center gap-4">
-                    <Link href="/tutor/dashboard">
+                    <Link href="/tutor/taxonomy/skills">
                         <Button variant="ghost" size="icon">
                             <ArrowLeft className="w-4 h-4" />
                         </Button>

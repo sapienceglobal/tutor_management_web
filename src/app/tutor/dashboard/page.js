@@ -12,11 +12,13 @@ import DataTable from '@/components/widgets/DataTable';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { UpcomingExamsWidget } from '@/components/calendar/UpcomingExamsWidget';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ShieldAlert } from 'lucide-react';
+import useInstitute from '@/hooks/useInstitute';
 
 export default function TutorDashboard() {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
+    const institute = useInstitute();
     const router = useRouter();
     const { confirmDialog } = useConfirm();
 
@@ -52,29 +54,29 @@ export default function TutorDashboard() {
         {
             title: 'Total Students',
             value: stats?.totalStudents?.toLocaleString() || '0',
-            subtext: 'in Last week',
-            trend: `${formatTrend(stats?.trends?.students)} increase`,
+            subtext: 'vs last week',
+            trend: `${formatTrend(stats?.trends?.students)}`,
             trendUp: (stats?.trends?.students === null) || (stats?.trends?.students >= 0)
         },
         {
             title: 'Active Courses',
             value: stats?.activeCourses?.toLocaleString() || '0',
-            subtext: 'than 1 yrs ago',
-            trend: `${formatTrend(stats?.trends?.courses)} less`,
+            subtext: 'vs last month',
+            trend: `${formatTrend(stats?.trends?.courses)}`,
             trendUp: (stats?.trends?.courses === null) || (stats?.trends?.courses >= 0)
         },
         {
             title: 'Total Earnings',
-            value: `$${stats?.totalEarnings?.toLocaleString() || '0'}`,
-            subtext: 'than last week',
-            trend: `${formatTrend(stats?.trends?.earnings)} lead less`,
+            value: `₹${stats?.totalEarnings?.toLocaleString() || '0'}`,
+            subtext: 'vs last week',
+            trend: `${formatTrend(stats?.trends?.earnings)}`,
             trendUp: (stats?.trends?.earnings === null) || (stats?.trends?.earnings >= 0)
         },
         {
             title: 'Avg. Rating',
-            value: `${stats?.avgRating || '0.0'}%`,
-            subtext: 'last month',
-            trend: `${formatTrend(stats?.trends?.reviews)} increase`,
+            value: `${(Number(stats?.avgRating) || 0).toFixed(1)} / 5`,
+            subtext: 'vs last month',
+            trend: `${formatTrend(stats?.trends?.reviews)}`,
             trendUp: (stats?.trends?.reviews === null) || (stats?.trends?.reviews >= 0)
         }
     ];
@@ -119,7 +121,7 @@ export default function TutorDashboard() {
         category: enrollment.courseTitle,
         date: new Date(enrollment.enrolledAt).toLocaleDateString(),
         views: enrollment.studentName,
-        price: `$${enrollment.price}`,
+        price: `₹${enrollment.price}`,
         dueDate: 'Paid',
         action: 'view'
     })) || [];
@@ -134,6 +136,12 @@ export default function TutorDashboard() {
                         <span className="text-[#7D8DA6]">tutor</span>
                         <span className="mx-2">/</span>
                         <span className="text-[#FF9F43]">dashboard </span>
+                        {institute && (
+                            <>
+                                <span className="text-[#FF9F43]">for </span>
+                                <span className="font-semibold text-indigo-600">{institute.name}</span>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

@@ -26,6 +26,7 @@ import { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { useTenant } from '@/components/providers/TenantProvider';
 import { useSettings } from '@/components/providers/SettingsProvider';
+import useInstitute from '@/hooks/useInstitute';
 
 export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
     const pathname = usePathname();
@@ -36,6 +37,7 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
     // Add Tenant Context
     const { tenant } = useTenant() || { tenant: null };
     const { settings } = useSettings();
+    const { institute } = useInstitute();
 
     useEffect(() => {
         const userRole = Cookies.get('user_role');
@@ -75,8 +77,8 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                 {/* Logo Area */}
                 <div className="h-16 flex items-center px-6 border-b border-slate-100 overflow-hidden">
                     <div className="flex items-center gap-2 min-w-0">
-                        {tenant?.logo ? (
-                            <img src={tenant.logo} alt="Logo" className="w-8 h-8 object-contain flex-shrink-0" />
+                        {institute?.logo ? (
+                            <img src={institute.logo} alt="Institute Logo" className="w-8 h-8 object-contain flex-shrink-0" />
                         ) : (
                             <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center">
                                 <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8 text-brand-primary" stroke="currentColor" strokeWidth="2">
@@ -86,7 +88,7 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                         )}
                         {showFull && (
                             <span className="text-xl font-bold text-slate-800 tracking-tight whitespace-nowrap">
-                                {role === 'superadmin' ? 'Super Admin' : role === 'admin' ? (settings.siteName || 'Admin Panel') : tenant?.name || settings.siteName || 'TutorApp'}
+                                {role === 'superadmin' ? 'Super Admin' : role === 'admin' ? (institute?.name || settings.siteName || 'Admin Panel') : institute?.name || tenant?.name || settings.siteName || 'TutorApp'}
                             </span>
                         )}
                     </div>

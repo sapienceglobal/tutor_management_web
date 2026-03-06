@@ -6,12 +6,14 @@ import { usePathname } from 'next/navigation';
 import { ChevronRight, X, GraduationCap } from 'lucide-react';
 import { studentNavItems } from '@/config/studentNav';
 import { useSettings } from '@/components/providers/SettingsProvider';
+import useInstitute from '@/hooks/useInstitute';
 
 export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
     const pathname = usePathname();
     const [expandedMenu, setExpandedMenu] = useState(null);
     const [isHovering, setIsHovering] = useState(false);
     const { settings } = useSettings();
+    const { institute } = useInstitute();
 
     const toggleSubmenu = (title) => {
         setExpandedMenu(expandedMenu === title ? null : title);
@@ -54,12 +56,20 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                 {/* Logo Area */}
                 <div className="h-16 flex items-center px-5 border-b border-white/10 overflow-hidden">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-9 h-9 flex-shrink-0 bg-indigo-500/30 rounded-xl flex items-center justify-center">
-                            <GraduationCap className="w-5 h-5 text-indigo-300" />
-                        </div>
+                        {institute?.logo ? (
+                            <img 
+                                src={institute.logo} 
+                                alt="Institute Logo" 
+                                className="w-9 h-9 object-contain rounded-xl flex-shrink-0"
+                            />
+                        ) : (
+                            <div className="w-9 h-9 flex-shrink-0 bg-indigo-500/30 rounded-xl flex items-center justify-center">
+                                <GraduationCap className="w-5 h-5 text-indigo-300" />
+                            </div>
+                        )}
                         {showFull && (
                             <span className="text-lg font-bold text-white tracking-tight whitespace-nowrap">
-                                {settings.siteName || 'SapienceLMS'}
+                                {institute?.name || settings.siteName || 'SapienceLMS'}
                             </span>
                         )}
                     </div>

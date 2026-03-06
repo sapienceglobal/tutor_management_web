@@ -8,7 +8,8 @@ import {
     Users,
     ClipboardList,
     HelpCircle,
-    DollarSign
+    DollarSign,
+    BrainCircuit    // For Skills
 } from 'lucide-react';
 
 export const tutorNavItems = [
@@ -36,6 +37,14 @@ export const tutorNavItems = [
                 submenu: [
                     { title: "All Questions", href: "/tutor/questions" },
                     { title: "AI Bulk Generator", href: "/tutor/questions/ai-generator" },
+                ]
+            },
+            {
+                title: "Taxonomy (Tags)",
+                icon: BookOpen,
+                submenu: [
+                    { title: "Manage Topics", href: "/tutor/taxonomy/topics" },
+                    { title: "Manage Skills", href: "/tutor/taxonomy/skills" },
                 ]
             },
             {

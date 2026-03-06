@@ -32,7 +32,9 @@ import {
     Sparkles,
     Layout,
     Type,
-    UploadCloud
+    UploadCloud,
+    Library,
+    Search
 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { Textarea } from '@/components/ui/textarea';
@@ -176,6 +178,8 @@ function CreateExamPageClient() {
 
     // Data State
     const [courses, setCourses] = useState([]);
+    const [topics, setTopics] = useState([]);
+    const [skills, setSkills] = useState([]);
     const [examData, setExamData] = useState({
         title: '',
         courseId: '',
@@ -197,7 +201,6 @@ function CreateExamPageClient() {
         disableFinishButton: false, // Extra from screenshot
         enableQuestionListView: true, // Extra from screenshot
         hideSolutions: false, // Extra from screenshot
-        hideSolutions: false, // Extra from screenshot
         negativeMarking: false, // Extra from screenshot
         // Scheduling
         isScheduled: false,
@@ -206,6 +209,10 @@ function CreateExamPageClient() {
     });
 
     const [errors, setErrors] = useState({});
+    const totalQuestionMarks = (examData.questions || []).reduce((sum, question) => sum + (question.points || 1), 0);
+    const derivedPassingMarks = totalQuestionMarks > 0
+        ? Number((((Number(examData.passingPercentage) || 0) / 100) * totalQuestionMarks).toFixed(2))
+        : 0;
 
     // Question Management State
     const [isAddOpen, setIsAddOpen] = useState(false);
@@ -226,6 +233,13 @@ function CreateExamPageClient() {
         difficulty: 'medium'
     });
     const [aiLoading, setAiLoading] = useState(false);
+
+    // Bank Import State
+    const [isBankOpen, setIsBankOpen] = useState(false);
+    const [bankQuestions, setBankQuestions] = useState([]);
+    const [bankLoading, setBankLoading] = useState(false);
+    const [bankFilters, setBankFilters] = useState({ topicId: 'all', skillId: 'all', difficulty: 'all' });
+    const [selectedBankIds, setSelectedBankIds] = useState([]);
 
     // Helpers
     const handleAddOption = () => {
@@ -359,8 +373,77 @@ function CreateExamPageClient() {
                 toast.error("Failed to load courses");
             }
         };
+
+        const fetchTaxonomy = async () => {
+            try {
+                const [topicsRes, skillsRes] = await Promise.all([
+                    api.get('/taxonomy/topics'),
+                    api.get('/taxonomy/skills')
+                ]);
+                if (topicsRes.data.success) setTopics(topicsRes.data.topics);
+                if (skillsRes.data.success) setSkills(skillsRes.data.skills);
+            } catch (err) {
+                console.error('Failed to load taxonomy', err);
+            }
+        };
+
         fetchCourses();
+        fetchTaxonomy();
     }, []);
+
+    const fetchBankQuestions = async () => {
+        setBankLoading(true);
+        try {
+            // Build query
+            const params = new URLSearchParams();
+            if (bankFilters.difficulty !== 'all') params.append('difficulty', bankFilters.difficulty);
+            if (bankFilters.topicId !== 'all') params.append('topicId', bankFilters.topicId);
+            if (bankFilters.skillId !== 'all') params.append('skillId', bankFilters.skillId);
+
+            const res = await api.get(`/question-bank/questions?${params.toString()}`);
+            if (res.data.success) {
+                setBankQuestions(res.data.questions);
+            }
+        } catch (error) {
+            console.error('Failed to load bank questions', error);
+            toast.error("Failed to load bank questions");
+        } finally {
+            setBankLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (isBankOpen) {
+            fetchBankQuestions();
+        }
+    }, [isBankOpen, bankFilters]);
+
+    const handleImportFromBank = () => {
+        if (selectedBankIds.length === 0) {
+            toast.error("Select at least one question to import");
+            return;
+        }
+        const questionsToImport = bankQuestions.filter(q => selectedBankIds.includes(q._id));
+
+        // Map backend structure to exam state structure
+        const mappedQuestions = questionsToImport.map(q => ({
+            question: q.question,
+            options: q.type === 'mcq' ? q.options : [],
+            type: q.type,
+            explanation: q.explanation || '',
+            points: q.points || 1,
+            difficulty: q.difficulty || 'medium'
+        }));
+
+        setExamData(prev => ({
+            ...prev,
+            questions: [...prev.questions, ...mappedQuestions]
+        }));
+
+        setIsBankOpen(false);
+        setSelectedBankIds([]);
+        toast.success(`Imported ${mappedQuestions.length} questions from bank!`);
+    };
 
     const validateForm = () => {
         const result = examDetailsSchema.safeParse(examData);
@@ -383,8 +466,11 @@ function CreateExamPageClient() {
 
         setSaving(true);
         try {
+            const safePassingPercentage = Number(examData.passingPercentage) || 0;
             const payload = {
                 ...examData,
+                passingPercentage: safePassingPercentage,
+                passingMarks: derivedPassingMarks,
                 status: status, // Use passed status or default 'draft'
             };
 
@@ -569,14 +655,16 @@ function CreateExamPageClient() {
                                             </div>
 
                                             <div className="space-y-3">
-                                                <Label className="text-sm font-semibold text-slate-700">Total Marks</Label>
+                                                <Label className="text-sm font-semibold text-slate-700">Passing Marks (Auto)</Label>
                                                 <Input
                                                     type="number"
-                                                    min="0"
-                                                    value={examData.passingMarks}
-                                                    onChange={(e) => setExamData({ ...examData, passingMarks: parseInt(e.target.value) || 0 })}
+                                                    value={derivedPassingMarks}
+                                                    readOnly
                                                     className="h-12 bg-white/50"
                                                 />
+                                                <p className="text-xs text-slate-500">
+                                                    Derived from pass % and total question marks ({totalQuestionMarks}).
+                                                </p>
                                             </div>
                                         </div>
 
@@ -817,6 +905,10 @@ function CreateExamPageClient() {
                                             <Sparkles className="w-4 h-4" />
                                             Generate via AI
                                         </Button>
+                                        <Button variant="outline" onClick={() => setIsBankOpen(true)} className="flex-1 md:flex-none gap-2 text-blue-700 border-blue-200 hover:bg-blue-50 hover:border-blue-300">
+                                            <Library className="w-4 h-4" />
+                                            Import from Bank
+                                        </Button>
                                         <Button onClick={() => { resetQuestionForm(); setIsAddOpen(true); }} className="flex-1 md:flex-none gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 text-white">
                                             <Plus className="w-4 h-4" />
                                             Add Question
@@ -834,6 +926,9 @@ function CreateExamPageClient() {
                                         <div className="flex gap-4">
                                             <Button variant="outline" onClick={() => setIsAIOpen(true)} className="gap-2">
                                                 <Sparkles className="w-4 h-4" /> AI Generate
+                                            </Button>
+                                            <Button variant="outline" onClick={() => setIsBankOpen(true)} className="gap-2">
+                                                <Library className="w-4 h-4" /> Import Bank
                                             </Button>
                                             <Button onClick={() => setIsAddOpen(true)} className="gap-2 bg-indigo-600 text-white hover:bg-indigo-700">
                                                 <Plus className="w-4 h-4" /> Manual Add
@@ -1165,6 +1260,137 @@ function CreateExamPageClient() {
                         <Button onClick={handleSaveQuestion} className="bg-[#3b0d46] text-white">
                             {editingIndex >= 0 ? "Update Question" : "Add Question"}
                         </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Import from Question Bank Modal */}
+            <Modal isOpen={isBankOpen} onClose={() => setIsBankOpen(false)} title="Import from Question Bank" className="max-w-5xl">
+                <div className="space-y-4 max-h-[85vh] flex flex-col">
+                    {/* Search + Filters Row */}
+                    <div className="flex gap-3 items-end shrink-0">
+                        <div className="flex-1 space-y-1">
+                            <Label className="text-xs text-slate-500">Search Questions</Label>
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                <Input
+                                    placeholder="Search by question text..."
+                                    className="pl-9"
+                                    value={bankFilters.search || ''}
+                                    onChange={(e) => setBankFilters({ ...bankFilters, search: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs text-slate-500">Difficulty</Label>
+                            <Select value={bankFilters.difficulty} onValueChange={(val) => setBankFilters({ ...bankFilters, difficulty: val })}>
+                                <SelectTrigger className="w-[130px]"><SelectValue placeholder="All" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="easy">Easy</SelectItem>
+                                    <SelectItem value="medium">Medium</SelectItem>
+                                    <SelectItem value="hard">Hard</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    {/* Category-based content */}
+                    <div className="flex-1 overflow-y-auto border border-slate-200 rounded-xl bg-slate-50/50 p-4 space-y-3 min-h-[400px]">
+                        {bankLoading ? (
+                            <div className="flex justify-center items-center h-full text-slate-500 min-h-[300px]">
+                                <Loader2 className="w-8 h-8 animate-spin" />
+                            </div>
+                        ) : (() => {
+                            // Filter by search term client-side
+                            const searchFiltered = bankQuestions.filter(q =>
+                                !bankFilters.search || q.question.toLowerCase().includes(bankFilters.search.toLowerCase())
+                            );
+
+                            if (searchFiltered.length === 0) {
+                                return (
+                                    <div className="flex flex-col items-center justify-center h-full text-slate-500 min-h-[300px]">
+                                        <Library className="w-12 h-12 text-slate-300 mb-3" />
+                                        <p>No questions found.</p>
+                                    </div>
+                                );
+                            }
+
+                            // Group by topic
+                            const grouped = searchFiltered.reduce((acc, q) => {
+                                const topicName = q.topicId?.name || 'Uncategorized';
+                                if (!acc[topicName]) acc[topicName] = [];
+                                acc[topicName].push(q);
+                                return acc;
+                            }, {});
+
+                            return Object.entries(grouped).map(([topicName, questions]) => (
+                                <div key={topicName} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                                    <div className="px-4 py-3 bg-slate-50 border-b flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-sm text-slate-800">{topicName}</span>
+                                            <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">{questions.length}</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const topicIds = questions.map(q => q._id);
+                                                const allSelected = topicIds.every(id => selectedBankIds.includes(id));
+                                                if (allSelected) {
+                                                    setSelectedBankIds(selectedBankIds.filter(id => !topicIds.includes(id)));
+                                                } else {
+                                                    setSelectedBankIds([...new Set([...selectedBankIds, ...topicIds])]);
+                                                }
+                                            }}
+                                            className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                                        >
+                                            {questions.every(q => selectedBankIds.includes(q._id)) ? 'Deselect All' : 'Select All'}
+                                        </button>
+                                    </div>
+                                    <div className="divide-y">
+                                        {questions.map((q) => (
+                                            <div key={q._id} className="px-4 py-3 flex items-start gap-3 hover:bg-slate-50/50">
+                                                <div className="pt-0.5">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedBankIds.includes(q._id)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) setSelectedBankIds([...selectedBankIds, q._id]);
+                                                            else setSelectedBankIds(selectedBankIds.filter(id => id !== q._id));
+                                                        }}
+                                                        className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex gap-2 mb-1">
+                                                        <span className={`text-xs px-1.5 py-0.5 rounded font-bold uppercase ${q.difficulty === 'hard' ? 'bg-red-100 text-red-700' : q.difficulty === 'easy' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{q.difficulty}</span>
+                                                        <span className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">{(q.type || 'mcq').toUpperCase()}</span>
+                                                        <span className="text-xs text-slate-400">{q.points || 1} pts</span>
+                                                    </div>
+                                                    <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(q.question) }} className="text-sm font-medium text-slate-800 line-clamp-2" />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ));
+                        })()}
+                    </div>
+
+                    <div className="flex justify-between items-center pt-4 border-t shrink-0">
+                        <div className="text-sm text-slate-600 font-medium bg-slate-100 px-4 py-2 rounded-full">
+                            {selectedBankIds.length} question(s) selected
+                        </div>
+                        <div className="flex gap-3">
+                            <Button variant="ghost" onClick={() => {
+                                setIsBankOpen(false);
+                                setSelectedBankIds([]);
+                            }}>Cancel</Button>
+                            <Button onClick={handleImportFromBank} disabled={selectedBankIds.length === 0} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                                <Library className="w-4 h-4" />
+                                Import Selected
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </Modal>

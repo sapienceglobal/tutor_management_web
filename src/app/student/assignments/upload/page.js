@@ -15,6 +15,7 @@ import api from '@/lib/axios';
 import assignmentService from '@/services/assignmentService';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-hot-toast';
+import AiTutorWidget from '@/components/AiTutorWidget';
 
 const MAX_SIZE_MB = 20;
 const ALLOWED_EXT = ['.pdf', '.doc', '.docx', '.txt', '.png', '.jpg', '.jpeg'];
@@ -29,13 +30,11 @@ export default function UploadAssignmentPage() {
     const [comments, setComments] = useState('');
     const [dragOver, setDragOver] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [aiQuestion, setAiQuestion] = useState('');
-    const [aiLoading, setAiLoading] = useState(false);
 
     useEffect(() => {
         api.get('/enrollments/my-enrollments').then((res) => {
             if (res.data?.enrollments) setEnrollments(res.data.enrollments);
-        }).catch(() => {});
+        }).catch(() => { });
     }, []);
 
     useEffect(() => {
@@ -241,39 +240,21 @@ export default function UploadAssignmentPage() {
 
                     {/* AI Tutor widget */}
                     <div className="lg:col-span-1">
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sticky top-6">
-                            <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                                <Bot className="w-5 h-5 text-indigo-600" />
-                                AI Tutor
-                            </h2>
-                            <p className="text-slate-600 text-sm mb-4">
-                                Hello! I&apos;m your AI Tutor. How can I help you today?
-                            </p>
-                            <div className="relative mb-4">
-                                <input
-                                    type="text"
-                                    value={aiQuestion}
-                                    onChange={(e) => setAiQuestion(e.target.value)}
-                                    placeholder="Ask a question..."
-                                    className="w-full pl-4 pr-4 py-2.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                />
-                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                            </div>
-                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Recommended topics:</p>
-                            <ul className="space-y-2">
-                                {recommendedTopics.map((topic, i) => (
-                                    <li key={i}>
-                                        <button
-                                            type="button"
-                                            onClick={() => setAiQuestion(topic)}
-                                            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors border border-slate-100"
-                                        >
-                                            <FileText className="w-4 h-4 text-slate-400 shrink-0" />
-                                            {topic}
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
+                        <div className="sticky top-6">
+                            <AiTutorWidget
+                                title="Submission Assistant"
+                                subtitle="Need help with this assignment? Ask me!"
+                                context={{
+                                    pageType: 'assignment_upload',
+                                    courseId: selectedCourseId,
+                                    assignmentId: selectedAssignmentId
+                                }}
+                                recommendedTopics={[
+                                    'What are the key requirements for this type of assignment?',
+                                    'Can you help me structure my essay/report?',
+                                    'What should I double check before submitting?'
+                                ]}
+                            />
                         </div>
                     </div>
                 </div>

@@ -66,9 +66,9 @@ export async function middleware(request) {
             return NextResponse.next();
         }
 
-        // Tutor: can access /tutor, NOT /admin, /superadmin
-        // Allow /student/courses/ and /student/exams/ for Preview Mode
+        // Tutor: can access /tutor, NOT /admin, /superadmin, /student
         if (role === 'tutor') {
+            // Allow /student/courses/ and /student/exams/ for Preview Mode
             if (pathname.startsWith('/admin') || pathname.startsWith('/superadmin')) {
                 return NextResponse.redirect(new URL('/tutor/dashboard', request.url));
             }
@@ -112,4 +112,3 @@ export const config = {
         '/register'
     ],
 };
-

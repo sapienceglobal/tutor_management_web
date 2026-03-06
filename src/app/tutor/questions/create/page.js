@@ -85,7 +85,7 @@ export default function CreateQuestionPage() {
             const res = await api.post('/question-bank/questions', formData);
             if (res.data.success) {
                 toast.success('Question created successfully!');
-                router.push('/tutor/dashboard');
+                router.push('/tutor/questions');
             }
         } catch (error) {
             console.error(error);
@@ -275,7 +275,7 @@ export default function CreateQuestionPage() {
                                     <Input
                                         type="number"
                                         value={formData.points}
-                                        onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) })}
+                                        onChange={(e) => setFormData({ ...formData, points: e.target.value === '' ? '' : Number(e.target.value) })}
                                         min={1}
                                     />
                                 </div>

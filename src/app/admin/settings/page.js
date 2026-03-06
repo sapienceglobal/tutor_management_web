@@ -9,13 +9,13 @@ export default function AdminSettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [instituteData, setInstituteData] = useState({
+        name: '',
+        contactEmail: '',
         logo: '',
         primaryColor: '#4f46e5',
         secondaryColor: '#f8fafc'
     });
     const [settings, setSettings] = useState({
-        siteName: 'TutorApp',
-        supportEmail: 'support@tutorapp.com',
         maintenanceMode: false,
         allowRegistration: true,
         defaultLanguage: 'English',
@@ -35,7 +35,7 @@ export default function AdminSettingsPage() {
         try {
             const [settingsRes, instituteRes] = await Promise.all([
                 api.get('/admin/settings'),
-                api.get('/institutes/me') // Requires institute specific backend
+                api.get('/user-institute/me') // Use the universal endpoint
             ]);
 
             if (settingsRes.data.success) {
@@ -43,6 +43,8 @@ export default function AdminSettingsPage() {
             }
             if (instituteRes.data?.success && instituteRes.data.institute) {
                 setInstituteData({
+                    name: instituteRes.data.institute.name || '',
+                    contactEmail: instituteRes.data.institute.contactEmail || '',
                     logo: instituteRes.data.institute.logo || '',
                     primaryColor: instituteRes.data.institute.brandColors?.primary || '#4f46e5',
                     secondaryColor: instituteRes.data.institute.brandColors?.secondary || '#f8fafc'
@@ -70,7 +72,9 @@ export default function AdminSettingsPage() {
         try {
             const [settingsRes, instRes] = await Promise.all([
                 api.put('/admin/settings', settings),
-                api.put('/institutes/me', {
+                api.put('/user-institute/me', {
+                    name: instituteData.name,
+                    contactEmail: instituteData.contactEmail,
                     logo: instituteData.logo,
                     brandColors: {
                         primary: instituteData.primaryColor,
@@ -120,9 +124,9 @@ export default function AdminSettingsPage() {
                             <label className="block text-sm font-medium text-slate-700 mb-1">Site Name</label>
                             <input
                                 type="text"
-                                name="siteName"
-                                value={settings.siteName}
-                                onChange={handleChange}
+                                name="name"
+                                value={instituteData.name}
+                                onChange={handleInstituteChange}
                                 className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>
@@ -130,9 +134,9 @@ export default function AdminSettingsPage() {
                             <label className="block text-sm font-medium text-slate-700 mb-1">Support Email</label>
                             <input
                                 type="email"
-                                name="supportEmail"
-                                value={settings.supportEmail}
-                                onChange={handleChange}
+                                name="contactEmail"
+                                value={instituteData.contactEmail}
+                                onChange={handleInstituteChange}
                                 className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>

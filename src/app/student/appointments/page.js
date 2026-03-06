@@ -63,10 +63,7 @@ export default function StudentAppointmentsPage() {
     };
 
     const filteredAppointments = appointments.filter(apt => {
-        if (activeTab === 'upcoming') return ['confirmed', 'pending'].includes(apt.status); // Adjusted to show pending in upcoming too or keep separate?
-        // User asked for "status cancelled... accepted... complete".
-        // Keeping tabs: Upcoming (Confirmed), Pending (Pending), History (Completed/Cancelled) seems logical.
-        if (activeTab === 'upcoming') return apt.status === 'confirmed';
+        if (activeTab === 'upcoming') return ['confirmed', 'pending'].includes(apt.status);
         if (activeTab === 'pending') return apt.status === 'pending';
         if (activeTab === 'history') return ['completed', 'cancelled'].includes(apt.status);
         return true;

@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'react-hot-toast';
 import { format, addDays, startOfToday, isSameDay, parse } from 'date-fns';
+import AiTutorWidget from '@/components/AiTutorWidget';
 
 export default function TutorDetailPage({ params }) {
     const { id } = use(params);
@@ -40,17 +41,20 @@ export default function TutorDetailPage({ params }) {
 
     useEffect(() => {
         (async () => {
-            await fetchTutorProfile();
+            const tutorData = await fetchTutorProfile();
             fetchTutorFullSchedule();
-            fetchTutorCourses();
+            if (tutorData?._id) {
+                fetchTutorCourses(tutorData._id);
+            }
             fetchTutorReviews();
         })();
     }, [id]);
 
-    const fetchTutorCourses = async () => {
+    const fetchTutorCourses = async (tutorDocId) => {
+        if (!tutorDocId) return;
         try {
             setLoadingCourses(true);
-            const response = await api.get(`/courses?tutorId=${id}`);
+            const response = await api.get(`/courses/tutor/${tutorDocId}`);
             if (response.data.success) setTutorCourses(response.data.courses || []);
         } catch (error) {
             console.error('Error fetching tutor courses:', error);
@@ -74,13 +78,17 @@ export default function TutorDetailPage({ params }) {
     const fetchTutorProfile = async () => {
         try {
             const response = await api.get(`/tutors/${id}`);
-            if (response.data.success) setTutor(response.data.tutor);
+            if (response.data.success) {
+                setTutor(response.data.tutor);
+                return response.data.tutor;
+            }
         } catch (error) {
             console.error('Error fetching tutor profile:', error);
             toast.error('Failed to load tutor');
         } finally {
             setLoading(false);
         }
+        return null;
     };
 
     const fetchTutorFullSchedule = async () => {
@@ -225,7 +233,14 @@ export default function TutorDetailPage({ params }) {
                                                 </span>
                                             )}
                                         </div>
-                                        <p className="text-indigo-600 font-medium mt-0.5">{tutor.categoryId?.name || 'Expert'} Tutor</p>
+                                        <div className="flex items-center flex-wrap gap-2 mt-1">
+                                            <p className="text-indigo-600 font-medium">{tutor.categoryId?.name || 'Expert'} Tutor</p>
+                                            {tutor.instituteId && (
+                                                <span className="inline-block px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold uppercase tracking-wider rounded-full border border-purple-100">
+                                                    {tutor.instituteId.name || 'Institute Tutor'}
+                                                </span>
+                                            )}
+                                        </div>
                                         <div className="flex items-center gap-4 mt-3 text-sm text-slate-600">
                                             <span className="flex items-center gap-1.5">
                                                 <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
@@ -238,7 +253,7 @@ export default function TutorDetailPage({ params }) {
                                             </span>
                                             <span className="flex items-center gap-1.5">
                                                 <MapPin className="w-4 h-4 text-slate-400" />
-                                                Online
+                                                {tutor.location || 'Online'}
                                             </span>
                                         </div>
                                     </div>
@@ -253,11 +268,10 @@ export default function TutorDetailPage({ params }) {
                                     <button
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
-                                        className={`flex items-center gap-2 px-4 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                                            activeTab === tab.id
-                                                ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50'
-                                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-                                        }`}
+                                        className={`flex items-center gap-2 px-4 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === tab.id
+                                            ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50'
+                                            : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                                            }`}
                                     >
                                         {tab.icon && <tab.icon className="w-4 h-4" />}
                                         {tab.label}
@@ -271,6 +285,24 @@ export default function TutorDetailPage({ params }) {
                                         <p className="text-slate-600 leading-relaxed whitespace-pre-line">
                                             {tutor.bio || 'Passionate tutor dedicated to helping students achieve their goals.'}
                                         </p>
+                                        {tutor.title && (
+                                            <div className="flex items-center gap-2 text-sm text-slate-700">
+                                                <Award className="w-4 h-4 text-indigo-500" />
+                                                <span className="font-medium">{tutor.title}</span>
+                                            </div>
+                                        )}
+                                        {tutor.subjects?.length > 0 && (
+                                            <div>
+                                                <h4 className="text-sm font-semibold text-slate-700 mb-2">Subjects / Expertise</h4>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {tutor.subjects.map((subject, idx) => (
+                                                        <span key={idx} className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-full border border-indigo-100">
+                                                            {subject}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                         <div className="grid grid-cols-2 gap-4 mt-6">
                                             <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                                                 <p className="text-2xl font-bold text-indigo-600">{tutorCourses.length}</p>
@@ -396,13 +428,12 @@ export default function TutorDetailPage({ params }) {
                                                             type="button"
                                                             onClick={() => { setSelectedDate(date); setSelectedSlot(null); }}
                                                             disabled={!hasSlots}
-                                                            className={`min-w-[64px] py-3 px-2 rounded-xl border text-center shrink-0 transition-all ${
-                                                                isSelected
-                                                                    ? 'bg-indigo-600 text-white border-indigo-600'
-                                                                    : hasSlots
-                                                                        ? 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50'
-                                                                        : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
-                                                            }`}
+                                                            className={`min-w-[64px] py-3 px-2 rounded-xl border text-center shrink-0 transition-all ${isSelected
+                                                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                                                : hasSlots
+                                                                    ? 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50'
+                                                                    : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
+                                                                }`}
                                                         >
                                                             <span className="block text-xs font-medium uppercase">{format(date, 'EEE')}</span>
                                                             <span className="block text-lg font-bold">{format(date, 'd')}</span>
@@ -423,11 +454,10 @@ export default function TutorDetailPage({ params }) {
                                                             key={slot}
                                                             type="button"
                                                             onClick={() => setSelectedSlot(slot)}
-                                                            className={`py-2.5 px-3 rounded-lg border text-sm font-medium transition-all ${
-                                                                selectedSlot === slot
-                                                                    ? 'bg-indigo-600 text-white border-indigo-600'
-                                                                    : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300'
-                                                            }`}
+                                                            className={`py-2.5 px-3 rounded-lg border text-sm font-medium transition-all ${selectedSlot === slot
+                                                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                                                : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300'
+                                                                }`}
                                                         >
                                                             {slot}
                                                         </button>
@@ -499,6 +529,23 @@ export default function TutorDetailPage({ params }) {
                                 </Button>
                                 <p className="text-xs text-center text-slate-400">Free cancellation up to 24 hours before.</p>
                             </div>
+                        </div>
+
+                        {/* AI Assistant Widget */}
+                        <div className="sticky top-[450px]">
+                            <AiTutorWidget
+                                title="Tutor Assistant"
+                                subtitle="Want to know more about this tutor?"
+                                context={{
+                                    pageType: 'tutor_profile',
+                                    tutorId: tutor._id
+                                }}
+                                recommendedTopics={[
+                                    'What is this tutor\'s teaching experience?',
+                                    'What subjects does this tutor specialize in?',
+                                    'Is this tutor a good fit for me?'
+                                ]}
+                            />
                         </div>
                     </div>
                 </div>

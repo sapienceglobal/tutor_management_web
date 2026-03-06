@@ -161,15 +161,22 @@ export default function LessonPlayerModal({
     const syncProgress = async () => {
         if (!videoRef.current || currentLesson.type !== 'video') return;
         try {
-            await api.post('/progress', {
+            const response = await api.post('/progress', {
                 courseId,
                 lessonId: currentLesson._id,
                 lastWatchedPosition: Math.floor(videoRef.current.currentTime),
                 timeSpent: Math.floor(videoRef.current.currentTime),
                 completed: false
             });
+            
+            if (response.data?.success) {
+                console.log('Progress synced successfully');
+            } else {
+                console.error('Progress sync failed:', response.data);
+            }
         } catch (error) {
             console.error('Error syncing progress:', error);
+            toast.error('Failed to sync progress');
         }
     };
 
@@ -234,7 +241,7 @@ export default function LessonPlayerModal({
     const handleCompleteAndNext = async () => {
         setIsCompleting(true);
         try {
-            await api.post('/progress', {
+            const response = await api.post('/progress', {
                 courseId,
                 lessonId: currentLesson._id,
                 lastWatchedPosition: videoRef.current?.currentTime || 0,
@@ -242,15 +249,20 @@ export default function LessonPlayerModal({
                 completed: true
             });
 
-            if (onLessonComplete) await onLessonComplete(currentLesson._id);
+            if (response.data?.success) {
+                if (onLessonComplete) await onLessonComplete(currentLesson._id);
 
-            if (currentIndex < lessons.length - 1) {
-                setCurrentIndex(currentIndex + 1);
+                if (currentIndex < lessons.length - 1) {
+                    setCurrentIndex(currentIndex + 1);
+                } else {
+                    toast.success('Course Completed! 🎉');
+                    onClose(true);
+                }
             } else {
-                toast.success('Course Completed! 🎉');
-                onClose(true);
+                toast.error('Failed to update progress');
             }
         } catch (error) {
+            console.error('Error updating progress:', error);
             toast.error('Failed to update progress');
         } finally {
             setIsCompleting(false);

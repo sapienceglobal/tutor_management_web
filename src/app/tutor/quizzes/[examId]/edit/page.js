@@ -11,7 +11,10 @@ import {
     Loader2,
     Save,
     Pencil,
-    Wand2
+    Wand2,
+    Plus,
+    Trash2,
+    MessageSquare
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { Button } from '@/components/ui/button';
@@ -35,6 +38,7 @@ export default function EditExamPage({ params }) {
         courseId: '',
         duration: 30, // minutes
         passingMarks: 10,
+        passingPercentage: 33,
         description: '',
         // Advanced Settings
         allowRetake: false,
@@ -47,6 +51,10 @@ export default function EditExamPage({ params }) {
         endDate: '',
         questions: []
     });
+    const totalQuestionMarks = (examData.questions || []).reduce((sum, question) => sum + (question.points || 1), 0);
+    const derivedPassingMarks = totalQuestionMarks > 0
+        ? Number((((Number(examData.passingPercentage) || 0) / 100) * totalQuestionMarks).toFixed(2))
+        : 0;
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -72,6 +80,7 @@ export default function EditExamPage({ params }) {
                     setExamData({
                         ...exam,
                         courseId: exam.courseId._id || exam.courseId, // Handle populated or unpopulated
+                        passingPercentage: exam.passingPercentage ?? 33,
                         startDate: formatDate(exam.startDate),
                         endDate: formatDate(exam.endDate),
                         questions: exam.questions.map(q => ({
@@ -95,23 +104,40 @@ export default function EditExamPage({ params }) {
         }
     }, [examId, router]);
 
-    const handleAddQuestion = () => {
-        setExamData(prev => ({
-            ...prev,
-            questions: [
-                ...prev.questions,
-                {
-                    question: 'New Question',
-                    options: [
-                        { text: 'Option A', isCorrect: true },
-                        { text: 'Option B', isCorrect: false },
-                        { text: 'Option C', isCorrect: false },
-                        { text: 'Option D', isCorrect: false },
-                    ],
-                    points: 1
-                }
-            ]
-        }));
+    const handleAddQuestion = (type = 'mcq') => {
+        if (type === 'subjective') {
+            setExamData(prev => ({
+                ...prev,
+                questions: [
+                    ...prev.questions,
+                    {
+                        question: '',
+                        options: [],
+                        idealAnswer: '',
+                        points: 1,
+                        type: 'subjective'
+                    }
+                ]
+            }));
+        } else {
+            setExamData(prev => ({
+                ...prev,
+                questions: [
+                    ...prev.questions,
+                    {
+                        question: '',
+                        options: [
+                            { text: 'Option A', isCorrect: true },
+                            { text: 'Option B', isCorrect: false },
+                            { text: 'Option C', isCorrect: false },
+                            { text: 'Option D', isCorrect: false },
+                        ],
+                        points: 1,
+                        type: 'mcq'
+                    }
+                ]
+            }));
+        }
     };
 
     const handleQuestionChange = (index, field, value) => {
@@ -143,6 +169,8 @@ export default function EditExamPage({ params }) {
             // Prepare payload - ensure dates are handled correctly
             const payload = {
                 ...examData,
+                passingPercentage: Number(examData.passingPercentage) || 0,
+                passingMarks: derivedPassingMarks,
                 startDate: examData.startDate || null,
                 endDate: examData.endDate || null,
                 status: newStatus || examData.status, // Update status if provided
@@ -210,13 +238,22 @@ export default function EditExamPage({ params }) {
                         />
                     </div>
                     <div className="grid gap-2">
-                        <Label>Passing Marks</Label>
+                        <Label>Pass Percentage</Label>
                         <Input
                             type="number"
-                            value={examData.passingMarks}
-                            onChange={(e) => setExamData({ ...examData, passingMarks: Number(e.target.value) })}
+                            min="0"
+                            max="100"
+                            value={examData.passingPercentage}
+                            onChange={(e) => setExamData({ ...examData, passingPercentage: Number(e.target.value) || 0 })}
                         />
                     </div>
+                </div>
+                <div className="grid gap-2">
+                    <Label>Passing Marks (Auto)</Label>
+                    <Input type="number" value={derivedPassingMarks} readOnly />
+                    <p className="text-xs text-gray-500">
+                        Derived from pass % and total question marks ({totalQuestionMarks}).
+                    </p>
                 </div>
 
                 {/* Advanced Settings Section */}
@@ -338,97 +375,123 @@ export default function EditExamPage({ params }) {
         </div>
     );
 
-    const renderQuestionEditor = () => (
-        <div className="max-w-4xl mx-auto space-y-8">
-            <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold">Review & Edit Questions</h2>
-                <Button onClick={handleAddQuestion} variant="outline" className="border-dashed">
-                    + Add Question
-                </Button>
-            </div>
+    const renderQuestionEditor = () => {
+        const isSubjective = (q) => !q.options || q.options.length === 0;
 
-            <div className="space-y-6">
-                {examData.questions.map((q, qIndex) => (
-                    <div key={qIndex} className="bg-white p-6 rounded-xl border shadow-sm space-y-4">
-                        <div className="flex justify-between items-start gap-4">
-                            <div className="flex-1 grid gap-2">
-                                <Label>Question {qIndex + 1}</Label>
-                                <Textarea
-                                    value={q.question}
-                                    onChange={(e) => handleQuestionChange(qIndex, 'question', e.target.value)}
-                                    placeholder="Enter question text"
-                                />
-                            </div>
-                            <Button
-                                variant="destructive"
-                                size="icon"
-                                className="h-8 w-8 mt-6"
-                                onClick={() => handleDeleteQuestion(qIndex)}
-                            >
-                                <span className="sr-only">Delete</span>
-                                ×
-                            </Button>
-                        </div>
+        return (
+            <div className="max-w-4xl mx-auto space-y-8">
+                <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-bold">Review & Edit Questions</h2>
+                    <div className="flex gap-2">
+                        <Button onClick={() => handleAddQuestion('mcq')} variant="outline" className="border-dashed gap-2">
+                            <Plus className="w-4 h-4" /> Add MCQ
+                        </Button>
+                        <Button onClick={() => handleAddQuestion('subjective')} variant="outline" className="border-dashed gap-2 text-amber-700 border-amber-300 hover:bg-amber-50">
+                            <MessageSquare className="w-4 h-4" /> Add Subjective
+                        </Button>
+                    </div>
+                </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4 border-l-2 border-gray-100">
-                            {q.options.map((opt, oIndex) => (
-                                <div key={oIndex} className="flex items-center gap-3">
-                                    <input
-                                        type="radio"
-                                        name={`correct-${qIndex}`}
-                                        checked={opt.isCorrect}
-                                        onChange={() => handleOptionChange(qIndex, oIndex, 'isCorrect', true)}
-                                        className="h-4 w-4 text-purple-600 focus:ring-purple-500"
-                                    />
-                                    <Input
-                                        value={opt.text}
-                                        onChange={(e) => handleOptionChange(qIndex, oIndex, 'text', e.target.value)}
-                                        placeholder={`Option ${oIndex + 1}`}
-                                        className={opt.isCorrect ? "border-green-500 ring-1 ring-green-500 bg-green-50" : ""}
+                <div className="space-y-6">
+                    {examData.questions.map((q, qIndex) => (
+                        <div key={qIndex} className="bg-white p-6 rounded-xl border shadow-sm space-y-4">
+                            <div className="flex justify-between items-start gap-4">
+                                <div className="flex-1 grid gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <Label>Question {qIndex + 1}</Label>
+                                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${isSubjective(q) ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                                            {isSubjective(q) ? 'SUBJECTIVE' : 'MCQ'}
+                                        </span>
+                                    </div>
+                                    <Textarea
+                                        value={q.question}
+                                        onChange={(e) => handleQuestionChange(qIndex, 'question', e.target.value)}
+                                        placeholder="Enter question text"
                                     />
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                ))}
-            </div>
+                                <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    className="h-8 w-8 mt-6"
+                                    onClick={() => handleDeleteQuestion(qIndex)}
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                            </div>
 
-            <div className="flex justify-end gap-3 pt-8 border-t">
-                <Button variant="ghost" onClick={() => setStep(2)}>Back</Button>
-                <div className="flex gap-2">
-                    {/* Status Actions */}
-                    {examData.status === 'published' ? (
+                            {isSubjective(q) ? (
+                                <div className="pl-4 border-l-2 border-amber-200 space-y-2">
+                                    <Label className="text-sm text-amber-700">Ideal Answer / Rubric (for grading reference)</Label>
+                                    <Textarea
+                                        value={q.idealAnswer || ''}
+                                        onChange={(e) => handleQuestionChange(qIndex, 'idealAnswer', e.target.value)}
+                                        placeholder="Write the expected answer or grading rubric here..."
+                                        className="min-h-[80px]"
+                                    />
+                                    <p className="text-xs text-slate-400">This will not be shown to students. Used only for manual grading.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4 border-l-2 border-gray-100">
+                                    {q.options.map((opt, oIndex) => (
+                                        <div key={oIndex} className="flex items-center gap-3">
+                                            <input
+                                                type="radio"
+                                                name={`correct-${qIndex}`}
+                                                checked={opt.isCorrect}
+                                                onChange={() => handleOptionChange(qIndex, oIndex, 'isCorrect', true)}
+                                                className="h-4 w-4 text-purple-600 focus:ring-purple-500"
+                                            />
+                                            <Input
+                                                value={opt.text}
+                                                onChange={(e) => handleOptionChange(qIndex, oIndex, 'text', e.target.value)}
+                                                placeholder={`Option ${oIndex + 1}`}
+                                                className={opt.isCorrect ? "border-green-500 ring-1 ring-green-500 bg-green-50" : ""}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                <div className="flex justify-end gap-3 pt-8 border-t">
+                    <Button variant="ghost" onClick={() => setStep(2)}>Back</Button>
+                    <div className="flex gap-2">
+                        {/* Status Actions */}
+                        {examData.status === 'published' ? (
+                            <Button
+                                onClick={() => handleUpdateExam('draft')}
+                                variant="outline"
+                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                disabled={saving}
+                            >
+                                Unpublish (Draft)
+                            </Button>
+                        ) : (
+                            <Button
+                                onClick={() => handleUpdateExam('published')}
+                                variant="outline"
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                disabled={saving || examData.questions.length === 0}
+                            >
+                                Publish Exam
+                            </Button>
+                        )}
+
                         <Button
-                            onClick={() => handleUpdateExam('draft')}
-                            variant="outline"
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                            disabled={saving}
-                        >
-                            Unpublish (Draft)
-                        </Button>
-                    ) : (
-                        <Button
-                            onClick={() => handleUpdateExam('published')}
-                            variant="outline"
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            onClick={() => handleUpdateExam()}
+                            className="bg-purple-600 hover:bg-purple-700 min-w-[150px]"
                             disabled={saving || examData.questions.length === 0}
                         >
-                            Publish Exam
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                            Save Changes
                         </Button>
-                    )}
-
-                    <Button
-                        onClick={() => handleUpdateExam()}
-                        className="bg-purple-600 hover:bg-purple-700 min-w-[150px]"
-                        disabled={saving || examData.questions.length === 0}
-                    >
-                        {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                        Save Changes
-                    </Button>
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     if (loading) {
         return (

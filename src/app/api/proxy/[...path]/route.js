@@ -63,12 +63,15 @@ async function proxy(request, params, method) {
     if (method !== 'GET' && method !== 'HEAD') {
         try {
             const body = await request.text();
-            if (body) opts.body = body;
+            if (body) {
+                opts.body = body;
+            }
         } catch (_) {}
     }
 
     try {
         const res = await fetch(url, opts);
+        
         const contentType = res.headers.get('Content-Type') || '';
         const isJson = contentType.includes('application/json');
         const isPdf = contentType.includes('application/pdf');

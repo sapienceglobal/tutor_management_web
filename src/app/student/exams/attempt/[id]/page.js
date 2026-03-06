@@ -8,9 +8,7 @@ import {
     XCircle,
     AlertCircle,
     Clock,
-    Calendar,
     ArrowLeft,
-    Share2,
     Download,
     TrendingUp
 } from 'lucide-react';
@@ -18,12 +16,25 @@ import api from '@/lib/axios';
 import { cn } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 
+const getOptionText = (option) => {
+    if (!option) return '';
+    if (typeof option === 'string') return option;
+    return option.text || '';
+};
+
+const getStatus = (item) => {
+    if (item?.status) return item.status;
+    if (item?.userSelectedOption === -1 || item?.userSelectedOption === undefined) return 'unanswered';
+    return item?.isCorrect ? 'correct' : 'incorrect';
+};
+
 export default function ExamResultPage({ params }) {
     const { id } = use(params);
     const router = useRouter();
 
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [viewingSolution, setViewingSolution] = useState(null);
 
     useEffect(() => {
         const fetchResult = async () => {
@@ -61,11 +72,12 @@ export default function ExamResultPage({ params }) {
 
     if (!result) return null;
 
+    const hiddenAnswers = (result.analysis || []).some((item) => item.canViewCorrectAnswer === false);
+    const hiddenSolutions = (result.analysis || []).some((item) => item.canViewSolution === false);
+
     return (
         <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8 font-sans">
             <div className="max-w-4xl mx-auto space-y-8">
-
-                {/* Header Actions */}
                 <div className="flex justify-between items-center">
                     <Button variant="ghost" onClick={() => router.push('/student/dashboard')} className="text-slate-600 hover:text-slate-900">
                         <ArrowLeft className="w-4 h-4 mr-2" />
@@ -79,11 +91,10 @@ export default function ExamResultPage({ params }) {
                     </div>
                 </div>
 
-                {/* Main Score Card */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                     <div className={cn(
-                        "h-2",
-                        result.isPassed ? "bg-emerald-500" : "bg-red-500"
+                        'h-2',
+                        result.isPassed ? 'bg-emerald-500' : 'bg-red-500'
                     )} />
 
                     <div className="p-8 md:p-12 text-center">
@@ -92,8 +103,8 @@ export default function ExamResultPage({ params }) {
 
                         <div className="flex flex-col items-center justify-center mb-8">
                             <div className={cn(
-                                "w-40 h-40 rounded-full flex flex-col items-center justify-center border-8 mb-4 shadow-lg",
-                                result.isPassed ? "border-emerald-100 bg-emerald-50 text-emerald-700" : "border-red-100 bg-red-50 text-red-700"
+                                'w-40 h-40 rounded-full flex flex-col items-center justify-center border-8 mb-4 shadow-lg',
+                                result.isPassed ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : 'border-red-100 bg-red-50 text-red-700'
                             )}>
                                 <span className="text-5xl font-extrabold">{Math.round(result.percentage)}%</span>
                                 <span className="text-sm font-semibold uppercase tracking-wider mt-1">{result.isPassed ? 'Passed' : 'Failed'}</span>
@@ -132,7 +143,6 @@ export default function ExamResultPage({ params }) {
                                     {result.unansweredCount}
                                 </p>
                             </div>
-                            {/* Percentile Rank */}
                             <div className="p-4 rounded-xl bg-indigo-50">
                                 <p className="text-indigo-600 text-sm font-medium mb-1">Percentile</p>
                                 <p className="text-indigo-900 font-bold flex items-center justify-center gap-2">
@@ -144,95 +154,117 @@ export default function ExamResultPage({ params }) {
                     </div>
                 </div>
 
-                {/* Detailed Analysis */}
                 <div className="space-y-6">
                     <h2 className="text-xl font-bold text-slate-800">Detailed Analysis</h2>
+                    {hiddenAnswers && (
+                        <p className="text-sm text-amber-700">Answer key hidden by tutor for some/all questions.</p>
+                    )}
+                    {hiddenSolutions && (
+                        <p className="text-sm text-amber-700">Solution hidden by tutor for some/all questions.</p>
+                    )}
 
                     {result.analysis && result.analysis.map((item, index) => {
-                        const isUnanswered = item.userSelectedOption === -1;
-                        const isCorrect = item.isCorrect;
+                        const status = getStatus(item);
+                        const selectedAnswer = item.selectedAnswerText || getOptionText(item.options?.[item.userSelectedOption]) || '-';
+                        const correctAnswer = item.canViewCorrectAnswer
+                            ? (item.correctAnswerText || getOptionText(item.options?.[item.correctOption]) || '-')
+                            : 'Hidden';
 
                         return (
-                            <div key={item._id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                                <div className="flex justify-between items-start gap-4 mb-4">
+                            <div key={item._id || index} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <div className="flex justify-between items-start gap-4 mb-3">
                                     <div className="flex gap-3">
                                         <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 font-bold text-sm">
-                                            {index + 1}
+                                            {item.questionNumber || index + 1}
                                         </span>
                                         <p className="text-slate-800 font-medium text-lg pt-0.5">{item.question}</p>
                                     </div>
                                     <div className="flex-shrink-0">
-                                        {isUnanswered ? (
-                                            <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
-                                                Unanswered
-                                            </span>
-                                        ) : isCorrect ? (
-                                            <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
-                                                Correct
-                                            </span>
-                                        ) : (
-                                            <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
-                                                Incorrect
-                                            </span>
-                                        )}
+                                        <span className={cn(
+                                            'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide',
+                                            status === 'correct' ? 'bg-emerald-100 text-emerald-700' : status === 'incorrect' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'
+                                        )}>
+                                            {status}
+                                        </span>
                                     </div>
                                 </div>
 
-                                <div className="grid gap-2 ml-11">
-                                    {item.options.map((opt, optIdx) => {
+                                <div className="ml-11 space-y-2">
+                                    <p className="text-sm text-slate-600"><span className="font-semibold">Your Answer:</span> {selectedAnswer}</p>
+                                    <p className={cn(
+                                        'text-sm',
+                                        item.canViewCorrectAnswer ? 'text-emerald-700' : 'text-slate-500'
+                                    )}>
+                                        <span className="font-semibold">Correct Answer:</span> {correctAnswer}
+                                    </p>
+                                    <p className="text-xs text-slate-500">Marks: {item.pointsEarned ?? 0} / {item.pointsPossible ?? item.points ?? 1}</p>
+                                </div>
+
+                                <div className="grid gap-2 ml-11 mt-4">
+                                    {(item.options || []).map((opt, optIdx) => {
+                                        const text = getOptionText(opt);
                                         const isSelected = item.userSelectedOption === optIdx;
-                                        const isCorrectOption = item.analysisCorrectOption === optIdx || item.correctOption === optIdx;
-                                        // The backend sends correctOption index as `correctOption`
+                                        const isCorrectOption = item.canViewCorrectAnswer && item.correctOption === optIdx;
 
-                                        // Correct Logic:
-                                        // If this option IS the correct answer -> highlight GREEN (always show correct answer)
-                                        // If this option was selected AND is WRONG -> highlight RED
+                                        let containerClass = 'border-slate-200 bg-white text-slate-600';
+                                        let badgeClass = 'border-slate-300 bg-slate-100 text-slate-500';
 
-                                        let containerClass = "border-slate-200 bg-white text-slate-600";
-                                        let icon = null;
-                                        let badgeClass = "border-slate-300 bg-slate-100 text-slate-500";
-
-                                        if (item.correctOption === optIdx) {
-                                            // Provide visual cue for correct answer
-                                            containerClass = "border-emerald-500 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-500/20";
-                                            badgeClass = "border-emerald-600 bg-emerald-600 text-white";
-                                            icon = <CheckCircle className="w-5 h-5 text-emerald-600" />;
-                                        }
-
-                                        if (isSelected && item.correctOption !== optIdx) {
-                                            // User selected WRONG option
-                                            containerClass = "border-red-500 bg-red-50 text-red-900 ring-1 ring-red-500/20";
-                                            badgeClass = "border-red-600 bg-red-600 text-white";
-                                            icon = <XCircle className="w-5 h-5 text-red-600" />;
+                                        if (isCorrectOption) {
+                                            containerClass = 'border-emerald-500 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-500/20';
+                                            badgeClass = 'border-emerald-600 bg-emerald-600 text-white';
+                                        } else if (isSelected && status === 'incorrect') {
+                                            containerClass = 'border-red-500 bg-red-50 text-red-900 ring-1 ring-red-500/20';
+                                            badgeClass = 'border-red-600 bg-red-600 text-white';
+                                        } else if (isSelected) {
+                                            containerClass = 'border-indigo-400 bg-indigo-50 text-indigo-900 ring-1 ring-indigo-300/30';
+                                            badgeClass = 'border-indigo-600 bg-indigo-600 text-white';
                                         }
 
                                         return (
                                             <div
                                                 key={optIdx}
                                                 className={cn(
-                                                    "flex items-center justify-between p-3 rounded-lg border text-sm transition-all",
+                                                    'flex items-center justify-between p-3 rounded-lg border text-sm transition-all',
                                                     containerClass
                                                 )}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <span className={cn(
-                                                        "w-6 h-6 flex items-center justify-center rounded-full text-xs border font-bold",
+                                                        'w-6 h-6 flex items-center justify-center rounded-full text-xs border font-bold',
                                                         badgeClass
                                                     )}>
-                                                        {['A', 'B', 'C', 'D'][optIdx]}
+                                                        {String.fromCharCode(65 + optIdx)}
                                                     </span>
-                                                    <span className="font-medium">{opt.text}</span>
+                                                    <span className="font-medium">{text}</span>
                                                 </div>
-                                                {icon}
                                             </div>
                                         );
                                     })}
                                 </div>
+
+                                <div className="ml-11 mt-4">
+                                    {item.canViewSolution && item.solutionText ? (
+                                        <button
+                                            onClick={() => setViewingSolution(viewingSolution === index ? null : index)}
+                                            className="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-200 transition-colors"
+                                        >
+                                            {viewingSolution === index ? 'Hide Solution' : 'View Solution'}
+                                        </button>
+                                    ) : (
+                                        <span className="text-xs text-slate-400">Solution hidden</span>
+                                    )}
+                                </div>
+
+                                {viewingSolution === index && item.canViewSolution && item.solutionText && (
+                                    <div className="ml-11 mt-3 p-3 bg-indigo-50 border border-indigo-100 rounded-lg">
+                                        <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">Solution Explanation</p>
+                                        <p className="text-sm text-slate-700">{item.solutionText}</p>
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
                 </div>
-
             </div>
         </div>
     );

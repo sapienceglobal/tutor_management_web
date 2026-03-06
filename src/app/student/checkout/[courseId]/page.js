@@ -45,6 +45,20 @@ export default function CheckoutPage() {
         };
         fetchCourse();
     }, [courseId, router]);
+    const handleFreeEnroll = async () => {
+        setProcessing(true);
+        try {
+            const res = await api.post('/enrollments', { courseId });
+            if (res.data.success) {
+                toast.success('🎉 Enrolled successfully! Start learning now.');
+                router.replace(`/student/courses/${courseId}`);
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Enrollment failed');
+        } finally {
+            setProcessing(false);
+        }
+    };
 
     const handlePayment = async () => {
         if (!scriptLoaded) {
@@ -232,12 +246,14 @@ export default function CheckoutPage() {
                                         </div>
 
                                         <Button
-                                            onClick={handlePayment}
-                                            disabled={processing || !scriptLoaded}
+                                            onClick={(!course.price || course.price === 0 || course.isFree) ? handleFreeEnroll : handlePayment}
+                                            disabled={processing || (!course.isFree && !scriptLoaded)}
                                             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-6 text-base font-semibold shadow-lg shadow-indigo-100 rounded-xl transition-all disabled:opacity-50"
                                         >
                                             {processing ? (
                                                 <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Processing...</>
+                                            ) : (!course.price || course.price === 0 || course.isFree) ? (
+                                                <><CheckCircle className="w-5 h-5 mr-2" /> Enroll for Free</>
                                             ) : (
                                                 <><CreditCard className="w-5 h-5 mr-2" /> Pay ₹{course.price?.toFixed(2)}</>
                                             )}

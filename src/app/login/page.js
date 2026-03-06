@@ -8,30 +8,63 @@ import Cookies from 'js-cookie';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000/api';
 
-function LoginPageClient() {
+const LoginPageClient = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [oauthResetEmail, setOauthResetEmail] = useState('');
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
     const [formData, setFormData] = useState({
         email: '',
         password: '',
     });
 
-    // Check for OAuth error in URL params
+    // Check for OAuth error and redirect params in URL
     useEffect(() => {
+        if (!isClient) return;
+        
         const oauthError = searchParams.get('error');
+        const redirect = searchParams.get('redirect');
+        const inviteEmail = searchParams.get('email');
+        const locked = searchParams.get('locked');
+        
         if (oauthError) {
             setError(decodeURIComponent(oauthError));
         }
-    }, [searchParams]);
+        
+        if (redirect) {
+            sessionStorage.setItem('loginRedirect', redirect);
+        }
+        if (inviteEmail) {
+            sessionStorage.setItem('inviteEmail', inviteEmail);
+            sessionStorage.setItem('emailLocked', locked === 'true');
+            // Auto-fill email field for invite login
+            setFormData(prev => ({ ...prev, email: inviteEmail }));
+        }
+    }, [searchParams, isClient]);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        
+        // Check if this is an invite login and field should be disabled
+        const inviteEmail = isClient && sessionStorage.getItem('inviteEmail');
+        const isInviteLogin = inviteEmail && name === 'email';
+        
+        if (isInviteLogin) {
+            // Don't allow changing email for invite login
+            return;
+        }
+        
+        setFormData({ ...formData, [name]: value });
         setError('');
         setOauthResetEmail('');
     };
@@ -51,6 +84,23 @@ function LoginPageClient() {
 
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
+
+            // Check for invite redirect after successful login
+            const loginRedirect = sessionStorage.getItem('loginRedirect');
+            const inviteEmail = sessionStorage.getItem('inviteEmail');
+            
+            // Clear session storage
+            sessionStorage.removeItem('loginRedirect');
+            sessionStorage.removeItem('inviteEmail');
+            sessionStorage.removeItem('emailLocked');
+            
+            // Handle invite redirect
+            if (loginRedirect && inviteEmail && user.email.toLowerCase() === inviteEmail.toLowerCase()) {
+                // User logged in with correct invite email, redirect back to invite page
+                // The invite page will handle the acceptance process
+                router.push(loginRedirect);
+                return;
+            }
 
             if (user.role === 'superadmin') {
                 router.push('/superadmin');
@@ -170,10 +220,17 @@ function LoginPageClient() {
                                             placeholder="name@example.com"
                                             type="email"
                                             required
-                                            className="pl-12 h-12 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl shadow-sm"
+                                            className={cn(
+                                                "pl-12 h-12 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl shadow-sm",
+                                                isClient && sessionStorage.getItem('inviteEmail') ? "bg-gray-100 border-gray-300 cursor-not-allowed" : ""
+                                            )}
                                             value={formData.email}
                                             onChange={handleChange}
+                                            disabled={isClient && !!sessionStorage.getItem('inviteEmail')}
                                         />
+                                        {isClient && sessionStorage.getItem('inviteEmail') && (
+                                            <p className="text-xs text-gray-500 mt-1">Email is locked for invite-based login</p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -269,7 +326,7 @@ function LoginPageClient() {
 
                 {/* Copyright/Footer */}
                 <div className="absolute bottom-4 text-slate-400 text-xs text-center w-full z-10">
-                    &copy; 2024 TutorApp Inc. All rights reserved.
+                    &copy; 2026 TutorApp Inc. All rights reserved.
                 </div>
             </div>
         </div>

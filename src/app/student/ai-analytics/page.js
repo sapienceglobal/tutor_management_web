@@ -3,27 +3,39 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
-    BarChart3, CheckCircle, Clock, TrendingUp, Eye, Sparkles, Brain
+    BarChart3, CheckCircle, Clock, TrendingUp, Eye, Sparkles, Brain,
+    Calendar, Target, BookOpen, Award, Zap, TrendingDown, AlertCircle
 } from 'lucide-react';
 import api from '@/lib/axios';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, LineChart, Line, Area, AreaChart } from 'recharts';
+import { Button } from '@/components/ui/button';
+import { toast } from 'react-hot-toast';
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'];
 
 export default function ResultsAnalyticsPage() {
     const [attempts, setAttempts] = useState([]);
     const [allExams, setAllExams] = useState([]);
+    const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('analytics');
+    const [studyPlan, setStudyPlan] = useState(null);
+    const [generatingPlan, setGeneratingPlan] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [historyRes, examsRes] = await Promise.all([
+                const [historyRes, examsRes, coursesRes] = await Promise.all([
                     api.get('/exams/student/history-all'),
                     api.get('/exams/student/all'),
+                    api.get('/enrollments/my-enrollments')
                 ]);
                 if (historyRes.data.success) setAttempts(historyRes.data.attempts || []);
                 if (examsRes.data.success) setAllExams(examsRes.data.exams || []);
+                if (coursesRes.data.success) {
+                    const enrolledCourses = (coursesRes.data.enrollments || []).map(e => e.courseId);
+                    setCourses(enrolledCourses);
+                }
             } catch (error) {
                 console.error('Error fetching analytics:', error);
             } finally {
@@ -32,6 +44,29 @@ export default function ResultsAnalyticsPage() {
         };
         fetchData();
     }, []);
+
+    // Generate AI Study Plan
+    const generateStudyPlan = async () => {
+        setGeneratingPlan(true);
+        try {
+            const response = await api.post('/ai/generate-study-plan', {
+                performanceData: attempts,
+                courses: courses,
+                goals: ['improve_scores', 'complete_courses', 'master_weak_areas']
+            });
+            
+            if (response.data.success) {
+                setStudyPlan(response.data.studyPlan);
+                setActiveTab('study-plan');
+                toast.success('AI Study Plan Generated Successfully! 🎯');
+            }
+        } catch (error) {
+            console.error('Error generating study plan:', error);
+            toast.error('Failed to generate AI study plan');
+        } finally {
+            setGeneratingPlan(false);
+        }
+    };
 
     // Insights
     const insights = useMemo(() => {
@@ -100,154 +135,247 @@ export default function ResultsAnalyticsPage() {
 
     return (
         <div className="space-y-6 font-sans">
-            {/* Header */}
-            <h1 className="text-2xl font-bold text-slate-800">Performance Insights</h1>
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold text-slate-800">AI Learning Hub</h1>
+                <Button 
+                    onClick={generateStudyPlan}
+                    disabled={generatingPlan}
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                >
+                    {generatingPlan ? (
+                        <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                            Generating Plan...
+                        </>
+                    ) : (
+                        <>
+                            <Brain className="w-4 h-4 mr-2" />
+                            Generate AI Study Plan
+                        </>
+                    )}
+                </Button>
+            </div>
 
-            {/* Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                    { label: 'Average Score', value: `${insights.avgScore}%`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-100' },
-                    { label: 'Completed Tests', value: insights.completed, icon: CheckCircle, color: 'text-indigo-600', bg: 'bg-indigo-100' },
-                    { label: 'Tests Pending', value: insights.pending, icon: Clock, color: 'text-blue-600', bg: 'bg-blue-100' },
-                ].map(stat => (
-                    <div key={stat.label} className="bg-white rounded-xl p-5 shadow-sm border border-slate-100 flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-full ${stat.bg} flex items-center justify-center`}>
-                            <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                        </div>
-                        <div>
-                            <p className="text-xs text-slate-500 font-medium">{stat.label}</p>
-                            <p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p>
-                        </div>
-                    </div>
+            <div className="flex space-x-1 bg-slate-100 p-1 rounded-lg">
+                {['analytics', 'study-plan'].map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`flex-1 px-4 py-2 rounded-md font-medium transition-all ${
+                            activeTab === tab
+                                ? 'bg-white text-indigo-600 shadow-sm'
+                                : 'text-slate-600 hover:text-slate-800'
+                        }`}
+                    >
+                        {tab === 'analytics' ? ' Analytics' : ' AI Study Plan'}
+                    </button>
                 ))}
             </div>
 
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Performance Trend */}
-                <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-base font-bold text-slate-800">Performance Trend</h2>
-                        <span className="text-xs text-slate-400 font-medium">Monthly Average</span>
+            {activeTab === 'analytics' && (
+                <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {[
+                            { label: 'Average Score', value: `${insights.avgScore}%`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+                            { label: 'Completed Tests', value: insights.completed, icon: CheckCircle, color: 'text-indigo-600', bg: 'bg-indigo-100' },
+                            { label: 'Tests Pending', value: insights.pending, icon: Clock, color: 'text-blue-600', bg: 'bg-blue-100' },
+                        ].map(stat => (
+                            <div key={stat.label} className="bg-white rounded-xl p-5 shadow-sm border border-slate-100 flex items-center gap-4">
+                                <div className={`w-12 h-12 rounded-full ${stat.bg} flex items-center justify-center`}>
+                                    <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-slate-500 font-medium">{stat.label}</p>
+                                    <p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                    {performanceTrend.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={220}>
-                            <BarChart data={performanceTrend}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} domain={[0, 100]} />
-                                <Tooltip
-                                    contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }}
-                                    formatter={(value) => [`${value}%`, 'Avg Score']}
-                                />
-                                <Bar dataKey="avg" radius={[6, 6, 0, 0]} maxBarSize={40}>
-                                    {performanceTrend.map((_, i) => (
-                                        <Cell key={i} fill={i === performanceTrend.length - 1 ? '#6366f1' : '#a5b4fc'} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    ) : (
-                        <div className="h-[220px] flex items-center justify-center text-sm text-slate-400">No data yet</div>
-                    )}
-                </div>
 
-                {/* Score Distribution */}
-                <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-                    <h2 className="text-base font-bold text-slate-800 mb-4">Score Distribution</h2>
-                    {scoreDistribution.length > 0 ? (
-                        <div className="flex items-center gap-6">
-                            <div className="w-40 h-40">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie data={scoreDistribution} dataKey="count" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={4}>
-                                            {scoreDistribution.map((_, i) => (
-                                                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-base font-bold text-slate-800">Performance Trend</h2>
+                                <span className="text-xs text-slate-400 font-medium">Monthly Average</span>
+                            </div>
+                            {performanceTrend.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={220}>
+                                    <BarChart data={performanceTrend}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} domain={[0, 100]} />
+                                        <Tooltip
+                                            contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }}
+                                            formatter={(value) => [`${value}%`, 'Avg Score']}
+                                        />
+                                        <Bar dataKey="avg" radius={[6, 6, 0, 0]} maxBarSize={40}>
+                                            {performanceTrend.map((_, i) => (
+                                                <Cell key={i} fill={i === performanceTrend.length - 1 ? '#6366f1' : '#a5b4fc'} />
                                             ))}
-                                        </Pie>
-                                        <Tooltip formatter={(value, name) => [`${value} Tests`, name]} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
-                                    </PieChart>
+                                        </Bar>
+                                    </BarChart>
                                 </ResponsiveContainer>
-                            </div>
-                            <div className="space-y-2">
-                                {scoreDistribution.map((range, i) => (
-                                    <div key={i} className="flex items-center gap-2 text-xs">
-                                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></span>
-                                        <span className="text-slate-500">{range.name}:</span>
-                                        <span className="font-bold" style={{ color: COLORS[i % COLORS.length] }}>{range.count} Tests</span>
-                                    </div>
-                                ))}
-                            </div>
+                            ) : (
+                                <div className="h-55 flex items-center justify-center text-sm text-slate-400">No data yet</div>
+                            )}
                         </div>
+
+                        <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+                            <h2 className="text-base font-bold text-slate-800 mb-4">Score Distribution</h2>
+                            {scoreDistribution.length > 0 ? (
+                                <div className="flex items-center gap-6">
+                                    <div className="w-40 h-40">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie data={scoreDistribution} dataKey="count" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={4}>
+                                                    {scoreDistribution.map((_, i) => (
+                                                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip formatter={(value, name) => [`${value} Tests`, name]} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {scoreDistribution.map((range, i) => (
+                                            <div key={i} className="flex items-center gap-2 text-xs">
+                                                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></span>
+                                                <span className="text-slate-500">{range.name}:</span>
+                                                <span className="font-bold" style={{ color: COLORS[i % COLORS.length] }}>{range.count} Tests</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="h-45 flex items-center justify-center text-sm text-slate-400">No data yet</div>
+                            )}
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {activeTab === 'study-plan' && (
+                <div className="space-y-6">
+                    {studyPlan ? (
+                        <>
+                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <Brain className="w-8 h-8 text-indigo-600" />
+                                    <div>
+                                        <h2 className="text-xl font-bold text-slate-800">Your AI Study Plan</h2>
+                                        <p className="text-sm text-slate-600">Personalized learning path based on your performance</p>
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    {[
+                                        { label: 'Study Duration', value: studyPlan.duration || '4 weeks', icon: Calendar },
+                                        { label: 'Daily Goal', value: studyPlan.dailyGoal || '2 hours', icon: Target },
+                                        { label: 'Focus Areas', value: studyPlan.focusAreas?.length || 3, icon: BookOpen },
+                                        { label: 'Expected Improvement', value: studyPlan.expectedImprovement || '+15%', icon: TrendingUp },
+                                    ].map((stat, i) => (
+                                        <div key={i} className="bg-white rounded-lg p-3 text-center">
+                                            <stat.icon className="w-5 h-5 text-indigo-600 mx-auto mb-1" />
+                                            <p className="text-xs text-slate-500">{stat.label}</p>
+                                            <p className="text-sm font-bold text-slate-800">{stat.value}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                                <div className="px-5 py-4 border-b border-slate-100">
+                                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                        <Calendar className="w-5 h-5 text-indigo-600" />
+                                        Weekly Schedule
+                                    </h3>
+                                </div>
+                                <div className="p-5 space-y-3">
+                                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, i) => (
+                                        <div key={day} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                            <span className="font-medium text-slate-700">{day}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm text-indigo-600 font-medium">
+                                                    {studyPlan.weeklySchedule?.[day] || 'Study & Practice'}
+                                                </span>
+                                                <Zap className="w-4 h-4 text-yellow-500" />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                                <div className="px-5 py-4 border-b border-slate-100">
+                                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                        <Target className="w-5 h-5 text-indigo-600" />
+                                        Focus Areas
+                                    </h3>
+                                </div>
+                                <div className="p-5">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {(studyPlan.focusAreas || [
+                                            { area: 'Mathematics', priority: 'High', reason: 'Improve problem-solving speed' },
+                                            { area: 'Science', priority: 'Medium', reason: 'Strengthen fundamentals' },
+                                            { area: 'Language', priority: 'Low', reason: 'Maintain current level' },
+                                            { area: 'Logic & Reasoning', priority: 'High', reason: 'Boost analytical skills' }
+                                        ]).map((focus, i) => (
+                                            <div key={i} className="border border-slate-200 rounded-lg p-4">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <h4 className="font-semibold text-slate-800">{focus.area}</h4>
+                                                    <span className={`px-2 py-1 text-xs font-bold rounded ${
+                                                        focus.priority === 'High' ? 'bg-red-100 text-red-700' :
+                                                        focus.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                                                        'bg-green-100 text-green-700'
+                                                    }`}>
+                                                        {focus.priority} Priority
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm text-slate-600">{focus.reason}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6 border border-emerald-100">
+                                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
+                                    <Award className="w-5 h-5 text-emerald-600" />
+                                    Recommended Actions
+                                </h3>
+                                <div className="space-y-3">
+                                    {(studyPlan.recommendations || [
+                                        'Complete 2 practice tests daily',
+                                        'Review weak areas for 30 minutes',
+                                        'Focus on time management during tests',
+                                        'Take breaks between study sessions'
+                                    ]).map((action, i) => (
+                                        <div key={i} className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                                            <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                                            <span className="text-sm text-slate-700">{action}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
                     ) : (
-                        <div className="h-[180px] flex items-center justify-center text-sm text-slate-400">No data yet</div>
+                        <div className="text-center py-16 bg-slate-50 rounded-xl">
+                            <Brain className="w-16 h-16 mx-auto mb-4 text-slate-400" />
+                            <h3 className="text-xl font-bold text-slate-800 mb-2">No Study Plan Yet</h3>
+                            <p className="text-slate-600 mb-6 max-w-md mx-auto">
+                                Generate your personalized AI study plan to get targeted recommendations and improve your learning efficiency.
+                            </p>
+                            <Button 
+                                onClick={generateStudyPlan}
+                                disabled={generatingPlan}
+                                className="bg-indigo-600 hover:bg-indigo-700"
+                            >
+                                {generatingPlan ? 'Generating...' : 'Generate AI Study Plan'}
+                            </Button>
+                        </div>
                     )}
                 </div>
-            </div>
-
-            {/* Recent Scores Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                <div className="px-5 py-4 border-b border-slate-100">
-                    <h2 className="text-lg font-bold text-slate-800">Recent Scores</h2>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wider">
-                                <th className="px-5 py-3 text-left font-semibold">#</th>
-                                <th className="px-5 py-3 text-left font-semibold">Test</th>
-                                <th className="px-5 py-3 text-left font-semibold">Date Taken</th>
-                                <th className="px-5 py-3 text-left font-semibold">Score</th>
-                                <th className="px-5 py-3 text-left font-semibold">Status</th>
-                                <th className="px-5 py-3 text-left font-semibold">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {recentScores.length > 0 ? recentScores.map((item, idx) => {
-                                const pct = item.totalMarks > 0 ? Math.round((item.score / item.totalMarks) * 100) : 0;
-                                return (
-                                    <tr key={item._id || idx} className="hover:bg-slate-50/50 transition-colors">
-                                        <td className="px-5 py-3.5 text-slate-500 font-medium">{idx + 1}</td>
-                                        <td className="px-5 py-3.5 font-semibold text-slate-800">{item.examTitle || 'Test'}</td>
-                                        <td className="px-5 py-3.5 text-slate-500 text-xs">
-                                            {new Date(item.date || item.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                            {', '}
-                                            {new Date(item.date || item.submittedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            <div className="flex items-center gap-2">
-                                                <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-blue-500' : 'bg-red-500'}`}>
-                                                    {pct}
-                                                </span>
-                                                <span className="font-bold text-slate-800">{pct}%</span>
-                                                <span className="text-xs text-slate-400">{item.score} / {item.totalMarks}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            <span className={`flex items-center gap-1 text-xs font-bold ${item.passed || item.isPassed ? 'text-emerald-600' : 'text-red-600'}`}>
-                                                <CheckCircle className="w-3.5 h-3.5" />
-                                                {item.passed || item.isPassed ? 'Completed' : 'Failed'}
-                                            </span>
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            <Link href={`/student/exams/${item.examId || item._id}/result?attemptId=${item._id}`} className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors inline-block">
-                                                <Eye className="w-3 h-3" /> View Report
-                                            </Link>
-                                        </td>
-                                    </tr>
-                                );
-                            }) : (
-                                <tr>
-                                    <td colSpan={6} className="px-5 py-12 text-center text-slate-400">
-                                        <BarChart3 className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                                        No test results yet. Complete some tests to see analytics!
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            )}
         </div>
     );
 }

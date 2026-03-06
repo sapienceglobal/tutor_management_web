@@ -159,7 +159,12 @@ export default function StudentExamsPage() {
                                     <tr key={exam._id} className="hover:bg-slate-50/50 transition-colors">
                                         <td className="px-5 py-3.5 text-slate-500 font-medium">{idx + 1}</td>
                                         <td className="px-5 py-3.5">
-                                            <p className="font-semibold text-slate-800">{exam.title}</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-semibold text-slate-800">{exam.title}</p>
+                                                {exam.isFree && (
+                                                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase">Free</span>
+                                                )}
+                                            </div>
                                             {exam.courseTitle && <p className="text-xs text-slate-400 mt-0.5">{exam.courseTitle}</p>}
                                         </td>
                                         <td className="px-5 py-3.5 text-slate-600">
@@ -180,7 +185,7 @@ export default function StudentExamsPage() {
                                                     Start Exam
                                                 </Link>
                                             ) : status === 'completed' ? (
-                                                <Link href={`/student/exams/${exam._id}/result?attemptId=${exam.lastAttemptId || ''}`} className="px-3 py-1.5 bg-slate-100 text-indigo-600 text-xs font-bold rounded-lg hover:bg-indigo-50 transition-colors inline-block">
+                                                <Link href={`/student/exams/${exam._id}/result${exam.lastAttemptId ? `?attemptId=${exam.lastAttemptId}` : ''}`} className="px-3 py-1.5 bg-slate-100 text-indigo-600 text-xs font-bold rounded-lg hover:bg-indigo-50 transition-colors inline-block">
                                                     View Result
                                                 </Link>
                                             ) : status === 'upcoming' ? (

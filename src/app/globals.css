@@ -63,6 +63,10 @@
 */
 
 :root {
+  /* Institute-specific theme colors - will be set dynamically */
+  --primary-color: #4f46e5;
+  --secondary-color: #f8fafc;
+  
   --background: 210 40% 98%;
   --foreground: 222.2 84% 4.9%;
 

@@ -93,6 +93,30 @@ export default function ExamPlayerPage() {
         }));
     };
 
+    const handleNumericAnswer = (questionId, value) => {
+        setAnswers(prev => ({ ...prev, [questionId]: { value: value } }));
+        setQuestionStatus(prev => ({
+            ...prev,
+            [questionId]: prev[questionId] === 'marked' ? 'answered-marked' : (value ? 'answered' : 'visited')
+        }));
+    };
+
+    const handleMatchAnswer = (questionId, leftItem, rightItem) => {
+        setAnswers(prev => {
+            const existingMatch = prev[questionId]?.match || {};
+            return {
+                ...prev,
+                [questionId]: {
+                    match: { ...existingMatch, [leftItem]: rightItem }
+                }
+            };
+        });
+        setQuestionStatus(prev => ({
+            ...prev,
+            [questionId]: prev[questionId] === 'marked' ? 'answered-marked' : 'answered'
+        }));
+    };
+
     const handleClearResponse = (questionId) => {
         const newAnswers = { ...answers };
         delete newAnswers[questionId];
@@ -133,8 +157,10 @@ export default function ExamPlayerPage() {
                 examId,
                 answers: Object.entries(answers).map(([qId, ans]) => ({
                     questionId: qId,
-                    selectedOption: ans.index,
-                    selectedOptionText: ans.text
+                    selectedOption: ans.index !== undefined ? ans.index : -1,
+                    selectedOptionText: ans.text || null,
+                    numericAnswer: ans.value || null,
+                    matchAnswers: ans.match || null
                 })),
                 timeSpent: (exam.duration * 60) - timeLeft,
                 startedAt: startedAt || new Date().toISOString()
@@ -372,34 +398,93 @@ export default function ExamPlayerPage() {
                     {/* Question Body */}
                     <div className="p-6">
                         <motion.div key={currentQuestion._id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                            {currentQuestion.questionType === 'passage_based' && currentQuestion.passage && (
+                                <div className="mb-6 bg-slate-50 p-5 rounded-xl border border-slate-200">
+                                    <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                        <Eye className="w-4 h-4" /> Read Passage
+                                    </h4>
+                                    <div className="prose prose-sm max-w-none text-slate-700 font-medium leading-relaxed whitespace-pre-wrap"
+                                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentQuestion.passage) }}
+                                    />
+                                </div>
+                            )}
+
                             <div className="prose prose-lg max-w-none text-slate-800 font-semibold mb-2"
                                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(`Q${currentQuestionIndex + 1}. ${currentQuestion.question}`) }}
                             />
-                            <p className="text-sm text-slate-400 mb-5">Choose one from below options</p>
 
-                            <div className="space-y-3">
-                                {currentQuestion.options.map((option, idx) => {
-                                    const isSelected = answers[currentQuestion._id]?.index === idx;
-                                    return (
-                                        <div
-                                            key={idx}
-                                            onClick={() => handleSelectOption(currentQuestion._id, idx, option.text)}
-                                            className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all
-                                                ${isSelected
-                                                    ? 'border-indigo-500 bg-indigo-50/50'
-                                                    : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
-                                                }`}
-                                        >
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 flex-shrink-0
-                                                ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-500'}`}
-                                            >
-                                                {String.fromCharCode(65 + idx)}
+                            {(!currentQuestion.questionType || currentQuestion.questionType === 'mcq' || currentQuestion.questionType === 'passage_based') && (
+                                <>
+                                    <p className="text-sm text-slate-400 mb-5">Choose one from below options</p>
+                                    <div className="space-y-3">
+                                        {currentQuestion.options.map((option, idx) => {
+                                            const isSelected = answers[currentQuestion._id]?.index === idx;
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    onClick={() => handleSelectOption(currentQuestion._id, idx, option.text)}
+                                                    className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all
+                                                        ${isSelected
+                                                            ? 'border-indigo-500 bg-indigo-50/50'
+                                                            : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
+                                                        }`}
+                                                >
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 flex-shrink-0
+                                                        ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-500'}`}
+                                                    >
+                                                        {String.fromCharCode(65 + idx)}
+                                                    </div>
+                                                    <span className={`text-sm font-medium ${isSelected ? 'text-indigo-800' : 'text-slate-600'}`}>{option.text}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </>
+                            )}
+
+                            {currentQuestion.questionType === 'numeric' && (
+                                <div className="mt-6">
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Type your numeric answer:</label>
+                                    <input
+                                        type="number"
+                                        step="any"
+                                        value={answers[currentQuestion._id]?.value || ''}
+                                        onChange={(e) => handleNumericAnswer(currentQuestion._id, e.target.value)}
+                                        className="w-full max-w-sm px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-0 text-lg font-semibold text-slate-800 transition-colors"
+                                        placeholder="e.g. 42.5"
+                                    />
+                                </div>
+                            )}
+
+                            {currentQuestion.questionType === 'match_the_following' && currentQuestion.pairs && (
+                                <div className="mt-6 space-y-4">
+                                    <p className="text-sm font-medium text-slate-600 mb-4">Match the items on the left with the correct options on the right.</p>
+
+                                    {/* Create a static array of right items to use as dropdown options */}
+                                    {currentQuestion.pairs.map((pair, idx) => (
+                                        <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                            <div className="flex-1 font-semibold text-slate-800">
+                                                {idx + 1}. {pair.left}
                                             </div>
-                                            <span className={`text-sm font-medium ${isSelected ? 'text-indigo-800' : 'text-slate-600'}`}>{option.text}</span>
+                                            <div className="hidden sm:block text-slate-400 font-bold">→</div>
+                                            <div className="flex-1">
+                                                <select
+                                                    value={answers[currentQuestion._id]?.match?.[pair.left] || ''}
+                                                    onChange={(e) => handleMatchAnswer(currentQuestion._id, pair.left, e.target.value)}
+                                                    className="w-full p-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                >
+                                                    <option value="" disabled>Select match...</option>
+                                                    {['', ...currentQuestion.pairs].map((p, i) => {
+                                                        if (!p) return null;
+                                                        return <option key={i} value={p.right}>{String.fromCharCode(65 + i - 1)}. {p.right}</option>
+                                                    })}
+                                                </select>
+                                            </div>
                                         </div>
-                                    );
-                                })}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
+
                         </motion.div>
                     </div>
 

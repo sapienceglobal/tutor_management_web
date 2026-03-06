@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Trash2, Search, User, Eye, Plus, Edit, Ban, CheckCircle } from 'lucide-react';
+import { Loader2, Trash2, Search, User, Eye, Plus, Edit, Ban, CheckCircle, UserX } from 'lucide-react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
@@ -61,6 +61,24 @@ export default function AdminStudentsPage() {
         } catch (error) {
             console.error('Block error:', error);
             toast.error(`Failed to ${action.toLowerCase()} student`);
+        }
+    };
+
+    const handleRemoveFromInstitute = async (id, name) => {
+        const isConfirmed = await confirmDialog(
+            "Remove from Institute", 
+            `Are you sure you want to remove ${name} from the institute? They will lose access to all institute resources and can only rejoin with a new invite.`, 
+            { variant: 'destructive' }
+        );
+        if (!isConfirmed) return;
+
+        try {
+            await api.delete(`/admin/users/${id}/remove-from-institute`);
+            setStudents(students.filter(s => s._id !== id));
+            toast.success(`${name} removed from institute successfully`);
+        } catch (error) {
+            console.error('Remove from institute error:', error);
+            toast.error(error.response?.data?.message || 'Failed to remove from institute');
         }
     };
 
@@ -196,6 +214,13 @@ export default function AdminStudentsPage() {
                                                     title={student.isBlocked ? "Unblock Student" : "Block Student"}
                                                 >
                                                     {student.isBlocked ? <CheckCircle className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
+                                                </button>
+                                                <button
+                                                    onClick={() => handleRemoveFromInstitute(student._id, student.name)}
+                                                    className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                                                    title="Remove from Institute (User loses access and needs new invite to rejoin)"
+                                                >
+                                                    <UserX className="w-4 h-4" />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(student._id)}

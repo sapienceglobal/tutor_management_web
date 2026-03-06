@@ -1,10 +1,9 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import {
-    CheckCircle, XCircle, Home, RotateCcw, Award, Download,
-    BarChart2, Brain, Eye, Clock, HelpCircle, Sparkles, TrendingUp
+    CheckCircle, XCircle, Home, RotateCcw, Award, Download, TrendingUp
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,25 @@ import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
+
+const getStatus = (item) => {
+    if (item?.status) return item.status;
+    const hasAnswer = item?.selectedIndex !== undefined && item?.selectedIndex !== null && item?.selectedIndex >= 0;
+    if (!hasAnswer) return 'unanswered';
+    return item?.isCorrect ? 'correct' : 'incorrect';
+};
+
+const getStatusChip = (status) => {
+    if (status === 'correct') return 'bg-emerald-100 text-emerald-700';
+    if (status === 'incorrect') return 'bg-red-100 text-red-700';
+    return 'bg-slate-100 text-slate-600';
+};
+
+const getOptionText = (option) => {
+    if (!option) return '';
+    if (typeof option === 'string') return option;
+    return option.text || '';
+};
 
 function ExamResultPageClient() {
     const params = useParams();
@@ -29,18 +47,22 @@ function ExamResultPageClient() {
 
     useEffect(() => {
         const fetchResult = async () => {
-            if (!attemptId) return;
+            if (!attemptId) {
+                setLoading(false);
+                return;
+            }
             try {
                 const res = await api.get(`/exams/attempt/${attemptId}`);
                 if (res.data.success) {
                     setResult(res.data.attempt);
-                    setDetailedResults(res.data.detailedResults || []);
+                    setDetailedResults(Array.isArray(res.data.detailedResults) ? res.data.detailedResults : []);
                     setExamTitle(res.data.exam?.title || '');
-                    setExamData(res.data.exam);
-                    if (res.data.attempt.isPassed) triggerConfetti();
+                    setExamData(res.data.exam || null);
+                    if (res.data.attempt?.isPassed) triggerConfetti();
                 }
             } catch (error) {
                 console.error('Error fetching result:', error);
+                toast.error('Failed to load result details');
             } finally {
                 setLoading(false);
             }
@@ -58,21 +80,29 @@ function ExamResultPageClient() {
         }, 250);
     };
 
-    if (loading) return (
-        <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="flex flex-col items-center gap-4">
-                <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                <p className="text-slate-500 font-medium text-sm animate-pulse">Calculating Results...</p>
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                    <p className="text-slate-500 font-medium text-sm animate-pulse">Calculating Results...</p>
+                </div>
             </div>
-        </div>
-    );
+        );
+    }
+
     if (!result) return <div className="p-10 text-center text-slate-500">Result not found</div>;
 
     const isPassed = result.isPassed;
     const percentage = result.percentage || (result.totalMarks > 0 ? Math.round((result.score / result.totalMarks) * 100) : 0);
-    const incorrectResults = detailedResults.filter(q => !q.isCorrect);
+    const allResults = detailedResults || [];
+    const correctCount = allResults.filter((item) => getStatus(item) === 'correct').length;
+    const incorrectCount = allResults.filter((item) => getStatus(item) === 'incorrect').length;
+    const unansweredCount = allResults.filter((item) => getStatus(item) === 'unanswered').length;
+    const hiddenAnswers = allResults.some((item) => item.canViewCorrectAnswer === false);
+    const hiddenSolutions = allResults.some((item) => item.canViewSolution === false);
+    const selectedResult = viewingSolution !== null ? allResults[viewingSolution] : null;
 
-    // Grade calculation
     const getGrade = (pct) => {
         if (pct >= 90) return 'A+';
         if (pct >= 80) return 'A';
@@ -84,24 +114,23 @@ function ExamResultPageClient() {
 
     return (
         <div className="space-y-6 font-sans">
-            {/* Breadcrumb + Actions */}
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-2 text-sm text-slate-500">
                     <Link href="/student/dashboard" className="hover:text-indigo-600">Home</Link>
-                    <span>›</span>
+                    <span>{'>'}</span>
                     <Link href="/student/exams" className="hover:text-indigo-600">Tests</Link>
-                    <span>›</span>
+                    <span>{'>'}</span>
                     <span className="font-semibold text-slate-800">Test Results</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
-                        onClick={() => toast('Certificate download coming soon!', { icon: '🎓' })}
+                        onClick={() => toast('Certificate download coming soon!')}
                         className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                     >
                         <Download className="w-3.5 h-3.5" /> Download Certificate
                     </button>
                     <button
-                        onClick={() => toast('Report download coming soon!', { icon: '📊' })}
+                        onClick={() => toast('Report download coming soon!')}
                         className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                     >
                         <Download className="w-3.5 h-3.5" /> Download Report
@@ -117,7 +146,6 @@ function ExamResultPageClient() {
                 </div>
             </div>
 
-            {/* Exam Title Card */}
             <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="w-9 h-9 bg-indigo-100 rounded-lg flex items-center justify-center">
@@ -128,7 +156,7 @@ function ExamResultPageClient() {
                 <div className="flex items-center gap-4 text-xs text-slate-500 flex-wrap">
                     <span>Date: {new Date(result.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     <span>|</span>
-                    <span>Duration: {examData?.duration || '—'} mins</span>
+                    <span>Duration: {examData?.duration || '-'} mins</span>
                     <span>|</span>
                     <span>Total Marks: {result.totalMarks}</span>
                     <span>|</span>
@@ -140,7 +168,6 @@ function ExamResultPageClient() {
                 </div>
             </div>
 
-            {/* Stat Cards Row */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
                     <p className="text-xs text-slate-500 font-medium mb-1">Score Obtained</p>
@@ -155,7 +182,7 @@ function ExamResultPageClient() {
                 </div>
                 <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
                     <p className="text-xs text-slate-500 font-medium mb-1">Rank</p>
-                    <span className="text-2xl font-black text-slate-800">—</span>
+                    <span className="text-2xl font-black text-slate-800">-</span>
                 </div>
                 <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
                     <p className="text-xs text-slate-500 font-medium mb-1">Grade</p>
@@ -170,12 +197,8 @@ function ExamResultPageClient() {
                 </div>
             </div>
 
-            {/* Main Grid: Performance + AI Panel */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
-                {/* Left: Performance + Incorrect Answers */}
                 <div className="xl:col-span-2 space-y-6">
-                    {/* Performance Overview */}
                     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
                         <h2 className="text-lg font-bold text-slate-800 mb-4">Performance Analytics</h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -183,18 +206,17 @@ function ExamResultPageClient() {
                                 <div className="grid grid-cols-3 gap-3">
                                     <div className="bg-emerald-50 rounded-xl p-3 text-center">
                                         <p className="text-xs text-emerald-600 font-medium">Correct</p>
-                                        <p className="text-xl font-black text-emerald-700">{detailedResults.filter(q => q.isCorrect).length}</p>
+                                        <p className="text-xl font-black text-emerald-700">{correctCount}</p>
                                     </div>
                                     <div className="bg-red-50 rounded-xl p-3 text-center">
                                         <p className="text-xs text-red-600 font-medium">Incorrect</p>
-                                        <p className="text-xl font-black text-red-700">{incorrectResults.length}</p>
+                                        <p className="text-xl font-black text-red-700">{incorrectCount}</p>
                                     </div>
                                     <div className="bg-slate-50 rounded-xl p-3 text-center">
                                         <p className="text-xs text-slate-500 font-medium">Unanswered</p>
-                                        <p className="text-xl font-black text-slate-700">{(examData?.questions?.length || 0) - detailedResults.length}</p>
+                                        <p className="text-xl font-black text-slate-700">{unansweredCount}</p>
                                     </div>
                                 </div>
-                                {/* Progress Bar */}
                                 <div>
                                     <div className="flex justify-between text-xs font-medium text-slate-500 mb-1">
                                         <span>Score Progress</span>
@@ -210,7 +232,6 @@ function ExamResultPageClient() {
                                     </div>
                                 </div>
                             </div>
-                            {/* Score Circle */}
                             <div className="flex items-center justify-center">
                                 <div className="relative w-32 h-32">
                                     <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
@@ -236,11 +257,16 @@ function ExamResultPageClient() {
                         </div>
                     </div>
 
-                    {/* Review Incorrect Answers */}
-                    {incorrectResults.length > 0 && (
+                    {allResults.length > 0 && (
                         <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                             <div className="px-6 py-4 border-b border-slate-100">
-                                <h2 className="text-lg font-bold text-slate-800">Review Incorrect Answers</h2>
+                                <h2 className="text-lg font-bold text-slate-800">Question Review (All Questions)</h2>
+                                {hiddenAnswers && (
+                                    <p className="text-xs text-amber-700 mt-1">Answer key hidden by tutor for some/all questions.</p>
+                                )}
+                                {hiddenSolutions && (
+                                    <p className="text-xs text-amber-700">Solution hidden by tutor for some/all questions.</p>
+                                )}
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
@@ -248,6 +274,7 @@ function ExamResultPageClient() {
                                         <tr className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wider">
                                             <th className="px-5 py-3 text-left font-semibold">Q. No.</th>
                                             <th className="px-5 py-3 text-left font-semibold">Question</th>
+                                            <th className="px-5 py-3 text-left font-semibold">Status</th>
                                             <th className="px-5 py-3 text-left font-semibold">Your Answer</th>
                                             <th className="px-5 py-3 text-left font-semibold">Correct Answer</th>
                                             <th className="px-5 py-3 text-left font-semibold">Marks</th>
@@ -255,38 +282,56 @@ function ExamResultPageClient() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {incorrectResults.map((q, idx) => (
-                                            <tr key={idx} className="hover:bg-slate-50/50">
-                                                <td className="px-5 py-3 text-slate-500 font-medium">{q.questionNumber || idx + 1}</td>
-                                                <td className="px-5 py-3 text-slate-700 max-w-[200px] truncate">{q.question}</td>
-                                                <td className="px-5 py-3 text-red-600 font-medium">{q.selectedAnswer || q.options?.[q.selectedIndex] || '—'}</td>
-                                                <td className="px-5 py-3 text-emerald-600 font-medium">{q.correctAnswer || q.options?.[q.correctIndex] || '—'}</td>
-                                                <td className="px-5 py-3 text-slate-500">0</td>
-                                                <td className="px-5 py-3">
-                                                    <button
-                                                        onClick={() => setViewingSolution(viewingSolution === idx ? null : idx)}
-                                                        className="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-200 transition-colors"
-                                                    >
-                                                        View Solution
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {allResults.map((item, idx) => {
+                                            const status = getStatus(item);
+                                            const selectedAnswer = item.selectedAnswerText
+                                                || getOptionText(item.options?.[item.selectedIndex])
+                                                || '-';
+                                            const correctAnswer = item.canViewCorrectAnswer
+                                                ? (item.correctAnswerText || getOptionText(item.options?.[item.correctIndex]) || '-')
+                                                : 'Hidden';
+                                            return (
+                                                <tr key={item.questionId || idx} className="hover:bg-slate-50/50">
+                                                    <td className="px-5 py-3 text-slate-500 font-medium">{item.questionNumber || idx + 1}</td>
+                                                    <td className="px-5 py-3 text-slate-700 max-w-[220px] truncate">{item.question}</td>
+                                                    <td className="px-5 py-3">
+                                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusChip(status)}`}>
+                                                            {status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-5 py-3 text-slate-700 font-medium">{selectedAnswer}</td>
+                                                    <td className="px-5 py-3 font-medium">
+                                                        <span className={item.canViewCorrectAnswer ? 'text-emerald-700' : 'text-slate-500'}>{correctAnswer}</span>
+                                                    </td>
+                                                    <td className="px-5 py-3 text-slate-500">{item.pointsEarned} / {item.pointsPossible}</td>
+                                                    <td className="px-5 py-3">
+                                                        {item.canViewSolution && item.solutionText ? (
+                                                            <button
+                                                                onClick={() => setViewingSolution(viewingSolution === idx ? null : idx)}
+                                                                className="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-200 transition-colors"
+                                                            >
+                                                                {viewingSolution === idx ? 'Hide Solution' : 'View Solution'}
+                                                            </button>
+                                                        ) : (
+                                                            <span className="text-xs text-slate-400">Hidden</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
-                            {/* Expanded Solution */}
-                            {viewingSolution !== null && incorrectResults[viewingSolution]?.explanation && (
+                            {selectedResult?.canViewSolution && selectedResult?.solutionText && (
                                 <div className="px-6 py-4 bg-indigo-50 border-t border-indigo-100">
                                     <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">Solution Explanation</p>
-                                    <p className="text-sm text-slate-700">{incorrectResults[viewingSolution].explanation}</p>
+                                    <p className="text-sm text-slate-700">{selectedResult.solutionText}</p>
                                 </div>
                             )}
                         </div>
                     )}
 
-                    {/* All Results Detail */}
-                    {detailedResults.length > 0 && incorrectResults.length === 0 && (
+                    {allResults.length > 0 && incorrectCount === 0 && unansweredCount === 0 && (
                         <div className="bg-emerald-50 rounded-xl p-6 border border-emerald-100 text-center">
                             <CheckCircle className="w-10 h-10 text-emerald-600 mx-auto mb-2" />
                             <h3 className="text-lg font-bold text-emerald-800">Perfect Score!</h3>
@@ -295,9 +340,7 @@ function ExamResultPageClient() {
                     )}
                 </div>
 
-                {/* Right: AI Panel */}
                 <div className="space-y-4">
-                    {/* Question Analysis */}
                     <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
                         <h3 className="text-base font-bold text-slate-800 mb-4">Question Analysis</h3>
                         <div className="space-y-2">
@@ -320,27 +363,27 @@ function ExamResultPageClient() {
                                     </div>
                                     <div className="flex items-center gap-2 text-sm">
                                         <TrendingUp className="w-4 h-4 text-amber-500" />
-                                        <span className="text-slate-700">Review incorrect answers</span>
+                                        <span className="text-slate-700">Review incorrect and unanswered questions</span>
                                     </div>
                                 </>
                             )}
                         </div>
                     </div>
 
-                    {/* Weakness */}
-                    {incorrectResults.length > 0 && (
+                    {(incorrectCount > 0 || unansweredCount > 0) && (
                         <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
                             <h3 className="text-base font-bold text-slate-800 mb-3">Weakness</h3>
                             <div className="space-y-2">
-                                <div className="flex items-start gap-2 text-sm">
-                                    <span className="text-amber-500 font-bold mt-0.5">!</span>
-                                    <span className="text-slate-600">{incorrectResults.length} question{incorrectResults.length > 1 ? 's' : ''} need{incorrectResults.length === 1 ? 's' : ''} improvement</span>
-                                </div>
+                                {incorrectCount > 0 && (
+                                    <div className="text-sm text-slate-600">{incorrectCount} incorrect question(s) need improvement.</div>
+                                )}
+                                {unansweredCount > 0 && (
+                                    <div className="text-sm text-slate-600">{unansweredCount} unanswered question(s) need revision.</div>
+                                )}
                             </div>
                         </div>
                     )}
 
-                    {/* AI Recommendation */}
                     <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
                         <h3 className="text-base font-bold text-slate-800 mb-3">AI Recommendation</h3>
                         <div className="space-y-2">
@@ -370,7 +413,6 @@ function ExamResultPageClient() {
                         </Link>
                     </div>
 
-                    {/* Action Buttons */}
                     <div className="space-y-2">
                         <Button
                             onClick={() => router.push('/student/dashboard')}

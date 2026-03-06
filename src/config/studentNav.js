@@ -15,6 +15,7 @@ import {
     GraduationCap,
     Heart,
     Search,
+    Compass,
 } from 'lucide-react';
 
 export const studentNavItems = [
@@ -33,6 +34,7 @@ export const studentNavItems = [
                 icon: BookOpen,
                 submenu: [
                     { title: "My Courses", href: "/student/courses" },
+                    { title: "Explore Courses", href: "/student/courses?tab=discover" },
                     { title: "My Wishlist", href: "/student/wishlist" },
                 ]
             },
@@ -47,6 +49,7 @@ export const studentNavItems = [
                 icon: FileText,
                 submenu: [
                     { title: "My Exams", href: "/student/exams" },
+                    { title: "Upcoming Exams", href: "/student/upcoming-exams" },
                     { title: "Exam History", href: "/student/history" },
                     { title: "Practice Sets", href: "/student/practice-sets" },
                 ]
@@ -73,12 +76,6 @@ export const studentNavItems = [
                 title: "Batches",
                 icon: Users,
                 href: "/student/batches",
-                type: "link"
-            },
-            {
-                title: "Upcoming Exams",
-                icon: Calendar,
-                href: "/student/upcoming-exams",
                 type: "link"
             },
             {

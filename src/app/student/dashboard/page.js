@@ -7,12 +7,13 @@ import {
     Brain, ChevronDown, ChevronUp, Award, Video
 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { toast } from 'react-hot-toast';
+import useInstitute from '@/hooks/useInstitute';
+import { useRouter } from 'next/navigation';
 
 export default function StudentDashboard() {
     const [enrollments, setEnrollments] = useState([]);
@@ -28,6 +29,12 @@ export default function StudentDashboard() {
     const [user, setUser] = useState({ name: 'Student' });
     const [activityData, setActivityData] = useState([]);
     const [batches, setBatches] = useState([]);
+    const institute = useInstitute();
+
+    // Industry-level multi-tenancy state
+    const [myInstitutes, setMyInstitutes] = useState([]);
+    const [currentInstitute, setCurrentInstitute] = useState(null);
+    const [activeTab, setActiveTab] = useState('institute'); // 'institute' | 'global'
 
     // Collapsible right panels
     const [aiOpen, setAiOpen] = useState(true);
@@ -36,19 +43,50 @@ export default function StudentDashboard() {
 
     const router = useRouter();
 
+    // 1. Initial Load Effect (User & Institutes only)
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
+        const fetchInitialConfig = async () => {
             try {
+                // Industry-level: Fetch user's institutes
+                try {
+                    const institutesRes = await api.get('/membership/my-institutes');
+                    if (institutesRes.data?.success) {
+                        setMyInstitutes(institutesRes.data.institutes || []);
+                        setCurrentInstitute(institutesRes.data.currentInstitute);
+
+                        // If no institute, show global tab
+                        if (!institutesRes.data.currentInstitute) {
+                            setActiveTab('global');
+                        }
+                    }
+                } catch (err) {
+                    console.warn('No institutes found, showing global view');
+                    setActiveTab('global');
+                }
+
                 // User Info
                 try {
                     const userRes = await api.get('/auth/me');
                     if (userRes.data.success) setUser(userRes.data.user);
                 } catch (err) { console.warn(err); }
 
+            } catch (error) {
+                console.error('Initial load error:', error);
+            }
+        };
+        fetchInitialConfig();
+    }, []);
+
+    // 2. Context Data Effect (Runs when activeTab changes)
+    useEffect(() => {
+        const fetchContextData = async () => {
+            setLoading(true);
+            try {
+                const scopeParam = `?scope=${activeTab}`;
+
                 // Enrollments
                 try {
-                    const enrollRes = await api.get('/enrollments/my-enrollments');
+                    const enrollRes = await api.get(`/enrollments/my-enrollments${scopeParam}`);
                     if (enrollRes.data.success) {
                         const data = enrollRes.data.enrollments;
                         setEnrollments(data);
@@ -63,7 +101,7 @@ export default function StudentDashboard() {
 
                 // Upcoming Exams
                 try {
-                    const examsRes = await api.get('/exams/student/all');
+                    const examsRes = await api.get(`/exams/student/all${scopeParam}`);
                     if (examsRes.data.success) {
                         const now = new Date();
                         const upcoming = examsRes.data.exams.filter(e =>
@@ -75,7 +113,7 @@ export default function StudentDashboard() {
 
                 // Live Classes count
                 try {
-                    const liveRes = await api.get('/live-classes/student');
+                    const liveRes = await api.get(`/live-classes/student${scopeParam}`);
                     if (liveRes.data.success) {
                         setLiveClassCount(liveRes.data.liveClasses?.length || 0);
                     }
@@ -83,7 +121,8 @@ export default function StudentDashboard() {
 
                 // History
                 try {
-                    const historyRes = await api.get('/exams/student/history-all');
+                    // Passing scope even to history for consistency, if backend supports it
+                    const historyRes = await api.get(`/exams/student/history-all${scopeParam}`);
                     if (historyRes.data.success) {
                         setHistory(historyRes.data.attempts.slice(0, 6));
                     }
@@ -91,25 +130,18 @@ export default function StudentDashboard() {
 
                 // Activity Data for chart
                 try {
-                    const activityRes = await api.get('/student/dashboard/activity');
+                    const activityRes = await api.get(`/student/dashboard/activity${scopeParam}`);
                     if (activityRes.data.success) {
                         setActivityData(activityRes.data.activity);
                     }
                 } catch (err) {
-                    // Fallback chart data
-                    setActivityData([
-                        { month: 'Jan', score: 45 }, { month: 'Feb', score: 52 },
-                        { month: 'Mar', score: 58 }, { month: 'Apr', score: 65 },
-                        { month: 'May', score: 60 }, { month: 'Jun', score: 72 },
-                        { month: 'Jul', score: 68 }, { month: 'Aug', score: 75 },
-                        { month: 'Sep', score: 80 }, { month: 'Oct', score: 78 },
-                        { month: 'Nov', score: 82 }, { month: 'Dec', score: 85 },
-                    ]);
+                    // Fallback: no data available
+                    setActivityData([]);
                 }
 
                 // Batches
                 try {
-                    const batchRes = await api.get('/batches/student/my-batches');
+                    const batchRes = await api.get(`/batches/student/my-batches${scopeParam}`);
                     if (batchRes.data.success) {
                         setBatches(batchRes.data.batches?.slice(0, 4) || []);
                     }
@@ -122,8 +154,9 @@ export default function StudentDashboard() {
                 setLoading(false);
             }
         };
-        fetchData();
-    }, []);
+
+        fetchContextData();
+    }, [activeTab]);
 
     // Calculate average score from history
     const avgScore = history.length > 0
@@ -148,22 +181,78 @@ export default function StudentDashboard() {
 
     return (
         <div className="space-y-6 font-sans">
-            {/* Welcome Section */}
-            <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full overflow-hidden border-3 border-indigo-200 shadow-md flex-shrink-0">
-                    <img
-                        src={user?.profileImage || "/default-avatar.png"}
-                        alt={user?.name}
-                        className="w-full h-full object-cover"
-                    />
+            {/* Welcome Section with Institute Info */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-full overflow-hidden border-3 border-indigo-200 shadow-md shrink-0">
+                        <img
+                            src={user?.profileImage || "/default-avatar.png"}
+                            alt={user?.name}
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-800">
+                            Welcome back, <span className="text-indigo-600">{user?.name?.split(' ')[0] || 'Student'}</span>
+                        </h1>
+                        <p className="text-sm text-slate-500">
+                            {currentInstitute ?
+                                `Student at ${currentInstitute.name}` :
+                                'Independent Student - Global Learning'
+                            }
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-800">
-                        Welcome back, <span className="text-indigo-600">{user?.name?.split(' ')[0] || 'Student'}</span>
-                    </h1>
-                    <p className="text-sm text-slate-500">Here's what's happening with your learning today.</p>
-                </div>
+
+                {/* Institute Switcher */}
+                {myInstitutes.length > 0 && (
+                    <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-1">
+                        <button
+                            onClick={() => setActiveTab('institute')}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'institute'
+                                ? 'bg-indigo-600 text-white'
+                                : 'text-slate-600 hover:text-slate-800'
+                                }`}
+                        >
+                            My Institute
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('global')}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'global'
+                                ? 'bg-indigo-600 text-white'
+                                : 'text-slate-600 hover:text-slate-800'
+                                }`}
+                        >
+                            Global
+                        </button>
+                    </div>
+                )}
             </div>
+
+            {/* Institute Info Banner */}
+            {currentInstitute && activeTab === 'institute' && (
+                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                <BookOpen className="w-5 h-5 text-indigo-600" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-indigo-900">{currentInstitute.name}</h3>
+                                <p className="text-sm text-indigo-700">Access your institute-specific courses and resources</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="px-2 py-1 bg-indigo-600 text-white text-xs font-medium rounded-full">
+                                {currentInstitute.roleInInstitute}
+                            </span>
+                            <span className="px-2 py-1 bg-green-600 text-white text-xs font-medium rounded-full">
+                                {currentInstitute.status}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Stat Cards Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -231,6 +320,72 @@ export default function StudentDashboard() {
                 </Link>
             </div>
 
+            {/* Continue Learning Section */}
+            {(() => {
+                const inProgressCourses = enrollments
+                    .filter(e => e.progress?.percentage > 0 && e.progress?.percentage < 100)
+                    .sort((a, b) => new Date(b.lastAccessedAt || b.updatedAt) - new Date(a.lastAccessedAt || a.updatedAt))
+                    .slice(0, 3);
+
+                if (inProgressCourses.length === 0) return null;
+
+                return (
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <PlayCircle className="w-5 h-5 text-indigo-600" />
+                                Continue Learning
+                            </h2>
+                            <Link href="/student/courses" className="text-sm text-indigo-600 font-semibold hover:underline flex items-center gap-1">
+                                View All <ArrowRight className="w-3 h-3" />
+                            </Link>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {inProgressCourses.map(enrollment => {
+                                const course = enrollment.courseId;
+                                const pct = enrollment.progress?.percentage || 0;
+                                const lastAccessed = enrollment.lastAccessedAt || enrollment.updatedAt;
+                                const timeAgo = lastAccessed ? (() => {
+                                    const diff = Date.now() - new Date(lastAccessed).getTime();
+                                    const mins = Math.floor(diff / 60000);
+                                    if (mins < 60) return `${mins}m ago`;
+                                    const hrs = Math.floor(mins / 60);
+                                    if (hrs < 24) return `${hrs}h ago`;
+                                    const days = Math.floor(hrs / 24);
+                                    return `${days}d ago`;
+                                })() : '';
+                                return (
+                                    <Link key={enrollment._id} href={`/student/courses/${course?._id}`} className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 hover:shadow-md transition-all group">
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 overflow-hidden">
+                                                {course?.thumbnail ? (
+                                                    <img src={course.thumbnail} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <BookOpen className="w-5 h-5 text-white" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="text-sm font-semibold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">{course?.title}</h3>
+                                                {timeAgo && <p className="text-[11px] text-slate-400 mt-0.5">Last accessed {timeAgo}</p>}
+                                            </div>
+                                        </div>
+                                        <div className="mt-3">
+                                            <div className="flex items-center justify-between text-xs mb-1">
+                                                <span className="text-slate-500 font-medium">{pct}% complete</span>
+                                                <span className="text-indigo-600 font-bold group-hover:underline">Resume →</span>
+                                            </div>
+                                            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                                            </div>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            })()}
+
             {/* Main Content Grid: Left + Right Sidebar */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
@@ -243,22 +398,30 @@ export default function StudentDashboard() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {/* Chart */}
                             <div className="md:col-span-2 h-56">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={activityData}>
-                                        <defs>
-                                            <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
-                                        <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} domain={[0, 100]} />
-                                        <Tooltip
-                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 14px rgba(0,0,0,0.1)' }}
-                                        />
-                                        <Area type="monotone" dataKey="score" stroke="#6366f1" strokeWidth={2.5} fill="url(#colorScore)" />
-                                    </AreaChart>
-                                </ResponsiveContainer>
+                                {activityData.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={activityData}>
+                                            <defs>
+                                                <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+                                            <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} domain={[0, 100]} />
+                                            <Tooltip
+                                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 14px rgba(0,0,0,0.1)' }}
+                                            />
+                                            <Area type="monotone" dataKey="score" stroke="#6366f1" strokeWidth={2.5} fill="url(#colorScore)" />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full text-center">
+                                        <TrendingUp className="w-8 h-8 text-slate-200 mb-2" />
+                                        <p className="text-sm text-slate-400">No activity data yet</p>
+                                        <p className="text-xs text-slate-300 mt-1">Complete exams to see your performance trend</p>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Score Summary */}

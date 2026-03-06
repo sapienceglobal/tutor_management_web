@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation'; // Correct import for App Router
-import { ArrowLeft, Upload, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Upload, Loader2, Save, Plus, X } from 'lucide-react';
 import api from '@/lib/axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,10 @@ export default function CreateCoursePage() {
         category: '', // This will map to categoryId
         thumbnail: '',
         language: 'English',
-        duration: 0
+        duration: 0,
+        visibility: 'institute', // 'institute' or 'public'
+        whatYouWillLearn: [''],
+        requirements: ['']
     });
 
     useEffect(() => {
@@ -67,9 +70,12 @@ export default function CreateCoursePage() {
                 price: Number(formData.price),
                 level: formData.level,
                 categoryId: formData.category,
-                thumbnail: formData.thumbnail, // You can add a placeholder or implement file upload later
+                thumbnail: formData.thumbnail,
                 language: formData.language,
-                duration: Number(formData.duration)
+                duration: Number(formData.duration),
+                visibility: formData.visibility,
+                whatYouWillLearn: formData.whatYouWillLearn.filter(item => item.trim() !== ''),
+                requirements: formData.requirements.filter(item => item.trim() !== '')
             };
 
             const response = await api.post('/courses', payload);
@@ -165,6 +171,34 @@ export default function CreateCoursePage() {
                                     <option value="advanced">Advanced</option>
                                 </select>
                             </div>
+
+                            <div className="grid gap-2 md:col-span-2">
+                                <Label htmlFor="visibility">Course Visibility</Label>
+                                <div className="flex items-center gap-6 mt-2">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="visibility"
+                                            value="institute"
+                                            checked={formData.visibility === 'institute'}
+                                            onChange={handleChange}
+                                            className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                                        />
+                                        <span className="text-sm font-medium text-gray-700">Institute Only (Visible only to your students)</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="visibility"
+                                            value="public"
+                                            checked={formData.visibility === 'public'}
+                                            onChange={handleChange}
+                                            className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                                        />
+                                        <span className="text-sm font-medium text-gray-700">Global (Visible to everyone)</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -223,6 +257,70 @@ export default function CreateCoursePage() {
                                 />
                             </div>
                         </div>
+                    </div>
+
+                    {/* What You'll Learn */}
+                    <div className="space-y-4 pt-4">
+                        <h3 className="text-lg font-semibold border-b pb-2">What Students Will Learn</h3>
+                        <p className="text-xs text-muted-foreground">Add key learning outcomes. These appear on the course landing page.</p>
+                        {formData.whatYouWillLearn.map((item, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                                <Input
+                                    value={item}
+                                    onChange={(e) => {
+                                        const updated = [...formData.whatYouWillLearn];
+                                        updated[index] = e.target.value;
+                                        setFormData(prev => ({ ...prev, whatYouWillLearn: updated }));
+                                    }}
+                                    placeholder={`Learning outcome ${index + 1}`}
+                                />
+                                {formData.whatYouWillLearn.length > 1 && (
+                                    <Button type="button" variant="ghost" size="icon" onClick={() => {
+                                        const updated = formData.whatYouWillLearn.filter((_, i) => i !== index);
+                                        setFormData(prev => ({ ...prev, whatYouWillLearn: updated }));
+                                    }}>
+                                        <X className="w-4 h-4 text-red-500" />
+                                    </Button>
+                                )}
+                            </div>
+                        ))}
+                        <Button type="button" variant="outline" size="sm" onClick={() => {
+                            setFormData(prev => ({ ...prev, whatYouWillLearn: [...prev.whatYouWillLearn, ''] }));
+                        }}>
+                            <Plus className="w-4 h-4 mr-2" /> Add Learning Outcome
+                        </Button>
+                    </div>
+
+                    {/* Requirements */}
+                    <div className="space-y-4 pt-4">
+                        <h3 className="text-lg font-semibold border-b pb-2">Prerequisites & Requirements</h3>
+                        <p className="text-xs text-muted-foreground">What should students know before enrolling?</p>
+                        {formData.requirements.map((item, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                                <Input
+                                    value={item}
+                                    onChange={(e) => {
+                                        const updated = [...formData.requirements];
+                                        updated[index] = e.target.value;
+                                        setFormData(prev => ({ ...prev, requirements: updated }));
+                                    }}
+                                    placeholder={`Requirement ${index + 1}`}
+                                />
+                                {formData.requirements.length > 1 && (
+                                    <Button type="button" variant="ghost" size="icon" onClick={() => {
+                                        const updated = formData.requirements.filter((_, i) => i !== index);
+                                        setFormData(prev => ({ ...prev, requirements: updated }));
+                                    }}>
+                                        <X className="w-4 h-4 text-red-500" />
+                                    </Button>
+                                )}
+                            </div>
+                        ))}
+                        <Button type="button" variant="outline" size="sm" onClick={() => {
+                            setFormData(prev => ({ ...prev, requirements: [...prev.requirements, ''] }));
+                        }}>
+                            <Plus className="w-4 h-4 mr-2" /> Add Requirement
+                        </Button>
                     </div>
 
                     <div className="pt-6 flex justify-end gap-3">

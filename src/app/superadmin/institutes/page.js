@@ -20,7 +20,9 @@ export default function InstitutesPage() {
         adminName: '',
         adminEmail: '',
         adminPassword: '',
-        plan: 'free'
+        plan: 'free',
+        maxTutors: 5,
+        maxStudents: 50
     });
 
     const loadInstitutes = async () => {
@@ -285,6 +287,61 @@ export default function InstitutesPage() {
 
                             <div className="space-y-4">
                                 <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">💎 Subscription Plan</h3>
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-2">Select Plan</label>
+                                        <select
+                                            value={formData.plan}
+                                            onChange={(e) => {
+                                                const plan = e.target.value;
+                                                const limits = {
+                                                    free: { maxTutors: 2, maxStudents: 10 },
+                                                    basic: { maxTutors: 10, maxStudents: 100 },
+                                                    pro: { maxTutors: 50, maxStudents: 500 },
+                                                    enterprise: { maxTutors: -1, maxStudents: -1 }
+                                                };
+                                                setFormData({ 
+                                                    ...formData, 
+                                                    plan,
+                                                    maxTutors: limits[plan]?.maxTutors || 5,
+                                                    maxStudents: limits[plan]?.maxStudents || 50
+                                                });
+                                            }}
+                                            className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        >
+                                            <option value="free">🆓 Free - 2 Tutors, 10 Students</option>
+                                            <option value="basic">🥉 Basic - 10 Tutors, 100 Students</option>
+                                            <option value="pro">⭐ Pro - 50 Tutors, 500 Students</option>
+                                            <option value="enterprise">🚀 Enterprise - Unlimited</option>
+                                        </select>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Max Tutors</label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="1000"
+                                                value={formData.maxTutors}
+                                                onChange={(e) => setFormData({ ...formData, maxTutors: parseInt(e.target.value) || 5 })}
+                                                className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                placeholder="Maximum number of tutors"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Max Students</label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="10000"
+                                                value={formData.maxStudents}
+                                                onChange={(e) => setFormData({ ...formData, maxStudents: parseInt(e.target.value) || 50 })}
+                                                className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                placeholder="Maximum number of students"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                                 <select
                                     value={formData.plan}
                                     onChange={(e) => setFormData({ ...formData, plan: e.target.value })}

@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { Facebook, Twitter, Instagram, Linkedin, Youtube, Mail, Phone, MapPin, Brain } from 'lucide-react';
 import { useSettings } from '@/components/providers/SettingsProvider';
+import useInstitute from '@/hooks/useInstitute';
 
 export function Footer() {
     const { settings } = useSettings();
+    const { institute } = useInstitute();
 
     return (
         <footer className="bg-[#0F172A] text-slate-300 font-sans border-t border-indigo-900/50">
@@ -138,7 +140,7 @@ export function Footer() {
                                 </div>
                                 <div>
                                     <p className="text-white font-semibold mb-1">Email Address</p>
-                                    <p className="text-sm text-slate-400">{settings.contactEmail || settings.supportEmail || 'Not set'}</p>
+                                    <p className="text-sm text-slate-400">{institute?.contactEmail || settings.contactEmail || settings.supportEmail || 'Not set'}</p>
                                 </div>
                             </div>
                             {(settings.supportPhone) && (

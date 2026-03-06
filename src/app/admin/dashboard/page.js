@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
 import StatsCard from '@/components/widgets/StatsCard';
 import AnalyticsChart from '@/components/widgets/AnalyticsChart';
-import { Calendar, Filter, X } from 'lucide-react';
+import { Calendar, Filter, X, Users, Mail, Plus, Building2, Settings } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import Link from 'next/link';
 
 export default function AdminDashboard() {
     const [stats, setStats] = useState(null);
@@ -38,6 +39,17 @@ export default function AdminDashboard() {
         fetchStats();
     }, []);
 
+    const fetchInstitute = async () => {
+        try {
+            const res = await api.get('/user-institute/me');
+            if (res.data?.success) {
+                setInstitute(res.data.institute);
+            }
+        } catch (err) {
+            console.error('Failed to fetch institute info:', err);
+        }
+    };
+
     const handleApplyFilter = () => {
         if (!startDate || !endDate) {
             toast.error('Please select both start and end date');
@@ -50,6 +62,7 @@ export default function AdminDashboard() {
         }
 
         fetchStats(startDate, endDate);
+        setShowFilter(false);
     };
 
     const handleClearFilter = () => {
@@ -204,6 +217,57 @@ export default function AdminDashboard() {
                 ))}
             </div>
 
+            {/* Quick Actions - Industry Level */}
+            <div className="bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-semibold text-[#2C3E50] text-lg">Quick Actions</h3>
+                    <Settings className="w-5 h-5 text-[#7D8DA6]" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Generate Tutor Invite */}
+                    <Link href="/admin/invites" className="group">
+                        <div className="flex items-center gap-4 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg border border-purple-200 transition-all">
+                            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                                <Mail className="w-6 h-6 text-purple-600" />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="font-semibold text-purple-900">Generate Tutor Invite</h4>
+                                <p className="text-sm text-purple-700">Create invite link for new tutors</p>
+                            </div>
+                            <Plus className="w-5 h-5 text-purple-600 group-hover:rotate-90 transition-transform" />
+                        </div>
+                    </Link>
+
+                    {/* Generate Student Invite */}
+                    <Link href="/admin/invites" className="group">
+                        <div className="flex items-center gap-4 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-all">
+                            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                                <Users className="w-6 h-6 text-blue-600" />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="font-semibold text-blue-900">Generate Student Invite</h4>
+                                <p className="text-sm text-blue-700">Create invite link for students</p>
+                            </div>
+                            <Plus className="w-5 h-5 text-blue-600 group-hover:rotate-90 transition-transform" />
+                        </div>
+                    </Link>
+
+                    {/* Institute Settings */}
+                    <Link href="/admin/settings" className="group">
+                        <div className="flex items-center gap-4 p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-all">
+                            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                                <Building2 className="w-6 h-6 text-green-600" />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="font-semibold text-green-900">Institute Settings</h4>
+                                <p className="text-sm text-green-700">Manage institute configuration</p>
+                            </div>
+                            <Settings className="w-5 h-5 text-green-600 group-hover:rotate-90 transition-transform" />
+                        </div>
+                    </Link>
+                </div>
+            </div>
+
             {/* Charts & Recent Users */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Growth Chart */}
@@ -243,6 +307,7 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             </div>
-        </div>
+
+            </div>
     );
 }

@@ -50,7 +50,7 @@ export default function CreateTopicPage() {
             const res = await api.post('/taxonomy/topics', formData);
             if (res.data.success) {
                 toast.success('Topic created successfully!');
-                router.push('/tutor/dashboard');
+                router.push('/tutor/taxonomy/topics');
             }
         } catch (error) {
             console.error(error);
@@ -64,7 +64,7 @@ export default function CreateTopicPage() {
         <div className="min-h-screen bg-slate-50 p-6">
             <div className="max-w-2xl mx-auto space-y-6">
                 <div className="flex items-center gap-4">
-                    <Link href="/tutor/dashboard">
+                    <Link href="/tutor/taxonomy/topics">
                         <Button variant="ghost" size="icon">
                             <ArrowLeft className="w-4 h-4" />
                         </Button>

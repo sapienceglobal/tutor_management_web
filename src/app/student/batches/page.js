@@ -1,23 +1,26 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BookOpen, Calendar, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { BookOpen, Calendar, Clock, CheckCircle2, XCircle, AlertCircle, Globe, Building2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '@/lib/axios';
 
 export default function StudentBatchesPage() {
     const [batches, setBatches] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [filterScope, setFilterScope] = useState('all'); // 'all' or 'strict'
 
     useEffect(() => {
         fetchMyBatches();
-    }, []);
+    }, [filterScope]);
 
     const fetchMyBatches = async () => {
+        setLoading(true);
         try {
             // Wait, we need to fetch both the batches the student is in AND their attendance for those batches.
-            // First, fetch batches
-            const res = await api.get('/batches/my');
+            // First, fetch batches based on filterScope
+            const endpoint = filterScope === 'strict' ? '/batches/my?scope=strict' : '/batches/my';
+            const res = await api.get(endpoint);
             if (res.data.success) {
                 const fetchedBatches = res.data.batches;
 
@@ -71,9 +74,27 @@ export default function StudentBatchesPage() {
 
     return (
         <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4">
-            <div>
-                <h1 className="text-3xl font-extrabold text-[#0F172A] tracking-tight">My Batches</h1>
-                <p className="text-slate-500 mt-2 text-lg">Track your enrolled cohorts and daily attendance.</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-extrabold text-[#0F172A] tracking-tight">My Batches</h1>
+                    <p className="text-slate-500 mt-2 text-lg">Track your enrolled cohorts and daily attendance.</p>
+                </div>
+
+                {/* Institute Filter Toggle */}
+                <div className="flex bg-slate-100 p-1 rounded-xl w-full md:w-auto self-start">
+                    <button
+                        onClick={() => setFilterScope('all')}
+                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${filterScope === 'all' ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'}`}
+                    >
+                        <Globe className="w-4 h-4" /> All Institutes
+                    </button>
+                    <button
+                        onClick={() => setFilterScope('strict')}
+                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${filterScope === 'strict' ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'}`}
+                    >
+                        <Building2 className="w-4 h-4" /> This Institute Only
+                    </button>
+                </div>
             </div>
 
             {batches.length === 0 ? (

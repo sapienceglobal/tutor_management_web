@@ -9,7 +9,10 @@ import {
     BarChart3,
     Tags,
     CreditCard,
-    Activity
+    Activity,
+    Mail,
+    Building2,
+    Crown
 } from 'lucide-react';
 
 export const adminNavItems = [
@@ -47,6 +50,12 @@ export const adminNavItems = [
         title: "MANAGEMENT",
         type: "section",
         children: [
+            {
+                title: "Invite Management",
+                icon: Mail,
+                href: "/admin/invites",
+                type: "link"
+            },
             {
                 title: "Tutors",
                 icon: GraduationCap,
@@ -93,6 +102,12 @@ export const adminNavItems = [
                 title: "Settings",
                 icon: Settings,
                 href: "/admin/settings",
+                type: "link"
+            },
+            {
+                title: "Subscription",
+                icon: Crown,
+                href: "/admin/subscription",
                 type: "link"
             },
             {

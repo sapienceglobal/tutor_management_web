@@ -13,8 +13,9 @@ import {
     BookOpen,
     Filter,
 } from 'lucide-react';
-import api from '@/lib/axios';
 import { Button } from '@/components/ui/button';
+import useInstitute from '@/hooks/useInstitute';
+import api from '@/lib/axios';
 
 const RATE_OPTIONS = [
     { label: 'Any rate', value: '' },
@@ -32,13 +33,35 @@ export default function FindTutorsPage() {
     const [maxRate, setMaxRate] = useState('');
     const [showFilters, setShowFilters] = useState(false);
 
+    // Industry-level multi-tenancy state
+    const [myInstitutes, setMyInstitutes] = useState([]);
+    const [currentInstitute, setCurrentInstitute] = useState(null);
+    const [activeTab, setActiveTab] = useState('institute'); // 'institute' | 'global'
+
     useEffect(() => {
+        fetchMembership();
         fetchCategories();
     }, []);
 
+    const fetchMembership = async () => {
+        try {
+            const institutesRes = await api.get('/membership/my-institutes');
+            if (institutesRes.data?.success) {
+                setMyInstitutes(institutesRes.data.institutes || []);
+                setCurrentInstitute(institutesRes.data.currentInstitute);
+                if (!institutesRes.data.currentInstitute) {
+                    setActiveTab('global');
+                }
+            }
+        } catch (err) {
+            console.warn('No institutes found, showing global view');
+            setActiveTab('global');
+        }
+    };
+
     useEffect(() => {
         fetchTutors();
-    }, [categoryId, maxRate]);
+    }, [categoryId, maxRate, activeTab]);
 
     const fetchCategories = async () => {
         try {
@@ -56,6 +79,7 @@ export default function FindTutorsPage() {
             if (searchTerm) params.set('search', searchTerm);
             if (categoryId) params.set('categoryId', categoryId);
             if (maxRate) params.set('maxRate', maxRate);
+            if (activeTab) params.set('scope', activeTab);
             const res = await api.get(`/tutors?${params.toString()}`);
             if (res.data.success) setTutors(res.data.tutors || []);
         } catch (error) {
@@ -77,9 +101,35 @@ export default function FindTutorsPage() {
         <div className="min-h-screen bg-[#f0f2f8]">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
                 {/* Header */}
-                <div className="flex flex-col gap-4">
-                    <h1 className="text-2xl font-bold text-slate-900">Find a Tutor</h1>
-                    <p className="text-slate-600">Connect with verified tutors for 1-on-1 learning. Book a session that fits your schedule.</p>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex flex-col gap-2">
+                        <h1 className="text-2xl font-bold text-slate-900">Find a Tutor</h1>
+                        <p className="text-slate-600">Connect with verified tutors for 1-on-1 learning. Book a session that fits your schedule.</p>
+                    </div>
+
+                    {/* Institute Switcher */}
+                    {myInstitutes.length > 0 && (
+                        <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-1 shrink-0">
+                            <button
+                                onClick={() => setActiveTab('institute')}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'institute'
+                                    ? 'bg-indigo-600 text-white shadow-sm'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                                    }`}
+                            >
+                                My Institute
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('global')}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'global'
+                                    ? 'bg-indigo-600 text-white shadow-sm'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                                    }`}
+                            >
+                                Global
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Search + Filters */}
@@ -176,15 +226,24 @@ export default function FindTutorsPage() {
                                             )}
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <h3 className="font-bold text-slate-900 truncate">{tutor.userId?.name || 'Tutor'}</h3>
-                                                {tutor.isVerified && (
-                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-xs font-medium">
-                                                        <CheckCircle className="w-3.5 h-3.5" /> Verified
+                                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="font-bold text-slate-900 truncate">{tutor.userId?.name || 'Tutor'}</h3>
+                                                    {tutor.isVerified && (
+                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-xs font-medium">
+                                                            <CheckCircle className="w-3.5 h-3.5" /> Verified
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center flex-wrap gap-2 mt-0.5">
+                                                <p className="text-sm font-medium text-indigo-600">{tutor.categoryId?.name || 'Expert'}</p>
+                                                {tutor.instituteId && (
+                                                    <span className="inline-block px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold uppercase tracking-wider rounded-full border border-purple-100">
+                                                        {tutor.instituteId.name || 'Institute Tutor'}
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="text-sm font-medium text-indigo-600 mt-0.5">{tutor.categoryId?.name || 'Expert'}</p>
                                             <div className="flex items-center gap-1.5 mt-2">
                                                 <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                                                 <span className="font-semibold text-slate-800">{tutor.rating?.toFixed(1) || 'New'}</span>
@@ -208,7 +267,7 @@ export default function FindTutorsPage() {
                                         </span>
                                         <span className="flex items-center gap-1.5">
                                             <MapPin className="w-4 h-4 text-slate-400" />
-                                            Online
+                                            {tutor.location || 'Online'}
                                         </span>
                                     </div>
 

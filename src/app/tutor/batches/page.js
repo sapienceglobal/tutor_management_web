@@ -10,37 +10,70 @@ import { Button } from '@/components/ui/button';
 export default function TutorBatchesPage() {
     const router = useRouter();
     const [batches, setBatches] = useState([]);
+    const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [formData, setFormData] = useState({ name: '', description: '', startDate: '', endDate: '' });
+    const [formData, setFormData] = useState({ name: '', courseId: '', description: '', scheduleDescription: '', startDate: '', endDate: '' });
 
-    useEffect(() => { fetchBatches(); }, []);
+    useEffect(() => {
+        fetchBatches();
+        fetchCourses();
+    }, []);
 
     const fetchBatches = async () => {
         try {
             const res = await api.get('/batches');
+            console.log('🔍 Batches response:', res.data);
             if (res.data.success) setBatches(res.data.batches || res.data.data || []);
         } catch (error) {
-            toast.error('Failed to load batches');
+            console.error('Failed to load batches:', error);
+            alert('Failed to load batches');
         } finally { setLoading(false); }
+    };
+
+    const fetchCourses = async () => {
+        try {
+            const res = await api.get('/courses/my-courses');
+            if (res.data.success) {
+                setCourses(res.data.courses || res.data.data || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch courses:', error);
+        }
     };
 
     const handleCreate = async (e) => {
         e.preventDefault();
-        if (!formData.name) return toast.error('Batch name is required');
+        if (!formData.name) {
+            alert('Batch name is required');
+            return;
+        }
+        if (!formData.courseId) {
+            alert('Please select a course for this batch');
+            return;
+        }
+        if (!formData.startDate) {
+            alert('Start date is required');
+            return;
+        }
+
+        console.log('🔍 Creating batch with data:', formData);
+
         setSaving(true);
         try {
             const res = await api.post('/batches', formData);
+            console.log('✅ Batch creation response:', res.data);
             if (res.data.success) {
-                toast.success('Batch created!');
+                alert('Batch created successfully!');
                 setShowForm(false);
-                setFormData({ name: '', description: '', startDate: '', endDate: '' });
+                setFormData({ name: '', courseId: '', description: '', scheduleDescription: '', startDate: '', endDate: '' });
                 fetchBatches();
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to create batch');
+            console.error('❌ Batch creation error:', error);
+            alert(error.response?.data?.message || 'Failed to create batch');
         } finally { setSaving(false); }
     };
 
@@ -79,11 +112,24 @@ export default function TutorBatchesPage() {
                             <input type="text" className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Morning Batch A" />
                         </div>
                         <div className="space-y-1">
+                            <label className="text-sm font-medium text-slate-600">Course *</label>
+                            <select className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none bg-white" value={formData.courseId} onChange={e => setFormData({ ...formData, courseId: e.target.value })}>
+                                <option value="">Select a course...</option>
+                                {courses.map(c => (
+                                    <option key={c._id} value={c._id}>{c.title}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-sm font-medium text-slate-600">Schedule Description</label>
+                            <input type="text" className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.scheduleDescription} onChange={e => setFormData({ ...formData, scheduleDescription: e.target.value })} placeholder="e.g. Mon-Wed-Fri 10:00 AM" />
+                        </div>
+                        <div className="space-y-1">
                             <label className="text-sm font-medium text-slate-600">Description</label>
                             <input type="text" className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Brief description" />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-600">Start Date</label>
+                            <label className="text-sm font-medium text-slate-600">Start Date *</label>
                             <input type="date" className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.startDate} onChange={e => setFormData({ ...formData, startDate: e.target.value })} />
                         </div>
                         <div className="space-y-1">

@@ -24,7 +24,7 @@ import {
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 
-export function StudentHeader({ user, onLogout, onMenuClick, onSidebarCollapse, isSidebarCollapsed }) {
+export function StudentHeader({ user, institute, onLogout, onMenuClick, onSidebarCollapse, isSidebarCollapsed }) {
     const [searchTerm, setSearchTerm] = useState('');
     const router = useRouter();
 
@@ -100,6 +100,20 @@ export function StudentHeader({ user, onLogout, onMenuClick, onSidebarCollapse, 
                                 <div className="flex flex-col space-y-1">
                                     <p className="text-sm font-semibold text-slate-800">{user?.name || 'Student'}</p>
                                     <p className="text-xs text-slate-500 truncate">{user?.email || 'student@example.com'}</p>
+                                    {institute && (
+                                        <div className="flex items-center gap-2">
+                                            {institute.logo && (
+                                                <img 
+                                                    src={institute.logo} 
+                                                    alt="Institute Logo" 
+                                                    className="w-4 h-4 rounded object-cover"
+                                                />
+                                            )}
+                                            <p className="text-xs text-indigo-600 font-medium">
+                                                {institute.name}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator />
