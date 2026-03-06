@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { Button } from '@/components/ui/button';
+import { getAudienceDisplay } from '@/lib/audienceDisplay';
 
 const SCHEDULE_PAGE_SIZE = 4;
 
@@ -170,11 +171,17 @@ export default function LiveClassesPage() {
                                             className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:border-indigo-200 transition-colors"
                                         >
                                             <div className="flex-1">
-                                                <h3 className="font-semibold text-slate-900">{c.title}</h3>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <h3 className="font-semibold text-slate-900">{c.title}</h3>
+                                                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getAudienceDisplay(c).badgeClass}`}>
+                                                        {getAudienceDisplay(c).label}
+                                                    </span>
+                                                </div>
                                                 <p className="text-sm text-slate-600 mt-1">
                                                     {c.tutorId?.userId?.name || 'Instructor'}
                                                     {c.courseId?.title && ` (${c.courseId.title})`}
                                                 </p>
+                                                <p className="text-[11px] text-slate-500 mt-1">{getAudienceDisplay(c).reason}</p>
                                                 <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-slate-500">
                                                     <span className="flex items-center gap-1">
                                                         <Clock className="w-4 h-4" />
@@ -235,7 +242,12 @@ export default function LiveClassesPage() {
                                             scheduleSlice.map((c, idx) => (
                                                 <tr key={c._id} className="border-b border-slate-100 hover:bg-slate-50/50">
                                                     <td className="px-6 py-4 text-slate-600">{(schedulePage - 1) * SCHEDULE_PAGE_SIZE + idx + 1}</td>
-                                                    <td className="px-6 py-4 font-medium text-slate-900">{c.title}</td>
+                                                    <td className="px-6 py-4">
+                                                        <p className="font-medium text-slate-900">{c.title}</p>
+                                                        <span className={`inline-flex mt-1 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getAudienceDisplay(c).badgeClass}`}>
+                                                            {getAudienceDisplay(c).label}
+                                                        </span>
+                                                    </td>
                                                     <td className="px-6 py-4 text-slate-700">{c.tutorId?.userId?.name || '—'}</td>
                                                     <td className="px-6 py-4 text-slate-600">
                                                         {new Date(c.dateTime).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}

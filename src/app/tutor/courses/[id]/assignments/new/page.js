@@ -20,13 +20,18 @@ import {
 import api from '@/lib/axios';
 import assignmentService from '@/services/assignmentService';
 import { toast } from 'react-hot-toast';
+import AudienceSelector from '@/components/shared/AudienceSelector';
+import useInstitute from '@/hooks/useInstitute';
 
 export default function NewAssignmentPage({ params }) {
     const router = useRouter();
     const { id: courseId } = use(params);
+    const { institute } = useInstitute();
 
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [availableBatches, setAvailableBatches] = useState([]);
+    const [availableStudents, setAvailableStudents] = useState([]);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -35,11 +40,55 @@ export default function NewAssignmentPage({ params }) {
         totalMarks: 100,
         status: 'published',
         attachments: [],
+        audience: {
+            scope: 'institute',
+            instituteId: null,
+            batchIds: [],
+            studentIds: [],
+        },
         rubric: [
             { criterion: 'Originality', description: 'Student\'s work is original', points: 20 },
             { criterion: 'Completeness', description: 'All parts of the assignment are addressed', points: 80 }
         ]
     });
+
+    useEffect(() => {
+        const fetchAudienceTargets = async () => {
+            try {
+                const [batchesRes, studentsRes] = await Promise.all([
+                    api.get('/batches'),
+                    api.get(`/enrollments/students/${courseId}`),
+                ]);
+                const batchList = (batchesRes.data?.batches || []).filter((batch) => {
+                    const batchCourseId = batch.courseId?._id || batch.courseId;
+                    return batchCourseId === courseId;
+                });
+                setAvailableBatches(batchList);
+                const studentList = (studentsRes.data?.students || []).map((item) => ({
+                    _id: item.studentId?._id,
+                    name: item.studentId?.name,
+                    email: item.studentId?.email,
+                })).filter((item) => item._id);
+                setAvailableStudents(studentList);
+            } catch (error) {
+                console.error('Failed to fetch audience targets', error);
+            }
+        };
+
+        if (courseId) {
+            fetchAudienceTargets();
+        }
+    }, [courseId]);
+
+    useEffect(() => {
+        setFormData((prev) => ({
+            ...prev,
+            audience: {
+                ...prev.audience,
+                instituteId: prev.audience?.instituteId || institute?._id || null,
+            },
+        }));
+    }, [institute?._id]);
 
     const handleCreate = async (e) => {
         e.preventDefault();
@@ -53,7 +102,13 @@ export default function NewAssignmentPage({ params }) {
             const data = {
                 ...formData,
                 courseId,
-                totalMarks: formData.rubric.reduce((acc, curr) => acc + Number(curr.points), 0)
+                totalMarks: formData.rubric.reduce((acc, curr) => acc + Number(curr.points), 0),
+                audience: {
+                    ...formData.audience,
+                    instituteId: formData.audience?.instituteId || institute?._id || null,
+                },
+                scope: formData.audience?.scope,
+                batchId: formData.audience?.scope === 'batch' ? (formData.audience.batchIds?.[0] || null) : null,
             };
 
             await assignmentService.createAssignment(data);
@@ -196,6 +251,15 @@ export default function NewAssignmentPage({ params }) {
                                 </select>
                             </div>
                         </div>
+
+                        <AudienceSelector
+                            value={formData.audience}
+                            onChange={(audience) => setFormData((prev) => ({ ...prev, audience }))}
+                            availableBatches={availableBatches}
+                            availableStudents={availableStudents}
+                            allowGlobal={Boolean(!institute?._id || institute?.features?.allowGlobalPublishingByInstituteTutors)}
+                            instituteId={institute?._id || null}
+                        />
 
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">Reference Materials</label>

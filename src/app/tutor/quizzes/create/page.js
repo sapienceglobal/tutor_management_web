@@ -57,6 +57,8 @@ import { toast } from 'react-hot-toast';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from "@/lib/utils";
+import AudienceSelector from '@/components/shared/AudienceSelector';
+import useInstitute from '@/hooks/useInstitute';
 
 // --- Validation Schema ---
 const examDetailsSchema = z.object({
@@ -169,6 +171,7 @@ function CreateExamPageClient() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const defaultType = searchParams.get('type') || 'quiz';
+    const { institute } = useInstitute();
 
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -178,6 +181,8 @@ function CreateExamPageClient() {
 
     // Data State
     const [courses, setCourses] = useState([]);
+    const [availableBatches, setAvailableBatches] = useState([]);
+    const [availableStudents, setAvailableStudents] = useState([]);
     const [topics, setTopics] = useState([]);
     const [skills, setSkills] = useState([]);
     const [examData, setExamData] = useState({
@@ -205,7 +210,13 @@ function CreateExamPageClient() {
         // Scheduling
         isScheduled: false,
         startDate: '',
-        endDate: ''
+        endDate: '',
+        audience: {
+            scope: 'institute',
+            instituteId: null,
+            batchIds: [],
+            studentIds: [],
+        },
     });
 
     const [errors, setErrors] = useState({});
@@ -391,6 +402,52 @@ function CreateExamPageClient() {
         fetchTaxonomy();
     }, []);
 
+    useEffect(() => {
+        setExamData((prev) => ({
+            ...prev,
+            audience: {
+                ...prev.audience,
+                instituteId: prev.audience?.instituteId || institute?._id || null,
+            },
+        }));
+    }, [institute?._id]);
+
+    useEffect(() => {
+        const fetchAudienceTargets = async () => {
+            if (!examData.courseId) {
+                setAvailableBatches([]);
+                setAvailableStudents([]);
+                return;
+            }
+
+            try {
+                const [batchesRes, studentsRes] = await Promise.all([
+                    api.get('/batches'),
+                    api.get(`/enrollments/students/${examData.courseId}`),
+                ]);
+
+                const batchList = (batchesRes.data?.batches || []).filter((batch) => {
+                    const batchCourseId = batch.courseId?._id || batch.courseId;
+                    return batchCourseId === examData.courseId;
+                });
+                setAvailableBatches(batchList);
+
+                const studentList = (studentsRes.data?.students || []).map((item) => ({
+                    _id: item.studentId?._id,
+                    name: item.studentId?.name,
+                    email: item.studentId?.email,
+                })).filter((item) => item._id);
+                setAvailableStudents(studentList);
+            } catch (error) {
+                console.error('Audience target load error:', error);
+                setAvailableBatches([]);
+                setAvailableStudents([]);
+            }
+        };
+
+        fetchAudienceTargets();
+    }, [examData.courseId]);
+
     const fetchBankQuestions = async () => {
         setBankLoading(true);
         try {
@@ -467,11 +524,18 @@ function CreateExamPageClient() {
         setSaving(true);
         try {
             const safePassingPercentage = Number(examData.passingPercentage) || 0;
+            const safeAudience = {
+                ...examData.audience,
+                instituteId: examData.audience?.instituteId || institute?._id || null,
+            };
             const payload = {
                 ...examData,
                 passingPercentage: safePassingPercentage,
                 passingMarks: derivedPassingMarks,
                 status: status, // Use passed status or default 'draft'
+                audience: safeAudience,
+                scope: safeAudience.scope,
+                batchId: safeAudience.scope === 'batch' ? (safeAudience.batchIds?.[0] || null) : null,
             };
 
             let response;
@@ -684,6 +748,15 @@ function CreateExamPageClient() {
                                                 className="data-[state=checked]:bg-emerald-500"
                                             />
                                         </div>
+
+                                        <AudienceSelector
+                                            value={examData.audience}
+                                            onChange={(audience) => setExamData({ ...examData, audience })}
+                                            availableBatches={availableBatches}
+                                            availableStudents={availableStudents}
+                                            allowGlobal={Boolean(!institute?._id || institute?.features?.allowGlobalPublishingByInstituteTutors)}
+                                            instituteId={institute?._id || null}
+                                        />
                                     </div>
 
                                     <div className="flex justify-end pt-6">

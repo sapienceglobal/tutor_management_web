@@ -12,6 +12,7 @@ import {
 import api from '@/lib/axios';
 import assignmentService from '@/services/assignmentService';
 import { Button } from '@/components/ui/button';
+import { getAudienceDisplay } from '@/lib/audienceDisplay';
 
 const PAGE_SIZE = 5;
 
@@ -193,11 +194,20 @@ export default function StudentAssignmentsPage() {
                                 {pageRows.length > 0 ? (
                                     pageRows.map((row, idx) => {
                                         const status = getStatus(row);
+                                        const audienceInfo = getAudienceDisplay(row);
                                         const globalIdx = (currentPage - 1) * PAGE_SIZE + idx + 1;
                                         return (
                                             <tr key={row._id} className="border-b border-slate-100 hover:bg-slate-50/50">
                                                 <td className="px-6 py-4 text-slate-600">{globalIdx}</td>
-                                                <td className="px-6 py-4 font-medium text-slate-900">{row.title}</td>
+                                                <td className="px-6 py-4">
+                                                    <p className="font-medium text-slate-900">{row.title}</p>
+                                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${audienceInfo.badgeClass}`}>
+                                                            {audienceInfo.label}
+                                                        </span>
+                                                        <span className="text-[11px] text-slate-500">{audienceInfo.reason}</span>
+                                                    </div>
+                                                </td>
                                                 <td className="px-6 py-4 text-slate-700">{row.courseTitle}</td>
                                                 <td className="px-6 py-4 text-slate-600">
                                                     {row.createdAt ? new Date(row.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}

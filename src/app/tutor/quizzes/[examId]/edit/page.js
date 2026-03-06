@@ -23,16 +23,21 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'react-hot-toast';
+import AudienceSelector from '@/components/shared/AudienceSelector';
+import useInstitute from '@/hooks/useInstitute';
 
 export default function EditExamPage({ params }) {
     const { examId } = use(params);
     const router = useRouter();
+    const { institute } = useInstitute();
     const [step, setStep] = useState(2); // Start at Details step
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
     // Data State
     const [courses, setCourses] = useState([]);
+    const [availableBatches, setAvailableBatches] = useState([]);
+    const [availableStudents, setAvailableStudents] = useState([]);
     const [examData, setExamData] = useState({
         title: '',
         courseId: '',
@@ -49,7 +54,13 @@ export default function EditExamPage({ params }) {
         shuffleOptions: false,
         startDate: '',
         endDate: '',
-        questions: []
+        questions: [],
+        audience: {
+            scope: 'institute',
+            instituteId: null,
+            batchIds: [],
+            studentIds: [],
+        },
     });
     const totalQuestionMarks = (examData.questions || []).reduce((sum, question) => sum + (question.points || 1), 0);
     const derivedPassingMarks = totalQuestionMarks > 0
@@ -87,7 +98,13 @@ export default function EditExamPage({ params }) {
                             ...q,
                             points: q.points || 1, // Ensure points exist
                             explanation: q.explanation || ''
-                        }))
+                        })),
+                        audience: exam.audience || {
+                            scope: exam.batchId ? 'batch' : (exam.instituteId ? 'institute' : 'global'),
+                            instituteId: exam.instituteId || institute?._id || null,
+                            batchIds: exam.batchId ? [exam.batchId] : [],
+                            studentIds: [],
+                        },
                     });
                 }
             } catch (error) {
@@ -103,6 +120,48 @@ export default function EditExamPage({ params }) {
             fetchInitialData();
         }
     }, [examId, router]);
+
+    useEffect(() => {
+        const fetchAudienceTargets = async () => {
+            if (!examData.courseId) {
+                setAvailableBatches([]);
+                setAvailableStudents([]);
+                return;
+            }
+            try {
+                const [batchesRes, studentsRes] = await Promise.all([
+                    api.get('/batches'),
+                    api.get(`/enrollments/students/${examData.courseId}`),
+                ]);
+                const batchList = (batchesRes.data?.batches || []).filter((batch) => {
+                    const batchCourseId = batch.courseId?._id || batch.courseId;
+                    return batchCourseId === examData.courseId;
+                });
+                setAvailableBatches(batchList);
+                const studentList = (studentsRes.data?.students || []).map((item) => ({
+                    _id: item.studentId?._id,
+                    name: item.studentId?.name,
+                    email: item.studentId?.email,
+                })).filter((item) => item._id);
+                setAvailableStudents(studentList);
+            } catch (error) {
+                console.error('Failed to fetch audience targets:', error);
+                setAvailableBatches([]);
+                setAvailableStudents([]);
+            }
+        };
+        fetchAudienceTargets();
+    }, [examData.courseId]);
+
+    useEffect(() => {
+        setExamData((prev) => ({
+            ...prev,
+            audience: {
+                ...prev.audience,
+                instituteId: prev.audience?.instituteId || institute?._id || null,
+            },
+        }));
+    }, [institute?._id]);
 
     const handleAddQuestion = (type = 'mcq') => {
         if (type === 'subjective') {
@@ -174,6 +233,12 @@ export default function EditExamPage({ params }) {
                 startDate: examData.startDate || null,
                 endDate: examData.endDate || null,
                 status: newStatus || examData.status, // Update status if provided
+                audience: {
+                    ...examData.audience,
+                    instituteId: examData.audience?.instituteId || institute?._id || null,
+                },
+                scope: examData.audience?.scope,
+                batchId: examData.audience?.scope === 'batch' ? (examData.audience.batchIds?.[0] || null) : null,
             };
 
             const res = await api.patch(`/exams/${examId}`, payload);
@@ -255,6 +320,15 @@ export default function EditExamPage({ params }) {
                         Derived from pass % and total question marks ({totalQuestionMarks}).
                     </p>
                 </div>
+
+                <AudienceSelector
+                    value={examData.audience}
+                    onChange={(audience) => setExamData({ ...examData, audience })}
+                    availableBatches={availableBatches}
+                    availableStudents={availableStudents}
+                    allowGlobal={Boolean(!institute?._id || institute?.features?.allowGlobalPublishingByInstituteTutors)}
+                    instituteId={institute?._id || null}
+                />
 
                 {/* Advanced Settings Section */}
                 <div className="border-t pt-6 mt-6 space-y-6">

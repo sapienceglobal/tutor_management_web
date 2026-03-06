@@ -257,11 +257,25 @@ export default function CourseDetailPage({ params }) {
     };
 
     const handleEnroll = async () => {
+        const isPaidCourse = Boolean(course && !course.isFree && Number(course.price || 0) > 0);
+        if (isPaidCourse) {
+            router.push(`/student/checkout/${id}`);
+            return;
+        }
+
         try {
             setEnrolling(true);
             const response = await api.post('/enrollments', { courseId: id });
             if (response.data.success) { setIsEnrolled(true); loadCourseData(); }
-        } catch (e) { toast.error(e.response?.data?.message || 'Failed to enroll'); }
+        } catch (e) {
+            const requiresPayment = e.response?.status === 402 || e.response?.data?.requiresPayment;
+            if (requiresPayment) {
+                toast('This is a paid course. Redirecting to secure checkout...', { icon: '💳' });
+                router.push(`/student/checkout/${id}`);
+                return;
+            }
+            toast.error(e.response?.data?.message || 'Failed to enroll');
+        }
         finally { setEnrolling(false); }
     };
 
@@ -1094,7 +1108,7 @@ export default function CourseDetailPage({ params }) {
                                 ) : !isEnrolled ? (
                                     <button onClick={handleEnroll} disabled={enrolling}
                                         className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 text-white font-bold rounded-xl text-sm transition-opacity disabled:opacity-70">
-                                        {enrolling ? 'Enrolling...' : 'Enroll Now'}
+                                        {enrolling ? 'Processing...' : (course.isFree ? 'Enroll Now' : 'Buy Now')}
                                     </button>
                                 ) : (
                                     <div className="w-full py-3 bg-emerald-500 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2">

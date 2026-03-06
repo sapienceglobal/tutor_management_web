@@ -25,11 +25,16 @@ import {
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
+import AudienceSelector from '@/components/shared/AudienceSelector';
+import useInstitute from '@/hooks/useInstitute';
 
 export default function TutorLiveClassesPage() {
     const router = useRouter();
+    const { institute } = useInstitute();
     const [classes, setClasses] = useState([]);
     const [courses, setCourses] = useState([]);
+    const [availableBatches, setAvailableBatches] = useState([]);
+    const [availableStudents, setAvailableStudents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
     const [editingId, setEditingId] = useState(null);
@@ -46,7 +51,13 @@ export default function TutorLiveClassesPage() {
         passcode: '',
         recordingLink: '',
         platform: 'jitsi',
-        autoCreate: true
+        autoCreate: true,
+        audience: {
+            scope: 'institute',
+            instituteId: null,
+            batchIds: [],
+            studentIds: [],
+        },
     };
 
     const [formData, setFormData] = useState(initialFormState);
@@ -96,7 +107,13 @@ export default function TutorLiveClassesPage() {
             recordingLink: cls.recordingLink || '',
             materialLink: cls.materialLink || '',
             platform: cls.platform,
-            autoCreate: false // Default to false when editing so existing details are shown
+            autoCreate: false, // Default to false when editing so existing details are shown
+            audience: cls.audience || {
+                scope: cls.batchId ? 'batch' : (cls.instituteId ? 'institute' : 'global'),
+                instituteId: cls.instituteId || institute?._id || null,
+                batchIds: cls.batchId ? [cls.batchId] : [],
+                studentIds: [],
+            },
         });
         setIsCreating(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -136,6 +153,12 @@ export default function TutorLiveClassesPage() {
 
         try {
             const payload = { ...formData };
+            payload.audience = {
+                ...formData.audience,
+                instituteId: formData.audience?.instituteId || institute?._id || null,
+            };
+            payload.scope = payload.audience.scope;
+            payload.batchId = payload.audience.scope === 'batch' ? (payload.audience.batchIds?.[0] || null) : null;
             if (payload.courseId === 'none') delete payload.courseId;
 
             if (editingId) {
@@ -155,6 +178,49 @@ export default function TutorLiveClassesPage() {
             toast.error(error.response?.data?.message || 'Failed to save class');
         }
     };
+
+    useEffect(() => {
+        const fetchAudienceTargets = async () => {
+            if (!isCreating || !formData.courseId || formData.courseId === 'none') {
+                setAvailableBatches([]);
+                setAvailableStudents([]);
+                return;
+            }
+            try {
+                const [batchesRes, studentsRes] = await Promise.all([
+                    api.get('/batches'),
+                    api.get(`/enrollments/students/${formData.courseId}`),
+                ]);
+                const batchList = (batchesRes.data?.batches || []).filter((batch) => {
+                    const batchCourseId = batch.courseId?._id || batch.courseId;
+                    return batchCourseId === formData.courseId;
+                });
+                setAvailableBatches(batchList);
+                const studentList = (studentsRes.data?.students || []).map((item) => ({
+                    _id: item.studentId?._id,
+                    name: item.studentId?.name,
+                    email: item.studentId?.email,
+                })).filter((item) => item._id);
+                setAvailableStudents(studentList);
+            } catch (error) {
+                console.error('Audience targets load error:', error);
+                setAvailableBatches([]);
+                setAvailableStudents([]);
+            }
+        };
+
+        fetchAudienceTargets();
+    }, [isCreating, formData.courseId]);
+
+    useEffect(() => {
+        setFormData((prev) => ({
+            ...prev,
+            audience: {
+                ...prev.audience,
+                instituteId: prev.audience?.instituteId || institute?._id || null,
+            },
+        }));
+    }, [institute?._id]);
 
     const handleDeleteClass = async (id) => {
         const isConfirmed = await confirmDialog("Cancel Class", "Are you sure you want to cancel this class?", { variant: 'destructive' });
@@ -300,6 +366,14 @@ export default function TutorLiveClassesPage() {
                                     placeholder="What will be covered?"
                                 />
                             </div>
+                            <AudienceSelector
+                                value={formData.audience}
+                                onChange={(audience) => setFormData({ ...formData, audience })}
+                                availableBatches={availableBatches}
+                                availableStudents={availableStudents}
+                                allowGlobal={Boolean(!institute?._id || institute?.features?.allowGlobalPublishingByInstituteTutors)}
+                                instituteId={institute?._id || null}
+                            />
                             <div className="flex justify-end gap-2 pt-2">
                                 <Button type="button" variant="outline" onClick={handleCancelEdit}>Cancel</Button>
                                 <Button type="submit">{editingId ? 'Update Class' : 'Schedule Class'}</Button>

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { Button } from '@/components/ui/button';
+import { getAudienceDisplay } from '@/lib/audienceDisplay';
 
 export default function StudentExamsPage() {
     const [exams, setExams] = useState([]);
@@ -155,17 +156,22 @@ export default function StudentExamsPage() {
                             {filteredExams.length > 0 ? filteredExams.map((exam, idx) => {
                                 const status = getStatus(exam);
                                 const cfg = statusConfig[status] || statusConfig.available;
+                                const audienceInfo = getAudienceDisplay(exam);
                                 return (
                                     <tr key={exam._id} className="hover:bg-slate-50/50 transition-colors">
                                         <td className="px-5 py-3.5 text-slate-500 font-medium">{idx + 1}</td>
                                         <td className="px-5 py-3.5">
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 flex-wrap">
                                                 <p className="font-semibold text-slate-800">{exam.title}</p>
+                                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${audienceInfo.badgeClass}`}>
+                                                    {audienceInfo.label}
+                                                </span>
                                                 {exam.isFree && (
                                                     <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase">Free</span>
                                                 )}
                                             </div>
                                             {exam.courseTitle && <p className="text-xs text-slate-400 mt-0.5">{exam.courseTitle}</p>}
+                                            <p className="text-[11px] text-slate-500 mt-0.5">{audienceInfo.reason}</p>
                                         </td>
                                         <td className="px-5 py-3.5 text-slate-600">
                                             <div className="flex items-center gap-1">

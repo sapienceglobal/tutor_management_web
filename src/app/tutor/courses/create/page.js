@@ -10,9 +10,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
+import AudienceSelector from '@/components/shared/AudienceSelector';
+import useInstitute from '@/hooks/useInstitute';
 
 export default function CreateCoursePage() {
     const router = useRouter();
+    const { institute } = useInstitute();
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
     const [formData, setFormData] = useState({
@@ -25,6 +28,12 @@ export default function CreateCoursePage() {
         language: 'English',
         duration: 0,
         visibility: 'institute', // 'institute' or 'public'
+        audience: {
+            scope: 'institute',
+            instituteId: null,
+            batchIds: [],
+            studentIds: [],
+        },
         whatYouWillLearn: [''],
         requirements: ['']
     });
@@ -32,6 +41,20 @@ export default function CreateCoursePage() {
     useEffect(() => {
         fetchCategories();
     }, []);
+
+    useEffect(() => {
+        setFormData((prev) => {
+            const nextAudience = {
+                ...prev.audience,
+                instituteId: prev.audience?.instituteId || institute?._id || null,
+            };
+            return {
+                ...prev,
+                audience: nextAudience,
+                visibility: nextAudience.scope === 'global' ? 'public' : 'institute',
+            };
+        });
+    }, [institute?._id]);
 
     const fetchCategories = async () => {
         try {
@@ -73,7 +96,12 @@ export default function CreateCoursePage() {
                 thumbnail: formData.thumbnail,
                 language: formData.language,
                 duration: Number(formData.duration),
-                visibility: formData.visibility,
+                visibility: formData.audience?.scope === 'global' ? 'public' : 'institute',
+                audience: {
+                    ...formData.audience,
+                    instituteId: formData.audience?.instituteId || institute?._id || null,
+                },
+                scope: formData.audience?.scope,
                 whatYouWillLearn: formData.whatYouWillLearn.filter(item => item.trim() !== ''),
                 requirements: formData.requirements.filter(item => item.trim() !== '')
             };
@@ -173,31 +201,14 @@ export default function CreateCoursePage() {
                             </div>
 
                             <div className="grid gap-2 md:col-span-2">
-                                <Label htmlFor="visibility">Course Visibility</Label>
-                                <div className="flex items-center gap-6 mt-2">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="visibility"
-                                            value="institute"
-                                            checked={formData.visibility === 'institute'}
-                                            onChange={handleChange}
-                                            className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
-                                        />
-                                        <span className="text-sm font-medium text-gray-700">Institute Only (Visible only to your students)</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="visibility"
-                                            value="public"
-                                            checked={formData.visibility === 'public'}
-                                            onChange={handleChange}
-                                            className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
-                                        />
-                                        <span className="text-sm font-medium text-gray-700">Global (Visible to everyone)</span>
-                                    </label>
-                                </div>
+                                <AudienceSelector
+                                    value={formData.audience}
+                                    onChange={(audience) => setFormData((prev) => ({ ...prev, audience }))}
+                                    availableBatches={[]}
+                                    availableStudents={[]}
+                                    allowGlobal={Boolean(!institute?._id || institute?.features?.allowGlobalPublishingByInstituteTutors)}
+                                    instituteId={institute?._id || null}
+                                />
                             </div>
                         </div>
                     </div>

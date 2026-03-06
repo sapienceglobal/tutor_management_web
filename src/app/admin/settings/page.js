@@ -13,7 +13,8 @@ export default function AdminSettingsPage() {
         contactEmail: '',
         logo: '',
         primaryColor: '#4f46e5',
-        secondaryColor: '#f8fafc'
+        secondaryColor: '#f8fafc',
+        allowGlobalPublishingByInstituteTutors: false,
     });
     const [settings, setSettings] = useState({
         maintenanceMode: false,
@@ -47,7 +48,10 @@ export default function AdminSettingsPage() {
                     contactEmail: instituteRes.data.institute.contactEmail || '',
                     logo: instituteRes.data.institute.logo || '',
                     primaryColor: instituteRes.data.institute.brandColors?.primary || '#4f46e5',
-                    secondaryColor: instituteRes.data.institute.brandColors?.secondary || '#f8fafc'
+                    secondaryColor: instituteRes.data.institute.brandColors?.secondary || '#f8fafc',
+                    allowGlobalPublishingByInstituteTutors: Boolean(
+                        instituteRes.data.institute.features?.allowGlobalPublishingByInstituteTutors
+                    ),
                 });
             }
         } catch (error) {
@@ -64,7 +68,8 @@ export default function AdminSettingsPage() {
     };
 
     const handleInstituteChange = (e) => {
-        setInstituteData({ ...instituteData, [e.target.name]: e.target.value });
+        const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+        setInstituteData({ ...instituteData, [e.target.name]: value });
     };
 
     const handleSave = async () => {
@@ -76,6 +81,7 @@ export default function AdminSettingsPage() {
                     name: instituteData.name,
                     contactEmail: instituteData.contactEmail,
                     logo: instituteData.logo,
+                    allowGlobalPublishingByInstituteTutors: instituteData.allowGlobalPublishingByInstituteTutors,
                     brandColors: {
                         primary: instituteData.primaryColor,
                         secondary: instituteData.secondaryColor
@@ -153,6 +159,22 @@ export default function AdminSettingsPage() {
                                 <option>French</option>
                                 <option>Hindi</option>
                             </select>
+                        </div>
+                        <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
+                            <div>
+                                <div className="font-medium text-slate-900">Allow Global Publishing by Institute Tutors</div>
+                                <div className="text-sm text-slate-500">If enabled, institute tutors can publish global content.</div>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    name="allowGlobalPublishingByInstituteTutors"
+                                    checked={instituteData.allowGlobalPublishingByInstituteTutors}
+                                    onChange={handleInstituteChange}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
                         </div>
                     </div>
                 </div>

@@ -28,7 +28,9 @@ import {
     BellRing,
     Award,
     ExternalLink,
-    Users
+    Users,
+    Upload,
+    AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/axios';
@@ -473,6 +475,18 @@ export default function ManageCoursePage({ params }) {
         const file = e.target.files[0];
         if (!file) return;
 
+        const resolveMediaUrl = (rawUrl) => {
+            if (!rawUrl) return '';
+            if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
+            const backendBase = (process.env.NEXT_PUBLIC_API_BASE_URL || '')
+                .replace(/\/api\/?$/, '')
+                .replace(/\/+$/, '');
+            if (backendBase) {
+                return `${backendBase}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+            }
+            return rawUrl;
+        };
+
         const formData = new FormData();
         formData.append('video', file);
 
@@ -483,16 +497,37 @@ export default function ManageCoursePage({ params }) {
             });
 
             if (res.data.success) {
-                // Prepend base URL for the playlist
-                const baseUrl = api.defaults.baseURL.replace('/api', '');
-                const fullUrl = baseUrl + res.data.estimatedPlaylistUrl;
+                const fullUrl = resolveMediaUrl(res.data.estimatedPlaylistUrl);
 
                 setLessonForm(prev => ({ ...prev, videoUrl: fullUrl }));
                 toast.success("Video uploaded and is processing for HLS!");
             }
         } catch (error) {
+            const backendMessage = error.response?.data?.message || '';
+            const shouldFallbackToDirectVideo = error.response?.status === 403
+                && /(hls|feature|subscription)/i.test(backendMessage);
+
+            if (shouldFallbackToDirectVideo) {
+                try {
+                    const directVideoFormData = new FormData();
+                    directVideoFormData.append('file', file);
+
+                    const fallbackRes = await api.post('/upload/file', directVideoFormData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+
+                    if (fallbackRes.data.success) {
+                        setLessonForm(prev => ({ ...prev, videoUrl: fallbackRes.data.fileUrl }));
+                        toast.success('Video uploaded in standard mode (HLS disabled on current plan).');
+                        return;
+                    }
+                } catch (fallbackError) {
+                    console.error('Direct video upload fallback failed:', fallbackError);
+                }
+            }
+
             console.error('Video upload failed:', error);
-            toast.error(error.response?.data?.message || 'Failed to upload video');
+            toast.error(backendMessage || 'Failed to upload video');
         } finally {
             setIsUploadingVideo(false);
         }

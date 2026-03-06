@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
     Search,
@@ -21,7 +20,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { Button } from '@/components/ui/button';
-import useInstitute from '@/hooks/useInstitute';
+import { getAudienceDisplay } from '@/lib/audienceDisplay';
 
 const COURSES_PER_PAGE = 8;
 
@@ -53,11 +52,11 @@ export default function MyCoursesPage() {
     }, []);
 
     // Support ?tab=discover from sidebar
-    const searchParams = useSearchParams();
     useEffect(() => {
-        const tab = searchParams.get('tab');
+        if (typeof window === 'undefined') return;
+        const tab = new URLSearchParams(window.location.search).get('tab');
         if (tab === 'discover') setMainTab('discover');
-    }, [searchParams]);
+    }, []);
 
     const fetchMembership = async () => {
         try {
@@ -262,6 +261,7 @@ export default function MyCoursesPage() {
                                             if (!course) return null;
                                             const progress = enrollment.progress?.percentage ?? 0;
                                             const instructorName = course.tutorId?.userId?.name || 'Instructor';
+                                            const audienceInfo = getAudienceDisplay(course);
                                             const isNew = enrollment.enrolledAt && (Date.now() - new Date(enrollment.enrolledAt).getTime()) < 14 * 24 * 60 * 60 * 1000;
                                             const isCertified = progress >= 100;
 
@@ -288,8 +288,14 @@ export default function MyCoursesPage() {
                                                         )}
                                                     </div>
                                                     <div className="p-4">
-                                                        <p className="font-semibold text-slate-900 line-clamp-1 mb-1">{course.title}</p>
-                                                        <p className="text-sm text-slate-500 mb-3">{instructorName}</p>
+                                                        <div className="flex items-start justify-between gap-2 mb-1">
+                                                            <p className="font-semibold text-slate-900 line-clamp-1">{course.title}</p>
+                                                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${audienceInfo.badgeClass}`}>
+                                                                {audienceInfo.label}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-sm text-slate-500">{instructorName}</p>
+                                                        <p className="text-[11px] text-slate-500 mb-3">{audienceInfo.reason}</p>
                                                         <div className="flex items-center gap-2 mb-3">
                                                             <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                                                                 <div
@@ -418,6 +424,7 @@ export default function MyCoursesPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                     {discoverCourses.map((course) => {
                                         const instructorName = course.tutorId?.userId?.name || 'Instructor';
+                                        const audienceInfo = getAudienceDisplay(course);
 
                                         return (
                                             <div
@@ -442,7 +449,12 @@ export default function MyCoursesPage() {
                                                 </div>
                                                 <div className="p-4 flex-1 flex flex-col">
                                                     <div className="flex-1">
-                                                        <p className="font-semibold text-slate-900 line-clamp-2 mb-1">{course.title}</p>
+                                                        <div className="flex items-start justify-between gap-2 mb-1">
+                                                            <p className="font-semibold text-slate-900 line-clamp-2">{course.title}</p>
+                                                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${audienceInfo.badgeClass}`}>
+                                                                {audienceInfo.label}
+                                                            </span>
+                                                        </div>
                                                         <div className="flex items-center gap-2 mb-1">
                                                             <p className="text-sm text-slate-500">{instructorName}</p>
                                                             {course.rating > 0 && (
@@ -452,12 +464,8 @@ export default function MyCoursesPage() {
                                                                 </span>
                                                             )}
                                                         </div>
+                                                        <p className="text-[11px] text-slate-500">{audienceInfo.reason}</p>
                                                         <div className="flex flex-wrap gap-2 mt-2">
-                                                            {course.visibility === 'institute' && (
-                                                                <span className="inline-block px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold uppercase tracking-wider rounded-full border border-purple-100">
-                                                                    Institute Course
-                                                                </span>
-                                                            )}
                                                             <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-full border border-slate-200">
                                                                 {course.lessons?.length || 0} Lessons
                                                             </span>
