@@ -8,7 +8,7 @@ import { studentNavItems } from '@/config/studentNav';
 import { useSettings } from '@/components/providers/SettingsProvider';
 import useInstitute from '@/hooks/useInstitute';
 
-// ─── Name truncation (same util as Sidebar) ──────────────────────────────────
+// ─── Name truncation ──────────────────────────────────────────────────────────
 function truncateName(name, maxLen = 18) {
     if (!name || name.length <= maxLen) return name;
     const words = name.trim().split(/\s+/);
@@ -25,14 +25,19 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
     const { settings } = useSettings();
     const { institute } = useInstitute();
 
+    useEffect(() => { setMounted(true); }, []);
+
     const toggleSubmenu = (title) => {
         setExpandedMenu(expandedMenu === title ? null : title);
     };
 
     const showFull = !isCollapsed || isHovering;
-    const activePath = mounted ? pathname : '';
 
-    useEffect(() => { setMounted(true); }, []);
+    // ── Guard ALL client-only values behind `mounted` ─────────────────────────
+    const activePath    = mounted ? pathname : '';
+    const rawName       = mounted ? (institute?.name || settings?.siteName || 'SapienceLMS') : 'SapienceLMS';
+    const displayName   = mounted ? truncateName(rawName, 20) : 'SapienceLMS';
+    const instituteLogo = mounted ? institute?.logo : null;
 
     // Auto-expand section with active page
     useEffect(() => {
@@ -48,8 +53,19 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
         });
     }, [activePath, mounted]);
 
-    const rawName = institute?.name || settings?.siteName || 'SapienceLMS';
-    const displayName = truncateName(rawName, 20);
+    // ── Shared inline style helpers (mirrors TutorSidebar exactly) ───────────
+    const activeLinkStyle   = { backgroundColor: 'color-mix(in srgb, var(--theme-primary) 22%, transparent)', color: 'white' };
+    const inactiveLinkStyle = { color: 'rgba(255,255,255,0.7)' };
+    const expandedBtnStyle  = { backgroundColor: 'rgba(255,255,255,0.06)', color: 'white' };
+
+    const onEnterInactive = (e) => {
+        e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)';
+        e.currentTarget.style.color = 'white';
+    };
+    const onLeaveInactive = (e) => {
+        e.currentTarget.style.backgroundColor = 'transparent';
+        e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
+    };
 
     return (
         <>
@@ -70,7 +86,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                     ${showFull ? 'w-64' : 'w-[72px]'}
                 `}
                 style={{
-                    background: 'linear-gradient(180deg, #1e1b4b 0%, #17144a 60%, #130f3f 100%)',
+                    background: 'var(--theme-sidebar)',
                     boxShadow: '2px 0 24px 0 rgba(0,0,0,0.18)',
                 }}
             >
@@ -79,15 +95,18 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         {/* Logo */}
                         <div className="w-9 h-9 flex-shrink-0">
-                            {institute?.logo ? (
+                            {instituteLogo ? (
                                 <img
-                                    src={institute.logo}
+                                    src={instituteLogo}
                                     alt="Logo"
                                     className="w-9 h-9 object-contain rounded-xl"
                                 />
                             ) : (
-                                <div className="w-9 h-9 bg-indigo-500/25 border border-indigo-500/20 rounded-xl flex items-center justify-center">
-                                    <GraduationCap className="w-5 h-5 text-indigo-300" />
+                                <div
+                                    className="w-9 h-9 rounded-xl flex items-center justify-center"
+                                    style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 25%, transparent)' }}
+                                >
+                                    <GraduationCap className="w-5 h-5" style={{ color: 'var(--theme-primary)' }} />
                                 </div>
                             )}
                         </div>
@@ -101,7 +120,10 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                             <span className="text-[14px] font-bold text-white truncate leading-snug">
                                 {displayName}
                             </span>
-                            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-400/80 mt-0.5 truncate">
+                            <span
+                                className="text-[10px] font-semibold uppercase tracking-[0.12em] mt-0.5 truncate"
+                                style={{ color: 'color-mix(in srgb, var(--theme-primary) 80%, white)' }}
+                            >
                                 Learning Portal
                             </span>
                         </div>
@@ -111,7 +133,10 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                     {showFull && (
                         <button
                             onClick={() => setIsOpen(false)}
-                            className="ml-2 lg:hidden p-1.5 rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-all flex-shrink-0"
+                            className="ml-2 lg:hidden p-1.5 rounded-lg transition-all flex-shrink-0"
+                            style={{ color: 'rgba(255,255,255,0.35)' }}
+                            onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
                         >
                             <X size={16} />
                         </button>
@@ -134,20 +159,20 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                         onClick={() => setIsOpen(false)}
                                         title={!showFull ? item.title : ''}
                                         className={`group flex items-center px-2.5 py-2.5 text-sm font-medium rounded-xl transition-all duration-150
-                                            ${isActive
-                                                ? 'bg-indigo-500/25 text-white shadow-sm'
-                                                : 'text-indigo-200/80 hover:bg-white/[0.06] hover:text-white'
-                                            }
                                             ${!showFull ? 'justify-center' : ''}
                                         `}
+                                        style={isActive ? activeLinkStyle : inactiveLinkStyle}
+                                        onMouseEnter={e => { if (!isActive) onEnterInactive(e); }}
+                                        onMouseLeave={e => { if (!isActive) onLeaveInactive(e); }}
                                     >
-                                        <Icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors duration-150
-                                            ${isActive ? 'text-indigo-300' : 'text-indigo-400/70 group-hover:text-indigo-300'}
-                                            ${showFull ? 'mr-3' : ''}
-                                        `} />
+                                        <Icon
+                                            className={`w-[18px] h-[18px] flex-shrink-0 transition-colors duration-150 ${showFull ? 'mr-3' : ''}`}
+                                            style={{ color: isActive ? 'var(--theme-primary)' : undefined }}
+                                        />
                                         {showFull && <span className="truncate">{item.title}</span>}
                                         {isActive && showFull && (
-                                            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+                                            <span className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                                style={{ backgroundColor: 'var(--theme-primary)' }} />
                                         )}
                                     </Link>
                                 );
@@ -160,7 +185,10 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                 <div className="mx-1 border-t border-white/[0.06]" />
 
                                 {showFull && (
-                                    <h3 className="px-2.5 pt-3 pb-1.5 text-[10px] font-bold text-indigo-400/50 uppercase tracking-[0.14em]">
+                                    <h3
+                                        className="px-2.5 pt-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.14em]"
+                                        style={{ color: 'color-mix(in srgb, var(--theme-primary) 55%, rgba(255,255,255,0.3))' }}
+                                    >
                                         {section.title}
                                     </h3>
                                 )}
@@ -183,23 +211,23 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                         onClick={() => showFull && toggleSubmenu(child.title)}
                                                         title={!showFull ? child.title : ''}
                                                         className={`group flex items-center w-full px-2.5 py-2.5 text-sm font-medium rounded-xl transition-all duration-150
-                                                            ${isActive || isExpanded
-                                                                ? 'bg-white/[0.07] text-white'
-                                                                : 'text-indigo-200/80 hover:bg-white/[0.06] hover:text-white'
-                                                            }
                                                             ${!showFull ? 'justify-center' : ''}
                                                         `}
+                                                        style={isActive || isExpanded ? expandedBtnStyle : inactiveLinkStyle}
+                                                        onMouseEnter={e => { if (!isActive && !isExpanded) onEnterInactive(e); }}
+                                                        onMouseLeave={e => { if (!isActive && !isExpanded) onLeaveInactive(e); }}
                                                     >
-                                                        <Icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors duration-150
-                                                            ${isActive ? 'text-indigo-300' : 'text-indigo-400/70 group-hover:text-indigo-300'}
-                                                            ${showFull ? 'mr-3' : ''}
-                                                        `} />
+                                                        <Icon
+                                                            className={`w-[18px] h-[18px] flex-shrink-0 transition-colors duration-150 ${showFull ? 'mr-3' : ''}`}
+                                                            style={{ color: isActive || isExpanded ? 'var(--theme-primary)' : undefined }}
+                                                        />
                                                         {showFull && (
                                                             <>
                                                                 <span className="flex-1 text-left truncate">{child.title}</span>
-                                                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 text-indigo-400/50
-                                                                    ${isExpanded ? 'rotate-90 !text-indigo-400' : ''}
-                                                                `} />
+                                                                <ChevronRight
+                                                                    className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+                                                                    style={{ color: isExpanded ? 'var(--theme-primary)' : 'rgba(255,255,255,0.3)' }}
+                                                                />
                                                             </>
                                                         )}
                                                     </button>
@@ -209,20 +237,20 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                         onClick={() => setIsOpen(false)}
                                                         title={!showFull ? child.title : ''}
                                                         className={`group flex items-center px-2.5 py-2.5 text-sm font-medium rounded-xl transition-all duration-150
-                                                            ${isActive
-                                                                ? 'bg-indigo-500/25 text-white'
-                                                                : 'text-indigo-200/80 hover:bg-white/[0.06] hover:text-white'
-                                                            }
                                                             ${!showFull ? 'justify-center' : ''}
                                                         `}
+                                                        style={isActive ? activeLinkStyle : inactiveLinkStyle}
+                                                        onMouseEnter={e => { if (!isActive) onEnterInactive(e); }}
+                                                        onMouseLeave={e => { if (!isActive) onLeaveInactive(e); }}
                                                     >
-                                                        <Icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors duration-150
-                                                            ${isActive ? 'text-indigo-300' : 'text-indigo-400/70 group-hover:text-indigo-300'}
-                                                            ${showFull ? 'mr-3' : ''}
-                                                        `} />
+                                                        <Icon
+                                                            className={`w-[18px] h-[18px] flex-shrink-0 transition-colors duration-150 ${showFull ? 'mr-3' : ''}`}
+                                                            style={{ color: isActive ? 'var(--theme-primary)' : undefined }}
+                                                        />
                                                         {showFull && <span className="truncate">{child.title}</span>}
                                                         {isActive && showFull && (
-                                                            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+                                                            <span className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                                                style={{ backgroundColor: 'var(--theme-primary)' }} />
                                                         )}
                                                     </Link>
                                                 )}
@@ -231,7 +259,10 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                 <div className={`overflow-hidden transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]
                                                     ${hasSubmenu && isExpanded && showFull ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}
                                                 `}>
-                                                    <div className="ml-[30px] mt-1 mb-1 space-y-0.5 border-l-2 border-indigo-500/20 pl-3">
+                                                    <div
+                                                        className="ml-[30px] mt-1 mb-1 space-y-0.5 pl-3"
+                                                        style={{ borderLeft: '2px solid color-mix(in srgb, var(--theme-primary) 25%, transparent)' }}
+                                                    >
                                                         {child.submenu?.map((sub) => {
                                                             const subActive = activePath === sub.href || activePath.startsWith(sub.href + '/');
                                                             return (
@@ -239,14 +270,18 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                                     key={sub.title}
                                                                     href={sub.href}
                                                                     onClick={() => setIsOpen(false)}
-                                                                    className={`flex items-center gap-2 px-3 py-2 text-[13px] rounded-lg transition-all duration-150
-                                                                        ${subActive
-                                                                            ? 'text-indigo-300 font-semibold bg-indigo-500/15'
-                                                                            : 'text-indigo-300/50 hover:text-indigo-200 hover:bg-white/[0.05]'
-                                                                        }
-                                                                    `}
+                                                                    className="flex items-center gap-2 px-3 py-2 text-[13px] rounded-lg transition-all duration-150"
+                                                                    style={subActive
+                                                                        ? { color: 'var(--theme-primary)', fontWeight: 600, backgroundColor: 'color-mix(in srgb, var(--theme-primary) 15%, transparent)' }
+                                                                        : { color: 'rgba(255,255,255,0.5)' }
+                                                                    }
+                                                                    onMouseEnter={e => { if (!subActive) { e.currentTarget.style.color = 'var(--theme-primary)'; e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'; } }}
+                                                                    onMouseLeave={e => { if (!subActive) { e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; e.currentTarget.style.backgroundColor = 'transparent'; } }}
                                                                 >
-                                                                    {subActive && <span className="w-1 h-1 rounded-full bg-indigo-400 flex-shrink-0" />}
+                                                                    {subActive && (
+                                                                        <span className="w-1 h-1 rounded-full flex-shrink-0"
+                                                                            style={{ backgroundColor: 'var(--theme-primary)' }} />
+                                                                    )}
                                                                     {sub.title}
                                                                 </Link>
                                                             );

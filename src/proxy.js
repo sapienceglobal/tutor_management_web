@@ -12,6 +12,11 @@ export async function proxy(request) {
     const token = request.cookies.get('token')?.value;
     const { pathname } = request.nextUrl;
 
+    // /invite/* is always public — no auth required regardless of login state
+    if (pathname.startsWith('/invite/')) {
+        return NextResponse.next();
+    }
+
     const isProtected = pathname.startsWith('/tutor')
         || pathname.startsWith('/student')
         || pathname.startsWith('/admin')
@@ -84,6 +89,7 @@ export async function proxy(request) {
 
 export const config = {
     matcher: [
+        '/invite/:path*',  
         '/tutor/:path*',
         '/student/:path*',
         '/admin/:path*',

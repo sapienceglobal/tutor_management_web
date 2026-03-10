@@ -7,7 +7,7 @@ import api from '@/lib/axios';
 export default function AiTutorWidget({
     context = {},
     recommendedTopics = [],
-    title = 'AI Assistant',
+    title = 'Sapience AI Assistant',
     subtitle = 'How can I help you today?',
     className = ''
 }) {

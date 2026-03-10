@@ -1,6 +1,5 @@
-'use client';
-
-import { useState } from 'react';
+"use client";
+import { useState, useEffect } from 'react';
 import { ShieldX, LogOut, RefreshCw, AlertTriangle } from 'lucide-react';
 import Cookies from 'js-cookie';
 import api from '@/lib/axios';

@@ -63,10 +63,26 @@
 */
 
 :root {
-  /* Institute-specific theme colors - will be set dynamically */
-  --primary-color: #4f46e5;
-  --secondary-color: #f8fafc;
-  
+  /* Dynamic theme colors - will be set by ThemeContext */
+  --theme-primary: #4f46e5;
+  --theme-secondary: #f1f5f9;
+  --theme-background: #f8fafc;
+  --theme-foreground: #1e293b;
+  --theme-sidebar: #1e1b4b;
+  --theme-sidebar-foreground: #e2e8f0;
+  --theme-accent: #6366f1;
+  --theme-muted: #f1f5f9;
+  --theme-border: #e2e8f0;
+
+  --theme-font: 'DM Sans', sans-serif;
+  --theme-radius: 1rem;
+  /* rounded-2xl = 1rem */
+  --theme-radius-sm: 0.75rem;
+  /* rounded-xl */
+  /* Legacy variables for backward compatibility */
+  --primary-color: var(--theme-primary);
+  --secondary-color: var(--theme-secondary);
+
   --background: 210 40% 98%;
   --foreground: 222.2 84% 4.9%;
 
@@ -76,24 +92,24 @@
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 84% 4.9%;
 
-  --primary: 24.6 95% 53.1%;
+  --primary: var(--theme-primary);
   --primary-foreground: 210 40% 98%;
 
-  --secondary: 210 40% 96.1%;
+  --secondary: var(--theme-secondary);
   --secondary-foreground: 222.2 47.4% 11.2%;
 
-  --muted: 210 40% 96.1%;
+  --muted: var(--theme-muted);
   --muted-foreground: 215.4 16.3% 46.9%;
 
-  --accent: 210 40% 96.1%;
+  --accent: var(--theme-accent);
   --accent-foreground: 222.2 47.4% 11.2%;
 
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
 
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 24.6 95% 53.1%;
+  --border: var(--theme-border);
+  --input: var(--theme-border);
+  --ring: var(--theme-primary);
 
   --radius: 0.5rem;
 }
@@ -247,19 +263,24 @@ html.has-scroll-dragging {
   scrollbar-width: thin;
   scrollbar-color: rgba(129, 140, 248, 0.4) transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(129, 140, 248, 0.35);
   border-radius: 9999px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(129, 140, 248, 0.55);
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb:active {
   background: rgba(129, 140, 248, 0.6);
 }
@@ -269,6 +290,7 @@ html.has-scroll-dragging {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
