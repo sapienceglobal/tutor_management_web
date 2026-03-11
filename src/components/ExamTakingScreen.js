@@ -92,10 +92,10 @@ export default function ExamTakingScreen({ exam, courseId, onClose, onComplete }
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const selectAnswer = (questionId, optionIndex) => {
+    const selectAnswer = (questionId, value) => {
         setAnswers(prev => ({
             ...prev,
-            [questionId]: optionIndex
+            [questionId]: value
         }));
     };
 
@@ -110,12 +110,22 @@ export default function ExamTakingScreen({ exam, courseId, onClose, onComplete }
         try {
             const timeSpent = Math.floor((new Date() - startedAt) / 1000);
             const answersData = questions.map(q => {
-                const selectedIndex = answers[q._id];
+                const answerValue = answers[q._id];
+                const isSubjective = !q.options || q.options.length === 0;
+
+                if (isSubjective) {
+                    return {
+                        questionId: q._id,
+                        selectedOption: -1,
+                        textAnswer: answerValue || '',
+                    };
+                }
+
                 return {
                     questionId: q._id,
-                    selectedOption: selectedIndex ?? -1,
-                    selectedOptionText: selectedIndex !== undefined && selectedIndex !== -1
-                        ? q.options[selectedIndex]?.text
+                    selectedOption: answerValue ?? -1,
+                    selectedOptionText: answerValue !== undefined && answerValue !== -1 && q.options
+                        ? q.options[answerValue]?.text
                         : null
                 };
             });
@@ -351,39 +361,50 @@ export default function ExamTakingScreen({ exam, courseId, onClose, onComplete }
 
                             {/* Options */}
                             <div className="space-y-3">
-                                {currentQuestion.options?.map((option, index) => {
-                                    const isSelected = answers[currentQuestion._id] === index;
-                                    const letter = String.fromCharCode(65 + index);
+                                {(!currentQuestion.options || currentQuestion.options.length === 0) ? (
+                                    <div className="animate-in fade-in duration-300">
+                                        <textarea
+                                            value={answers[currentQuestion._id] || ''}
+                                            onChange={(e) => selectAnswer(currentQuestion._id, e.target.value)}
+                                            placeholder="Type your detailed answer here..."
+                                            className="w-full p-6 rounded-2xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 min-h-[240px] resize-y text-slate-800 bg-slate-50 transition-all text-lg shadow-inner font-medium placeholder:text-slate-400"
+                                        />
+                                    </div>
+                                ) : (
+                                    currentQuestion.options?.map((option, index) => {
+                                        const isSelected = answers[currentQuestion._id] === index;
+                                        const letter = String.fromCharCode(65 + index);
 
-                                    return (
-                                        <button
-                                            key={index}
-                                            onClick={() => selectAnswer(currentQuestion._id, index)}
-                                            className={`w-full p-5 rounded-2xl border-2 transition-all duration-200 text-left group ${isSelected
-                                                ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-xl shadow-indigo-200 scale-[1.02]'
-                                                : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50 hover:shadow-lg'
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg transition-all duration-200 ${isSelected
-                                                    ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg'
-                                                    : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200'
-                                                    }`}>
-                                                    {letter}
-                                                </div>
-                                                <span className={`flex-1 text-lg ${isSelected ? 'font-semibold text-indigo-900' : 'text-slate-700'
-                                                    }`}>
-                                                    {option.text}
-                                                </span>
-                                                {isSelected && (
-                                                    <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
-                                                        <CheckCircle className="w-5 h-5 text-white" />
+                                        return (
+                                            <button
+                                                key={index}
+                                                onClick={() => selectAnswer(currentQuestion._id, index)}
+                                                className={`w-full p-5 rounded-2xl border-2 transition-all duration-200 text-left group ${isSelected
+                                                    ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-xl shadow-indigo-200 scale-[1.02]'
+                                                    : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50 hover:shadow-lg'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg transition-all duration-200 ${isSelected
+                                                        ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg'
+                                                        : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200'
+                                                        }`}>
+                                                        {letter}
                                                     </div>
-                                                )}
-                                            </div>
-                                        </button>
-                                    );
-                                })}
+                                                    <span className={`flex-1 text-lg ${isSelected ? 'font-semibold text-indigo-900' : 'text-slate-700'
+                                                        }`}>
+                                                        {option.text}
+                                                    </span>
+                                                    {isSelected && (
+                                                        <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+                                                            <CheckCircle className="w-5 h-5 text-white" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </button>
+                                        );
+                                    })
+                                )}
                             </div>
 
                             {/* Answer Saved Indicator */}

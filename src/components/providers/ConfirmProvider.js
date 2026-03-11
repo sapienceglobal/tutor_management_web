@@ -85,7 +85,7 @@ export function ConfirmProvider({ children }) {
                         </Button>
                         <Button
                             variant={options.variant === 'destructive' ? 'destructive' : 'default'}
-                            className={options.variant === 'destructive' ? "bg-red-600 hover:bg-red-700" : ""}
+                            className={options.variant === 'destructive' ? "bg-red-600 hover:bg-red-700 text-white" : "bg-[var(--theme-primary)] text-white hover:opacity-90"}
                             onClick={handleConfirm}
                         >
                             {options.confirmText}

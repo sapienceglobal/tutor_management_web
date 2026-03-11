@@ -28,11 +28,11 @@ const getOptionText = (option) => {
 
 const getGradeInfo = (pct) => {
     if (pct >= 90) return { grade: 'A+', color: '#10b981', bg: '#ecfdf5', label: 'Outstanding' };
-    if (pct >= 80) return { grade: 'A',  color: '#10b981', bg: '#ecfdf5', label: 'Excellent' };
+    if (pct >= 80) return { grade: 'A', color: '#10b981', bg: '#ecfdf5', label: 'Excellent' };
     if (pct >= 70) return { grade: 'B+', color: '#3b82f6', bg: '#eff6ff', label: 'Very Good' };
-    if (pct >= 60) return { grade: 'B',  color: '#3b82f6', bg: '#eff6ff', label: 'Good' };
-    if (pct >= 50) return { grade: 'C',  color: '#f59e0b', bg: '#fffbeb', label: 'Average' };
-    return               { grade: 'D',  color: '#ef4444', bg: '#fef2f2', label: 'Needs Work' };
+    if (pct >= 60) return { grade: 'B', color: '#3b82f6', bg: '#eff6ff', label: 'Good' };
+    if (pct >= 50) return { grade: 'C', color: '#f59e0b', bg: '#fffbeb', label: 'Average' };
+    return { grade: 'D', color: '#ef4444', bg: '#fef2f2', label: 'Needs Work' };
 };
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -59,8 +59,8 @@ function StatBox({ label, children, gradient }) {
 
 function StatusPill({ status }) {
     const cfg = {
-        correct:    { bg: '#ecfdf5', color: '#059669', label: 'Correct' },
-        incorrect:  { bg: '#fef2f2', color: '#dc2626', label: 'Incorrect' },
+        correct: { bg: '#ecfdf5', color: '#059669', label: 'Correct' },
+        incorrect: { bg: '#fef2f2', color: '#dc2626', label: 'Incorrect' },
         unanswered: { bg: 'var(--theme-background)', color: '#94a3b8', label: 'Skipped' },
     }[status] || { bg: 'var(--theme-background)', color: '#94a3b8', label: status };
     return (
@@ -79,12 +79,12 @@ function ExamResultPageClient() {
     const attemptId = searchParams.get('attemptId');
     const examId = params.id;
 
-    const [loading, setLoading]                 = useState(true);
-    const [result, setResult]                   = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [result, setResult] = useState(null);
     const [detailedResults, setDetailedResults] = useState([]);
-    const [examTitle, setExamTitle]             = useState('');
-    const [examData, setExamData]               = useState(null);
-    const [expandedRow, setExpandedRow]         = useState(null);
+    const [examTitle, setExamTitle] = useState('');
+    const [examData, setExamData] = useState(null);
+    const [expandedRow, setExpandedRow] = useState(null);
 
     useEffect(() => {
         const fetchResult = async () => {
@@ -133,16 +133,16 @@ function ExamResultPageClient() {
 
     if (!result) return <div className="p-10 text-center text-slate-400 text-sm">Result not found</div>;
 
-    const isPassed          = result.isPassed;
-    const percentage        = result.percentage || (result.totalMarks > 0 ? Math.round((result.score / result.totalMarks) * 100) : 0);
-    const allResults        = detailedResults || [];
-    const correctCount      = allResults.filter(i => getStatus(i) === 'correct').length;
-    const incorrectCount    = allResults.filter(i => getStatus(i) === 'incorrect').length;
-    const unansweredCount   = allResults.filter(i => getStatus(i) === 'unanswered').length;
-    const hiddenAnswers     = allResults.some(i => i.canViewCorrectAnswer === false);
-    const hiddenSolutions   = allResults.some(i => i.canViewSolution === false);
-    const gradeInfo         = getGradeInfo(percentage);
-    const accuracy          = allResults.length > 0 ? Math.round((correctCount / allResults.length) * 100) : 0;
+    const isPassed = result.isPassed;
+    const percentage = result.percentage || (result.totalMarks > 0 ? Math.round((result.score / result.totalMarks) * 100) : 0);
+    const allResults = detailedResults || [];
+    const correctCount = allResults.filter(i => getStatus(i) === 'correct').length;
+    const incorrectCount = allResults.filter(i => getStatus(i) === 'incorrect').length;
+    const unansweredCount = allResults.filter(i => getStatus(i) === 'unanswered').length;
+    const hiddenAnswers = allResults.some(i => i.canViewCorrectAnswer === false);
+    const hiddenSolutions = allResults.some(i => i.canViewSolution === false);
+    const gradeInfo = getGradeInfo(percentage);
+    const accuracy = allResults.length > 0 ? Math.round((correctCount / allResults.length) * 100) : 0;
 
     return (
         <div className="space-y-4 pb-10" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
@@ -263,9 +263,9 @@ function ExamResultPageClient() {
                                 {/* 3-box counts */}
                                 <div className="grid grid-cols-3 gap-2.5">
                                     {[
-                                        { label: 'Correct',   count: correctCount,    bg: '#ecfdf5', color: '#059669', border: '#a7f3d0' },
-                                        { label: 'Incorrect', count: incorrectCount,  bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
-                                        { label: 'Skipped',   count: unansweredCount, bg: 'var(--theme-background)', color: '#64748b', border: '#e2e8f0' },
+                                        { label: 'Correct', count: correctCount, bg: '#ecfdf5', color: '#059669', border: '#a7f3d0' },
+                                        { label: 'Incorrect', count: incorrectCount, bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
+                                        { label: 'Skipped', count: unansweredCount, bg: 'var(--theme-background)', color: '#64748b', border: '#e2e8f0' },
                                     ].map(b => (
                                         <div key={b.label} className="rounded-2xl p-3 text-center border"
                                             style={{ background: b.bg, borderColor: b.border }}>
@@ -287,9 +287,11 @@ function ExamResultPageClient() {
                                             animate={{ width: `${percentage}%` }}
                                             transition={{ duration: 1.2, delay: 0.3, ease: 'easeOut' }}
                                             className="h-full rounded-full"
-                                            style={{ background: isPassed
-                                                ? 'linear-gradient(90deg, #10b981, #34d399)'
-                                                : 'linear-gradient(90deg, #ef4444, #f97316)' }}
+                                            style={{
+                                                background: isPassed
+                                                    ? 'linear-gradient(90deg, #10b981, #34d399)'
+                                                    : 'linear-gradient(90deg, #ef4444, #f97316)'
+                                            }}
                                         />
                                     </div>
                                 </div>
@@ -298,9 +300,9 @@ function ExamResultPageClient() {
                                 {allResults.length > 0 && (
                                     <div className="space-y-2 pt-1">
                                         {[
-                                            { label: 'Correct',   count: correctCount,    color: '#10b981' },
-                                            { label: 'Incorrect', count: incorrectCount,  color: '#ef4444' },
-                                            { label: 'Skipped',   count: unansweredCount, color: '#cbd5e1' },
+                                            { label: 'Correct', count: correctCount, color: '#10b981' },
+                                            { label: 'Incorrect', count: incorrectCount, color: '#ef4444' },
+                                            { label: 'Skipped', count: unansweredCount, color: '#cbd5e1' },
                                         ].map(b => (
                                             <div key={b.label} className="flex items-center gap-3">
                                                 <span className="w-16 text-xs text-slate-500 font-medium shrink-0">{b.label}</span>
@@ -401,9 +403,9 @@ function ExamResultPageClient() {
                                     </thead>
                                     <tbody>
                                         {allResults.map((item, idx) => {
-                                            const status        = getStatus(item);
+                                            const status = getStatus(item);
                                             const selectedAnswer = item.selectedAnswerText || getOptionText(item.options?.[item.selectedIndex]) || '—';
-                                            const correctAnswer  = item.canViewCorrectAnswer
+                                            const correctAnswer = item.canViewCorrectAnswer
                                                 ? (item.correctAnswerText || getOptionText(item.options?.[item.correctIndex]) || '—')
                                                 : 'Hidden';
                                             const isExpanded = expandedRow === idx;
@@ -439,40 +441,61 @@ function ExamResultPageClient() {
                                                             <span className="text-slate-300"> / {item.pointsPossible}</span>
                                                         </td>
                                                         <td className="px-4 py-3">
-                                                            {hasSolution ? (
-                                                                <button
-                                                                    onClick={() => setExpandedRow(isExpanded ? null : idx)}
-                                                                    className={`flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-bold rounded-lg transition-all
-                                                                        ${isExpanded
-                                                                            ? 'bg-[var(--theme-primary)]/20 text-[var(--theme-primary)]'
-                                                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
-                                                                    {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                                                                    {isExpanded ? 'Hide' : 'Solution'}
-                                                                </button>
-                                                            ) : (
-                                                                <span className="text-[11px] text-slate-300 italic">Hidden</span>
-                                                            )}
+                                                            <button
+                                                                onClick={() => setExpandedRow(isExpanded ? null : idx)}
+                                                                className={`flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-bold rounded-lg transition-all
+                                                                    ${isExpanded
+                                                                        ? 'bg-[var(--theme-primary)]/20 text-[var(--theme-primary)]'
+                                                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                                                                {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                                                {isExpanded ? 'Hide' : 'Review'}
+                                                            </button>
                                                         </td>
                                                     </tr>
 
                                                     {/* Inline solution expansion */}
                                                     <AnimatePresence>
-                                                        {isExpanded && hasSolution && (
+                                                        {isExpanded && (
                                                             <motion.tr
                                                                 key={`sol-${idx}`}
                                                                 initial={{ opacity: 0 }}
                                                                 animate={{ opacity: 1 }}
                                                                 exit={{ opacity: 0 }}
                                                                 className="border-b border-[var(--theme-primary)]/30">
-                                                                <td colSpan={7} className="px-6 py-4 bg-[var(--theme-primary)]/20/60">
-                                                                    <div className="flex items-start gap-3">
-                                                                        <div className="w-6 h-6 bg-[var(--theme-primary)]/20 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                                                                            <Sparkles className="w-3.5 h-3.5 text-[var(--theme-primary)]" />
-                                                                        </div>
+                                                                <td colSpan={7} className="px-6 py-5 bg-slate-50/80">
+                                                                    <div className="flex flex-col gap-4">
+                                                                        {/* Full Question */}
                                                                         <div>
-                                                                            <p className="text-[10px] font-bold text-[var(--theme-primary)] uppercase tracking-wider mb-1">Solution Explanation</p>
-                                                                            <p className="text-sm text-slate-700 leading-relaxed">{item.solutionText}</p>
+                                                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Question</p>
+                                                                            <p className="text-sm font-medium text-slate-800 leading-relaxed whitespace-pre-wrap">{item.question}</p>
                                                                         </div>
+
+                                                                        {/* Full Answers */}
+                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                            <div className="p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
+                                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Your Answer</p>
+                                                                                <p className="text-sm font-medium text-slate-700 leading-relaxed whitespace-pre-wrap">{selectedAnswer}</p>
+                                                                            </div>
+                                                                            <div className="p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
+                                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Correct Answer / AI Feedback</p>
+                                                                                <div className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${item.canViewCorrectAnswer ? 'text-emerald-700' : 'text-slate-400 italic'}`}>
+                                                                                    {item.aiFeedback || correctAnswer}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Solution Explanation if exists */}
+                                                                        {hasSolution && (
+                                                                            <div className="flex items-start gap-3 mt-1 p-4 bg-[var(--theme-primary)]/10 rounded-xl border border-[var(--theme-primary)]/20">
+                                                                                <div className="w-6 h-6 bg-[var(--theme-primary)]/20 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                                                                                    <Sparkles className="w-3.5 h-3.5 text-[var(--theme-primary)]" />
+                                                                                </div>
+                                                                                <div>
+                                                                                    <p className="text-[10px] font-bold text-[var(--theme-primary)] uppercase tracking-wider mb-1">Solution Explanation</p>
+                                                                                    <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{item.solutionText}</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </td>
                                                             </motion.tr>

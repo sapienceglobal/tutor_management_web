@@ -83,6 +83,11 @@ export default function ExamPlayerPage() {
         setQuestionStatus(prev => ({ ...prev, [questionId]: prev[questionId] === 'marked' ? 'answered-marked' : (value ? 'answered' : 'visited') }));
     };
 
+    const handleSubjectiveAnswer = (questionId, text) => {
+        setAnswers(prev => ({ ...prev, [questionId]: { textAnswer: text } }));
+        setQuestionStatus(prev => ({ ...prev, [questionId]: prev[questionId] === 'marked' ? 'answered-marked' : (text.trim() ? 'answered' : 'visited') }));
+    };
+
     const handleMatchAnswer = (questionId, leftItem, rightItem) => {
         setAnswers(prev => ({ ...prev, [questionId]: { match: { ...(prev[questionId]?.match || {}), [leftItem]: rightItem } } }));
         setQuestionStatus(prev => ({ ...prev, [questionId]: prev[questionId] === 'marked' ? 'answered-marked' : 'answered' }));
@@ -123,6 +128,7 @@ export default function ExamPlayerPage() {
                     selectedOptionText: ans.text || null,
                     numericAnswer: ans.value || null,
                     matchAnswers: ans.match || null,
+                    textAnswer: ans.textAnswer || null,
                 })),
                 timeSpent: (exam.duration * 60) - timeLeft,
                 startedAt: startedAt || new Date().toISOString(),
@@ -277,11 +283,11 @@ export default function ExamPlayerPage() {
     // SCREEN 2 — EXAM PLAYER
     // ══════════════════════════════════════════════════════════════════════════
     const currentQuestion = exam.questions[currentQuestionIndex];
-    const answeredCount       = Object.values(questionStatus).filter(s => s === 'answered' || s === 'answered-marked').length;
-    const notAnsweredCount    = Object.values(questionStatus).filter(s => s === 'visited').length;
-    const markedCount         = Object.values(questionStatus).filter(s => s === 'marked').length;
+    const answeredCount = Object.values(questionStatus).filter(s => s === 'answered' || s === 'answered-marked').length;
+    const notAnsweredCount = Object.values(questionStatus).filter(s => s === 'visited').length;
+    const markedCount = Object.values(questionStatus).filter(s => s === 'marked').length;
     const answeredMarkedCount = Object.values(questionStatus).filter(s => s === 'answered-marked').length;
-    const notVisitedCount     = Object.values(questionStatus).filter(s => s === 'not-visited').length;
+    const notVisitedCount = Object.values(questionStatus).filter(s => s === 'not-visited').length;
     const totalMarksObtainable = exam.totalMarks || exam.questions.length;
     const marksProgress = Math.round((answeredCount / exam.questions.length) * 100);
     const isLowTime = timeLeft < 300;
@@ -290,11 +296,11 @@ export default function ExamPlayerPage() {
     const getNavBoxStyle = (status, isCurrent) => {
         if (isCurrent) return { bg: 'var(--theme-sidebar)', text: 'white', border: 'var(--theme-sidebar)', ring: true };
         switch (status) {
-            case 'answered':        return { bg: '#22c55e', text: 'white', border: '#16a34a' };
+            case 'answered': return { bg: '#22c55e', text: 'white', border: '#16a34a' };
             case 'answered-marked': return { bg: '#f59e0b', text: 'white', border: '#d97706' };
-            case 'marked':          return { bg: '#a855f7', text: 'white', border: '#9333ea' };
-            case 'visited':         return { bg: '#ef4444', text: 'white', border: '#dc2626' };
-            default:                return { bg: '#f1f5f9', text: '#64748b', border: '#e2e8f0' };
+            case 'marked': return { bg: '#a855f7', text: 'white', border: '#9333ea' };
+            case 'visited': return { bg: '#ef4444', text: 'white', border: '#dc2626' };
+            default: return { bg: '#f1f5f9', text: '#64748b', border: '#e2e8f0' };
         }
     };
 
@@ -384,7 +390,7 @@ export default function ExamPlayerPage() {
                                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(`Q${currentQuestionIndex + 1}. ${currentQuestion.question}`) }} />
 
                             {/* MCQ */}
-                            {(!currentQuestion.questionType || currentQuestion.questionType === 'mcq' || currentQuestion.questionType === 'passage_based') && (
+                            {currentQuestion.options && currentQuestion.options.length > 0 && (!currentQuestion.questionType || currentQuestion.questionType === 'mcq' || currentQuestion.questionType === 'passage_based') && (
                                 <>
                                     <p className="text-sm text-slate-400 mb-4">Choose one from below options</p>
                                     <div className="space-y-3">
@@ -409,6 +415,19 @@ export default function ExamPlayerPage() {
                                         })}
                                     </div>
                                 </>
+                            )}
+
+                            {/* Subjective */}
+                            {(!currentQuestion.options || currentQuestion.options.length === 0 || currentQuestion.questionType === 'subjective') && (
+                                <div className="mt-5 animate-in fade-in duration-300">
+                                    <label className="block text-sm font-semibold text-slate-600 mb-2">Type your detailed answer:</label>
+                                    <textarea
+                                        value={answers[currentQuestion._id]?.textAnswer || ''}
+                                        onChange={e => handleSubjectiveAnswer(currentQuestion._id, e.target.value)}
+                                        placeholder="Type your detailed answer here..."
+                                        className="w-full p-5 rounded-2xl border-2 border-slate-200 focus:border-[var(--theme-primary)] focus:ring-4 focus:ring-[var(--theme-primary)]/10 min-h-[240px] resize-y text-slate-800 bg-slate-50 transition-all text-base shadow-inner font-medium placeholder:text-slate-400"
+                                    />
+                                </div>
                             )}
 
                             {/* Numeric */}

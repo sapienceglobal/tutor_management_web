@@ -116,10 +116,10 @@ export default function ExamResultModal({ result, onClose }) {
                                         className="w-full text-left p-4 flex items-start gap-4 hover:bg-slate-50 rounded-t-xl"
                                     >
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 font-bold ${isCorrect
-                                                ? 'bg-green-100 text-green-700'
-                                                : q.selectedIndex === -1
-                                                    ? 'bg-slate-100 text-slate-500'
-                                                    : 'bg-red-100 text-red-700'
+                                            ? 'bg-green-100 text-green-700'
+                                            : q.selectedIndex === -1
+                                                ? 'bg-slate-100 text-slate-500'
+                                                : 'bg-red-100 text-red-700'
                                             }`}>
                                             {index + 1}
                                         </div>
@@ -130,8 +130,8 @@ export default function ExamResultModal({ result, onClose }) {
                                         </div>
                                         <div className="flex items-center gap-3 shrink-0">
                                             <span className={`px-2 py-1 rounded text-xs font-bold ${isCorrect
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : 'bg-red-100 text-red-700'
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-red-100 text-red-700'
                                                 }`}>
                                                 {q.pointsEarned} / {q.pointsPossible} pts
                                             </span>
@@ -159,22 +159,38 @@ export default function ExamResultModal({ result, onClose }) {
                                                     return (
                                                         <div key={optIdx} className={optionClass}>
                                                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] ${isAnswer
-                                                                    ? 'border-green-500 bg-green-500 text-white'
-                                                                    : isSelected
-                                                                        ? 'border-red-500 bg-red-500 text-white'
-                                                                        : 'border-slate-300'
+                                                                ? 'border-green-500 bg-green-500 text-white'
+                                                                : isSelected
+                                                                    ? 'border-red-500 bg-red-500 text-white'
+                                                                    : 'border-slate-300'
                                                                 }`}>
                                                                 {String.fromCharCode(65 + optIdx)}
                                                             </div>
-                                                            <span className="flex-1 font-medium">{opt}</span>
+                                                            <span className="flex-1 font-medium">{opt?.text || opt}</span>
                                                             {isAnswer && <CheckCircle className="w-5 h-5 text-green-600" />}
                                                             {isSelected && !isCorrect && <XCircle className="w-5 h-5 text-red-600" />}
                                                         </div>
                                                     );
                                                 })}
+                                                {q.options.length === 0 && (
+                                                    <div className="bg-white border border-slate-200 p-4 rounded-lg">
+                                                        <div className="text-sm font-bold text-slate-500 mb-2 uppercase tracking-wider">Your Answer</div>
+                                                        <p className="text-slate-800 whitespace-pre-wrap">{q.selectedAnswerText || <span className="text-slate-400 italic">No answer provided</span>}</p>
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            {q.explanation && (
+                                            {q.aiFeedback && (
+                                                <div className="bg-purple-50 border border-purple-100 p-3 rounded-lg mt-3">
+                                                    <div className="flex items-center gap-2 text-purple-800 font-bold text-sm mb-1">
+                                                        <Award className="w-4 h-4" />
+                                                        AI Grading Feedback
+                                                    </div>
+                                                    <p className="text-purple-900 text-sm whitespace-pre-wrap">{q.aiFeedback}</p>
+                                                </div>
+                                            )}
+
+                                            {!q.aiFeedback && q.explanation && (
                                                 <div className="bg-blue-50 border border-blue-100 p-3 rounded-lg mt-3">
                                                     <div className="flex items-center gap-2 text-blue-800 font-bold text-sm mb-1">
                                                         <HelpCircle className="w-4 h-4" />
