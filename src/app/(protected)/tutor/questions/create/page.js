@@ -11,6 +11,7 @@ import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { QuestionFormFields } from '@/components/shared/QuestionFormFields';
+import { C, T, FX } from '@/constants/tutorTokens';
 
 export default function CreateQuestionPage() {
     const router = useRouter();
@@ -40,7 +41,7 @@ export default function CreateQuestionPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.question) return toast.error('Question text is required');
-        if (formData.type === 'mcq') {
+        if (['mcq', 'true_false'].includes(formData.type)) {
             if (formData.options.some(o => !o.text)) return toast.error('All options must have text');
             if (!formData.options.some(o => o.isCorrect)) return toast.error('Select at least one correct answer');
         } else if (!formData.idealAnswer) return toast.error('Ideal Answer is required');
@@ -81,7 +82,7 @@ export default function CreateQuestionPage() {
     };
 
     return (
-        <div className="space-y-6" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-6" style={{ fontFamily: T.fontFamily }}>
 
             {/* Page Header */}
             <div className="flex items-center justify-between">
@@ -94,8 +95,8 @@ export default function CreateQuestionPage() {
                     <div>
                         <div className="flex items-center gap-2.5 mb-0.5">
                             <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                                <Plus className="w-3.5 h-3.5" style={{ color: 'var(--theme-primary)' }} />
+                                style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
+                                <Plus className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
                             </div>
                             <h1 className="text-lg font-bold text-slate-800">Create New Question</h1>
                         </div>
@@ -106,7 +107,7 @@ export default function CreateQuestionPage() {
                     variant="outline" size="sm"
                     onClick={() => setIsAIOpen(true)}
                     className="gap-2 text-sm border-slate-200"
-                    style={{ color: 'var(--theme-primary)' }}>
+                    style={{ color: C.btnPrimary }}>
                     <Sparkles className="w-4 h-4" /> Generate with AI
                 </Button>
             </div>
@@ -118,7 +119,7 @@ export default function CreateQuestionPage() {
                     <Button
                         type="submit" disabled={loading}
                         className="w-full h-10 text-white font-semibold gap-2 mt-2"
-                        style={{ backgroundColor: 'var(--theme-primary)' }}>
+                        style={{ backgroundColor: C.btnPrimary }}>
                         {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                         <Save className="w-4 h-4" /> Save Question
                     </Button>
@@ -132,8 +133,8 @@ export default function CreateQuestionPage() {
                         <div className="p-5 border-b border-slate-100 flex justify-between items-center">
                             <div className="flex items-center gap-2.5">
                                 <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                                    style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                                    <BrainCircuit className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                                    style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
+                                    <BrainCircuit className="w-4 h-4" style={{ color: C.btnPrimary }} />
                                 </div>
                                 <h2 className="text-base font-bold text-slate-800">Generate with AI</h2>
                             </div>
@@ -178,7 +179,7 @@ export default function CreateQuestionPage() {
                             <Button
                                 onClick={handleAIGenerate} disabled={aiLoading}
                                 className="w-full text-white gap-2 mt-2"
-                                style={{ backgroundColor: 'var(--theme-primary)' }}>
+                                style={{ backgroundColor: C.btnPrimary }}>
                                 {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BrainCircuit className="w-4 h-4" />}
                                 Generate Question
                             </Button>

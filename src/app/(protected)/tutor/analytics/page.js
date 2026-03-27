@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
+import { toast } from 'react-hot-toast';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
     Legend, ResponsiveContainer, LineChart, Line,
     PieChart, Pie, Cell
 } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowUpRight, Users, BookOpen, Star, Clock, TrendingUp, Loader2 } from 'lucide-react';
+import { ArrowUpRight, Users, Star, Clock, TrendingUp, Loader2, Download } from 'lucide-react';
+import { C, T, FX } from '@/constants/tutorTokens';
 
 // ─── Custom Tooltip ──────────────────────────────────────────────────────────
 const CustomBarTooltip = ({ active, payload, label }) => {
@@ -16,7 +18,7 @@ const CustomBarTooltip = ({ active, payload, label }) => {
         return (
             <div className="bg-white border border-slate-100 rounded-xl px-3 py-2 shadow-lg text-xs">
                 <p className="text-slate-400 font-medium mb-0.5">{label}</p>
-                <p className="font-bold text-slate-800" style={{ color: 'var(--theme-primary)' }}>
+                <p className="font-bold text-slate-800" style={{ color: C.btnPrimary }}>
                     ₹{payload[0].value?.toLocaleString()}
                 </p>
             </div>
@@ -46,8 +48,9 @@ export default function TutorAnalyticsPage() {
     const [monthlyEarnings, setMonthlyEarnings] = useState([]);
     const [courseEnrollments, setCourseEnrollments] = useState([]);
     const [studentDistribution, setStudentDistribution] = useState([]);
-    const [stats, setStats] = useState({ avgRating: 0, totalReviews: 0, totalStudents: 0 });
+    const [stats, setStats] = useState({ avgRating: 0, totalReviews: 0, totalStudents: 0, totalCourses: 0 });
     const [loading, setLoading] = useState(true);
+    const [exporting, setExporting] = useState(false);
 
     useEffect(() => { fetchAnalytics(); }, []);
 
@@ -73,6 +76,7 @@ export default function TutorAnalyticsPage() {
                     avgRating: statsRes.data.stats.rating.average,
                     totalReviews: statsRes.data.stats.rating.totalReviews,
                     totalStudents: statsRes.data.stats.students.total,
+                    totalCourses: statsRes.data.stats.courses.total,
                 });
             }
 
@@ -95,10 +99,36 @@ export default function TutorAnalyticsPage() {
         }
     };
 
+    const handleExport = async () => {
+        setExporting(true);
+        try {
+            const res = await api.get('/tutor/dashboard/export', { responseType: 'blob' });
+            const disposition = res.headers?.['content-disposition'] || '';
+            let fileName = `tutor-analytics-${new Date().toISOString().slice(0, 10)}.csv`;
+            const fileNameMatch = disposition.match(/filename="?([^"]+)"?/i);
+            if (fileNameMatch?.[1]) fileName = fileNameMatch[1];
+
+            const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', fileName);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+            toast.success('Analytics report downloaded');
+        } catch {
+            toast.error('Failed to export analytics');
+        } finally {
+            setExporting(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-7 h-7 animate-spin" style={{ color: 'var(--theme-primary)' }} />
+                <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
                 <p className="text-sm text-slate-400">Loading analytics...</p>
             </div>
         );
@@ -106,25 +136,36 @@ export default function TutorAnalyticsPage() {
 
     // Pie chart colors derived from CSS vars — computed once on client
     const PIE_COLORS = [
-        'var(--theme-primary)',
-        'var(--theme-accent)',
-        'var(--theme-sidebar)',
+        C.btnPrimary,
+        C.chartLine,
+        C.darkCard,
     ];
 
     return (
-        <div className="space-y-6" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-6" style={{ fontFamily: T.fontFamily }}>
 
             {/* Page Header */}
             <div>
-                <div className="flex items-center gap-2.5 mb-1">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{
-                            backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)',
-                            border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)'
-                        }}>
-                        <TrendingUp className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 mb-1">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                            style={{
+                                backgroundColor: FX.primary12,
+                                border: `1px solid ${FX.primary20}`
+                            }}>
+                            <TrendingUp className="w-4 h-4" style={{ color: C.btnPrimary }} />
+                        </div>
+                        <h1 className="text-xl font-bold text-slate-800">Analytics</h1>
                     </div>
-                    <h1 className="text-xl font-bold text-slate-800">Analytics</h1>
+                    <button
+                        onClick={handleExport}
+                        disabled={exporting}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-white transition-opacity disabled:opacity-60"
+                        style={{ backgroundColor: C.btnPrimary }}
+                    >
+                        {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                        Export Report
+                    </button>
                 </div>
                 <p className="text-xs text-slate-400 pl-0.5">Deep dive into your course performance and student engagement.</p>
             </div>
@@ -142,7 +183,7 @@ export default function TutorAnalyticsPage() {
                     iconBg="bg-yellow-50" iconColor="text-yellow-500"
                 />
                 <StatCard
-                    icon={Clock} label="Total Courses" value={courseEnrollments.length}
+                    icon={Clock} label="Total Courses" value={stats.totalCourses}
                     sub="Active courses"
                     iconBg="bg-blue-50" iconColor="text-blue-500"
                 />
@@ -161,7 +202,7 @@ export default function TutorAnalyticsPage() {
                             key={tab}
                             value={tab}
                             className="capitalize text-sm font-semibold rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-2"
-                            style={{ '--tab-active-color': 'var(--theme-primary)' }}>
+                            style={{ '--tab-active-color': C.btnPrimary }}>
                             {tab === 'overview' ? 'Overview' : tab === 'courses' ? 'Course Performance' : 'Student Insights'}
                         </TabsTrigger>
                     ))}
@@ -187,7 +228,7 @@ export default function TutorAnalyticsPage() {
                                                 tickFormatter={(v) => `₹${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
                                             <Tooltip content={<CustomBarTooltip />} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />
                                             <Bar dataKey="revenue" name="Earnings" radius={[6, 6, 0, 0]}
-                                                fill="var(--theme-primary)" />
+                                                fill={C.btnPrimary} />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 ) : (
@@ -213,14 +254,14 @@ export default function TutorAnalyticsPage() {
                                     return (
                                         <div key={index} className="flex items-center gap-3">
                                             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-black flex-shrink-0"
-                                                style={{ backgroundColor: index === 0 ? 'var(--theme-primary)' : 'var(--theme-sidebar)' }}>
+                                                style={{ backgroundColor: index === 0 ? C.btnPrimary : C.darkCard }}>
                                                 {index + 1}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm font-semibold text-slate-700 truncate mb-1.5">{course.name}</p>
                                                 <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                                     <div className="h-full rounded-full transition-all duration-700"
-                                                        style={{ width: `${pct}%`, backgroundColor: 'var(--theme-primary)' }} />
+                                                        style={{ width: `${pct}%`, backgroundColor: C.btnPrimary }} />
                                                 </div>
                                             </div>
                                             <span className="text-sm font-bold text-slate-600 flex-shrink-0">{course.students}</span>
@@ -246,8 +287,8 @@ export default function TutorAnalyticsPage() {
                                 <LineChart data={monthlyEarnings} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="var(--theme-primary)" stopOpacity={0.15} />
-                                            <stop offset="100%" stopColor="var(--theme-primary)" stopOpacity={0} />
+                                            <stop offset="0%" stopColor={C.btnPrimary} stopOpacity={0.15} />
+                                            <stop offset="100%" stopColor={C.btnPrimary} stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -256,9 +297,9 @@ export default function TutorAnalyticsPage() {
                                     <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: 12 }} />
                                     <Legend wrapperStyle={{ fontSize: 12 }} />
                                     <Line type="monotone" dataKey="revenue" name="Revenue"
-                                        stroke="var(--theme-primary)" strokeWidth={2.5}
-                                        dot={{ r: 3, fill: 'var(--theme-primary)', strokeWidth: 0 }}
-                                        activeDot={{ r: 5, fill: 'var(--theme-primary)' }} />
+                                        stroke={C.btnPrimary} strokeWidth={2.5}
+                                        dot={{ r: 3, fill: C.btnPrimary, strokeWidth: 0 }}
+                                        activeDot={{ r: 5, fill: C.btnPrimary }} />
                                 </LineChart>
                             </ResponsiveContainer>
                         </div>

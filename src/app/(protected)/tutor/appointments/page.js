@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
+import { C, T, FX } from '@/constants/tutorTokens';
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
@@ -63,21 +64,21 @@ export default function ManageAppointmentsPage() {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-7 h-7 animate-spin" style={{ color: 'var(--theme-primary)' }} />
+                <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
                 <p className="text-sm text-slate-400">Loading appointments...</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-5" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-5" style={{ fontFamily: T.fontFamily }}>
 
             {/* ── Header ────────────────────────────────────────────────────── */}
             <div className="bg-white rounded-xl border border-slate-100 px-5 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                        <Calendar className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                        style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
+                        <Calendar className="w-4 h-4" style={{ color: C.btnPrimary }} />
                     </div>
                     <div>
                         <h1 className="text-lg font-bold text-slate-800">Manage Appointments</h1>
@@ -91,13 +92,13 @@ export default function ManageAppointmentsPage() {
                         <button key={tab} onClick={() => setActiveTab(tab)}
                             className="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all capitalize"
                             style={activeTab === tab
-                                ? { backgroundColor: 'white', color: 'var(--theme-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }
+                                ? { backgroundColor: 'white', color: C.btnPrimary, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }
                                 : { color: '#94a3b8' }}>
                             {tab}
                             {tab !== 'history' && (
                                 <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full font-black"
                                     style={activeTab === tab
-                                        ? { backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', color: 'var(--theme-primary)' }
+                                        ? { backgroundColor: FX.primary12, color: C.btnPrimary }
                                         : { backgroundColor: '#f1f5f9', color: '#94a3b8' }}>
                                     {appointments.filter(a => a.status === tab).length}
                                 </span>
@@ -117,8 +118,8 @@ export default function ManageAppointmentsPage() {
 
                                 {/* Date box */}
                                 <div className="hidden md:flex flex-col items-center justify-center w-16 h-16 rounded-xl flex-shrink-0 border"
-                                    style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 6%, white)', borderColor: 'color-mix(in srgb, var(--theme-primary) 15%, white)' }}>
-                                    <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--theme-primary)' }}>
+                                    style={{ backgroundColor: FX.primary06, borderColor: FX.primary15White }}>
+                                    <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: C.btnPrimary }}>
                                         {format(new Date(apt.dateTime), 'MMM')}
                                     </span>
                                     <span className="text-2xl font-black text-slate-800 leading-tight">
@@ -134,7 +135,7 @@ export default function ManageAppointmentsPage() {
                                     <div className="flex items-start justify-between gap-3 mb-3">
                                         <div className="flex items-center gap-2.5 min-w-0">
                                             <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
-                                                style={{ background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))' }}>
+                                                style={{ background: C.gradientBtn }}>
                                                 {apt.studentId?.profileImage
                                                     ? <img src={apt.studentId.profileImage} alt="" className="w-full h-full object-cover" />
                                                     : <span className="text-white text-xs font-bold">{apt.studentId?.name?.[0]?.toUpperCase() || 'S'}</span>}
@@ -170,7 +171,7 @@ export default function ManageAppointmentsPage() {
                                                 <MessageSquare className="w-3.5 h-3.5" /> Message
                                             </button>
                                             <button className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white rounded-xl transition-opacity"
-                                                style={{ backgroundColor: 'var(--theme-primary)' }}>
+                                                style={{ backgroundColor: C.btnPrimary }}>
                                                 <Video className="w-3.5 h-3.5" /> Join Meeting
                                             </button>
                                         </div>
@@ -183,8 +184,8 @@ export default function ManageAppointmentsPage() {
             ) : (
                 <div className="text-center py-16 bg-white rounded-xl border border-dashed border-slate-200">
                     <div className="mx-auto w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 8%, white)' }}>
-                        <AlertCircle className="w-6 h-6" style={{ color: 'var(--theme-primary)' }} />
+                        style={{ backgroundColor: FX.primary08 }}>
+                        <AlertCircle className="w-6 h-6" style={{ color: C.btnPrimary }} />
                     </div>
                     <h3 className="text-sm font-semibold text-slate-700 mb-1">No appointments found</h3>
                     <p className="text-xs text-slate-400">No {activeTab} appointments at this time.</p>

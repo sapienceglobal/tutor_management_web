@@ -5,6 +5,7 @@ import { Loader2, Mail, Calendar, BookOpen, CreditCard, ChevronLeft, User } from
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import { C, T, FX } from '@/constants/tutorTokens';
 
 export default function TutorStudentDetailPage({ params }) {
     const { id }      = use(params);
@@ -32,7 +33,7 @@ export default function TutorStudentDetailPage({ params }) {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-7 h-7 animate-spin" style={{ color: 'var(--theme-primary)' }} />
+                <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
                 <p className="text-sm text-slate-400">Loading student details...</p>
             </div>
         );
@@ -45,15 +46,15 @@ export default function TutorStudentDetailPage({ params }) {
     }
 
     return (
-        <div className="space-y-5" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-5" style={{ fontFamily: T.fontFamily }}>
 
             {/* ── Profile card ──────────────────────────────────────────────── */}
             <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
                 {/* Banner */}
-                <div className="h-28 relative" style={{ backgroundColor: 'var(--theme-sidebar)' }}>
+                <div className="h-28 relative" style={{ backgroundColor: C.darkCard }}>
                     {/* Glow blob */}
                     <div className="absolute -top-6 -right-6 w-48 h-48 rounded-full blur-3xl opacity-30"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 60%, transparent)' }} />
+                        style={{ backgroundColor: FX.primary60Transparent }} />
                     {/* Back button */}
                     <button onClick={() => router.back()}
                         className="absolute top-4 left-5 flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors">
@@ -65,7 +66,7 @@ export default function TutorStudentDetailPage({ params }) {
                     {/* Avatar row */}
                     <div className="flex items-end justify-between -mt-10 mb-4">
                         <div className="w-20 h-20 rounded-2xl border-4 border-white shadow-md overflow-hidden flex-shrink-0"
-                            style={{ background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))' }}>
+                            style={{ background: C.gradientBtn }}>
                             {student.profileImage
                                 ? <img src={student.profileImage} alt="" className="w-full h-full object-cover" />
                                 : <div className="w-full h-full flex items-center justify-center text-3xl font-black text-white">
@@ -80,7 +81,7 @@ export default function TutorStudentDetailPage({ params }) {
                             <div className="flex items-center gap-2 mb-1">
                                 <h1 className="text-xl font-bold text-slate-900">{student.name}</h1>
                                 <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border"
-                                    style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 8%, white)', color: 'var(--theme-primary)', borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
+                                    style={{ backgroundColor: FX.primary08, color: C.btnPrimary, borderColor: FX.primary20 }}>
                                     <User className="w-2.5 h-2.5 inline mr-0.5" />Student
                                 </span>
                             </div>
@@ -97,8 +98,8 @@ export default function TutorStudentDetailPage({ params }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-white rounded-xl border border-slate-100 p-5 flex items-center gap-4 hover:shadow-sm transition-shadow">
                     <div className="w-11 h-11 rounded-xl flex items-center justify-center"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)' }}>
-                        <BookOpen className="w-5 h-5" style={{ color: 'var(--theme-primary)' }} />
+                        style={{ backgroundColor: FX.primary12 }}>
+                        <BookOpen className="w-5 h-5" style={{ color: C.btnPrimary }} />
                     </div>
                     <div>
                         <p className="text-xs text-slate-500 font-semibold">Courses Enrolled</p>
@@ -123,8 +124,8 @@ export default function TutorStudentDetailPage({ params }) {
             <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
                 <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
                     <div className="w-6 h-6 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)' }}>
-                        <BookOpen className="w-3.5 h-3.5" style={{ color: 'var(--theme-primary)' }} />
+                        style={{ backgroundColor: FX.primary12 }}>
+                        <BookOpen className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
                     </div>
                     <h3 className="text-sm font-bold text-slate-800">Enrolled Courses</h3>
                 </div>

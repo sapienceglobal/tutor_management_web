@@ -322,6 +322,15 @@ export default function EditExamPage({ params }) {
                         </div>
                     </div>
 
+                    {/* Security & Integrity */}
+                    <div className="bg-white rounded-xl border border-slate-100 p-6">
+                        <h2 className="text-sm font-bold text-red-600 uppercase tracking-wider mb-1">Security & Integrity</h2>
+                        <p className="text-xs text-slate-400 mb-5">Control proctoring and browser restrictions for this exam</p>
+
+                        <SettingRow label="AI Face Detection (Proctoring)" desc="Requires webcam access. Flags suspicious activity." id="proctoring" checked={examData.isProctoringEnabled ?? false} onChange={(v) => setExamData({ ...examData, isProctoringEnabled: v })} />
+                        <SettingRow label="Strict Tab Tracking" desc="Flag exam heavily upon tab switches or minimizes" id="tabSwitch" checked={examData.strictTabSwitching ?? false} onChange={(v) => setExamData({ ...examData, strictTabSwitching: v })} />
+                    </div>
+
                     <div className="flex justify-end">
                         <Button onClick={() => setStep(3)} className="bg-orange-500 hover:bg-orange-600 text-white gap-2 shadow-sm shadow-orange-200">
                             Next: Edit Questions <ChevronRight className="w-4 h-4" />

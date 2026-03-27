@@ -4,118 +4,127 @@
  * ThemeContext — Industry-level LMS theme resolution
  *
  * Priority chain (highest → lowest):
+ *  1. SuperAdmin enforceGlobalTheme = true → Everyone uses globalTheme
+ *  2. User in Institute + useGlobalTheme   → SA's studentTheme / tutorTheme
+ *  3. User in Institute                    → Institute's own themes
+ *  4. No Institute                         → SA's studentTheme / tutorTheme
+ *  5. Absolute fallback                    → FALLBACK constants below
  *
- *  1. SuperAdmin enforceGlobalTheme = true
- *     → Everyone uses SuperAdmin's globalTheme, no exceptions
- *
- *  2. User belongs to an Institute
- *     a. Institute useGlobalTheme = true
- *        → Use SuperAdmin's role-specific theme (studentTheme / tutorTheme)
- *     b. Institute useGlobalTheme = false
- *        → Use Institute's own studentTheme / tutorTheme
- *
- *  3. User NOT in any Institute (standalone tutor/student)
- *     → Use SuperAdmin's role-specific theme (studentTheme / tutorTheme)
- *
- *  4. Absolute fallback → hardcoded defaults
+ * ─── FALLBACK COLORS ─────────────────────────────────────────────────────────
+ * These are the default colors shown when no admin theme is configured.
+ * They match the student design spec exactly.
+ * studentTokens.js reads these via CSS vars — so changing here updates all pages.
  */
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import useInstitute from '@/hooks/useInstitute';
 import api from '@/lib/axios';
 
-// ─── Hardcoded fallback defaults ─────────────────────────────────────────────
+// ─── Hardcoded fallback defaults ──────────────────────────────────────────────
 const FALLBACK = {
     student: {
-        primary:          '#4338ca',
-        secondary:        '#f8fafc',
-        accent:           '#6366f1',
-        sidebar:          '#1e1b4b',
-        background:       '#f8fafc',
-        foreground:       '#1e293b',
-        sidebarForeground:'#e2e8f0',
-        muted:            '#f1f5f9',
-        border:           '#e2e8f0',
-        font:             "'DM Sans', sans-serif",
-        fontSize:         '14',
-        radius:           '1rem',
+        // ── Brand colors (match studentTokens design spec) ─────────────────
+        primary:           '#7573E8',   // C.btnPrimary, C.iconBg area
+        secondary:         '#DCD7F6',   // C.pageBg — page background
+        accent:            '#5E9D9D',   // C.chartLine — chart/analytics
+        sidebar:           '#3D3B8E',   // C.darkCard — dark hero sections
+
+        // ── Derived (not set by admin, but needed for CSS vars) ────────────
+        background:        '#DCD7F6',   // same as secondary
+        foreground:        '#151656',   // C.heading — all headings
+        sidebarForeground: '#ffffff',
+        muted:             '#DCD7F6',
+        border:            'rgba(98,103,233,0.12)',
+
+        // ── Typography ────────────────────────────────────────────────────
+        font:     "'DM Sans', sans-serif",
+        fontSize: '14',
+        radius:   '1rem',
     },
     tutor: {
-        primary:          '#f97316',
-        secondary:        '#fff7ed',
-        accent:           '#fb923c',
-        sidebar:          '#0f172a',
-        background:       '#fff7ed',
-        foreground:       '#1e293b',
-        sidebarForeground:'#e2e8f0',
-        muted:            '#fff7ed',
-        border:           '#fed7aa',
-        font:             "'DM Sans', sans-serif",
-        fontSize:         '14',
-        radius:           '1rem',
+        primary:           '#f97316',
+        secondary:         '#fff7ed',
+        accent:            '#fb923c',
+        sidebar:           '#0f172a',
+        background:        '#fff7ed',
+        foreground:        '#1e293b',
+        sidebarForeground: '#e2e8f0',
+        muted:             '#fff7ed',
+        border:            '#fed7aa',
+        font:              "'DM Sans', sans-serif",
+        fontSize:          '14',
+        radius:            '1rem',
     },
     global: {
-        primary:          '#4338ca',
-        secondary:        '#f8fafc',
-        accent:           '#6366f1',
-        sidebar:          '#1e1b4b',
-        background:       '#f8fafc',
-        foreground:       '#1e293b',
-        sidebarForeground:'#e2e8f0',
-        muted:            '#f1f5f9',
-        border:           '#e2e8f0',
-        font:             "'DM Sans', sans-serif",
-        fontSize:         '14',
-        radius:           '1rem',
+        // ── Neutral admin/default colors — DO NOT use student colors here ──
+        // Admin & SuperAdmin always use this fallback.
+        // Student colors are in FALLBACK.student only.
+        primary:           '#4338ca',
+        secondary:         '#f8fafc',
+        accent:            '#6366f1',
+        sidebar:           '#1e1b4b',
+        background:        '#f8fafc',
+        foreground:        '#1e293b',
+        sidebarForeground: '#e2e8f0',
+        muted:             '#f1f5f9',
+        border:            '#e2e8f0',
+        font:              "'DM Sans', sans-serif",
+        fontSize:          '14',
+        radius:            '1rem',
     },
 };
 
 const DARK_OVERRIDES = {
-    background:       '#0f172a',
-    foreground:       '#f8fafc',
-    secondary:        '#1e293b',
-    muted:            '#1e293b',
-    border:           '#334155',
-    sidebarForeground:'#cbd5e1',
+    background:        '#0f172a',
+    foreground:        '#f8fafc',
+    secondary:         '#1e293b',
+    muted:             '#1e293b',
+    border:            '#334155',
+    sidebarForeground: '#cbd5e1',
 };
 
-// ─── Convert API theme object → CSS variable map ─────────────────────────────
+// ─── Convert API theme object → CSS variable map ──────────────────────────────
+// SuperAdmin stores: primaryColor, secondaryColor, sidebarColor, accentColor
+// We derive all CSS vars from these 4.
 function apiThemeToVars(apiTheme, fallbackKey = 'global') {
-    if (!apiTheme) return { ...FALLBACK[fallbackKey] };
+    const fb = FALLBACK[fallbackKey] || FALLBACK.global;
+    if (!apiTheme) return { ...fb };
+
+    const primary    = apiTheme.primaryColor   || fb.primary;
+    const secondary  = apiTheme.secondaryColor || fb.secondary;
+    const sidebar    = apiTheme.sidebarColor   || fb.sidebar;
+    const accent     = apiTheme.accentColor    || fb.accent;
+
     return {
-        primary:          apiTheme.primaryColor   || FALLBACK[fallbackKey].primary,
-        secondary:        apiTheme.secondaryColor || FALLBACK[fallbackKey].secondary,
-        accent:           apiTheme.accentColor    || FALLBACK[fallbackKey].accent,
-        sidebar:          apiTheme.sidebarColor   || FALLBACK[fallbackKey].sidebar,
-        background:       apiTheme.secondaryColor || FALLBACK[fallbackKey].background,
-        foreground:       FALLBACK[fallbackKey].foreground,
-        sidebarForeground:FALLBACK[fallbackKey].sidebarForeground,
-        muted:            apiTheme.secondaryColor || FALLBACK[fallbackKey].muted,
-        border:           FALLBACK[fallbackKey].border,
-        font:             apiTheme.fontFamily     || FALLBACK[fallbackKey].font,
-        fontSize:         String(apiTheme.fontSize || FALLBACK[fallbackKey].fontSize),
-        radius:           '1rem',
+        primary,
+        secondary,
+        accent,
+        sidebar,
+        background:        secondary,
+        foreground:        fb.foreground,   // keep design spec foreground
+        sidebarForeground: '#ffffff',
+        muted:             secondary,
+        border:            fb.border,
+        font:              apiTheme.fontFamily || fb.font,
+        fontSize:          String(apiTheme.fontSize || fb.fontSize),
+        radius:            '1rem',
     };
 }
 
-// ─── Read role from cookie (set by backend, tamper-evident) ─────────────────
-// We use 'user_role' cookie which is set at login alongside JWT token.
-// Even if someone tampers this cookie, the WORST outcome is wrong CSS colors —
-// all actual data access is protected by backend JWT + authorize middleware.
-// localStorage.userRole is kept as fallback for compatibility.
+// ─── Read role from cookie ─────────────────────────────────────────────────────
 function getUserRole() {
     if (typeof window === 'undefined') return 'student';
-    // Try cookie first (more reliable — set by login, cleared on logout)
     const cookieRole = document.cookie
         .split('; ')
         .find(row => row.startsWith('user_role='))
         ?.split('=')[1];
     if (cookieRole) return cookieRole;
-    // Fallback to localStorage
     return localStorage.getItem('userRole') || 'student';
 }
-const CACHE_KEY   = 'sapience_global_theme_v2';
-const CACHE_TTL   = 5 * 60 * 1000; // 5 minutes
+
+// ─── Cache helpers ─────────────────────────────────────────────────────────────
+const CACHE_KEY = 'sapience_global_theme_v2';
+const CACHE_TTL = 5 * 60 * 1000;
 
 function readCache() {
     if (typeof window === 'undefined') return null;
@@ -135,58 +144,12 @@ function writeCache(data) {
     } catch {}
 }
 
-// ─── Synchronous theme resolver (runs before React paint) ───────────────────
-// Reads localStorage cache + institute data to compute theme vars WITHOUT
-// any async calls — eliminates the flash of wrong theme on page load.
-function resolveThemeSync() {
-    if (typeof window === 'undefined') return { ...FALLBACK.global };
-
-    const role = getUserRole();
-    if (role === 'admin' || role === 'superadmin') return { ...FALLBACK.global };
-
-    const isStudent = role === 'student';
-    const roleKey   = isStudent ? 'student' : 'tutor';
-
-    // Try to read cached global data
-    const globalData = readCache();
-
-    // Try to read cached institute data
-    let institute = null;
-    try {
-        const raw = localStorage.getItem('sapience_institute_cache');
-        if (raw) {
-            const { data, ts } = JSON.parse(raw);
-            if (Date.now() - ts < 10 * 60 * 1000) institute = data;
-        }
-    } catch {}
-
-    let resolved;
-
-    if (globalData?.enforceGlobalTheme) {
-        resolved = apiThemeToVars(globalData.globalTheme, 'global');
-    } else if (institute) {
-        if (institute.themeSettings?.useGlobalTheme) {
-            const saTheme = isStudent ? globalData?.studentTheme : globalData?.tutorTheme;
-            resolved = apiThemeToVars(saTheme || (isStudent ? institute.studentTheme : institute.tutorTheme), roleKey);
-        } else {
-            resolved = apiThemeToVars(isStudent ? institute.studentTheme : institute.tutorTheme, roleKey);
-        }
-    } else if (globalData) {
-        resolved = apiThemeToVars(isStudent ? globalData.studentTheme : globalData.tutorTheme, roleKey);
-    } else {
-        resolved = { ...FALLBACK[roleKey] || FALLBACK.global };
-    }
-
-    const mode = localStorage.getItem('theme-mode') || 'light';
-    if (mode === 'dark') resolved = { ...resolved, ...DARK_OVERRIDES };
-    return resolved;
-}
-
-// ─── Apply theme vars to DOM immediately (call this synchronously) ───────────
+// ─── Apply theme vars to DOM ───────────────────────────────────────────────────
 function applyThemeToDom(vars, mode) {
     if (typeof window === 'undefined') return;
     const root = document.documentElement;
-    const map = {
+
+    const cssMap = {
         primary:           '--theme-primary',
         secondary:         '--theme-secondary',
         accent:            '--theme-accent',
@@ -199,18 +162,64 @@ function applyThemeToDom(vars, mode) {
         font:              '--theme-font',
         radius:            '--theme-radius',
     };
-    Object.entries(map).forEach(([key, cssVar]) => {
+
+    Object.entries(cssMap).forEach(([key, cssVar]) => {
         if (vars[key]) root.style.setProperty(cssVar, vars[key]);
     });
-    if (vars.fontSize) {
-        root.style.fontSize = `${vars.fontSize}px`;
-        document.body.style.fontFamily = vars.font || FALLBACK.global.font;
-    }
+
+    if (vars.fontSize) root.style.fontSize = `${vars.fontSize}px`;
+    if (vars.font)     document.body.style.fontFamily = vars.font;
+
+    // Legacy compat
+    root.style.setProperty('--primary-color',   vars.primary   || '');
+    root.style.setProperty('--secondary-color', vars.secondary || '');
+
     root.classList.remove('light', 'dark');
     root.classList.add(mode || 'light');
 }
 
+// ─── Sync resolver (no async — prevents flash on load) ────────────────────────
+function resolveThemeSync() {
+    if (typeof window === 'undefined') return { ...FALLBACK.global };
 
+    const role = getUserRole();
+    if (role === 'admin' || role === 'superadmin') return { ...FALLBACK.global };
+
+    const isStudent = role === 'student';
+    const roleKey   = isStudent ? 'student' : 'tutor';
+    const globalData = readCache();
+
+    let institute = null;
+    try {
+        const raw = localStorage.getItem('sapience_institute_cache');
+        if (raw) {
+            const { data, ts } = JSON.parse(raw);
+            if (Date.now() - ts < 10 * 60 * 1000) institute = data;
+        }
+    } catch {}
+
+    let resolved;
+    if (globalData?.enforceGlobalTheme) {
+        resolved = apiThemeToVars(globalData.globalTheme, 'global');
+    } else if (institute) {
+        if (institute.themeSettings?.useGlobalTheme) {
+            const saTheme = isStudent ? globalData?.studentTheme : globalData?.tutorTheme;
+            resolved = apiThemeToVars(saTheme || (isStudent ? institute.studentTheme : institute.tutorTheme), roleKey);
+        } else {
+            resolved = apiThemeToVars(isStudent ? institute.studentTheme : institute.tutorTheme, roleKey);
+        }
+    } else if (globalData) {
+        resolved = apiThemeToVars(isStudent ? globalData.studentTheme : globalData.tutorTheme, roleKey);
+    } else {
+        resolved = { ...FALLBACK[roleKey] };
+    }
+
+    const mode = localStorage.getItem('theme-mode') || 'light';
+    if (mode === 'dark') resolved = { ...resolved, ...DARK_OVERRIDES };
+    return resolved;
+}
+
+// ─── Context ───────────────────────────────────────────────────────────────────
 const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
@@ -221,12 +230,9 @@ export function ThemeProvider({ children }) {
         return localStorage.getItem('theme-mode') || 'light';
     });
 
-    // SuperAdmin's global theme data (fetched once, cached)
     const [globalData, setGlobalData] = useState(() => readCache());
 
-    // ── Initialize SYNCHRONOUSLY from cache — eliminates flash of wrong theme ─
-    // resolveThemeSync() reads localStorage without any async calls so the
-    // correct theme is applied before the very first React paint.
+    // Sync init — apply correct theme before first paint (no flash)
     const [theme, setTheme] = useState(() => {
         const resolved = resolveThemeSync();
         applyThemeToDom(
@@ -236,22 +242,15 @@ export function ThemeProvider({ children }) {
         return resolved;
     });
 
-    // ── Fetch SuperAdmin global theme ─────────────────────────────────────────
-    // Uses /api/settings/global-theme — accessible to ALL authenticated users
-    // (NOT /superadmin/global-theme which requires superadmin role)
-    // IMPORTANT: We do NOT short-circuit on cache here.
-    // Cache is only used by resolveThemeSync() to prevent the initial flash.
-    // The async fetch ALWAYS runs so students/tutors get the latest theme
-    // immediately — without waiting for the 5-min cache TTL to expire.
+    // Fetch fresh global theme (always — cache only prevents initial flash)
     const fetchGlobalTheme = useCallback(async () => {
         try {
             const res = await api.get('/settings/global-theme');
             if (res.data?.success && res.data?.theme) {
-                writeCache(res.data.theme);        // update cache for next page load (flash prevention)
-                setGlobalData(res.data.theme);     // update in-memory state → triggers theme re-resolve
+                writeCache(res.data.theme);
+                setGlobalData(res.data.theme);
             }
         } catch (err) {
-            // Fetch failed — fall back to cache so at least something renders
             const cached = readCache();
             if (cached) setGlobalData(cached);
             console.warn('[ThemeProvider] Failed to fetch global theme:', err?.response?.status, err?.message);
@@ -260,11 +259,9 @@ export function ThemeProvider({ children }) {
 
     useEffect(() => { fetchGlobalTheme(); }, [fetchGlobalTheme]);
 
-    // ── Resolve theme whenever dependencies change ────────────────────────────
+    // Resolve theme whenever deps change
     useEffect(() => {
         const userRole = getUserRole();
-
-        // ── Admin & SuperAdmin: always fixed default, no theming ──────────────
         if (userRole === 'admin' || userRole === 'superadmin') {
             setTheme({ ...FALLBACK.global });
             return;
@@ -272,42 +269,28 @@ export function ThemeProvider({ children }) {
 
         const isStudent = userRole === 'student';
         const roleKey   = isStudent ? 'student' : 'tutor';
-
         let resolved;
 
-        // ── PRIORITY 1: SuperAdmin enforces global ────────────────────────────
         if (globalData?.enforceGlobalTheme) {
             resolved = apiThemeToVars(globalData.globalTheme, 'global');
-        }
-
-        // ── PRIORITY 2: User belongs to an institute ──────────────────────────
-        else if (institute) {
+        } else if (institute) {
             if (institute.themeSettings?.useGlobalTheme) {
-                // Institute wants global theme — but only if globalData is loaded
-                // If globalData is null (fetch failed/pending), fall back to
-                // institute's own theme to avoid showing default blue
                 const saTheme = isStudent ? globalData?.studentTheme : globalData?.tutorTheme;
-                if (saTheme) {
-                    resolved = apiThemeToVars(saTheme, roleKey);
-                } else {
-                    // globalData not yet loaded — use institute's own theme as temp fallback
-                    const instTheme = isStudent ? institute.studentTheme : institute.tutorTheme;
-                    resolved = apiThemeToVars(instTheme, roleKey);
-                }
+                resolved = apiThemeToVars(
+                    saTheme || (isStudent ? institute.studentTheme : institute.tutorTheme),
+                    roleKey
+                );
             } else {
-                // Institute uses its own custom theme
-                const instTheme = isStudent ? institute.studentTheme : institute.tutorTheme;
-                resolved = apiThemeToVars(instTheme, roleKey);
+                resolved = apiThemeToVars(
+                    isStudent ? institute.studentTheme : institute.tutorTheme,
+                    roleKey
+                );
             }
-        }
-
-        // ── PRIORITY 3: No institute — use SuperAdmin's role theme ────────────
-        else {
+        } else {
             const saTheme = isStudent ? globalData?.studentTheme : globalData?.tutorTheme;
             resolved = apiThemeToVars(saTheme, roleKey);
         }
 
-        // ── Apply dark mode overrides if active ───────────────────────────────
         if (mode === 'dark' && globalData?.enableDarkMode !== false) {
             resolved = { ...resolved, ...DARK_OVERRIDES };
         }
@@ -315,13 +298,12 @@ export function ThemeProvider({ children }) {
         setTheme(resolved);
     }, [institute, globalData, mode]);
 
-    // ── Apply resolved theme to DOM as CSS custom properties ─────────────────
+    // Apply CSS vars to DOM
     useEffect(() => {
         const root = document.documentElement;
         root.classList.remove('light', 'dark');
         root.classList.add(mode);
 
-        // Map our keys → CSS vars
         const cssMap = {
             primary:           '--theme-primary',
             secondary:         '--theme-secondary',
@@ -341,41 +323,27 @@ export function ThemeProvider({ children }) {
             if (theme[key]) root.style.setProperty(cssVar, theme[key]);
         });
 
-        // ── Font size: apply directly to root so all rem/em units scale ───────
-        if (theme.fontSize) {
-            root.style.fontSize = `${theme.fontSize}px`;
-        }
+        if (theme.fontSize) root.style.fontSize = `${theme.fontSize}px`;
+        if (theme.font)     document.body.style.fontFamily = theme.font;
 
-        // ── Font family: apply to body so all text inherits ───────────────────
-        if (theme.font) {
-            document.body.style.fontFamily = theme.font;
-        }
-
-        // Legacy vars for backward compatibility
         root.style.setProperty('--primary-color',   theme.primary);
         root.style.setProperty('--secondary-color', theme.secondary);
-
     }, [theme, mode]);
 
-    // ── Toggle dark / light ───────────────────────────────────────────────────
     const toggleMode = () => {
-        // Respect SuperAdmin's enableDarkMode setting
         if (globalData?.enableDarkMode === false) return;
         const next = mode === 'light' ? 'dark' : 'light';
         setMode(next);
         if (typeof window !== 'undefined') localStorage.setItem('theme-mode', next);
     };
 
-    // ── Force refresh global theme cache (call after SuperAdmin saves) ────────
     const refreshGlobalTheme = () => {
         if (typeof window !== 'undefined') {
             localStorage.removeItem(CACHE_KEY);
-            localStorage.removeItem('global-theme-settings'); // legacy key
+            localStorage.removeItem('global-theme-settings');
         }
         fetchGlobalTheme();
     };
-
-    const isDarkModeAllowed = globalData?.enableDarkMode !== false;
 
     const value = {
         theme,
@@ -386,18 +354,18 @@ export function ThemeProvider({ children }) {
         institute,
         isDarkMode:        mode === 'dark',
         isLightMode:       mode === 'light',
-        isDarkModeAllowed,           // expose so Header can show/hide toggle
+        isDarkModeAllowed: globalData?.enableDarkMode !== false,
         globalData,
         colors: {
-            primary:          theme.primary,
-            secondary:        theme.secondary,
-            background:       theme.background,
-            foreground:       theme.foreground,
-            sidebar:          theme.sidebar,
-            sidebarForeground:theme.sidebarForeground,
-            accent:           theme.accent,
-            muted:            theme.muted,
-            border:           theme.border,
+            primary:           theme.primary,
+            secondary:         theme.secondary,
+            background:        theme.background,
+            foreground:        theme.foreground,
+            sidebar:           theme.sidebar,
+            sidebarForeground: theme.sidebarForeground,
+            accent:            theme.accent,
+            muted:             theme.muted,
+            border:            theme.border,
         },
     };
 

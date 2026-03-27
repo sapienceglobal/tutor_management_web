@@ -8,6 +8,7 @@ import {
 import { toast } from 'react-hot-toast';
 import api from '@/lib/axios';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
+import { C, T, FX } from '@/constants/tutorTokens';
 
 const LEAVE_TYPES = [
     'Sick Leave', 'Medical Appointment', 'Personal Reasons',
@@ -15,7 +16,7 @@ const LEAVE_TYPES = [
 ];
 const ITEMS_PER_PAGE = 5;
 
-const inp = "w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/10 transition-colors bg-white";
+const inp = "w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[#7573E8] focus:ring-2 focus:ring-[#7573E8]/10 transition-colors bg-white";
 
 function StatusBadge({ status }) {
     const map = {
@@ -147,21 +148,21 @@ export default function TutorLeavesPage() {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-7 h-7 animate-spin" style={{ color: 'var(--theme-primary)' }} />
+                <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
                 <p className="text-sm text-slate-400">Loading leaves...</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-5" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-5" style={{ fontFamily: T.fontFamily }}>
 
             {/* ── Header ────────────────────────────────────────────────────── */}
             <div className="bg-white rounded-xl border border-slate-100 px-5 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                        <Calendar className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                        style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
+                        <Calendar className="w-4 h-4" style={{ color: C.btnPrimary }} />
                     </div>
                     <div>
                         <h1 className="text-lg font-bold text-slate-800">Leave Requests</h1>
@@ -171,7 +172,7 @@ export default function TutorLeavesPage() {
                 <button
                     onClick={() => { setShowForm(!showForm); if (showForm) resetForm(); }}
                     className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-sm transition-opacity"
-                    style={{ backgroundColor: 'var(--theme-primary)' }}>
+                    style={{ backgroundColor: C.btnPrimary }}>
                     <Plus className="w-4 h-4" /> New Leave Request
                 </button>
             </div>
@@ -254,7 +255,7 @@ export default function TutorLeavesPage() {
                                 </button>
                                 <button type="submit" disabled={submitting}
                                     className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white rounded-xl transition-opacity disabled:opacity-60"
-                                    style={{ backgroundColor: 'var(--theme-primary)' }}>
+                                    style={{ backgroundColor: C.btnPrimary }}>
                                     {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</> : (editingLeave ? 'Update Request' : 'Submit Request')}
                                 </button>
                             </div>
@@ -295,14 +296,14 @@ export default function TutorLeavesPage() {
                         ].map(stat => (
                             <div key={stat.label} className="bg-white rounded-xl border border-slate-100 p-4 flex items-center gap-3 hover:shadow-sm transition-shadow">
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${stat.bg || ''}`}
-                                    style={!stat.bg ? { backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, white)' } : {}}>
+                                    style={!stat.bg ? { backgroundColor: FX.primary10 } : {}}>
                                     <stat.icon className={`w-5 h-5 ${stat.color}`}
-                                        style={!stat.color ? { color: 'var(--theme-primary)' } : {}} />
+                                        style={!stat.color ? { color: C.btnPrimary } : {}} />
                                 </div>
                                 <div>
                                     <p className="text-[10px] text-slate-500 font-semibold uppercase">{stat.label}</p>
                                     <p className={`text-xl font-black ${stat.color}`}
-                                        style={!stat.color ? { color: 'var(--theme-primary)' } : {}}>
+                                        style={!stat.color ? { color: C.btnPrimary } : {}}>
                                         {stat.count}
                                     </p>
                                 </div>
@@ -326,7 +327,7 @@ export default function TutorLeavesPage() {
                                         onClick={() => { setActiveFilter(f.key); setCurrentPage(1); }}
                                         className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors"
                                         style={activeFilter === f.key
-                                            ? { backgroundColor: 'var(--theme-primary)', color: 'white' }
+                                            ? { backgroundColor: C.btnPrimary, color: 'white' }
                                             : { color: '#64748b' }}>
                                         {f.label}
                                     </button>
@@ -361,13 +362,13 @@ export default function TutorLeavesPage() {
                                                 {leave.status === 'pending' ? (
                                                     <button onClick={() => handleEdit(leave)}
                                                         className="px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors"
-                                                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, white)', color: 'var(--theme-primary)' }}>
+                                                        style={{ backgroundColor: FX.primary10, color: C.btnPrimary }}>
                                                         Edit
                                                     </button>
                                                 ) : (
                                                     <button onClick={() => setViewingLeave(viewingLeave?._id === leave._id ? null : leave)}
                                                         className="px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors"
-                                                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, white)', color: 'var(--theme-primary)' }}>
+                                                        style={{ backgroundColor: FX.primary10, color: C.btnPrimary }}>
                                                         View
                                                     </button>
                                                 )}
@@ -400,7 +401,7 @@ export default function TutorLeavesPage() {
                                         <button key={i} onClick={() => setCurrentPage(i + 1)}
                                             className="w-7 h-7 text-xs font-bold rounded-lg transition-colors"
                                             style={currentPage === i + 1
-                                                ? { backgroundColor: 'var(--theme-primary)', color: 'white' }
+                                                ? { backgroundColor: C.btnPrimary, color: 'white' }
                                                 : { color: '#64748b' }}>
                                             {i + 1}
                                         </button>
@@ -432,7 +433,7 @@ export default function TutorLeavesPage() {
                                 ))}
                             </div>
                             <button className="w-full mt-5 py-2.5 text-xs font-semibold rounded-xl border transition-colors"
-                                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 6%, white)', color: 'var(--theme-primary)', borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
+                                style={{ backgroundColor: FX.primary06, color: C.btnPrimary, borderColor: FX.primary20 }}>
                                 View Leave Policy
                             </button>
                         </div>
@@ -450,8 +451,8 @@ export default function TutorLeavesPage() {
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                             <div className="flex items-center gap-2.5">
                                 <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                                    style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                                    <Calendar className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                                    style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
+                                    <Calendar className="w-4 h-4" style={{ color: C.btnPrimary }} />
                                 </div>
                                 <h3 className="text-base font-bold text-slate-800">Leave Details</h3>
                             </div>
@@ -491,7 +492,7 @@ export default function TutorLeavesPage() {
                         <div className="px-6 pb-6">
                             <button onClick={() => setViewingLeave(null)}
                                 className="w-full py-2.5 text-sm font-semibold text-white rounded-xl transition-opacity"
-                                style={{ backgroundColor: 'var(--theme-primary)' }}>
+                                style={{ backgroundColor: C.btnPrimary }}>
                                 Close
                             </button>
                         </div>

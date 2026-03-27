@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { TutorSidebar } from '@/components/layout/TutorSidebar';
-import { Header } from '@/components/layout/header';
+import { TutorHeader } from '@/components/layout/TutorHeader';
 import useInstitute from '@/hooks/useInstitute';
+import { C, T } from '@/constants/tutorTokens';
 // ✅ ThemeProvider removed — root layout already wraps everything in ThemeProvider
 
 export default function TutorLayout({ children }) {
@@ -12,7 +13,7 @@ export default function TutorLayout({ children }) {
     const { institute } = useInstitute();
 
     return (
-        <div className="min-h-screen" style={{ backgroundColor: 'var(--theme-background)' }}>
+        <div className="min-h-screen" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}>
             <TutorSidebar
                 isOpen={sidebarOpen}
                 setIsOpen={setSidebarOpen}
@@ -20,7 +21,7 @@ export default function TutorLayout({ children }) {
                 setIsCollapsed={setSidebarCollapsed}
             />
             <div className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
-                <Header
+                <TutorHeader
                     onMenuClick={() => setSidebarOpen(!sidebarOpen)}
                     onSidebarCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
                     isSidebarCollapsed={sidebarCollapsed}

@@ -1,6 +1,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { C, T, S } from '@/constants/tutorTokens';
 
-export default function AnalyticsChart({ data, title = "Last Year Overview" }) {
+export default function AnalyticsChart({ data, title = "Last Year Overview", isTutor }) {
     // Default data if none provided
     const chartData = data || [
         { name: 'P1-6', students: 24000, enrollments: 31000 },
@@ -17,11 +18,16 @@ export default function AnalyticsChart({ data, title = "Last Year Overview" }) {
         { name: 'p6-8', students: 78000, enrollments: 95000 },
     ];
 
-    return (
-        <div className="bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-6">
-            <h3 className="text-lg font-semibold text-[#2C3E50] mb-6 pb-4 border-b border-slate-200">{title}</h3>
+    const wrapperClass = isTutor ? "p-6 rounded-2xl" : "bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-6";
+    const wrapperStyle = isTutor ? { backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card } : {};
+    const titleStyle = isTutor ? { color: C.heading, fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.bold } : {};
+    const titleClass = isTutor ? "mb-6 pb-4 border-b border-slate-200/50" : "text-lg font-semibold text-[#2C3E50] mb-6 pb-4 border-b border-slate-200";
 
-            <div className="h-80">
+    return (
+        <div className={wrapperClass} style={wrapperStyle}>
+            <h3 className={titleClass} style={titleStyle}>{title}</h3>
+
+            <div className="h-80" style={isTutor ? { fontFamily: T.fontFamily } : {}}>
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         data={chartData}
@@ -47,10 +53,11 @@ export default function AnalyticsChart({ data, title = "Last Year Overview" }) {
                         />
                         <Tooltip
                             contentStyle={{
-                                backgroundColor: 'white',
+                                backgroundColor: isTutor ? C.innerBg : 'white',
                                 border: 'none',
-                                borderRadius: '8px',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                borderRadius: isTutor ? '12px' : '8px',
+                                boxShadow: isTutor ? S.card : '0 4px 12px rgba(0,0,0,0.1)',
+                                color: isTutor ? C.text : '#333'
                             }}
                             cursor={{ fill: 'rgba(0,0,0,0.05)' }}
                         />
@@ -69,14 +76,14 @@ export default function AnalyticsChart({ data, title = "Last Year Overview" }) {
                         />
                         <Bar
                             dataKey="students"
-                            fill="#1E3A8A"
+                            fill={isTutor ? '#3D3B8E' : '#1E3A8A'}
                             name="Website Views"
                             radius={[4, 4, 0, 0]}
                             barSize={20}
                         />
                         <Bar
                             dataKey="enrollments"
-                            fill="#FF9F43"
+                            fill={isTutor ? '#7573E8' : '#FF9F43'}
                             name="New Users"
                             radius={[4, 4, 0, 0]}
                             barSize={20}

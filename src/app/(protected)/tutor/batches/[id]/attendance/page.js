@@ -1,137 +1,287 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useMemo, useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
-import { ArrowLeft, Users, CheckCircle, XCircle, Clock, Download, Loader2 } from 'lucide-react';
+import { ArrowLeft, CalendarDays, CheckCircle2, Download, Loader2, Users, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { C, T, FX, S, pageStyle } from '@/constants/tutorTokens';
 
-export default function AttendancePage({ params }) {
-    const { id }    = use(params);
-    const router    = useRouter();
+function safeArray(value) {
+    return Array.isArray(value) ? value : [];
+}
+
+export default function TutorBatchAttendancePage({ params }) {
+    const { id } = use(params);
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
-    const [data, setData]       = useState(null);
+    const [batch, setBatch] = useState(null);
+    const [attendanceRows, setAttendanceRows] = useState([]);
 
     useEffect(() => {
-        (async () => {
+        const fetchData = async () => {
             try {
-                const res = await api.get(`/live-classes/${id}/attendance-report`);
-                if (res.data.success) setData(res.data.data);
-            } catch { /* handled below */ }
-            finally { setLoading(false); }
-        })();
+                const [batchRes, attendanceRes] = await Promise.all([
+                    api.get(`/batches/${id}`),
+                    api.get(`/attendance/batch/${id}`),
+                ]);
+                setBatch(batchRes.data?.batch || null);
+                setAttendanceRows(safeArray(attendanceRes.data?.records));
+            } catch (error) {
+                console.error('Failed to load batch attendance:', error);
+                setBatch(null);
+                setAttendanceRows([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
     }, [id]);
+
+    const stats = useMemo(() => {
+        const sessions = attendanceRows.length;
+        let markedEntries = 0;
+        let presentEntries = 0;
+        let absentEntries = 0;
+        let lateEntries = 0;
+
+        attendanceRows.forEach((row) => {
+            safeArray(row.records).forEach((record) => {
+                markedEntries += 1;
+                const status = String(record.status || '').toLowerCase();
+                if (status === 'present') presentEntries += 1;
+                if (status === 'absent') absentEntries += 1;
+                if (status === 'late') {
+                    lateEntries += 1;
+                    presentEntries += 1;
+                }
+            });
+        });
+
+        const attendanceRate = markedEntries > 0 ? Number(((presentEntries / markedEntries) * 100).toFixed(1)) : 0;
+        return { sessions, markedEntries, presentEntries, absentEntries, lateEntries, attendanceRate };
+    }, [attendanceRows]);
+
+    const studentRows = useMemo(() => {
+        const map = new Map();
+        safeArray(batch?.students).forEach((student) => {
+            const studentId = String(student._id);
+            map.set(studentId, {
+                studentId,
+                name: student.name || 'Student',
+                email: student.email || '',
+                present: 0,
+                absent: 0,
+                late: 0,
+                total: 0,
+                lastMarkedAt: null,
+            });
+        });
+
+        attendanceRows.forEach((row) => {
+            const sessionDate = row.date ? new Date(row.date) : null;
+            safeArray(row.records).forEach((record) => {
+                const student = record.studentId;
+                const studentId = String(student?._id || student || '');
+                if (!studentId) return;
+
+                if (!map.has(studentId)) {
+                    map.set(studentId, {
+                        studentId,
+                        name: student?.name || 'Student',
+                        email: student?.email || '',
+                        present: 0,
+                        absent: 0,
+                        late: 0,
+                        total: 0,
+                        lastMarkedAt: null,
+                    });
+                }
+
+                const rowData = map.get(studentId);
+                rowData.total += 1;
+                const status = String(record.status || '').toLowerCase();
+                if (status === 'present') rowData.present += 1;
+                if (status === 'absent') rowData.absent += 1;
+                if (status === 'late') rowData.late += 1;
+
+                if (sessionDate && (!rowData.lastMarkedAt || sessionDate > rowData.lastMarkedAt)) {
+                    rowData.lastMarkedAt = sessionDate;
+                }
+            });
+        });
+
+        return Array.from(map.values())
+            .map((row) => {
+                const attendanceRate = row.total > 0
+                    ? Number((((row.present + row.late) / row.total) * 100).toFixed(1))
+                    : 0;
+                return {
+                    ...row,
+                    attendanceRate,
+                };
+            })
+            .sort((a, b) => a.attendanceRate - b.attendanceRate);
+    }, [attendanceRows, batch?.students]);
+
+    const sessionRows = useMemo(() => {
+        return attendanceRows.map((row) => {
+            const records = safeArray(row.records);
+            const present = records.filter((record) => {
+                const status = String(record.status || '').toLowerCase();
+                return status === 'present' || status === 'late';
+            }).length;
+            const absent = records.filter((record) => String(record.status || '').toLowerCase() === 'absent').length;
+            const rate = records.length > 0 ? Number(((present / records.length) * 100).toFixed(1)) : 0;
+            return {
+                id: row._id,
+                date: row.date,
+                records: records.length,
+                present,
+                absent,
+                rate,
+            };
+        });
+    }, [attendanceRows]);
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3"
-                style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
-                <Loader2 className="w-7 h-7 animate-spin" style={{ color: 'var(--theme-primary)' }} />
-                <p className="text-sm text-slate-400">Loading attendance...</p>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+                <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted }}>Loading batch attendance...</p>
             </div>
         );
     }
 
-    if (!data) {
-        return <div className="p-8 text-center text-sm text-red-500">Failed to load attendance data.</div>;
+    if (!batch) {
+        return (
+            <div className="p-8 text-center" style={pageStyle}>
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.danger }}>
+                    Failed to load batch attendance data.
+                </p>
+            </div>
+        );
     }
 
-    const { classDetails, stats, students } = data;
-
     return (
-        <div className="space-y-5" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
-
-            {/* ── Header ────────────────────────────────────────────────────── */}
-            <div className="bg-white rounded-xl border border-slate-100 px-5 py-4">
+        <div className="space-y-5" style={pageStyle}>
+            <div className="rounded-2xl p-4" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <div className="flex items-center gap-3">
-                    <button onClick={() => router.back()}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors flex-shrink-0">
-                        <ArrowLeft className="w-4 h-4 text-slate-500" />
+                    <button
+                        onClick={() => router.back()}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center"
+                        style={{ backgroundColor: FX.primary08 }}
+                    >
+                        <ArrowLeft className="w-4 h-4" style={{ color: C.btnPrimary }} />
                     </button>
-                    <div>
-                        <h1 className="text-lg font-bold text-slate-800">{classDetails.title}</h1>
-                        <p className="text-xs text-slate-400">
-                            {format(new Date(classDetails.dateTime), 'PPP p')} · {classDetails.duration} mins
+                    <div className="min-w-0">
+                        <h1 className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>
+                            {batch.name} Attendance
+                        </h1>
+                        <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+                            Course: {batch.courseId?.title || 'N/A'} • Students: {safeArray(batch.students).length}
                         </p>
                     </div>
-                    <button onClick={() => window.print()}
-                        className="ml-auto flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
-                        <Download className="w-3.5 h-3.5" /> Export
+                    <button
+                        onClick={() => window.print()}
+                        className="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border"
+                        style={{ borderColor: C.cardBorder, color: C.btnPrimary, backgroundColor: FX.primary08 }}
+                    >
+                        <Download className="w-3.5 h-3.5" />
+                        Export
                     </button>
                 </div>
             </div>
 
-            {/* ── Stats ─────────────────────────────────────────────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: 'Total Enrolled', value: stats.totalEnrolled,        icon: Users,       color: 'text-blue-500',    bg: 'bg-blue-50',    theme: false },
-                    { label: 'Present',         value: stats.totalPresent,         icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50', theme: false },
-                    { label: 'Absent',          value: stats.totalAbsent,          icon: XCircle,     color: 'text-red-500',     bg: 'bg-red-50',     theme: false },
-                    { label: 'Turnout',         value: `${stats.attendancePercentage}%`, icon: Clock, color: '',                bg: '',              theme: true  },
-                ].map(({ label, value, icon: Icon, color, bg, theme }) => (
-                    <div key={label} className="bg-white rounded-xl border border-slate-100 p-5 hover:shadow-sm transition-shadow">
-                        <div className="flex items-center justify-between mb-3">
-                            <p className="text-xs font-semibold text-slate-500">{label}</p>
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${bg}`}
-                                style={theme ? { backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, white)' } : {}}>
-                                <Icon className={`w-4 h-4 ${color}`}
-                                    style={theme ? { color: 'var(--theme-primary)' } : {}} />
-                            </div>
+                    { label: 'Sessions Marked', value: stats.sessions, icon: CalendarDays, color: C.btnPrimary, bg: FX.primary08 },
+                    { label: 'Present + Late', value: stats.presentEntries, icon: CheckCircle2, color: C.success, bg: C.successBg },
+                    { label: 'Absent', value: stats.absentEntries, icon: XCircle, color: C.danger, bg: C.dangerBg },
+                    { label: 'Attendance Rate', value: `${stats.attendanceRate}%`, icon: Users, color: C.warning, bg: C.warningBg },
+                ].map((item) => (
+                    <div key={item.label} className="rounded-2xl border p-4" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}>
+                        <div className="flex items-center justify-between mb-2.5">
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, fontWeight: T.weight.bold }}>{item.label}</p>
+                            <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: item.bg }}>
+                                <item.icon className="w-4 h-4" style={{ color: item.color }} />
+                            </span>
                         </div>
-                        <p className={`text-2xl font-black ${color}`}
-                            style={theme ? { color: 'var(--theme-primary)' } : {}}>
-                            {value}
-                        </p>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading }}>{item.value}</p>
                     </div>
                 ))}
             </div>
 
-            {/* ── Students table ────────────────────────────────────────────── */}
-            <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
-                <div className="px-5 py-4 border-b border-slate-100">
-                    <h3 className="text-sm font-bold text-slate-800">Attendance List</h3>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <div className="rounded-2xl border overflow-hidden" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}>
+                    <div className="px-4 py-3 border-b" style={{ borderColor: C.cardBorder }}>
+                        <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                            Student Attendance Summary
+                        </h2>
+                    </div>
+                    <div className="max-h-[430px] overflow-auto">
+                        <table className="w-full min-w-[560px]">
+                            <thead style={{ backgroundColor: FX.primary05 }}>
+                                <tr>
+                                    {['Student', 'Rate', 'Present', 'Absent', 'Late'].map((h) => (
+                                        <th key={h} className="text-left px-4 py-2.5" style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
+                                            {h}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {studentRows.map((student) => (
+                                    <tr key={student.studentId} className="border-t" style={{ borderColor: C.cardBorder }}>
+                                        <td className="px-4 py-3">
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.semibold }}>{student.name}</p>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>{student.email}</p>
+                                        </td>
+                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text }}>{student.attendanceRate}%</td>
+                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.success }}>{student.present + student.late}</td>
+                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.danger }}>{student.absent}</td>
+                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.warning }}>{student.late}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                {/* Head */}
-                <div className="grid grid-cols-[2fr_2fr_100px_100px] gap-4 px-5 py-3 border-b border-slate-50 bg-slate-50/60">
-                    {['Student', 'Email', 'Status', 'Join Time'].map(h => (
-                        <span key={h} className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{h}</span>
-                    ))}
+                <div className="rounded-2xl border overflow-hidden" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}>
+                    <div className="px-4 py-3 border-b" style={{ borderColor: C.cardBorder }}>
+                        <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                            Session History
+                        </h2>
+                    </div>
+                    <div className="max-h-[430px] overflow-auto">
+                        <table className="w-full min-w-[560px]">
+                            <thead style={{ backgroundColor: FX.primary05 }}>
+                                <tr>
+                                    {['Date', 'Entries', 'Present', 'Absent', 'Rate'].map((h) => (
+                                        <th key={h} className="text-left px-4 py-2.5" style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
+                                            {h}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {sessionRows.map((session) => (
+                                    <tr key={session.id} className="border-t" style={{ borderColor: C.cardBorder }}>
+                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.semibold }}>
+                                            {session.date ? format(new Date(session.date), 'PPP') : 'N/A'}
+                                        </td>
+                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text }}>{session.records}</td>
+                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.success }}>{session.present}</td>
+                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.danger }}>{session.absent}</td>
+                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text }}>{session.rate}%</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-
-                {students.length > 0 ? (
-                    <div className="divide-y divide-slate-50">
-                        {students.map(student => (
-                            <div key={student.studentId}
-                                className="grid grid-cols-[2fr_2fr_100px_100px] gap-4 px-5 py-4 items-center hover:bg-slate-50/40 transition-colors">
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                                        style={{ background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))' }}>
-                                        {student.name.charAt(0).toUpperCase()}
-                                    </div>
-                                    <span className="text-sm font-semibold text-slate-800 truncate">{student.name}</span>
-                                </div>
-                                <span className="text-xs text-slate-500 truncate">{student.email}</span>
-                                <div>
-                                    <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold border
-                                        ${student.status === 'Present'
-                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                            : 'bg-red-50 text-red-600 border-red-200'}`}>
-                                        {student.status}
-                                    </span>
-                                </div>
-                                <span className="text-xs text-slate-500">
-                                    {student.joinedAt ? format(new Date(student.joinedAt), 'h:mm a') : '—'}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-12">
-                        <Users className="w-8 h-8 text-slate-200 mx-auto mb-2" />
-                        <p className="text-sm text-slate-400">No students enrolled in this course yet.</p>
-                    </div>
-                )}
             </div>
         </div>
     );

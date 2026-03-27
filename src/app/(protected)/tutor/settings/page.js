@@ -11,6 +11,7 @@ import {
 import Cookies from 'js-cookie';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
+import { C, T, FX } from '@/constants/tutorTokens';
 
 const TABS = [
     { id: 'profile',       label: 'Public Profile',  icon: Sparkles },
@@ -19,7 +20,7 @@ const TABS = [
     { id: 'security',      label: 'Security',         icon: Lock },
 ];
 
-const inp = "w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/10 transition-colors bg-white";
+const inp = "w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none transition-colors bg-white";
 
 export default function TutorSettingsPage() {
     const router = useRouter();
@@ -27,6 +28,8 @@ export default function TutorSettingsPage() {
     const [user, setUser]           = useState(null);
     const [loading, setLoading]     = useState(true);
     const [saving, setSaving]       = useState(false);
+    const [savingNotifications, setSavingNotifications] = useState(false);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     const [formData, setFormData] = useState({
         name: '', phone: '', bio: '', title: '', location: '', website: ''
@@ -64,6 +67,15 @@ export default function TutorSettingsPage() {
                 bio: tutorData.bio || '', title: tutorData.title || '',
                 location: tutorData.location || '', website: tutorData.website || '',
             });
+
+            setNotifications(
+                tutorData.notificationPreferences || {
+                    enrollment: userData.notificationSettings?.email !== false,
+                    reviews: userData.notificationSettings?.push !== false,
+                    summary: userData.notificationSettings?.sms === true,
+                    promotions: false,
+                }
+            );
         } catch { toast.error('Failed to load profile'); }
         finally { setLoading(false); }
     };
@@ -72,20 +84,95 @@ export default function TutorSettingsPage() {
         setSaving(true);
         try {
             const p1 = api.patch('/auth/profile', { name: formData.name, phone: formData.phone });
-            let p2   = Promise.resolve();
+            let p2 = Promise.resolve(null);
             if (user?.role === 'tutor' && user?.tutorId) {
                 p2 = api.patch(`/tutors/${user.tutorId}`, {
                     bio: formData.bio, title: formData.title,
                     location: formData.location, website: formData.website,
                 });
             }
-            await Promise.all([p1, p2]);
-            const updated = { ...user, name: formData.name, phone: formData.phone };
+            const [userRes, tutorRes] = await Promise.all([p1, p2]);
+            const updated = {
+                ...user,
+                ...(userRes.data?.user || {}),
+                ...(tutorRes?.data?.tutor ? { tutor: tutorRes.data.tutor } : {}),
+            };
             setUser(updated);
             localStorage.setItem('user', JSON.stringify(updated));
             toast.success('Profile updated successfully!');
         } catch { toast.error('Failed to update profile.'); }
         finally { setSaving(false); }
+    };
+
+    const handleSaveNotifications = async () => {
+        setSavingNotifications(true);
+        try {
+            if (user?.role === 'tutor' && user?.tutorId) {
+                await api.patch(`/tutors/${user.tutorId}`, { notificationPreferences: notifications });
+            } else {
+                await api.patch('/auth/notification-settings', {
+                    email: notifications.enrollment || notifications.reviews,
+                    push: notifications.summary,
+                    sms: notifications.promotions,
+                });
+            }
+
+            const updated = {
+                ...user,
+                tutor: {
+                    ...(user?.tutor || {}),
+                    notificationPreferences: notifications,
+                },
+            };
+            setUser(updated);
+            localStorage.setItem('user', JSON.stringify(updated));
+            toast.success('Notification preferences saved');
+        } catch {
+            toast.error('Failed to save notification preferences');
+        } finally {
+            setSavingNotifications(false);
+        }
+    };
+
+    const handleProfileImageUpload = async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setUploadingImage(true);
+        try {
+            const uploadData = new FormData();
+            uploadData.append('image', file);
+
+            const uploadRes = await api.post('/upload/image', uploadData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            if (!uploadRes.data?.success || !uploadRes.data?.imageUrl) {
+                throw new Error('Image upload failed');
+            }
+
+            const profileRes = await api.patch('/auth/profile-image', {
+                profileImage: uploadRes.data.imageUrl,
+                cloudinaryId: uploadRes.data.cloudinaryId,
+            });
+
+            if (!profileRes.data?.success) {
+                throw new Error('Profile update failed');
+            }
+
+            const updated = {
+                ...user,
+                ...(profileRes.data?.user || {}),
+            };
+            setUser(updated);
+            localStorage.setItem('user', JSON.stringify(updated));
+            toast.success('Profile photo updated');
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to upload profile photo');
+        } finally {
+            setUploadingImage(false);
+            event.target.value = '';
+        }
     };
 
     const handleLogout = () => {
@@ -99,22 +186,22 @@ export default function TutorSettingsPage() {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3"
-                style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
-                <Loader2 className="w-7 h-7 animate-spin" style={{ color: 'var(--theme-primary)' }} />
+                style={{ fontFamily: T.fontFamily }}>
+                <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
                 <p className="text-sm text-slate-400">Loading settings...</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-5" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-5" style={{ fontFamily: T.fontFamily }}>
 
             {/* ── Page Header ─────────────────────────────────────────── */}
             <div className="bg-white rounded-xl border border-slate-100 px-5 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                        <SettingsIcon className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                        style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
+                        <SettingsIcon className="w-4 h-4" style={{ color: C.btnPrimary }} />
                     </div>
                     <div>
                         <h1 className="text-lg font-bold text-slate-800">Account Settings</h1>
@@ -134,14 +221,14 @@ export default function TutorSettingsPage() {
 
                     {/* Profile Card */}
                     <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
-                        <div className="h-20 relative" style={{ backgroundColor: 'var(--theme-sidebar)' }}>
+                        <div className="h-20 relative" style={{ backgroundColor: C.darkCard }}>
                             <div className="absolute -top-6 -right-6 w-36 h-36 rounded-full blur-3xl opacity-20"
-                                style={{ backgroundColor: 'var(--theme-primary)' }} />
+                                style={{ backgroundColor: C.btnPrimary }} />
                         </div>
                         <div className="px-5 pb-5 -mt-10 flex flex-col items-center text-center">
                             <div className="relative mb-3">
                                 <div className="w-[72px] h-[72px] rounded-2xl border-4 border-white shadow-lg overflow-hidden"
-                                    style={{ background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))' }}>
+                                    style={{ background: C.gradientBtn }}>
                                     {user?.profileImage
                                         ? <img src={user.profileImage} alt={user.name} className="w-full h-full object-cover" />
                                         : <div className="w-full h-full flex items-center justify-center">
@@ -149,14 +236,24 @@ export default function TutorSettingsPage() {
                                           </div>}
                                 </div>
                                 <button className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center text-white shadow"
-                                    style={{ backgroundColor: 'var(--theme-primary)' }}>
-                                    <Camera className="w-3.5 h-3.5" />
+                                    style={{ backgroundColor: C.btnPrimary }}
+                                    onClick={() => document.getElementById('tutor-profile-image-input')?.click()}
+                                    type="button"
+                                    disabled={uploadingImage}>
+                                    {uploadingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
                                 </button>
+                                <input
+                                    id="tutor-profile-image-input"
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleProfileImageUpload}
+                                />
                             </div>
                             <h2 className="text-base font-bold text-slate-900">{user?.name}</h2>
                             <p className="text-xs text-slate-500 mt-0.5">{user?.email}</p>
                             <span className="mt-2 text-[10px] px-3 py-1 rounded-full font-bold text-white"
-                                style={{ background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))' }}>
+                                style={{ background: C.gradientBtn }}>
                                 Professional Tutor
                             </span>
                         </div>
@@ -165,7 +262,7 @@ export default function TutorSettingsPage() {
                     {/* Quick Stats */}
                     <div className="bg-white rounded-xl border border-slate-100 p-5">
                         <div className="flex items-center gap-2 mb-4">
-                            <TrendingUp className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                            <TrendingUp className="w-4 h-4" style={{ color: C.btnPrimary }} />
                             <h3 className="text-sm font-bold text-slate-800">Quick Stats</h3>
                         </div>
                         <div className="space-y-2.5">
@@ -196,7 +293,7 @@ export default function TutorSettingsPage() {
                         <div className="space-y-3 text-xs">
                             <div className="flex items-center justify-between">
                                 <span className="text-slate-500">Plan</span>
-                                <span className="font-bold" style={{ color: 'var(--theme-primary)' }}>Pro Tutor</span>
+                                <span className="font-bold" style={{ color: C.btnPrimary }}>Pro Tutor</span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-slate-500">Member Since</span>
@@ -221,7 +318,7 @@ export default function TutorSettingsPage() {
                             <button key={id} onClick={() => setActiveTab(id)}
                                 className="flex items-center gap-1.5 px-5 py-3.5 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors flex-1 justify-center"
                                 style={activeTab === id
-                                    ? { borderColor: 'var(--theme-primary)', color: 'var(--theme-primary)' }
+                                    ? { borderColor: C.btnPrimary, color: C.btnPrimary }
                                     : { borderColor: 'transparent', color: '#94a3b8' }}>
                                 <Icon className="w-4 h-4" /> {label}
                             </button>
@@ -285,7 +382,7 @@ export default function TutorSettingsPage() {
                                 <div className="flex justify-end pt-2 border-t border-slate-100">
                                     <button onClick={handleSave} disabled={saving}
                                         className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl transition-opacity disabled:opacity-60"
-                                        style={{ backgroundColor: 'var(--theme-primary)' }}>
+                                        style={{ backgroundColor: C.btnPrimary }}>
                                         {saving ? <><Loader2 className="w-4 h-4 animate-spin" />Saving...</> : <><Save className="w-4 h-4" />Save Changes</>}
                                     </button>
                                 </div>
@@ -324,7 +421,7 @@ export default function TutorSettingsPage() {
                                     <div className="flex justify-end pt-2 border-t border-slate-100">
                                         <button onClick={handleSave} disabled={saving}
                                             className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl transition-opacity disabled:opacity-60"
-                                            style={{ backgroundColor: 'var(--theme-primary)' }}>
+                                            style={{ backgroundColor: C.btnPrimary }}>
                                             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                                             Update Contact Info
                                         </button>
@@ -367,8 +464,8 @@ export default function TutorSettingsPage() {
                                     <div key={key} className="flex items-center justify-between px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                                                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, white)' }}>
-                                                <Icon className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                                                style={{ backgroundColor: FX.primary10 }}>
+                                                <Icon className="w-4 h-4" style={{ color: C.btnPrimary }} />
                                             </div>
                                             <div>
                                                 <p className="text-sm font-semibold text-slate-700">{label}</p>
@@ -376,21 +473,28 @@ export default function TutorSettingsPage() {
                                             </div>
                                         </div>
                                         <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                                            <input type="checkbox" className="sr-only peer"
-                                                checked={notifications[key]}
-                                                onChange={() => setNotifications(n => ({ ...n, [key]: !n[key] }))} />
-                                            <div className="w-10 h-5 bg-slate-200 rounded-full peer transition-colors
-                                                peer-checked:bg-[var(--theme-primary)]
-                                                after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                                                after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all
-                                                peer-checked:after:translate-x-5 after:border after:border-slate-200" />
+                                            <button
+                                                type="button"
+                                                onClick={() => setNotifications(n => ({ ...n, [key]: !n[key] }))}
+                                                className="w-10 h-5 rounded-full relative transition-colors"
+                                                style={{ backgroundColor: notifications[key] ? C.btnPrimary : '#CBD5E1' }}
+                                            >
+                                                <span
+                                                    className="absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white border border-slate-200 transition-transform"
+                                                    style={{ transform: notifications[key] ? 'translateX(20px)' : 'translateX(0px)' }}
+                                                />
+                                            </button>
                                         </label>
                                     </div>
                                 ))}
                             </div>
                             <div className="px-6 py-4 border-t border-slate-100">
-                                <button className="px-5 py-2.5 text-sm font-semibold text-white rounded-xl"
-                                    style={{ backgroundColor: 'var(--theme-primary)' }}>
+                                <button
+                                    onClick={handleSaveNotifications}
+                                    disabled={savingNotifications}
+                                    className="px-5 py-2.5 text-sm font-semibold text-white rounded-xl disabled:opacity-60 flex items-center gap-2"
+                                    style={{ backgroundColor: C.btnPrimary }}>
+                                    {savingNotifications && <Loader2 className="w-4 h-4 animate-spin" />}
                                     Save Preferences
                                 </button>
                             </div>
@@ -419,7 +523,7 @@ function SecuritySettings({ hasPassword }) {
     const [loading, setLoading]     = useState(false);
     const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
 
-    const pinp = "w-full px-3.5 py-2.5 pl-10 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/10 transition-colors";
+    const pinp = "w-full px-3.5 py-2.5 pl-10 text-sm border border-slate-200 rounded-xl focus:outline-none transition-colors";
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -473,7 +577,7 @@ function SecuritySettings({ hasPassword }) {
             </div>
             <button type="submit" disabled={loading}
                 className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-white rounded-xl transition-opacity disabled:opacity-60"
-                style={{ backgroundColor: 'var(--theme-primary)' }}>
+                style={{ backgroundColor: C.btnPrimary }}>
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {hasPassword ? 'Update Password' : 'Set Password'}
             </button>

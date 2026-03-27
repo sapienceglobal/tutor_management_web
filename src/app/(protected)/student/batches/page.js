@@ -4,51 +4,37 @@ import { useState, useEffect } from 'react';
 import { BookOpen, Calendar, Clock, CheckCircle2, XCircle, AlertCircle, Globe, Building2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '@/lib/axios';
+import { C, T, S, R, cx, pageStyle } from '@/constants/studentTokens';
 
 export default function StudentBatchesPage() {
-    const [batches, setBatches] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [filterScope, setFilterScope] = useState('all'); // 'all' or 'strict'
+    const [batches, setBatches]         = useState([]);
+    const [loading, setLoading]         = useState(true);
+    const [filterScope, setFilterScope] = useState('all');
 
-    useEffect(() => {
-        fetchMyBatches();
-    }, [filterScope]);
+    useEffect(() => { fetchMyBatches(); }, [filterScope]);
 
     const fetchMyBatches = async () => {
         setLoading(true);
         try {
-            // Wait, we need to fetch both the batches the student is in AND their attendance for those batches.
-            // First, fetch batches based on filterScope
             const endpoint = filterScope === 'strict' ? '/batches/my?scope=strict' : '/batches/my';
             const res = await api.get(endpoint);
             if (res.data.success) {
-                const fetchedBatches = res.data.batches;
-
-                // Now fetch attendance for each batch to show basic stats
-                const batchesWithStats = await Promise.all(fetchedBatches.map(async (batch) => {
+                const batchesWithStats = await Promise.all(res.data.batches.map(async (batch) => {
                     try {
                         const attRes = await api.get(`/attendance/batch/${batch._id}`);
                         if (attRes.data.success) {
-                            const records = attRes.data.records;
-                            const present = records.filter(r => r.status === 'present').length;
-                            const total = records.length;
+                            const records  = attRes.data.records;
+                            const present  = records.filter(r => r.status === 'present').length;
+                            const total    = records.length;
                             const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
-
-                            return {
-                                ...batch,
-                                attendanceStats: { present, total, percentage },
-                                recentLogs: records.slice(0, 5) // Last 5 days
-                            };
+                            return { ...batch, attendanceStats: { present, total, percentage }, recentLogs: records.slice(0, 5) };
                         }
-                    } catch (e) {
-                        return { ...batch, attendanceStats: null, recentLogs: [] };
-                    }
+                    } catch { return { ...batch, attendanceStats: null, recentLogs: [] }; }
                 }));
-
                 setBatches(batchesWithStats);
             }
-        } catch (error) {
-            console.error('Fetch student batches error:', error);
+        } catch (err) {
+            console.error(err);
             toast.error('Failed to load your enrolled batches');
         } finally {
             setLoading(false);
@@ -56,151 +42,213 @@ export default function StudentBatchesPage() {
     };
 
     const getStatusIcon = (status) => {
-        switch (status) {
-            case 'present': return <CheckCircle2 className="w-4 h-4 text-emerald-600" />;
-            case 'absent': return <XCircle className="w-4 h-4 text-red-600" />;
-            case 'late': return <AlertCircle className="w-4 h-4 text-amber-600" />;
-            default: return null;
-        }
+        if (status === 'present') return <CheckCircle2 className="w-4 h-4" style={{ color: C.success }} />;
+        if (status === 'absent')  return <XCircle      className="w-4 h-4" style={{ color: C.danger }} />;
+        if (status === 'late')    return <AlertCircle  className="w-4 h-4" style={{ color: C.warning }} />;
+        return null;
     };
 
-    if (loading) {
-        return (
-            <div className="flex justify-center py-24">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+    const getAttColor = (pct) => {
+        if (pct >= 75) return C.success;
+        if (pct >= 50) return C.warning;
+        return C.danger;
+    };
+
+    // ── Loading ──────────────────────────────────────────────────────────────
+    if (loading) return (
+        <div className="flex items-center justify-center min-h-[50vh]">
+            <div className="flex flex-col items-center gap-3">
+                <div className="w-11 h-11 rounded-full border-[3px] animate-spin"
+                    style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, opacity: 0.55 }}>
+                    Loading batches…
+                </p>
             </div>
-        );
-    }
+        </div>
+    );
 
     return (
-        <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4">
+        <div className="space-y-5 pb-8" style={pageStyle}>
+
+            {/* ── Header ───────────────────────────────────────────────── */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold text-[#0F172A] tracking-tight">My Batches</h1>
-                    <p className="text-slate-500 mt-2 text-lg">Track your enrolled cohorts and daily attendance.</p>
+                    <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading }}>
+                        My Batches
+                    </h1>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, opacity: 0.55, marginTop: 2 }}>
+                        Track your enrolled cohorts and daily attendance.
+                    </p>
                 </div>
 
-                {/* Institute Filter Toggle */}
-                <div className="flex bg-slate-100 p-1 rounded-xl w-full md:w-auto self-start">
-                    <button
-                        onClick={() => setFilterScope('all')}
-                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${filterScope === 'all' ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'}`}
-                    >
-                        <Globe className="w-4 h-4" /> All Institutes
-                    </button>
-                    <button
-                        onClick={() => setFilterScope('strict')}
-                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${filterScope === 'strict' ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'}`}
-                    >
-                        <Building2 className="w-4 h-4" /> This Institute Only
-                    </button>
+                {/* Scope Toggle */}
+                <div className="flex p-1 rounded-2xl self-start"
+                    style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}` }}>
+                    {[
+                        { key: 'all',    label: 'All Institutes',    Icon: Globe },
+                        { key: 'strict', label: 'This Institute',    Icon: Building2 },
+                    ].map(({ key, label, Icon }) => (
+                        <button key={key} onClick={() => setFilterScope(key)}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm transition-all"
+                            style={filterScope === key
+                                ? { backgroundColor: C.btnPrimary, color: '#ffffff', fontFamily: T.fontFamily, fontWeight: T.weight.bold }
+                                : { color: C.text, opacity: 0.7, fontFamily: T.fontFamily, fontWeight: T.weight.semibold }}>
+                            <Icon className="w-4 h-4" /> {label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
+            {/* ── Empty ────────────────────────────────────────────────── */}
             {batches.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center shadow-sm">
-                    <BookOpen className="w-16 h-16 text-slate-200 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-slate-800">Not Enrolled Yet</h3>
-                    <p className="text-slate-500 mt-2 max-w-md mx-auto">You have not been assigned to any specific student batches. Once your instructor adds you to a cohort, it will appear here.</p>
+                <div className="rounded-2xl p-16 text-center"
+                    style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                        style={{ backgroundColor: C.innerBg }}>
+                        <BookOpen className="w-8 h-8" style={{ color: C.cardBorder }} />
+                    </div>
+                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>
+                        Not Enrolled Yet
+                    </h3>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, marginTop: 8, maxWidth: 380, margin: '8px auto 0' }}>
+                        You have not been assigned to any specific batches. Once your instructor adds you to a cohort, it will appear here.
+                    </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {batches.map((batch) => (
-                        <div key={batch._id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    {batches.map(batch => {
+                        const pct      = batch.attendanceStats?.percentage || 0;
+                        const attColor = getAttColor(pct);
 
-                            {/* Header / Course Info */}
-                            <div className="p-6 border-b border-slate-100 flex items-start gap-4">
-                                <div className="w-16 h-16 bg-indigo-50 rounded-xl border border-indigo-100 flex items-center justify-center shrink-0">
-                                    <BookOpen className="w-8 h-8 text-indigo-500" />
+                        return (
+                            <div key={batch._id} className="rounded-2xl overflow-hidden flex flex-col transition-all hover:shadow-lg"
+                                style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+
+                                {/* Header */}
+                                <div className="p-5 flex items-start gap-4"
+                                    style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                                    <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
+                                        style={{ backgroundColor: `${C.btnPrimary}15`, border: `1px solid ${C.btnPrimary}25` }}>
+                                        <BookOpen className="w-7 h-7" style={{ color: C.btnPrimary }} />
+                                    </div>
+
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <h2 className="line-clamp-1"
+                                                style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>
+                                                {batch.name}
+                                            </h2>
+                                            <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shrink-0"
+                                                style={batch.status === 'active'
+                                                    ? { backgroundColor: C.successBg, color: C.success, fontFamily: T.fontFamily }
+                                                    : { backgroundColor: `${C.btnPrimary}15`, color: C.btnPrimary, fontFamily: T.fontFamily }}>
+                                                {batch.status}
+                                            </span>
+                                        </div>
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, marginTop: 2 }}>
+                                            {batch.courseId?.title}
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <img
+                                                src={batch.tutorId?.userId?.profileImage || `https://ui-avatars.com/api/?name=${batch.tutorId?.userId?.name}`}
+                                                alt="" className="w-5 h-5 rounded-full"
+                                            />
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, fontWeight: T.weight.medium }}>
+                                                {batch.tutorId?.userId?.name}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="flex-1 w-full">
-                                    <div className="flex justify-between items-start">
-                                        <h2 className="text-xl font-bold text-slate-900 line-clamp-1">{batch.name}</h2>
-                                        <span className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wider rounded-lg ${batch.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                                            {batch.status}
+                                {/* Date + Schedule row */}
+                                <div className="grid grid-cols-2 divide-x"
+                                    style={{ borderBottom: `1px solid ${C.cardBorder}`, divideColor: C.cardBorder, backgroundColor: C.innerBg }}>
+                                    {[
+                                        { icon: Calendar, label: 'Start Date',  value: new Date(batch.startDate).toLocaleDateString() },
+                                        { icon: Clock,    label: 'Schedule',    value: batch.scheduleDescription || 'Flexible' },
+                                    ].map(({ icon: Icon, label, value }) => (
+                                        <div key={label} className="p-4 flex flex-col gap-1"
+                                            style={{ borderColor: C.cardBorder }}>
+                                            <div className="flex items-center gap-1.5"
+                                                style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
+                                                <Icon className="w-3.5 h-3.5" /> {label}
+                                            </div>
+                                            <span className="truncate"
+                                                style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading }}>
+                                                {value}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Attendance */}
+                                <div className="p-5 flex-1">
+                                    <div className="flex items-end justify-between mb-3">
+                                        <div>
+                                            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
+                                                Your Attendance
+                                            </h3>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, marginTop: 2 }}>
+                                                Overall presence rate
+                                            </p>
+                                        </div>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: attColor }}>
+                                            {pct}%
                                         </span>
                                     </div>
-                                    <p className="text-slate-500 text-sm mt-1">{batch.courseId?.title}</p>
 
-                                    <div className="flex items-center gap-2 mt-3 text-sm text-slate-600 font-medium">
-                                        <img
-                                            src={batch.tutorId?.userId?.profileImage || `https://ui-avatars.com/api/?name=${batch.tutorId?.userId?.name}`}
-                                            alt=""
-                                            className="w-5 h-5 rounded-full"
-                                        />
-                                        <span>Instructor: {batch.tutorId?.userId?.name}</span>
+                                    {/* Progress bar */}
+                                    <div className="w-full h-2 rounded-full overflow-hidden mb-5"
+                                        style={{ backgroundColor: C.innerBg }}>
+                                        <div className="h-full rounded-full transition-all duration-700"
+                                            style={{ width: `${pct}%`, backgroundColor: attColor }} />
                                     </div>
-                                </div>
-                            </div>
 
-                            {/* Details Grid */}
-                            <div className="grid grid-cols-2 divide-x divide-slate-100 border-b border-slate-100 bg-slate-50/50">
-                                <div className="p-4 flex flex-col gap-1">
-                                    <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                                        <Calendar className="w-3.5 h-3.5" /> Start Date
-                                    </div>
-                                    <span className="text-slate-900 font-semibold">{new Date(batch.startDate).toLocaleDateString()}</span>
-                                </div>
-                                <div className="p-4 flex flex-col gap-1">
-                                    <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                                        <Clock className="w-3.5 h-3.5" /> Schedule
-                                    </div>
-                                    <span className="text-slate-900 font-semibold truncate" title={batch.scheduleDescription}>{batch.scheduleDescription || 'Flexible'}</span>
-                                </div>
-                            </div>
-
-                            {/* Attendance Section */}
-                            <div className="p-6 bg-white flex-1">
-                                <div className="flex justify-between items-end mb-4">
-                                    <div>
-                                        <h3 className="font-bold text-slate-800">Your Attendance</h3>
-                                        <p className="text-xs text-slate-500 mt-0.5">Overall presence rate in this batch</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className={`text-2xl font-black ${batch.attendanceStats?.percentage >= 75 ? 'text-emerald-600' : batch.attendanceStats?.percentage >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
-                                            {batch.attendanceStats?.percentage || 0}%
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Progress Bar */}
-                                <div className="w-full bg-slate-100 rounded-full h-2.5 mb-6 overflow-hidden">
-                                    <div
-                                        className={`h-2.5 rounded-full ${batch.attendanceStats?.percentage >= 75 ? 'bg-emerald-500' : batch.attendanceStats?.percentage >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
-                                        style={{ width: `${batch.attendanceStats?.percentage || 0}%` }}
-                                    ></div>
-                                </div>
-
-                                {/* Recent Logs Timeline */}
-                                <div className="space-y-3">
-                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Recent Logs</h4>
-                                    {batch.recentLogs && batch.recentLogs.length > 0 ? (
-                                        batch.recentLogs.map((log) => (
-                                            <div key={log._id} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50">
+                                    {/* Recent Logs */}
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 10 }}>
+                                        Recent Logs
+                                    </p>
+                                    <div className="space-y-2.5">
+                                        {batch.recentLogs?.length > 0 ? batch.recentLogs.map(log => (
+                                            <div key={log._id} className="flex items-center justify-between p-3 rounded-xl"
+                                                style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`p-1.5 rounded-md ${log.status === 'present' ? 'bg-emerald-100' : log.status === 'absent' ? 'bg-red-100' : 'bg-amber-100'}`}>
+                                                    <div className="p-1.5 rounded-lg"
+                                                        style={{
+                                                            backgroundColor: log.status === 'present' ? C.successBg :
+                                                                             log.status === 'absent'  ? C.dangerBg  : C.warningBg,
+                                                        }}>
                                                         {getStatusIcon(log.status)}
                                                     </div>
                                                     <div>
-                                                        <span className="block text-sm font-semibold text-slate-700 capitalize">{log.status}</span>
-                                                        <span className="block text-xs text-slate-500">{new Date(log.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                                                        <span className="block capitalize"
+                                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading }}>
+                                                            {log.status}
+                                                        </span>
+                                                        <span className="block"
+                                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+                                                            {new Date(log.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                                                        </span>
                                                     </div>
                                                 </div>
                                                 {log.remarks && (
-                                                    <div className="text-xs text-slate-500 italic max-w-[120px] truncate" title={log.remarks}>
+                                                    <span className="truncate max-w-[120px] italic"
+                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}
+                                                        title={log.remarks}>
                                                         "{log.remarks}"
-                                                    </div>
+                                                    </span>
                                                 )}
                                             </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-sm text-slate-500 italic">No attendance records documented yet.</p>
-                                    )}
+                                        )) : (
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, fontStyle: 'italic' }}>
+                                                No attendance records yet.
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

@@ -2,19 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import {
-    BookOpen, Clock, TrendingUp, Calendar, ArrowRight,
-    PlayCircle, FileText, Sparkles, BarChart3, Users,
-    Brain, ChevronDown, ChevronUp, Award, Video,
-    Flame, Target, CheckCircle2, Star, Folder, Edit3,
-    ClipboardList, User
+    BookOpen, TrendingUp, ArrowRight, PlayCircle, FileText,
+    Sparkles, BarChart3, Users, Brain, ChevronDown, ChevronUp,
+    Award, Video, CheckCircle2, Folder, ClipboardList, User
 } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/axios';
-import { Progress } from '@/components/ui/progress';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { toast } from 'react-hot-toast';
 import useInstitute from '@/hooks/useInstitute';
 import { useRouter } from 'next/navigation';
+import { C, T, S, cx, pageStyle } from '@/constants/studentTokens';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function timeAgo(date) {
@@ -26,60 +24,106 @@ function timeAgo(date) {
     if (hrs < 24) return `${hrs}h ago`;
     return `${Math.floor(hrs / 24)}d ago`;
 }
+// ─── FallbackImage ────────────────────────────────────────────────────────────
+function FallbackImage({ src, alt, className }) {
+    const defaultImg = 'https://images.unsplash.com/photo-1546374823-74e2d36d4bd2?auto=format&fit=crop&q=80&w=600';
+    const [imgSrc, setImgSrc] = useState(src || defaultImg);
+    const [hasError, setHasError] = useState(false);
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+    useEffect(() => {
+        setImgSrc(src || defaultImg);
+        setHasError(false);
+    }, [src]);
 
-/** Redesigned Stat card matching screenshot */
-function StatCard({ icon: Icon, value, label, href, iconBg, iconColor, isAI }) {
+    if (hasError) {
+        return (
+            <div className={`flex items-center justify-center bg-slate-100 ${className}`}>
+                <BookOpen className="w-6 h-6 text-slate-400" />
+            </div>
+        );
+    }
+
+    return (
+        <img 
+            src={imgSrc} 
+            alt={alt} 
+            className={className}
+            onError={() => {
+                if (imgSrc !== defaultImg) {
+                    setImgSrc(defaultImg);
+                } else {
+                    setHasError(true);
+                }
+            }}
+        />
+    );
+}
+
+// ─── Icon Pill ────────────────────────────────────────────────────────────────
+function IconPill({ icon: Icon, size = 20, bg }) {
+    return (
+        <div className="flex items-center justify-center rounded-xl flex-shrink-0"
+            style={{ width: 40, height: 40, backgroundColor: bg || C.iconBg }}>
+            <Icon style={{ width: size, height: size, color: C.iconColor }} />
+        </div>
+    );
+}
+
+// ─── StatCard ─────────────────────────────────────────────────────────────────
+function StatCard({ icon: Icon, value, label, href, isAI }) {
     const cardContent = (
-        <div className={`relative rounded-2xl p-4 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer
-            ${isAI
-                ? 'bg-[var(--theme-sidebar)] text-white shadow-md'
-                : 'bg-white border border-slate-200/80 shadow-sm'}`}
-            style={{ minHeight: '120px' }}>
+        <div className="relative rounded-2xl p-4 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
+            style={{
+                backgroundColor: isAI ? '#3D3B8E' : C.cardBg,
+                border: `1px solid ${C.cardBorder}`,
+                minHeight: 120,
+                boxShadow: S.card,
+            }}>
 
-            {/* Background decoration - subtle curve/wave */}
+            {/* Decorative curve */}
             {!isAI && (
-                <div className="absolute right-0 bottom-0 w-24 h-16 opacity-10 pointer-events-none">
-                    <svg viewBox="0 0 96 64" fill="none" className="w-full h-full">
-                        <path d="M96 64 C70 64 60 20 0 30 L0 64 Z" fill="var(--theme-primary)" />
+                <div className="absolute right-0 bottom-0 w-36 h-20 pointer-events-none overflow-hidden rounded-b-2xl">
+                    <svg viewBox="0 0 144 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                        <path d="M0 55 C30 55 50 30 80 28 C100 26 120 35 144 30 L144 80 L0 80 Z"
+                            fill="#CDD5F0" opacity="0.55" />
+                        <path d="M0 55 C30 55 50 30 80 28 C100 26 120 35 144 30"
+                            stroke="#8095E4" strokeWidth="2" fill="none" opacity="0.85" />
                     </svg>
                 </div>
             )}
 
-            <div className="relative flex flex-col h-full">
-                {/* Top row: icon + label */}
-                <div className="flex items-start gap-3 mb-2">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isAI ? 'bg-amber-400/30' : iconBg}`}>
-                        <Icon className={`w-5 h-5 ${isAI ? 'text-amber-300' : iconColor}`} />
-                    </div>
+            <div className="relative flex flex-col h-full gap-2">
+                <div className="flex items-start gap-3">
+                    <IconPill icon={Icon} bg={isAI ? 'rgba(245,158,11,0.25)' : C.iconBg} />
                     <div className="flex-1 min-w-0">
                         {isAI ? (
-                            <p className="text-sm font-bold text-white leading-tight">{label}</p>
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: '#ffffff', lineHeight: T.leading.tight }}>
+                                {label}
+                            </p>
                         ) : (
                             <>
-                                <p className="text-xs font-semibold text-slate-500 leading-tight">{label}</p>
-                                <p className="text-3xl font-black text-slate-800 leading-tight mt-0.5">{value}</p>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.statLabel, lineHeight: T.leading.tight }}>
+                                    {label}
+                                </p>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size['3xl'], fontWeight: T.weight.black, color: C.statValue, lineHeight: T.leading.tight, marginTop: 2 }}>
+                                    {value}
+                                </p>
                             </>
                         )}
                     </div>
                 </div>
 
-                {/* AI card CTA */}
-                {isAI && (
+                {isAI ? (
                     <div className="mt-auto">
-                        {/* Styled as span — outer card is already a Link, no nested <a> */}
-                        <span className="block w-full py-2 px-3 bg-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/90 text-white text-xs font-bold rounded-xl transition-colors mt-2 text-center">
+                        <span className="block w-full py-2 px-3 text-white text-center rounded-xl"
+                            style={{ backgroundColor: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
                             Start AI Study Plan
                         </span>
                     </div>
-                )}
-
-                {/* View All button — span only, outer card Link handles navigation */}
-                {!isAI && href && (
-                    <div className="mt-auto pt-2">
-                        {/* Using span instead of Link to avoid nested <a> inside the wrapping Link */}
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-50 transition-colors">
+                ) : href && (
+                    <div className="mt-auto">
+                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg"
+                            style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
                             View All <ArrowRight className="w-3 h-3" />
                         </span>
                     </div>
@@ -87,24 +131,23 @@ function StatCard({ icon: Icon, value, label, href, iconBg, iconColor, isAI }) {
             </div>
         </div>
     );
-
-    // Wrap entire card in Link (no inner Links to avoid nested <a>)
-    // Both normal and AI cards wrapped in Link if href provided
     return href ? <Link href={href}>{cardContent}</Link> : cardContent;
 }
 
-/** Section header */
+// ─── SectionHeader ────────────────────────────────────────────────────────────
 function SectionHeader({ icon: Icon, title, linkHref, linkLabel = 'View All' }) {
     return (
         <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-[var(--theme-primary)]/20 flex items-center justify-center">
-                    <Icon className="w-4 h-4 text-[var(--theme-primary)]" />
-                </div>
-                <h2 className="text-base font-bold text-slate-800">{title}</h2>
+                <IconPill icon={Icon} size={16} />
+                <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading }}>
+                    {title}
+                </h2>
             </div>
             {linkHref && (
-                <Link href={linkHref} className="flex items-center gap-1 text-xs font-semibold text-[var(--theme-primary)] hover:text-[var(--theme-primary)] transition-colors">
+                <Link href={linkHref}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg"
+                    style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
                     {linkLabel} <ArrowRight className="w-3 h-3" />
                 </Link>
             )}
@@ -112,34 +155,38 @@ function SectionHeader({ icon: Icon, title, linkHref, linkLabel = 'View All' }) 
     );
 }
 
-/** Collapsible sidebar panel */
+// ─── SidePanel ────────────────────────────────────────────────────────────────
 function SidePanel({ icon: Icon, title, open, onToggle, children }) {
     return (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="rounded-2xl overflow-hidden"
+            style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
             <button onClick={onToggle}
-                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-slate-50/80 transition-colors">
+                className="w-full flex items-center justify-between px-4 py-3.5 transition-colors"
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
                 <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-[var(--theme-primary)]/20 flex items-center justify-center">
-                        <Icon className="w-4 h-4 text-[var(--theme-primary)]" />
-                    </div>
-                    <span className="text-sm font-bold text-slate-800">{title}</span>
+                    <IconPill icon={Icon} size={15} />
+                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                        {title}
+                    </span>
                 </div>
                 {open
-                    ? <ChevronUp className="w-4 h-4 text-slate-400" />
-                    : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                    ? <ChevronUp className="w-4 h-4" style={{ color: C.text, opacity: 0.5 }} />
+                    : <ChevronDown className="w-4 h-4" style={{ color: C.text, opacity: 0.5 }} />}
             </button>
             {open && <div className="px-4 pb-4">{children}</div>}
         </div>
     );
 }
 
-// ─── Custom Tooltip for chart ─────────────────────────────────────────────────
+// ─── Chart Tooltip ────────────────────────────────────────────────────────────
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload?.length) {
         return (
-            <div className="bg-[var(--theme-sidebar)] text-white text-xs rounded-xl px-3 py-2 shadow-xl">
-                <p className="text-[var(--theme-primary)]/70 font-medium mb-0.5">{label}</p>
-                <p className="font-bold text-lg">{payload[0].value}%</p>
+            <div className="rounded-xl px-3 py-2 shadow-xl"
+                style={{ backgroundColor: '#3D3B8E', fontFamily: T.fontFamily }}>
+                <p style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: 'rgba(255,255,255,0.55)', marginBottom: 2 }}>{label}</p>
+                <p style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: '#ffffff' }}>{payload[0].value}%</p>
             </div>
         );
     }
@@ -148,28 +195,23 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function StudentDashboard() {
-    const [enrollments, setEnrollments] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState({ enrolledCourses: 0, completedCourses: 0, inProgress: 0 });
-    const [history, setHistory] = useState([]);
-    const [upcomingExams, setUpcomingExams] = useState([]);
-    const [liveClassCount, setLiveClassCount] = useState(0);
-    const [user, setUser] = useState({ name: 'Student' });
-    const [activityData, setActivityData] = useState([]);
-    const [batches, setBatches] = useState([]);
-    const institute = useInstitute();
-
-    const [myInstitutes, setMyInstitutes] = useState([]);
+    const [enrollments, setEnrollments]           = useState([]);
+    const [loading, setLoading]                   = useState(true);
+    const [stats, setStats]                       = useState({ enrolledCourses: 0, completedCourses: 0, inProgress: 0 });
+    const [history, setHistory]                   = useState([]);
+    const [upcomingExams, setUpcomingExams]        = useState([]);
+    const [liveClassCount, setLiveClassCount]     = useState(0);
+    const [user, setUser]                         = useState({ name: 'Student' });
+    const [activityData, setActivityData]         = useState([]);
+    const [batches, setBatches]                   = useState([]);
+    const [myInstitutes, setMyInstitutes]         = useState([]);
     const [currentInstitute, setCurrentInstitute] = useState(null);
-    const [activeTab, setActiveTab] = useState('institute');
-
-    const [aiOpen, setAiOpen] = useState(true);
+    const [activeTab, setActiveTab]               = useState('institute');
+    const [aiOpen, setAiOpen]                     = useState(true);
     const [announcementsOpen, setAnnouncementsOpen] = useState(true);
-    const [batchPanelOpen, setBatchPanelOpen] = useState(true);
-
+    const [batchPanelOpen, setBatchPanelOpen]     = useState(true);
     const router = useRouter();
 
-    // ── Fetch: initial config ────────────────────────────────────────────────
     useEffect(() => {
         const fetchInitialConfig = async () => {
             try {
@@ -181,23 +223,20 @@ export default function StudentDashboard() {
                         if (!institutesRes.data.currentInstitute) setActiveTab('global');
                     }
                 } catch { setActiveTab('global'); }
-
                 try {
                     const userRes = await api.get('/auth/me');
                     if (userRes.data.success) setUser(userRes.data.user);
-                } catch { }
-            } catch (error) { console.error('Initial load error:', error); }
+                } catch {}
+            } catch (err) { console.error('Initial load error:', err); }
         };
         fetchInitialConfig();
     }, []);
 
-    // ── Fetch: context data ──────────────────────────────────────────────────
     useEffect(() => {
         const fetchContextData = async () => {
             setLoading(true);
             try {
                 const s = `?scope=${activeTab}`;
-
                 try {
                     const enrollRes = await api.get(`/enrollments/my-enrollments${s}`);
                     if (enrollRes.data.success) {
@@ -206,42 +245,35 @@ export default function StudentDashboard() {
                         const completed = data.filter(e => e.progress?.percentage === 100).length;
                         setStats({ enrolledCourses: data.length, completedCourses: completed, inProgress: data.length - completed });
                     }
-                } catch { }
-
+                } catch {}
                 try {
                     const examsRes = await api.get(`/exams/student/all${s}`);
                     if (examsRes.data.success) {
                         const now = new Date();
-                        const upcoming = examsRes.data.exams
+                        setUpcomingExams(examsRes.data.exams
                             .filter(e => e.isScheduled && new Date(e.startDate) > now)
                             .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
-                            .slice(0, 5);
-                        setUpcomingExams(upcoming);
+                            .slice(0, 5));
                     }
-                } catch { }
-
+                } catch {}
                 try {
                     const liveRes = await api.get(`/live-classes/student${s}`);
                     if (liveRes.data.success) setLiveClassCount(liveRes.data.liveClasses?.length || 0);
-                } catch { }
-
+                } catch {}
                 try {
                     const historyRes = await api.get(`/exams/student/history-all${s}`);
                     if (historyRes.data.success) setHistory(historyRes.data.attempts.slice(0, 6));
-                } catch { }
-
+                } catch {}
                 try {
                     const activityRes = await api.get(`/student/dashboard/activity${s}`);
                     if (activityRes.data.success) setActivityData(activityRes.data.activity);
                 } catch { setActivityData([]); }
-
                 try {
                     const batchRes = await api.get(`/batches/student/my-batches${s}`);
                     if (batchRes.data.success) setBatches(batchRes.data.batches?.slice(0, 4) || []);
-                } catch { }
-
-            } catch (error) {
-                console.error('Dashboard load error:', error);
+                } catch {}
+            } catch (err) {
+                console.error('Dashboard load error:', err);
                 toast.error('Failed to load dashboard data');
             } finally { setLoading(false); }
         };
@@ -252,17 +284,21 @@ export default function StudentDashboard() {
         ? Math.round(history.reduce((acc, h) => acc + (h.totalMarks > 0 ? (h.score / h.totalMarks) * 100 : 0), 0) / history.length)
         : 0;
 
-    // ── Loading state ────────────────────────────────────────────────────────
+    const progressColors = ['#5E9D9D', '#7573E8', '#6267E9', '#4748AA'];
+
     if (loading) return (
         <div className="flex items-center justify-center min-h-[60vh]">
             <div className="flex flex-col items-center gap-3">
                 <div className="relative w-12 h-12">
-                    <div className="w-12 h-12 rounded-full border-[3px] border-[var(--theme-primary)]/30 border-t-[var(--theme-primary)] animate-spin" />
+                    <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                        style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <Sparkles className="w-4 h-4 text-[var(--theme-primary)] animate-pulse" />
+                        <Sparkles className="w-4 h-4 animate-pulse" style={{ color: C.btnPrimary }} />
                     </div>
                 </div>
-                <p className="text-sm text-slate-400 font-medium">Loading your dashboard…</p>
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, opacity: 0.55 }}>
+                    Loading your dashboard…
+                </p>
             </div>
         </div>
     );
@@ -273,119 +309,55 @@ export default function StudentDashboard() {
         .slice(0, 3);
 
     return (
-        /* Overall page background - soft lavender tint matching screenshot */
-        <div className="space-y-5 pb-8 min-h-screen" style={{
-            fontFamily: "var(--theme-font, 'DM Sans', sans-serif)",
+        <div className="space-y-5 pb-8 min-h-screen" style={{ fontFamily: T.fontFamily, backgroundColor: C.pageBg }}>
 
-        }}>
-
-            {/* ── Welcome Header ────────────────────────────────────────────── */}
+            {/* ── Welcome Header ──────────────────────────────────────────── */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <div className="relative shrink-0">
-                        <div className="w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-[var(--theme-primary)] ring-offset-2 shadow-md">
-                            <img
-                                src={user?.profileImage || '/default-avatar.png'}
-                                alt={user?.name}
-                                className="w-full h-full object-cover"
-                            />
+                        <div className="w-14 h-14 rounded-2xl overflow-hidden"
+                            style={{ border: `2px solid ${C.btnPrimary}`, boxShadow: `0 0 0 3px ${C.btnViewAllBg}` }}>
+                            <img src={user?.profileImage || '/default-avatar.png'} alt={user?.name}
+                                className="w-full h-full object-cover" />
                         </div>
-                        {/* Online dot */}
                         <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full" />
                     </div>
                     <div>
-                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-[0.08em] mb-0.5">
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.text, opacity: 0.55, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 2 }}>
                             {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </p>
-                        <h1 className="text-2xl font-black text-slate-900 leading-tight">
-                            Hello, <span className="text-[var(--theme-primary)]">{user?.name?.split(' ')[0] || 'Student'}</span> 👋
+                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, lineHeight: T.leading.tight }}>
+                            Hello, <span style={{ color: C.btnPrimary }}>{user?.name?.split(' ')[0] || 'Student'}</span> 👋
                         </h1>
-                        <p className="text-sm text-slate-400 mt-0.5">
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, opacity: 0.65, marginTop: 2 }}>
                             {currentInstitute ? `Student at ${currentInstitute.name}` : 'Independent Learner · Global'}
                         </p>
                     </div>
                 </div>
 
-                {/* Institute / Global Switcher */}
+                {/* Switcher */}
                 {myInstitutes.length > 0 && (
-                    <div className="flex items-center gap-1 bg-white/70 rounded-xl p-1 self-start sm:self-auto shadow-sm">
-                        <button onClick={() => setActiveTab('institute')}
-                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150
-                                ${activeTab === 'institute' ? 'bg-[var(--theme-sidebar)] text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-                            My Institute
-                        </button>
-                        <button onClick={() => setActiveTab('global')}
-                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150
-                                ${activeTab === 'global' ? 'bg-[var(--theme-sidebar)] text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-                            Global
-                        </button>
+                    <div className="flex items-center gap-1 rounded-xl p-1 self-start sm:self-auto"
+                        style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}` }}>
+                        {['institute', 'global'].map(tab => (
+                            <button key={tab} onClick={() => setActiveTab(tab)}
+                                className="px-4 py-2 rounded-lg capitalize transition-all duration-150"
+                                style={activeTab === tab
+                                    ? { backgroundColor: C.btnPrimary, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold }
+                                    : { color: C.text, opacity: 0.7, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>
+                                {tab === 'institute' ? 'My Institute' : 'Global'}
+                            </button>
+                        ))}
                     </div>
                 )}
             </div>
 
-            {/* ── Institute Banner ──────────────────────────────────────────── */}
-            {currentInstitute && activeTab === 'institute' && (
-                <div className="relative rounded-2xl overflow-hidden"
-                    style={{ background: 'linear-gradient(135deg, var(--theme-sidebar) 0%, var(--theme-sidebar) 50%, var(--theme-sidebar) 100%)' }}>
-                    <div className="absolute inset-0 opacity-[0.06]"
-                        style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-                    <div className="relative flex items-center justify-between px-5 py-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
-                                <BookOpen className="w-5 h-5 text-[var(--theme-primary)]/70" />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-white text-sm">{currentInstitute.name}</h3>
-                                <p className="text-[var(--theme-primary)]/70 text-xs">Access your institute courses &amp; resources</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-1 bg-white/15 text-[var(--theme-primary)]/70 text-[11px] font-bold rounded-full capitalize">
-                                {currentInstitute.roleInInstitute}
-                            </span>
-                            <span className="px-2.5 py-1 bg-emerald-500/30 text-emerald-200 text-[11px] font-bold rounded-full capitalize">
-                                {currentInstitute.status}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* ── Stat Cards ────────────────────────────────────────────────── */}
-            {/* Layout matches screenshot: 4 cards in a row, 3 normal + 1 AI dark card */}
+            {/* ── Stat Cards ───────────────────────────────────────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
-                    icon={Folder}
-                    value={stats.enrolledCourses}
-                    label="Enrolled Courses"
-                    href="/student/courses"
-                    iconBg="bg-[var(--theme-primary)]/15"
-                    iconColor="text-[var(--theme-primary)]"
-                />
-                <StatCard
-                    icon={ClipboardList}
-                    value={upcomingExams.length}
-                    label="Upcoming Exams"
-                    href="/student/exams"
-                    iconBg="bg-[var(--theme-primary)]/15"
-                    iconColor="text-[var(--theme-primary)]"
-                />
-                <StatCard
-                    icon={Video}
-                    value={liveClassCount}
-                    label="Live Classes"
-                    href="/student/live-classes"
-                    iconBg="bg-[var(--theme-primary)]/15"
-                    iconColor="text-[var(--theme-primary)]"
-                />
-                {/* AI card - dark themed */}
-                <StatCard
-                    icon={Brain}
-                    value={`${avgScore}%`}
-                    label="AI Recommendations"
-                    href="/student/ai-analytics"
-                    isAI
-                />
+                <StatCard icon={Folder}        value={stats.enrolledCourses} label="Enrolled Courses"   href="/student/courses" />
+                <StatCard icon={ClipboardList}  value={upcomingExams.length}  label="Upcoming Exams"     href="/student/exams" />
+                <StatCard icon={Video}          value={liveClassCount}         label="Live Classes"       href="/student/live-classes" />
+                <StatCard icon={Brain}          value={`${avgScore}%`}         label="AI Recommendations" href="/student/ai-analytics" isAI />
             </div>
 
             {/* ── Continue Learning ─────────────────────────────────────────── */}
@@ -393,33 +365,45 @@ export default function StudentDashboard() {
                 <div>
                     <SectionHeader icon={PlayCircle} title="Continue Learning" linkHref="/student/courses" />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {inProgressCourses.map(enrollment => {
+                        {inProgressCourses.map((enrollment, i) => {
                             const course = enrollment.courseId;
                             const pct = enrollment.progress?.percentage || 0;
+                            const barColor = progressColors[i % progressColors.length];
                             return (
                                 <Link key={enrollment._id} href={`/student/courses/${course?._id}`}
-                                    className="group bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+                                    className="group rounded-2xl p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+                                    style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}` }}>
                                     <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--theme-sidebar)] to-[var(--theme-primary)] flex items-center justify-center overflow-hidden shrink-0">
-                                            {course?.thumbnail
-                                                ? <img src={course.thumbnail} alt="" className="w-full h-full object-cover" />
-                                                : <BookOpen className="w-5 h-5 text-white" />}
+                                        <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
+                                            style={{ backgroundColor: C.innerBg }}>
+                                            <FallbackImage 
+                                                src={course?.thumbnail} 
+                                                alt="" 
+                                                className="w-full h-full object-cover" 
+                                            />
                                         </div>
                                         <div className="min-w-0">
-                                            <h3 className="text-sm font-bold text-slate-800 truncate group-hover:text-[var(--theme-primary)] transition-colors">
+                                            <h3 className="truncate"
+                                                style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
                                                 {course?.title}
                                             </h3>
-                                            <p className="text-[11px] text-slate-400 mt-0.5">{timeAgo(enrollment.lastAccessedAt || enrollment.updatedAt)}</p>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.text, opacity: 0.55, marginTop: 2 }}>
+                                                {timeAgo(enrollment.lastAccessedAt || enrollment.updatedAt)}
+                                            </p>
                                         </div>
                                     </div>
                                     <div>
-                                        <div className="flex justify-between text-[11px] font-semibold mb-1.5">
-                                            <span className="text-slate-500">{pct}% complete</span>
-                                            <span className="text-[var(--theme-primary)] group-hover:underline">Resume →</span>
+                                        <div className="flex justify-between mb-1.5">
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.semibold, color: C.text, opacity: 0.6 }}>
+                                                {pct}% complete
+                                            </span>
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.semibold, color: barColor }}>
+                                                Resume →
+                                            </span>
                                         </div>
-                                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                            <div className="h-full bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-accent)] rounded-full transition-all duration-700"
-                                                style={{ width: `${pct}%` }} />
+                                        <div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: C.innerBg }}>
+                                            <div className="h-full rounded-full transition-all duration-700"
+                                                style={{ width: `${pct}%`, backgroundColor: barColor }} />
                                         </div>
                                     </div>
                                 </Link>
@@ -429,236 +413,273 @@ export default function StudentDashboard() {
                 </div>
             )}
 
-            {/* ── Main Grid: Left + Right ───────────────────────────────────── */}
+            {/* ── Main Grid ─────────────────────────────────────────────────── */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
 
-                {/* ── LEFT 2/3 ──────────────────────────────────────────────── */}
+                {/* Left 2/3 */}
                 <div className="xl:col-span-2 space-y-5">
 
-                    {/* Performance Card */}
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+                    {/* Performance Overview */}
+                    <div className="rounded-2xl p-5"
+                        style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                         <SectionHeader icon={TrendingUp} title="Performance Overview" />
-
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {/* Chart - left 2/3 */}
                             <div className="md:col-span-2 h-52">
                                 {activityData.length > 0 ? (
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={activityData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                                             <defs>
-                                                <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="0%" stopColor="var(--theme-primary)" stopOpacity={0.25} />
-                                                    <stop offset="100%" stopColor="var(--theme-primary)" stopOpacity={0} />
+                                                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor={C.chartLine} stopOpacity={0.30} />
+                                                    <stop offset="100%" stopColor={C.chartLine} stopOpacity={0.02} />
                                                 </linearGradient>
                                             </defs>
-                                            <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
-                                            <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} domain={[0, 100]} />
+                                            <XAxis dataKey="month"
+                                                tick={{ fontSize: 11, fill: C.text, opacity: 0.5, fontFamily: T.fontFamily }}
+                                                tickLine={false} axisLine={false} />
+                                            <YAxis
+                                                tick={{ fontSize: 11, fill: C.text, opacity: 0.5, fontFamily: T.fontFamily }}
+                                                tickLine={false} axisLine={false} domain={[0, 100]} />
                                             <Tooltip content={<CustomTooltip />} />
-                                            <Area type="monotone" dataKey="score" stroke="var(--theme-primary)" strokeWidth={2.5}
-                                                fill="url(#grad)" dot={{ r: 3, fill: 'var(--theme-primary)', strokeWidth: 0 }}
-                                                activeDot={{ r: 5, fill: 'var(--theme-primary)' }} />
+                                            <Area type="monotone" dataKey="score"
+                                                stroke={C.chartLine} strokeWidth={2.5}
+                                                fill="url(#chartGrad)"
+                                                dot={{ r: 3, fill: C.chartLine, strokeWidth: 0 }}
+                                                activeDot={{ r: 5, fill: C.chartLine }} />
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 ) : (
                                     <div className="flex flex-col items-center justify-center h-full gap-2">
-                                        <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center">
-                                            <TrendingUp className="w-6 h-6 text-slate-300" />
+                                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: C.innerBg }}>
+                                            <TrendingUp className="w-6 h-6" style={{ color: C.chartLine, opacity: 0.5 }} />
                                         </div>
-                                        <p className="text-sm font-semibold text-slate-400">No activity yet</p>
-                                        <p className="text-xs text-slate-300 text-center">Complete exams to see your performance trend</p>
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text, opacity: 0.5 }}>
+                                            No activity yet
+                                        </p>
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, opacity: 0.35, textAlign: 'center' }}>
+                                            Complete exams to see your trend
+                                        </p>
                                     </div>
                                 )}
                             </div>
-
-                            {/* Score display - right 1/3 - matches screenshot: checkmark icon + "Score 78%" + "This Month ▶ 23%" */}
-                            <div className="flex flex-col items-center justify-center bg-slate-50/80 rounded-2xl p-4 gap-2 border border-slate-100">
-                                {/* Checkmark circle icon */}
-                                <div className="w-12 h-12 rounded-full border-[3px] border-[var(--theme-primary)] flex items-center justify-center mb-1">
-                                    <CheckCircle2 className="w-6 h-6 text-[var(--theme-primary)]" />
+                            {/* Score circle */}
+                            <div className="flex flex-col items-center justify-center rounded-2xl p-4 gap-2"
+                                style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
+                                <div className="w-12 h-12 rounded-full border-[3px] flex items-center justify-center mb-1"
+                                    style={{ borderColor: C.chartLine }}>
+                                    <CheckCircle2 className="w-6 h-6" style={{ color: C.chartLine }} />
                                 </div>
                                 <div className="text-center">
-                                    <p className="text-sm font-semibold text-slate-600">Score</p>
-                                    <p className="text-3xl font-black text-slate-800">{avgScore}%</p>
-                                    <p className="text-xs text-emerald-500 font-semibold flex items-center gap-1 justify-center mt-1">
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text, opacity: 0.6 }}>
+                                        Score
+                                    </p>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size['3xl'], fontWeight: T.weight.black, color: C.statValue }}>
+                                        {avgScore}%
+                                    </p>
+                                    <p className="flex items-center gap-1 justify-center mt-1"
+                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.chartLine }}>
                                         <TrendingUp className="w-3 h-3" /> This Month
-                                        {/* PLACEHOLDER - growth % not available in current code */}
                                     </p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Batch Details - redesigned to match screenshot */}
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+                    {/* Batch Details */}
+                    <div className="rounded-2xl p-5"
+                        style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                         <SectionHeader icon={Users} title="Batch Details" linkHref="/student/batches" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:divide-x" style={{ borderColor: C.cardBorder }}>
 
-                        {/* Batch name header row - PLACEHOLDER if no batch data */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:divide-x divide-slate-100">
-
-                            {/* Left: Batch info + course progress bars */}
+                            {/* Left: course progress */}
                             <div className="pr-0 md:pr-6">
-                                {/* Batch label */}
-                                <p className="text-xs font-bold text-[var(--theme-primary)] mb-3 uppercase tracking-wide">
-                                    {batches[0]?.name || 'Batch A, Advanced Science' /* PLACEHOLDER */}
+                                <p className="mb-3 uppercase"
+                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.btnPrimary, letterSpacing: T.tracking.wider }}>
+                                    {batches[0]?.name || 'Batch A, Advanced Science'}
                                 </p>
-
-                                {/* Instructor row - PLACEHOLDER (no instructor data in current code) */}
-                                {batches[0] ? (
-                                    <div className="flex items-center gap-3 mb-4 p-2.5 bg-slate-50 rounded-xl">
-                                        <div className="w-9 h-9 rounded-full bg-[var(--theme-primary)]/20 overflow-hidden shrink-0">
-                                            {batches[0]?.instructorImage
-                                                ? <img src={batches[0].instructorImage} alt="" className="w-full h-full object-cover" />
-                                                : <User className="w-5 h-5 text-[var(--theme-primary)] m-auto mt-2" />}
+                                {batches[0] && (
+                                    <div className="flex items-center gap-3 mb-4 p-2.5 rounded-xl"
+                                        style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
+                                        <div className="w-9 h-9 rounded-full overflow-hidden shrink-0" style={{ backgroundColor: C.btnViewAllBg }}>
+                                            <User className="w-5 h-5 m-auto mt-2" style={{ color: C.btnPrimary }} />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-slate-700">{batches[0]?.name || 'Batch A'}</p>
-                                            <p className="text-xs text-slate-400">{batches[0]?.instructorName || ''}</p>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                                                {batches[0]?.name || 'Batch A'}
+                                            </p>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, opacity: 0.55 }}>
+                                                {batches[0]?.instructorName || ''}
+                                            </p>
                                         </div>
-                                        {/* Progress badge */}
-                                        <span className="ml-auto text-xs font-black text-white bg-[var(--theme-primary)] px-2.5 py-1 rounded-lg shrink-0">
+                                        <span className="ml-auto text-white px-2.5 py-1 rounded-lg shrink-0"
+                                            style={{ backgroundColor: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
                                             {enrollments[0]?.progress?.percentage || 0}%
                                         </span>
                                     </div>
-                                ) : null}
-
-                                {/* Course progress bars */}
+                                )}
                                 <div className="space-y-3.5">
                                     {enrollments.slice(0, 4).length > 0 ? enrollments.slice(0, 4).map((enrollment, i) => {
                                         const pct = enrollment.progress?.percentage || 0;
-                                        const barColors = [
-                                            'from-[var(--theme-primary)] to-[var(--theme-accent)]',
-                                            'from-emerald-500 to-teal-400',
-                                            'from-emerald-500 to-teal-400',
-                                            'from-[var(--theme-primary)] to-[var(--theme-primary)]/70'
-                                        ];
+                                        const barColor = progressColors[i % progressColors.length];
                                         return (
                                             <Link key={enrollment._id} href={`/student/courses/${enrollment.courseId?._id}`} className="block group">
                                                 <div className="flex items-center justify-between mb-1.5">
-                                                    <span className="text-sm font-semibold text-slate-700 truncate max-w-[68%] group-hover:text-[var(--theme-primary)] transition-colors">
+                                                    <span className="truncate max-w-[68%]"
+                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text }}>
                                                         {enrollment.courseId?.title || 'Course'}
                                                     </span>
-                                                    <span className="text-xs font-black text-white bg-[var(--theme-primary)]/80 px-2 py-0.5 rounded-lg shrink-0 ml-2">
+                                                    <span className="text-white px-2 py-0.5 rounded-lg shrink-0 ml-2"
+                                                        style={{ backgroundColor: barColor, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
                                                         {pct}%
                                                     </span>
                                                 </div>
-                                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                    <div className={`h-full bg-gradient-to-r ${barColors[i % 4]} rounded-full transition-all duration-700`}
-                                                        style={{ width: `${pct}%` }} />
+                                                <div className="h-2 w-full rounded-full overflow-hidden" style={{ backgroundColor: C.innerBg }}>
+                                                    <div className="h-full rounded-full transition-all duration-700"
+                                                        style={{ width: `${pct}%`, backgroundColor: barColor }} />
                                                 </div>
                                             </Link>
                                         );
-                                    }) : <p className="text-sm text-slate-400 italic">No enrolled courses yet.</p>}
+                                    }) : (
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontStyle: 'italic', color: C.text, opacity: 0.45 }}>
+                                            No enrolled courses yet.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
-                            {/* Right: Upcoming exams list */}
+                            {/* Right: upcoming exams */}
                             <div className="pl-0 md:pl-6 mt-4 md:mt-0">
-                                {/* Batch label for exams column */}
-                                <p className="text-xs font-bold text-[var(--theme-primary)] mb-3 uppercase tracking-wide">
-                                    {batches[0]?.name || 'Batch A, Advanced Science' /* PLACEHOLDER */}
+                                <p className="mb-3 uppercase"
+                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.btnPrimary, letterSpacing: T.tracking.wider }}>
+                                    {batches[0]?.name || 'Batch A, Advanced Science'}
                                 </p>
-
                                 <div className="space-y-2.5">
                                     {upcomingExams.slice(0, 4).length > 0 ? upcomingExams.slice(0, 4).map(exam => (
-                                        <div key={exam._id} className="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl hover:bg-[var(--theme-primary)]/5 transition-colors border border-slate-100">
+                                        <div key={exam._id}
+                                            className="flex items-center justify-between p-3 rounded-xl transition-colors"
+                                            style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}
+                                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+                                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}>
                                             <div className="flex items-center gap-2.5 min-w-0">
-                                                <div className="w-8 h-8 bg-[var(--theme-primary)]/15 rounded-lg flex items-center justify-center shrink-0">
-                                                    <FileText className="w-4 h-4 text-[var(--theme-primary)]" />
+                                                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                                                    style={{ backgroundColor: C.iconBg }}>
+                                                    <FileText className="w-4 h-4 text-white" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="text-sm font-semibold text-slate-700 truncate">{exam.title}</p>
-                                                    <p className="text-[11px] text-slate-400 mt-0.5">
+                                                    <p className="truncate"
+                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading }}>
+                                                        {exam.title}
+                                                    </p>
+                                                    <p style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.text, opacity: 0.5, marginTop: 2 }}>
                                                         Batch in {Math.ceil((new Date(exam.startDate) - new Date()) / (1000 * 60 * 60 * 24))} days
                                                     </p>
                                                 </div>
                                             </div>
                                             <Link href={`/student/exams/${exam._id}`}
-                                                className="px-3 py-1.5 bg-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/90 text-white text-xs font-bold rounded-lg transition-colors shrink-0 ml-2">
+                                                className="px-3 py-1.5 text-white rounded-lg shrink-0 ml-2 transition-colors"
+                                                style={{ backgroundColor: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
                                                 Attempt
                                             </Link>
                                         </div>
-                                    )) : <p className="text-sm text-slate-400 italic">No upcoming exams.</p>}
+                                    )) : (
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontStyle: 'italic', color: C.text, opacity: 0.45 }}>
+                                            No upcoming exams.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Pagination row - PLACEHOLDER - no pagination logic in current code */}
-                        <div className="flex items-center justify-center gap-2 mt-5 pt-4 border-t border-slate-100">
-                            <button className="px-3 py-1.5 text-xs font-semibold text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-1">
-                                ‹ Previous
-                            </button>
-                            {[1, 2, 3].map(n => (
-                                <button key={n} className={`w-8 h-8 text-xs font-bold rounded-lg transition-colors
-                                    ${n === 1 ? 'bg-[var(--theme-primary)] text-white' : 'text-slate-500 border border-slate-200 hover:bg-slate-50'}`}>
-                                    {n}
+                        {/* Pagination */}
+                        <div className="flex items-center justify-center gap-2 mt-5 pt-4"
+                            style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+                            {['‹ Previous', '1', '2', '3', 'Next ›'].map((item) => (
+                                <button key={item}
+                                    className="rounded-lg transition-colors"
+                                    style={item === '1'
+                                        ? { backgroundColor: C.btnPrimary, color: '#ffffff', padding: '6px 12px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }
+                                        : { backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, padding: '6px 12px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
+                                    {item}
                                 </button>
                             ))}
-                            <button className="px-3 py-1.5 text-xs font-semibold text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-1">
-                                Next ›
-                            </button>
                         </div>
                     </div>
 
                     {/* Recent Results */}
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+                    <div className="rounded-2xl p-5"
+                        style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                         <SectionHeader icon={Award} title="Recent Results" linkHref="/student/history" />
                         <div className="space-y-3">
                             {history.length > 0 ? history.slice(0, 4).map(attempt => {
                                 const scorePct = attempt.totalMarks > 0 ? Math.round((attempt.score / attempt.totalMarks) * 100) : 0;
+                                const passed = attempt.isPassed;
                                 return (
                                     <div key={attempt._id}
-                                        className="flex items-center justify-between p-3.5 bg-slate-50/80 rounded-xl hover:bg-slate-100/70 transition-colors border border-slate-100">
+                                        className="flex items-center justify-between p-3.5 rounded-xl transition-colors"
+                                        style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}
+                                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+                                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}>
                                         <div className="flex items-center gap-3 min-w-0">
-                                            <div className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center text-white text-xs font-black shrink-0
-                                                ${attempt.isPassed
-                                                    ? 'bg-gradient-to-br from-emerald-500 to-teal-500'
-                                                    : 'bg-gradient-to-br from-red-500 to-rose-500'}`}>
+                                            <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0"
+                                                style={{ backgroundColor: passed ? C.success : C.danger, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
                                                 {scorePct}%
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-sm font-semibold text-slate-700 truncate">{attempt.examId?.title || 'Exam'}</p>
-                                                <p className="text-[11px] text-slate-400 mt-0.5">{new Date(attempt.submittedAt).toLocaleDateString('en-IN')}</p>
+                                                <p className="truncate"
+                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading }}>
+                                                    {attempt.examId?.title || 'Exam'}
+                                                </p>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.text, opacity: 0.5, marginTop: 2 }}>
+                                                    {new Date(attempt.submittedAt).toLocaleDateString('en-IN')}
+                                                </p>
                                             </div>
                                         </div>
-                                        <span className={`shrink-0 ml-2 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide
-                                            ${attempt.isPassed ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                                            {attempt.isPassed ? 'PASSED' : 'FAILED'}
+                                        <span className="shrink-0 ml-2 px-2.5 py-1 rounded-full"
+                                            style={passed
+                                                ? { backgroundColor: C.successBg, color: C.success, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold }
+                                                : { backgroundColor: C.dangerBg, color: C.danger, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold }}>
+                                            {passed ? 'PASSED' : 'FAILED'}
                                         </span>
                                     </div>
                                 );
                             }) : (
                                 <div className="flex flex-col items-center gap-2 py-8">
-                                    <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center">
-                                        <FileText className="w-5 h-5 text-slate-300" />
+                                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: C.innerBg }}>
+                                        <FileText className="w-5 h-5" style={{ color: C.btnPrimary, opacity: 0.4 }} />
                                     </div>
-                                    <p className="text-sm text-slate-400">No exam results yet</p>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, opacity: 0.4 }}>
+                                        No exam results yet
+                                    </p>
                                 </div>
                             )}
                         </div>
                     </div>
                 </div>
 
-                {/* ── RIGHT SIDEBAR ─────────────────────────────────────────── */}
+                {/* Right Sidebar */}
                 <div className="space-y-4">
 
                     {/* AI Recommendations */}
                     <SidePanel icon={Brain} title="AI Recommendations" open={aiOpen} onToggle={() => setAiOpen(v => !v)}>
                         <div className="space-y-2.5">
-                            {/* PLACEHOLDER items - no AI recommendation data in current code */}
-                            <div className="flex items-center gap-2.5 p-3 bg-[var(--theme-primary)]/10 rounded-xl border border-[var(--theme-primary)]/15">
-                                <div className="w-7 h-7 bg-[var(--theme-primary)]/20 rounded-lg flex items-center justify-center shrink-0">
-                                    <BookOpen className="w-3.5 h-3.5 text-[var(--theme-primary)]" />
+                            {[
+                                { icon: BookOpen, text: 'Continue your enrolled courses' },
+                                { icon: FileText, text: 'Practice upcoming exam topics' },
+                            ].map((rec, i) => (
+                                <div key={i} className="flex items-center gap-2.5 p-3 rounded-xl"
+                                    style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
+                                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                                        style={{ backgroundColor: C.iconBg }}>
+                                        <rec.icon className="w-3.5 h-3.5 text-white" />
+                                    </div>
+                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.text }}>
+                                        {rec.text}
+                                    </span>
                                 </div>
-                                <span className="text-xs text-slate-700 font-medium">Continue your enrolled courses</span>
-                            </div>
-                            <div className="flex items-center gap-2.5 p-3 bg-[var(--theme-primary)]/10 rounded-xl border border-[var(--theme-primary)]/15">
-                                <div className="w-7 h-7 bg-[var(--theme-primary)]/20 rounded-lg flex items-center justify-center shrink-0">
-                                    <FileText className="w-3.5 h-3.5 text-[var(--theme-primary)]" />
-                                </div>
-                                <span className="text-xs text-slate-700 font-medium">Practice upcoming exam topics</span>
-                            </div>
+                            ))}
                             <Link href="/student/ai-analytics"
-                                className="flex items-center justify-center gap-2 w-full py-3 bg-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/90 text-white text-sm font-bold rounded-xl transition-all mt-1 shadow-sm shadow-[var(--theme-primary)]/30">
+                                className="flex items-center justify-center gap-2 w-full py-3 text-white rounded-xl mt-1 transition-all"
+                                style={{ backgroundColor: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, boxShadow: `0 4px 14px ${C.btnPrimary}50` }}>
                                 <Sparkles className="w-4 h-4" />
                                 Start AI Study Plan
                             </Link>
@@ -669,39 +690,49 @@ export default function StudentDashboard() {
                     <SidePanel icon={Users} title="Instructor Announcements" open={announcementsOpen} onToggle={() => setAnnouncementsOpen(v => !v)}>
                         <div className="space-y-2.5">
                             {upcomingExams.length > 0 ? upcomingExams.slice(0, 3).map(exam => (
-                                <div key={exam._id} className="flex items-start gap-2.5 p-3 bg-[var(--theme-primary)]/8 rounded-xl border border-[var(--theme-primary)]/10">
-                                    <div className="w-7 h-7 bg-[var(--theme-primary)]/15 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                                        <FileText className="w-3.5 h-3.5 text-[var(--theme-primary)]" />
+                                <div key={exam._id} className="flex items-start gap-2.5 p-3 rounded-xl"
+                                    style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
+                                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                                        style={{ backgroundColor: C.iconBg }}>
+                                        <FileText className="w-3.5 h-3.5 text-white" />
                                     </div>
-                                    <p className="text-xs text-slate-600 leading-relaxed">
-                                        <span className="font-bold text-slate-800">{exam.title}</span>{' '}
-                                        scheduled on{' '}
-                                        <span className="text-[var(--theme-primary)] font-semibold">
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, lineHeight: T.leading.relaxed, color: C.text }}>
+                                        <span style={{ fontWeight: T.weight.bold, color: C.heading }}>{exam.title}</span>{' '}
+                                        on{' '}
+                                        <span style={{ fontWeight: T.weight.semibold, color: C.btnPrimary }}>
                                             {new Date(exam.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                         </span>
                                     </p>
                                 </div>
                             )) : (
-                                <p className="text-xs text-slate-400 italic">No announcements at this time.</p>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontStyle: 'italic', color: C.text, opacity: 0.45 }}>
+                                    No announcements at this time.
+                                </p>
                             )}
                         </div>
                     </SidePanel>
 
-                    {/* Batch Details Quick Links - matching screenshot "Batch Details" panel */}
+                    {/* Batch Details quick links */}
                     <SidePanel icon={BarChart3} title="Batch Details" open={batchPanelOpen} onToggle={() => setBatchPanelOpen(v => !v)}>
                         <div className="space-y-0.5">
                             {[
-                                { label: 'My Batches', href: '/student/batches', icon: Users },
+                                { label: 'My Batches',        href: '/student/batches', icon: Users    },
                                 { label: 'Batch Reportrties', href: '/student/history', icon: BarChart3 },
-                                { label: 'Profile', href: '/student/profile', icon: User },
+                                { label: 'Profile',           href: '/student/profile', icon: User     },
                             ].map(link => (
                                 <Link key={link.label} href={link.href}
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-[var(--theme-primary)]/10 hover:text-[var(--theme-primary)] transition-colors group">
-                                    <div className="w-7 h-7 bg-[var(--theme-primary)]/10 rounded-lg flex items-center justify-center shrink-0 group-hover:bg-[var(--theme-primary)]/20 transition-colors">
-                                        <link.icon className="w-3.5 h-3.5 text-[var(--theme-primary)]" />
+                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors"
+                                    style={{ color: C.text }}
+                                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}
+                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                                        style={{ backgroundColor: C.iconBg }}>
+                                        <link.icon className="w-3.5 h-3.5 text-white" />
                                     </div>
-                                    {link.label}
-                                    <ArrowRight className="w-3 h-3 text-slate-300 group-hover:text-[var(--theme-primary)]/70 ml-auto transition-colors" />
+                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium }}>
+                                        {link.label}
+                                    </span>
+                                    <ArrowRight className="w-3 h-3 ml-auto" style={{ color: C.text, opacity: 0.3 }} />
                                 </Link>
                             ))}
                         </div>

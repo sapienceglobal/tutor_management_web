@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import {
     PlayCircle, CheckCircle, Lock, Clock, Star, FileQuestion, Award, Users,
     Download, MessageSquare, ThumbsUp, ChevronDown, Edit3, Trash2,
-    Zap, Target, Calendar, X, Video, Sparkles, Trophy, Globe,
+    Zap, Target, Calendar, X, Sparkles, Trophy, Globe,
     ShieldAlert, Eye, ClipboardList, Brain, FileText, Loader2,
-    ChevronLeft, ChevronRight, BookOpen, BarChart2, Layers,
-    AlertCircle, Play, SkipForward, Volume2, Maximize2, Bot
+    ChevronLeft, ChevronRight, BarChart2,
+    AlertCircle, Play, SkipForward, Bot
 } from 'lucide-react';
 import api from '@/lib/axios';
 import assignmentService from '@/services/assignmentService';
@@ -16,140 +16,140 @@ import LessonPlayerModal from '@/components/LessonPlayerModal';
 import ExamHistoryModal from '@/components/ExamHistoryModal';
 import ExamResultModal from '@/components/ExamResultModal';
 import { ReportAbuseModal } from '@/components/shared/ReportAbuseModal';
-import { Button } from '@/components/ui/button';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 import Link from 'next/link';
 import AiTutorWidget from '@/components/AiTutorWidget';
+import { C, T, S } from '@/constants/studentTokens';
 
-// ─── Shared style constant ───────────────────────────────────────────────────
-const darkGrad = { background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))' };
+// gradient shorthand
+const GS = { background: C.gradientBtn };
 
-// ─── Status Badge ────────────────────────────────────────────────────────────
+// ─── Status Badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
     const cfg = {
-        completed: { label: 'Completed', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-        'in-progress': { label: 'In Progress', cls: 'bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] border-[var(--theme-primary)]/30' },
-        locked: { label: 'Locked', cls: 'bg-slate-100 text-slate-500 border-slate-200' },
-        pending: { label: 'Pending', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+        completed:     { label: 'Completed',   bg: C.successBg,              color: C.success,    border: C.successBorder },
+        'in-progress': { label: 'In Progress', bg: C.innerBg,                color: C.btnPrimary, border: C.cardBorder },
+        locked:        { label: 'Locked',      bg: 'rgba(100,116,139,0.08)', color: '#64748B',    border: 'rgba(100,116,139,0.15)' },
+        pending:       { label: 'Pending',     bg: C.warningBg,              color: C.warning,    border: C.warningBorder },
     };
     const c = cfg[status] || cfg.pending;
     return (
-        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.04em] border ${c.cls}`}>
-            {status === 'completed' && <CheckCircle className="w-3 h-3" />}
-            {status === 'in-progress' && <span className="w-1.5 h-1.5 rounded-full bg-[var(--theme-primary)] animate-pulse inline-block" />}
-            {status === 'locked' && <Lock className="w-3 h-3" />}
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full"
+            style={{ backgroundColor: c.bg, color: c.color, border: `1px solid ${c.border}`, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wide }}>
+            {status === 'completed'   && <CheckCircle className="w-3 h-3" />}
+            {status === 'in-progress' && <span className="w-1.5 h-1.5 rounded-full animate-pulse inline-block" style={{ backgroundColor: C.btnPrimary }} />}
+            {status === 'locked'      && <Lock className="w-3 h-3" />}
             {c.label}
         </span>
     );
 }
 
-// ─── Circular Progress ───────────────────────────────────────────────────────
+// ─── Circular Progress ────────────────────────────────────────────────────────
 function CircularProgress({ pct, completed, total, size = 120 }) {
     const r = 48, circ = 2 * Math.PI * r, dash = (pct / 100) * circ;
     return (
         <div className="flex flex-col items-center gap-3">
             <div className="relative" style={{ width: size, height: size }}>
                 <svg width={size} height={size} viewBox="0 0 120 120">
-                    <circle cx="60" cy="60" r={r} fill="none" stroke="#e2e8f0" strokeWidth="8" />
+                    <circle cx="60" cy="60" r={r} fill="none" stroke={C.innerBg} strokeWidth="8" />
                     <circle cx="60" cy="60" r={r} fill="none" stroke="url(#pg)" strokeWidth="8"
                         strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
                         transform="rotate(-90 60 60)" style={{ transition: 'stroke-dasharray 0.6s ease' }} />
                     <defs>
                         <linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="var(--theme-primary)" /><stop offset="100%" stopColor="var(--theme-accent)" />
+                            <stop offset="0%" stopColor={C.btnPrimary} />
+                            <stop offset="100%" stopColor={C.chartLine} />
                         </linearGradient>
                     </defs>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-black text-slate-800">{pct}%</span>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Done</span>
+                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading }}>{pct}%</span>
+                    <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: C.text, opacity: 0.45 }}>Done</span>
                 </div>
             </div>
             <div className="text-center">
-                <p className="text-sm font-bold text-slate-700">{completed}/{total}</p>
-                <p className="text-xs text-slate-400">Lessons Completed</p>
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.text }}>{completed}/{total}</p>
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, opacity: 0.45 }}>Lessons Completed</p>
             </div>
         </div>
     );
 }
 
-// ─── Quiz Score Row ──────────────────────────────────────────────────────────
+// ─── Quiz Score Row ───────────────────────────────────────────────────────────
 function QuizScoreRow({ title, score }) {
-    const color = score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444';
+    const color = score >= 80 ? C.success : score >= 60 ? C.warning : C.danger;
     return (
         <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-xl bg-[var(--theme-primary)]/20 flex items-center justify-center shrink-0">
-                <FileQuestion className="w-3.5 h-3.5 text-[var(--theme-primary)]" />
+            <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: C.innerBg }}>
+                <FileQuestion className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
             </div>
             <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-slate-700 truncate">{title}</p>
-                <div className="mt-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text }}>{title}</p>
+                <div className="mt-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: C.innerBg }}>
                     <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, backgroundColor: color }} />
                 </div>
             </div>
-            <span className="text-xs font-black text-slate-700 shrink-0">{score}%</span>
+            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: C.heading, flexShrink: 0 }}>{score}%</span>
         </div>
     );
 }
 
-// ─── Dark gradient button helper ─────────────────────────────────────────────
-function DBtn({ children, onClick, disabled, className = '', type = 'button', style: extraStyle = {} }) {
+// ─── Gradient Button ──────────────────────────────────────────────────────────
+function DBtn({ children, onClick, disabled, className = '', type = 'button', style: extra = {} }) {
     return (
         <button type={type} onClick={onClick} disabled={disabled}
-            className={`text-white font-black rounded-2xl transition-all hover:opacity-90 disabled:opacity-50 ${className}`}
-            style={{ ...darkGrad, ...extraStyle }}>
+            className={`text-white rounded-2xl transition-all hover:opacity-90 disabled:opacity-50 ${className}`}
+            style={{ ...GS, fontFamily: T.fontFamily, fontWeight: T.weight.black, ...extra }}>
             {children}
         </button>
     );
 }
 
-// ─── Main ────────────────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function CourseDetailPage({ params }) {
     const router = useRouter();
     const { id } = use(params);
 
-    const [course, setCourse] = useState(null);
-    const [lessons, setLessons] = useState([]);
-    const [exams, setExams] = useState([]);
-    const [reviews, setReviews] = useState([]);
-    const [myReview, setMyReview] = useState(null);
+    const [course, setCourse]                     = useState(null);
+    const [lessons, setLessons]                   = useState([]);
+    const [exams, setExams]                       = useState([]);
+    const [reviews, setReviews]                   = useState([]);
+    const [myReview, setMyReview]                 = useState(null);
     const [ratingDistribution, setRatingDistribution] = useState([]);
-    const [isEnrolled, setIsEnrolled] = useState(false);
-    const [isInstructor, setIsInstructor] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [enrolling, setEnrolling] = useState(false);
-    const [activeTab, setActiveTab] = useState('overview');
-    const [curriculumTab, setCurriculumTab] = useState('lessons');
-    const [courseProgress, setCourseProgress] = useState(null);
-    const [enrollment, setEnrollment] = useState(null);
-    const [quizScores, setQuizScores] = useState([]);
-    const [sortBy, setSortBy] = useState('recent');
-    const [expandedModules, setExpandedModules] = useState([]);
-    const [liveClasses, setLiveClasses] = useState([]);
-    const [assignments, setAssignments] = useState([]);
-    const [showReviewModal, setShowReviewModal] = useState(false);
-    const [reviewForm, setReviewForm] = useState({ rating: 0, comment: '' });
+    const [isEnrolled, setIsEnrolled]             = useState(false);
+    const [isInstructor, setIsInstructor]         = useState(false);
+    const [loading, setLoading]                   = useState(true);
+    const [enrolling, setEnrolling]               = useState(false);
+    const [activeTab, setActiveTab]               = useState('overview');
+    const [courseProgress, setCourseProgress]     = useState(null);
+    const [enrollment, setEnrollment]             = useState(null);
+    const [quizScores, setQuizScores]             = useState([]);
+    const [sortBy, setSortBy]                     = useState('recent');
+    const [expandedModules, setExpandedModules]   = useState([]);
+    const [liveClasses, setLiveClasses]           = useState([]);
+    const [assignments, setAssignments]           = useState([]);
+    const [showReviewModal, setShowReviewModal]   = useState(false);
+    const [reviewForm, setReviewForm]             = useState({ rating: 0, comment: '' });
     const [submittingReview, setSubmittingReview] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [hasMoreReviews, setHasMoreReviews] = useState(true);
-    const [loadingReviews, setLoadingReviews] = useState(false);
-    const [isWishlisted, setIsWishlisted] = useState(false);
-    const [wishlistLoading, setWishlistLoading] = useState(false);
+    const [currentPage, setCurrentPage]           = useState(1);
+    const [hasMoreReviews, setHasMoreReviews]     = useState(true);
+    const [loadingReviews, setLoadingReviews]     = useState(false);
+    const [isWishlisted, setIsWishlisted]         = useState(false);
+    const [wishlistLoading, setWishlistLoading]   = useState(false);
     const [showExamHistoryModal, setShowExamHistoryModal] = useState(false);
     const [showLessonPlayerModal, setShowLessonPlayerModal] = useState(false);
-    const [selectedExam, setSelectedExam] = useState(null);
+    const [selectedExam, setSelectedExam]         = useState(null);
     const [selectedLessonIndex, setSelectedLessonIndex] = useState(0);
-    const [showResultModal, setShowResultModal] = useState(false);
-    const [selectedResult, setSelectedResult] = useState(null);
-    const [showReportModal, setShowReportModal] = useState(false);
-    const [lessonPage, setLessonPage] = useState(1);
-    const [aiWidgetOpen, setAiWidgetOpen] = useState(false);
+    const [showResultModal, setShowResultModal]   = useState(false);
+    const [selectedResult, setSelectedResult]     = useState(null);
+    const [showReportModal, setShowReportModal]   = useState(false);
+    const [lessonPage, setLessonPage]             = useState(1);
+    const [aiWidgetOpen, setAiWidgetOpen]         = useState(false);
     const LESSONS_PER_PAGE = 6;
     const { confirmDialog } = useConfirm();
-
-    const [aiLoading, setAiLoading] = useState(null);
-    const [aiResult, setAiResult] = useState(null);
+    const [aiLoading, setAiLoading]   = useState(null);
+    const [aiResult, setAiResult]     = useState(null);
     const [showAiPanel, setShowAiPanel] = useState(false);
 
     useEffect(() => { loadCourseData(); checkWishlistStatus(); }, [id]);
@@ -229,9 +229,7 @@ export default function CourseDetailPage({ params }) {
         } catch (e) { console.error(e); } finally { setLoadingReviews(false); }
     };
 
-    const checkWishlistStatus = async () => {
-        try { const { data } = await api.get(`/wishlist/${id}/status`); setIsWishlisted(data.inWishlist); } catch (_) { }
-    };
+    const checkWishlistStatus = async () => { try { const { data } = await api.get(`/wishlist/${id}/status`); setIsWishlisted(data.inWishlist); } catch (_) { } };
     const toggleWishlist = async () => {
         try {
             setWishlistLoading(true);
@@ -268,19 +266,19 @@ export default function CourseDetailPage({ params }) {
         try { await api.delete(`/reviews/${myReview._id}`); setMyReview(null); loadReviews(); toast.success("Review deleted"); }
         catch (_) { toast.error('Failed to delete review'); }
     };
-    const toggleHelpful = async (reviewId) => { try { await api.post(`/reviews/${reviewId}/helpful`); loadReviews(); } catch (_) { } };
-    const toggleModule = (moduleId) => setExpandedModules(prev => prev.includes(moduleId) ? prev.filter(i => i !== moduleId) : [...prev, moduleId]);
-    const getLessonsByModule = (moduleId) => lessons.filter(l => (l.moduleId?._id || l.moduleId)?.toString() === moduleId?.toString()).sort((a, b) => (a.order || 0) - (b.order || 0));
-    const isLessonLocked = (lesson) => !isInstructor && !isEnrolled && !lesson.isFree;
-    const handleLessonClick = (lesson) => {
+    const toggleHelpful      = async (reviewId) => { try { await api.post(`/reviews/${reviewId}/helpful`); loadReviews(); } catch (_) { } };
+    const toggleModule        = (moduleId) => setExpandedModules(prev => prev.includes(moduleId) ? prev.filter(i => i !== moduleId) : [...prev, moduleId]);
+    const getLessonsByModule  = (moduleId) => lessons.filter(l => (l.moduleId?._id || l.moduleId)?.toString() === moduleId?.toString()).sort((a, b) => (a.order || 0) - (b.order || 0));
+    const isLessonLocked      = (lesson) => !isInstructor && !isEnrolled && !lesson.isFree;
+    const handleLessonClick   = (lesson) => {
         if (isLessonLocked(lesson)) { toast.error('Enroll to access this lesson'); return; }
         setSelectedLessonIndex(lessons.findIndex(l => l._id === lesson._id));
         setShowLessonPlayerModal(true);
     };
-    const handleExamClick = (exam) => { setSelectedExam(exam); setShowExamHistoryModal(true); };
-    const handleStartExam = () => { if (selectedExam) { setShowExamHistoryModal(false); router.push(`/student/exams/${selectedExam._id}`); } };
+    const handleExamClick     = (exam) => { setSelectedExam(exam); setShowExamHistoryModal(true); };
+    const handleStartExam     = () => { if (selectedExam) { setShowExamHistoryModal(false); router.push(`/student/exams/${selectedExam._id}`); } };
     const handleLessonComplete = async () => { await loadCourseData(true); };
-    const handleAISummarize = async () => {
+    const handleAISummarize   = async () => {
         if (!course) return; setAiLoading('summarize'); setShowAiPanel(true);
         try { const res = await api.post('/ai/summarize-lesson', { courseId: course._id, lessonTitle: course.title, content: course.description }); setAiResult({ type: 'AI Summary', content: res.data.summary || res.data.data }); }
         catch (e) { toast.error(e.response?.data?.message || 'Failed'); setShowAiPanel(false); } finally { setAiLoading(null); }
@@ -291,38 +289,46 @@ export default function CourseDetailPage({ params }) {
         catch (e) { toast.error(e.response?.data?.message || 'Failed'); setShowAiPanel(false); } finally { setAiLoading(null); }
     };
 
-    // ── Derived ───────────────────────────────────────────────────────────────
-    const completedIds = (courseProgress?.progress || []).filter(p => p.completed).map(p => p.lessonId?.toString());
-    const completedCount = completedIds.length;
-    const totalLessons = lessons.length;
-    const totalDuration = lessons.reduce((acc, l) => acc + (l.duration || 0), 0);
-    const pct = totalLessons ? Math.round((completedCount / totalLessons) * 100) : 0;
-    const currentLesson = lessons[selectedLessonIndex] || lessons[0];
-    const nextLesson = lessons[(selectedLessonIndex + 1 < totalLessons) ? selectedLessonIndex + 1 : -1];
+    // Derived
+    const completedIds     = (courseProgress?.progress || []).filter(p => p.completed).map(p => p.lessonId?.toString());
+    const completedCount   = completedIds.length;
+    const totalLessons     = lessons.length;
+    const totalDuration    = lessons.reduce((acc, l) => acc + (l.duration || 0), 0);
+    const pct              = totalLessons ? Math.round((completedCount / totalLessons) * 100) : 0;
+    const currentLesson    = lessons[selectedLessonIndex] || lessons[0];
+    const nextLesson       = lessons[(selectedLessonIndex + 1 < totalLessons) ? selectedLessonIndex + 1 : -1];
     const isCourseSuspended = course && (course.status !== 'published' || !course?.tutorId?.isVerified || course?.tutorId?.userId?.isBlocked);
-    const pagedLessons = lessons.slice((lessonPage - 1) * LESSONS_PER_PAGE, lessonPage * LESSONS_PER_PAGE);
+    const pagedLessons     = lessons.slice((lessonPage - 1) * LESSONS_PER_PAGE, lessonPage * LESSONS_PER_PAGE);
     const totalLessonPages = Math.ceil(totalLessons / LESSONS_PER_PAGE);
-    const resumeToFirst = () => { const idx = lessons.findIndex(l => !completedIds.includes(l._id?.toString())); setSelectedLessonIndex(idx >= 0 ? idx : 0); setShowLessonPlayerModal(true); };
+    const resumeToFirst    = () => { const idx = lessons.findIndex(l => !completedIds.includes(l._id?.toString())); setSelectedLessonIndex(idx >= 0 ? idx : 0); setShowLessonPlayerModal(true); };
 
-    // ── States ────────────────────────────────────────────────────────────────
     if (loading) return (
-        <div className="flex h-screen items-center justify-center bg-slate-50" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="flex h-screen items-center justify-center">
             <div className="flex flex-col items-center gap-3">
                 <div className="relative w-12 h-12">
-                    <div className="w-12 h-12 rounded-full border-[3px] border-[var(--theme-primary)]/30 border-t-[var(--theme-primary)] animate-spin" />
-                    <div className="absolute inset-0 flex items-center justify-center"><Sparkles className="w-5 h-5 text-[var(--theme-primary)] animate-pulse" /></div>
+                    <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                        style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Sparkles className="w-5 h-5 animate-pulse" style={{ color: C.btnPrimary }} />
+                    </div>
                 </div>
-                <p className="text-sm text-slate-400 font-medium">Loading course…</p>
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, opacity: 0.55 }}>Loading course…</p>
             </div>
         </div>
     );
 
     if (!course) return (
-        <div className="flex h-screen items-center justify-center bg-slate-50" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="flex h-screen items-center justify-center">
             <div className="text-center">
-                <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4"><X className="w-8 h-8 text-red-400" /></div>
-                <h2 className="text-lg font-black text-slate-800 mb-3">Course Not Found</h2>
-                <button onClick={() => router.back()} className="px-4 py-2 border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50">Go Back</button>
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: C.dangerBg }}>
+                    <X className="w-8 h-8" style={{ color: C.danger }} />
+                </div>
+                <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, marginBottom: 12 }}>Course Not Found</h2>
+                <button onClick={() => router.back()}
+                    className="px-4 py-2 rounded-2xl transition-colors"
+                    style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, color: C.text, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
+                    Go Back
+                </button>
             </div>
         </div>
     );
@@ -330,31 +336,37 @@ export default function CourseDetailPage({ params }) {
     const tabs = ['overview', 'lessons', 'assignments', 'discussions', 'resources'];
 
     return (
-        <div className="min-h-screen bg-[var(--theme-background)]" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="min-h-screen" style={{ fontFamily: T.fontFamily }}>
 
             {/* Instructor Preview Banner */}
             {isInstructor && (
-                <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-2.5 flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-wider shadow-sm">
-                    <Eye className="w-3.5 h-3.5 shrink-0" /> Preview Mode — Videos & content are fully unlocked for you.
+                <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-2.5 flex items-center justify-center gap-2 shadow-sm"
+                    style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
+                    <Eye className="w-3.5 h-3.5 shrink-0" /> Preview Mode — Videos &amp; content are fully unlocked for you.
                 </div>
             )}
 
-            {/* ── Sticky Header ─────────────────────────────────────────── */}
-            <div className="bg-white border-b border-slate-100 sticky top-0 z-30 shadow-sm">
+            {/* ── Sticky Header ──────────────────────────────────────────── */}
+            <div className="sticky top-0 z-30 shadow-sm"
+                style={{ backgroundColor: C.surfaceWhite, borderBottom: `1px solid ${C.cardBorder}` }}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6">
                     <div className="flex items-center justify-between gap-3 pt-3.5 pb-0">
                         <div className="min-w-0 flex-1">
-                            <h1 className="text-sm font-black text-slate-800 truncate">{course.title}</h1>
+                            <h1 className="truncate"
+                                style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>
+                                {course.title}
+                            </h1>
                             {enrollment?.batchId && (
-                                <p className="text-[var(--theme-primary)] text-[11px] font-bold flex items-center gap-1 mt-0.5">
+                                <p className="flex items-center gap-1 mt-0.5"
+                                    style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.btnPrimary }}>
                                     <Users className="w-3 h-3" /> Cohort: {enrollment.batchId.name}
                                 </p>
                             )}
                         </div>
                         {(isEnrolled || isInstructor) && (
                             <button onClick={resumeToFirst}
-                                className="shrink-0 flex items-center gap-1.5 px-4 py-2 text-white text-[11px] font-black rounded-2xl transition-all hover:opacity-90 shadow-sm"
-                                style={darkGrad}>
+                                className="shrink-0 flex items-center gap-1.5 px-4 py-2 text-white rounded-2xl transition-all hover:opacity-90 shadow-sm"
+                                style={{ ...GS, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black }}>
                                 <Play className="w-3 h-3 fill-white" /> Resume
                             </button>
                         )}
@@ -362,8 +374,10 @@ export default function CourseDetailPage({ params }) {
                     <div className="flex gap-0 overflow-x-auto mt-3 -mb-px">
                         {tabs.map(tab => (
                             <button key={tab} onClick={() => setActiveTab(tab)}
-                                className={`px-4 py-3 text-[11px] font-black whitespace-nowrap border-b-2 uppercase tracking-[0.06em] transition-all
-                                    ${activeTab === tab ? 'border-[var(--theme-primary)] text-[var(--theme-primary)]' : 'border-transparent text-slate-400 hover:text-slate-700'}`}>
+                                className="px-4 py-3 whitespace-nowrap border-b-2 transition-all"
+                                style={activeTab === tab
+                                    ? { borderBottomColor: C.btnPrimary, color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wide }
+                                    : { borderBottomColor: 'transparent', color: C.text, opacity: 0.45, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wide }}>
                                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
                             </button>
                         ))}
@@ -374,52 +388,62 @@ export default function CourseDetailPage({ params }) {
             {/* Suspended Banner */}
             {isCourseSuspended && isEnrolled && (
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-4">
-                    <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-start gap-3">
-                        <ShieldAlert className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                    <div className="p-4 rounded-2xl flex items-start gap-3"
+                        style={{ backgroundColor: C.warningBg, border: `1px solid ${C.warningBorder}` }}>
+                        <ShieldAlert className="w-5 h-5 mt-0.5 shrink-0" style={{ color: C.warning }} />
                         <div>
-                            <p className="text-amber-800 font-black text-sm">Course Suspended</p>
-                            <p className="text-amber-700 text-xs mt-0.5">This course is no longer publicly available. You retain full access as an enrolled student.</p>
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: '#92400E' }}>Course Suspended</p>
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#92400E', opacity: 0.75, marginTop: 2 }}>This course is no longer publicly available. You retain full access as an enrolled student.</p>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* ── Main Grid ─────────────────────────────────────────────── */}
+            {/* ── Main Grid ──────────────────────────────────────────────── */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5">
                 <div className="grid lg:grid-cols-3 gap-5">
 
                     {/* LEFT: 2 cols */}
                     <div className="lg:col-span-2 space-y-4">
 
-                        {/* ══ OVERVIEW ════════════════════════════════════ */}
+                        {/* ══ OVERVIEW ═══════════════════════════════════════ */}
                         {activeTab === 'overview' && (
-                            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                            <div className="rounded-2xl overflow-hidden"
+                                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                                 {/* Progress Hero */}
                                 {(isEnrolled || isInstructor) && (
-                                    <div className="p-5 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--theme-sidebar) 0%, var(--theme-primary) 100%)' }}>
-                                        <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+                                    <div className="p-5 relative overflow-hidden" style={GS}>
+                                        <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(#fff 1px,transparent 1px)', backgroundSize: '16px 16px' }} />
                                         <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                             <div className="flex items-center gap-4">
                                                 <div className="relative w-14 h-14 shrink-0">
                                                     <svg width="56" height="56" viewBox="0 0 56 56">
-                                                        <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="5" />
-                                                        <circle cx="28" cy="28" r="22" fill="none" stroke="white" strokeWidth="5" strokeDasharray={`${(pct / 100) * 138.2} 138.2`} strokeLinecap="round" transform="rotate(-90 28 28)" />
+                                                        <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,0.20)" strokeWidth="5" />
+                                                        <circle cx="28" cy="28" r="22" fill="none" stroke="white" strokeWidth="5"
+                                                            strokeDasharray={`${(pct / 100) * 138.2} 138.2`} strokeLinecap="round" transform="rotate(-90 28 28)" />
                                                     </svg>
-                                                    <span className="absolute inset-0 flex items-center justify-center text-xs font-black text-white">{pct}%</span>
+                                                    <span className="absolute inset-0 flex items-center justify-center text-white"
+                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>{pct}%</span>
                                                 </div>
                                                 <div>
-                                                    <p className="text-white/60 text-[10px] font-bold uppercase tracking-[0.08em]">Current Lesson</p>
-                                                    <p className="font-black text-white text-sm leading-tight mt-0.5">{currentLesson?.title || 'Start Learning'}</p>
+                                                    <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: 'rgba(255,255,255,0.55)' }}>
+                                                        Current Lesson
+                                                    </p>
+                                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: '#ffffff', lineHeight: T.leading.tight, marginTop: 2 }}>
+                                                        {currentLesson?.title || 'Start Learning'}
+                                                    </p>
                                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                                                        <img src={course.tutorId?.userId?.profileImage || '/default-avatar.png'} className="w-5 h-5 rounded-full border border-white/30" alt="" />
-                                                        <span className="text-white/60 text-[11px]">{course.tutorId?.userId?.name}</span>
-                                                        <span className="text-white/40 text-[11px]">·</span>
-                                                        <span className="text-white/60 text-[11px]">{completedCount}/{totalLessons} done</span>
+                                                        <img src={course.tutorId?.userId?.profileImage || '/default-avatar.svg'} className="w-5 h-5 rounded-full" style={{ border: '1px solid rgba(255,255,255,0.30)' }} alt="" />
+                                                        <span style={{ fontFamily: T.fontFamily, fontSize: '11px', color: 'rgba(255,255,255,0.60)' }}>{course.tutorId?.userId?.name}</span>
+                                                        <span style={{ color: 'rgba(255,255,255,0.40)' }}>·</span>
+                                                        <span style={{ fontFamily: T.fontFamily, fontSize: '11px', color: 'rgba(255,255,255,0.60)' }}>{completedCount}/{totalLessons} done</span>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <button onClick={resumeToFirst} className="px-5 py-2.5 bg-white text-[var(--theme-primary)] rounded-2xl font-black text-xs hover:bg-[var(--theme-primary)]/20 shadow-md flex items-center gap-1.5">
-                                                <Play className="w-3.5 h-3.5 fill-[var(--theme-primary)]" /> Resume Course
+                                            <button onClick={resumeToFirst}
+                                                className="px-5 py-2.5 bg-white rounded-2xl shadow-md flex items-center gap-1.5 hover:opacity-90 transition-opacity"
+                                                style={{ color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
+                                                <Play className="w-3.5 h-3.5 fill-current" /> Resume Course
                                             </button>
                                         </div>
                                     </div>
@@ -429,74 +453,95 @@ export default function CourseDetailPage({ params }) {
                                     {/* What you'll learn */}
                                     {course.whatYouWillLearn?.length > 0 && (
                                         <div>
-                                            <h3 className="text-sm font-black text-slate-800 mb-3 flex items-center gap-2">
-                                                <span className="p-1.5 bg-yellow-50 rounded-xl"><Zap className="w-4 h-4 text-yellow-500" /></span>
+                                            <h3 className="flex items-center gap-2 mb-3"
+                                                style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>
+                                                <span className="p-1.5 rounded-xl" style={{ backgroundColor: C.warningBg }}>
+                                                    <Zap className="w-4 h-4" style={{ color: C.warning }} />
+                                                </span>
                                                 What You'll Learn
                                             </h3>
                                             <div className="grid sm:grid-cols-2 gap-2">
                                                 {course.whatYouWillLearn.map((item, i) => (
-                                                    <div key={i} className="flex items-start gap-2.5 p-3 bg-emerald-50 rounded-2xl border border-emerald-100">
-                                                        <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                                        <span className="text-sm text-slate-700 font-medium">{item}</span>
+                                                    <div key={i} className="flex items-start gap-2.5 p-3 rounded-2xl"
+                                                        style={{ backgroundColor: C.successBg, border: `1px solid ${C.successBorder}` }}>
+                                                        <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: C.success }} />
+                                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text }}>{item}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
                                     )}
+
                                     {/* About */}
                                     <div>
-                                        <h3 className="text-sm font-black text-slate-800 mb-3 flex items-center gap-2">
-                                            <span className="p-1.5 bg-blue-50 rounded-xl"><Target className="w-4 h-4 text-blue-500" /></span>
+                                        <h3 className="flex items-center gap-2 mb-3"
+                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>
+                                            <span className="p-1.5 rounded-xl" style={{ backgroundColor: 'rgba(59,130,246,0.08)' }}>
+                                                <Target className="w-4 h-4" style={{ color: '#3B82F6' }} />
+                                            </span>
                                             About This Course
                                         </h3>
-                                        <p className="text-slate-600 leading-relaxed text-sm whitespace-pre-line">{course.description}</p>
+                                        <p className="leading-relaxed whitespace-pre-line"
+                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, lineHeight: T.leading.relaxed }}>
+                                            {course.description}
+                                        </p>
                                     </div>
+
                                     {/* Requirements */}
                                     {course.requirements?.length > 0 && (
                                         <div>
-                                            <h3 className="text-sm font-black text-slate-800 mb-3">Requirements</h3>
+                                            <h3 className="mb-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>Requirements</h3>
                                             <ul className="space-y-2">
                                                 {course.requirements.map((req, i) => (
-                                                    <li key={i} className="flex items-start gap-3 text-sm text-slate-700 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--theme-primary)] mt-1.5 shrink-0" />{req}
+                                                    <li key={i} className="flex items-start gap-3 p-3 rounded-xl"
+                                                        style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text }}>
+                                                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: C.btnPrimary }} />{req}
                                                     </li>
                                                 ))}
                                             </ul>
                                         </div>
                                     )}
+
                                     {/* AI Tools */}
                                     {isEnrolled && (
-                                        <div className="pt-4 border-t border-slate-100">
-                                            <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.06em] mb-3 flex items-center gap-2">
-                                                <Brain className="w-4 h-4 text-[var(--theme-accent)]" /> AI Study Tools
+                                        <div className="pt-4" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+                                            <h3 className="mb-3 flex items-center gap-2"
+                                                style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wide, color: C.heading }}>
+                                                <Brain className="w-4 h-4" style={{ color: C.btnPrimary }} /> AI Study Tools
                                             </h3>
                                             <div className="flex flex-wrap gap-3">
                                                 <button onClick={handleAISummarize} disabled={aiLoading === 'summarize'}
-                                                    className="flex items-center gap-2 px-4 py-2 text-white text-xs font-black rounded-2xl hover:opacity-90 disabled:opacity-60 transition-all"
-                                                    style={{ background: 'linear-gradient(135deg, var(--theme-accent), var(--theme-primary))' }}>
+                                                    className="flex items-center gap-2 px-4 py-2 text-white rounded-2xl hover:opacity-90 disabled:opacity-60 transition-all"
+                                                    style={{ ...GS, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
                                                     {aiLoading === 'summarize' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                                                     Summarize Course
                                                 </button>
                                                 <button onClick={handleAIRevisionNotes} disabled={aiLoading === 'revision'}
-                                                    className="flex items-center gap-2 px-4 py-2 text-white text-xs font-black rounded-2xl hover:opacity-90 disabled:opacity-60 transition-all"
-                                                    style={{ background: 'linear-gradient(135deg, #059669, #0d9488)' }}>
+                                                    className="flex items-center gap-2 px-4 py-2 text-white rounded-2xl hover:opacity-90 disabled:opacity-60 transition-all"
+                                                    style={{ background: 'linear-gradient(135deg,#059669,#0d9488)', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
                                                     {aiLoading === 'revision' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
                                                     Generate Revision Notes
                                                 </button>
                                             </div>
                                             {showAiPanel && (
-                                                <div className="mt-4 bg-gradient-to-br from-[var(--theme-accent)] to-[var(--theme-primary)] rounded-2xl border border-[var(--theme-accent)]/30 p-5">
+                                                <div className="mt-4 rounded-2xl p-5" style={{ backgroundColor: C.darkCard, border: `1px solid ${C.cardBorder}` }}>
                                                     <div className="flex items-center justify-between mb-3">
-                                                        <h4 className="font-black text-[var(--theme-accent)] text-xs flex items-center gap-2"><Brain className="w-3.5 h-3.5" />{aiResult?.type || 'Generating…'}</h4>
-                                                        <button onClick={() => setShowAiPanel(false)} className="text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
+                                                        <h4 className="flex items-center gap-2 text-white"
+                                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
+                                                            <Brain className="w-3.5 h-3.5" />{aiResult?.type || 'Generating…'}
+                                                        </h4>
+                                                        <button onClick={() => setShowAiPanel(false)}><X className="w-4 h-4 text-white/50" /></button>
                                                     </div>
                                                     {aiLoading ? (
                                                         <div className="flex items-center gap-3 py-6 justify-center">
-                                                            <Loader2 className="w-5 h-5 animate-spin text-[var(--theme-accent)]" />
-                                                            <span className="text-[var(--theme-accent)] text-sm font-bold">AI is thinking…</span>
+                                                            <Loader2 className="w-5 h-5 animate-spin" style={{ color: C.btnPrimary }} />
+                                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.70)' }}>AI is thinking…</span>
                                                         </div>
                                                     ) : (
-                                                        <div className="prose prose-sm max-w-none text-slate-700 whitespace-pre-wrap text-sm">{aiResult?.content}</div>
+                                                        <div className="prose prose-sm max-w-none whitespace-pre-wrap"
+                                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: 'rgba(255,255,255,0.80)' }}>
+                                                            {aiResult?.content}
+                                                        </div>
                                                     )}
                                                 </div>
                                             )}
@@ -506,35 +551,43 @@ export default function CourseDetailPage({ params }) {
                             </div>
                         )}
 
-                        {/* ══ LESSONS ═════════════════════════════════════ */}
+                        {/* ══ LESSONS ════════════════════════════════════════ */}
                         {activeTab === 'lessons' && (
                             <div className="space-y-4">
                                 {(isEnrolled || isInstructor) && (
-                                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+                                    <div className="rounded-2xl p-4"
+                                        style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                             <div className="flex items-center gap-3">
                                                 <div className="relative w-10 h-10 shrink-0">
                                                     <svg width="40" height="40" viewBox="0 0 48 48">
-                                                        <circle cx="24" cy="24" r="19" fill="none" stroke="#e2e8f0" strokeWidth="4" />
-                                                        <circle cx="24" cy="24" r="19" fill="none" stroke="var(--theme-primary)" strokeWidth="4" strokeDasharray={`${(pct / 100) * 119.4} 119.4`} strokeLinecap="round" transform="rotate(-90 24 24)" />
+                                                        <circle cx="24" cy="24" r="19" fill="none" stroke={C.innerBg} strokeWidth="4" />
+                                                        <circle cx="24" cy="24" r="19" fill="none" stroke={C.btnPrimary} strokeWidth="4"
+                                                            strokeDasharray={`${(pct / 100) * 119.4} 119.4`} strokeLinecap="round" transform="rotate(-90 24 24)" />
                                                     </svg>
-                                                    <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-[var(--theme-primary)]">{pct}%</span>
+                                                    <span className="absolute inset-0 flex items-center justify-center"
+                                                        style={{ fontFamily: T.fontFamily, fontSize: '9px', fontWeight: T.weight.black, color: C.btnPrimary }}>{pct}%</span>
                                                 </div>
                                                 <div>
-                                                    <p className="font-black text-slate-800 text-sm">{currentLesson?.title || 'No lesson selected'}</p>
-                                                    <p className="text-[11px] text-slate-400 mt-0.5 font-medium">{completedCount}/{totalLessons} Lessons Done</p>
+                                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>
+                                                        {currentLesson?.title || 'No lesson selected'}
+                                                    </p>
+                                                    <p style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: C.text, opacity: 0.45, marginTop: 2 }}>
+                                                        {completedCount}/{totalLessons} Lessons Done
+                                                    </p>
                                                 </div>
                                             </div>
-                                            <button onClick={() => { setSelectedLessonIndex(selectedLessonIndex); setShowLessonPlayerModal(true); }}
-                                                className="px-4 py-2.5 text-white rounded-2xl font-black text-xs flex items-center gap-1.5 hover:opacity-90 transition-all"
-                                                style={darkGrad}>
+                                            <button onClick={() => setShowLessonPlayerModal(true)}
+                                                className="px-4 py-2.5 text-white rounded-2xl flex items-center gap-1.5 hover:opacity-90 transition-all"
+                                                style={{ ...GS, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
                                                 <Play className="w-3 h-3 fill-white" /> Resume
                                             </button>
                                         </div>
                                     </div>
                                 )}
 
-                                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                                <div className="rounded-2xl overflow-hidden"
+                                    style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                                     <div className="p-5">
                                         {(() => {
                                             const modules = course.modules || [];
@@ -549,21 +602,30 @@ export default function CourseDetailPage({ params }) {
                                                             const status = locked ? 'locked' : isDone ? 'completed' : isAct ? 'in-progress' : 'pending';
                                                             return (
                                                                 <div key={lesson._id} onClick={() => !locked && handleLessonClick(lesson)}
-                                                                    className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all
-                                                                        ${locked ? 'opacity-60 cursor-not-allowed bg-slate-50 border-slate-100'
-                                                                            : isAct ? 'bg-[var(--theme-primary)]/20/70 border-[var(--theme-primary)]/30 cursor-pointer'
-                                                                                : 'bg-white border-slate-100 hover:border-[var(--theme-primary)]/30 hover:bg-[var(--theme-primary)]/20/30 cursor-pointer'}`}>
-                                                                    {isAct && <div className="w-1 h-10 rounded-full shrink-0" style={{ background: 'linear-gradient(180deg,var(--theme-primary),var(--theme-accent))' }} />}
-                                                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isDone ? 'bg-emerald-100' : isAct ? 'bg-[var(--theme-primary)]/20' : 'bg-slate-100'}`}>
-                                                                        {isDone ? <CheckCircle className="w-4 h-4 text-emerald-600" />
-                                                                            : lesson.type === 'video' ? <PlayCircle className="w-4 h-4 text-[var(--theme-primary)]" />
-                                                                                : lesson.type === 'quiz' ? <FileQuestion className="w-4 h-4 text-amber-500" />
-                                                                                    : <FileText className="w-4 h-4 text-slate-400" />}
+                                                                    className="flex items-center gap-3 p-3.5 rounded-2xl transition-all"
+                                                                    style={locked
+                                                                        ? { opacity: 0.60, cursor: 'not-allowed', backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }
+                                                                        : isAct
+                                                                            ? { backgroundColor: C.btnViewAllBg, border: `2px solid ${C.btnPrimary}`, cursor: 'pointer' }
+                                                                            : { backgroundColor: C.surfaceWhite, border: `2px solid ${C.cardBorder}`, cursor: 'pointer' }}
+                                                                    onMouseEnter={e => { if (!locked && !isAct) e.currentTarget.style.borderColor = C.btnPrimary; }}
+                                                                    onMouseLeave={e => { if (!locked && !isAct) e.currentTarget.style.borderColor = C.cardBorder; }}>
+                                                                    {isAct && <div className="w-1 h-10 rounded-full shrink-0" style={GS} />}
+                                                                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                                                                        style={{ backgroundColor: isDone ? C.successBg : isAct ? C.innerBg : C.cardBg }}>
+                                                                        {isDone ? <CheckCircle className="w-4 h-4" style={{ color: C.success }} />
+                                                                            : lesson.type === 'video' ? <PlayCircle className="w-4 h-4" style={{ color: C.btnPrimary }} />
+                                                                                : lesson.type === 'quiz' ? <FileQuestion className="w-4 h-4" style={{ color: C.warning }} />
+                                                                                    : <FileText className="w-4 h-4" style={{ color: C.text, opacity: 0.4 }} />}
                                                                     </div>
                                                                     <div className="flex-1 min-w-0">
-                                                                        <p className={`text-sm font-bold truncate ${isAct ? 'text-[var(--theme-primary)]' : 'text-slate-800'}`}>{gIdx + 1}. {lesson.title}</p>
+                                                                        <p className="truncate"
+                                                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: isAct ? C.btnPrimary : C.heading }}>
+                                                                            {gIdx + 1}. {lesson.title}
+                                                                        </p>
                                                                         {lesson.duration > 0 && (
-                                                                            <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1 font-medium">
+                                                                            <p className="flex items-center gap-1 mt-0.5"
+                                                                                style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.medium, color: C.text, opacity: 0.45 }}>
                                                                                 <Clock className="w-3 h-3" />{Math.floor(lesson.duration / 60)}:{String(lesson.duration % 60).padStart(2, '0')}
                                                                             </p>
                                                                         )}
@@ -572,8 +634,8 @@ export default function CourseDetailPage({ params }) {
                                                                         <StatusBadge status={status} />
                                                                         {!locked && (
                                                                             <button onClick={e => { e.stopPropagation(); handleLessonClick(lesson); }}
-                                                                                className="px-3 py-1.5 text-white text-[10px] font-black rounded-xl hover:opacity-90 flex items-center gap-1 transition-all"
-                                                                                style={darkGrad}>
+                                                                                className="px-3 py-1.5 text-white rounded-xl hover:opacity-90 flex items-center gap-1 transition-all"
+                                                                                style={{ ...GS, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black }}>
                                                                                 {isDone ? <><SkipForward className="w-3 h-3" />Resume</> : <><Play className="w-3 h-3 fill-white" />Play</>}
                                                                             </button>
                                                                         )}
@@ -583,16 +645,26 @@ export default function CourseDetailPage({ params }) {
                                                         })}
                                                     </div>
                                                     {totalLessonPages > 1 && (
-                                                        <div className="flex items-center justify-center gap-2 mt-5 pt-4 border-t border-slate-100">
-                                                            <button onClick={() => setLessonPage(p => Math.max(1, p - 1))} disabled={lessonPage === 1} className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 disabled:opacity-40"><ChevronLeft className="w-4 h-4 text-slate-600" /></button>
+                                                        <div className="flex items-center justify-center gap-2 mt-5 pt-4" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+                                                            <button onClick={() => setLessonPage(p => Math.max(1, p - 1))} disabled={lessonPage === 1}
+                                                                className="p-2 rounded-xl disabled:opacity-40 transition-colors"
+                                                                style={{ border: `1px solid ${C.cardBorder}`, backgroundColor: C.surfaceWhite }}>
+                                                                <ChevronLeft className="w-4 h-4" style={{ color: C.text }} />
+                                                            </button>
                                                             {Array.from({ length: totalLessonPages }, (_, i) => i + 1).map(pg => (
                                                                 <button key={pg} onClick={() => setLessonPage(pg)}
-                                                                    className={`w-8 h-8 rounded-xl text-xs font-black transition-all ${lessonPage === pg ? 'text-white' : 'border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                                                                    style={lessonPage === pg ? darkGrad : {}}>
+                                                                    className="w-8 h-8 rounded-xl transition-all"
+                                                                    style={lessonPage === pg
+                                                                        ? { ...GS, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }
+                                                                        : { border: `1px solid ${C.cardBorder}`, color: C.text, backgroundColor: C.surfaceWhite, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
                                                                     {pg}
                                                                 </button>
                                                             ))}
-                                                            <button onClick={() => setLessonPage(p => Math.min(totalLessonPages, p + 1))} disabled={lessonPage === totalLessonPages} className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 disabled:opacity-40"><ChevronRight className="w-4 h-4 text-slate-600" /></button>
+                                                            <button onClick={() => setLessonPage(p => Math.min(totalLessonPages, p + 1))} disabled={lessonPage === totalLessonPages}
+                                                                className="p-2 rounded-xl disabled:opacity-40"
+                                                                style={{ border: `1px solid ${C.cardBorder}`, backgroundColor: C.surfaceWhite }}>
+                                                                <ChevronRight className="w-4 h-4" style={{ color: C.text }} />
+                                                            </button>
                                                         </div>
                                                     )}
                                                 </>
@@ -604,40 +676,55 @@ export default function CourseDetailPage({ params }) {
                                                         const mDone = mLessons.filter(l => completedIds.includes(l._id?.toString())).length;
                                                         const isExp = expandedModules.includes(module._id);
                                                         return (
-                                                            <div key={module._id} className="border-2 border-slate-100 rounded-2xl overflow-hidden">
+                                                            <div key={module._id} className="rounded-2xl overflow-hidden" style={{ border: `2px solid ${C.cardBorder}` }}>
                                                                 <button onClick={() => toggleModule(module._id)}
-                                                                    className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 transition-colors">
+                                                                    className="w-full flex items-center justify-between p-4 transition-colors"
+                                                                    style={{ backgroundColor: C.innerBg }}
+                                                                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+                                                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}>
                                                                     <div className="flex items-center gap-3">
-                                                                        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isExp ? '' : '-rotate-90'}`} />
-                                                                        <span className="font-black text-slate-800 text-sm">{module.title}</span>
+                                                                        <ChevronDown className={`w-4 h-4 transition-transform ${isExp ? '' : '-rotate-90'}`} style={{ color: C.text, opacity: 0.45 }} />
+                                                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>{module.title}</span>
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
-                                                                        <span className="text-[10px] text-slate-400 font-bold">{mDone}/{mLessons.length}</span>
-                                                                        {mDone === mLessons.length && mLessons.length > 0 && <CheckCircle className="w-4 h-4 text-emerald-500" />}
+                                                                        <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.text, opacity: 0.45 }}>{mDone}/{mLessons.length}</span>
+                                                                        {mDone === mLessons.length && mLessons.length > 0 && <CheckCircle className="w-4 h-4" style={{ color: C.success }} />}
                                                                     </div>
                                                                 </button>
                                                                 {isExp && (
-                                                                    <div className="divide-y divide-slate-50">
-                                                                        {mLessons.map(lesson => {
+                                                                    <div>
+                                                                        {mLessons.map((lesson, li) => {
                                                                             const locked = isLessonLocked(lesson);
                                                                             const isDone = completedIds.includes(lesson._id?.toString());
                                                                             const isAct = lesson._id === currentLesson?._id;
                                                                             const status = locked ? 'locked' : isDone ? 'completed' : isAct ? 'in-progress' : 'pending';
                                                                             return (
                                                                                 <div key={lesson._id} onClick={() => !locked && handleLessonClick(lesson)}
-                                                                                    className={`flex items-center gap-3 px-5 py-3 transition-all ${locked ? 'opacity-60 cursor-not-allowed' : isAct ? 'bg-[var(--theme-primary)]/20 cursor-pointer' : 'hover:bg-slate-50 cursor-pointer'}`}>
-                                                                                    <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${isDone ? 'bg-emerald-100' : 'bg-slate-100'}`}>
-                                                                                        {isDone ? <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
-                                                                                            : lesson.type === 'video' ? <PlayCircle className="w-3.5 h-3.5 text-[var(--theme-primary)]" />
-                                                                                                : lesson.type === 'quiz' ? <FileQuestion className="w-3.5 h-3.5 text-amber-500" />
-                                                                                                    : <FileText className="w-3.5 h-3.5 text-slate-400" />}
+                                                                                    className="flex items-center gap-3 px-5 py-3 transition-all"
+                                                                                    style={{
+                                                                                        borderTop: li > 0 ? `1px solid ${C.cardBorder}` : 'none',
+                                                                                        opacity: locked ? 0.60 : 1,
+                                                                                        cursor: locked ? 'not-allowed' : 'pointer',
+                                                                                        backgroundColor: isAct ? C.btnViewAllBg : 'transparent',
+                                                                                    }}
+                                                                                    onMouseEnter={e => { if (!locked && !isAct) e.currentTarget.style.backgroundColor = C.innerBg; }}
+                                                                                    onMouseLeave={e => { if (!locked && !isAct) e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                                                                    <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0"
+                                                                                        style={{ backgroundColor: isDone ? C.successBg : C.innerBg }}>
+                                                                                        {isDone ? <CheckCircle className="w-3.5 h-3.5" style={{ color: C.success }} />
+                                                                                            : lesson.type === 'video' ? <PlayCircle className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
+                                                                                                : lesson.type === 'quiz' ? <FileQuestion className="w-3.5 h-3.5" style={{ color: C.warning }} />
+                                                                                                    : <FileText className="w-3.5 h-3.5" style={{ color: C.text, opacity: 0.4 }} />}
                                                                                     </div>
-                                                                                    <span className={`text-sm flex-1 truncate font-medium ${isAct ? 'text-[var(--theme-primary)] font-bold' : 'text-slate-700'}`}>{lesson.title}</span>
+                                                                                    <span className="flex-1 truncate"
+                                                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: isAct ? T.weight.bold : T.weight.medium, color: isAct ? C.btnPrimary : C.text }}>
+                                                                                        {lesson.title}
+                                                                                    </span>
                                                                                     <StatusBadge status={status} />
                                                                                     {!locked && (
                                                                                         <button onClick={e => { e.stopPropagation(); handleLessonClick(lesson); }}
-                                                                                            className="px-3 py-1 text-white text-[10px] font-black rounded-xl hover:opacity-90 flex items-center gap-1"
-                                                                                            style={darkGrad}>
+                                                                                            className="px-3 py-1 text-white rounded-xl hover:opacity-90 flex items-center gap-1"
+                                                                                            style={{ ...GS, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black }}>
                                                                                             <Play className="w-3 h-3 fill-white" /> Play
                                                                                         </button>
                                                                                     )}
@@ -656,7 +743,7 @@ export default function CourseDetailPage({ params }) {
                                 </div>
 
                                 {/* Video Preview */}
-                                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                                <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}` }}>
                                     <div className="aspect-video bg-slate-900 relative flex items-center justify-center">
                                         {currentLesson ? (
                                             <>
@@ -667,28 +754,36 @@ export default function CourseDetailPage({ params }) {
                                                     </div>
                                                 </button>
                                                 <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between z-10">
-                                                    <p className="text-white text-sm font-black truncate">{currentLesson.title}</p>
+                                                    <p className="text-white truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black }}>{currentLesson.title}</p>
                                                     {completedIds.includes(currentLesson._id?.toString()) && (
-                                                        <span className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/90 text-white text-[10px] font-black rounded-full">
+                                                        <span className="flex items-center gap-1 px-2.5 py-1 text-white rounded-full"
+                                                            style={{ backgroundColor: 'rgba(16,185,129,0.90)', fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black }}>
                                                             <CheckCircle className="w-3 h-3" /> Completed
                                                         </span>
                                                     )}
                                                 </div>
                                             </>
-                                        ) : <span className="text-slate-400 text-sm">Select a lesson to preview</span>}
+                                        ) : <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, opacity: 0.35 }}>Select a lesson to preview</span>}
                                     </div>
                                     {nextLesson && (
-                                        <div className="flex items-center gap-4 p-4 border-t border-slate-100">
-                                            <div className="w-14 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
-                                                <PlayCircle className="w-5 h-5 text-slate-300" />
+                                        <div className="flex items-center gap-4 p-4" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+                                            <div className="w-14 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: C.innerBg }}>
+                                                <PlayCircle className="w-5 h-5" style={{ color: C.text, opacity: 0.25 }} />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-wider">Upcoming</p>
-                                                <p className="font-black text-slate-800 text-sm truncate mt-0.5">{nextLesson.title}</p>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: C.text, opacity: 0.40 }}>
+                                                    Upcoming
+                                                </p>
+                                                <p className="truncate mt-0.5" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>
+                                                    {nextLesson.title}
+                                                </p>
                                             </div>
                                             <button onClick={() => { setSelectedLessonIndex(lessons.findIndex(l => l._id === nextLesson._id)); setShowLessonPlayerModal(true); }}
-                                                className="px-3 py-1.5 border-2 border-[var(--theme-primary)]/30 text-[var(--theme-primary)] rounded-xl text-[11px] font-black hover:bg-[var(--theme-primary)]/20 flex items-center gap-1 shrink-0">
-                                                <Play className="w-3 h-3 fill-[var(--theme-primary)]" /> Play
+                                                className="px-3 py-1.5 rounded-xl flex items-center gap-1 shrink-0 transition-colors"
+                                                style={{ border: `1.5px solid ${C.cardBorder}`, color: C.btnPrimary, backgroundColor: C.innerBg, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black }}
+                                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+                                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}>
+                                                <Play className="w-3 h-3 fill-current" /> Play
                                             </button>
                                         </div>
                                     )}
@@ -696,14 +791,15 @@ export default function CourseDetailPage({ params }) {
                             </div>
                         )}
 
-                        {/* ══ ASSIGNMENTS ═════════════════════════════════ */}
+                        {/* ══ ASSIGNMENTS ════════════════════════════════════ */}
                         {activeTab === 'assignments' && (
-                            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-                                <h3 className="text-sm font-black text-slate-800">Assignments</h3>
+                            <div className="rounded-2xl p-6 space-y-4"
+                                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                                <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>Assignments</h3>
                                 {(!isEnrolled && !isInstructor) ? (
-                                    <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                                        <Lock className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-                                        <p className="text-slate-600 font-bold text-sm mb-4">Enroll to access assignments</p>
+                                    <div className="text-center py-12 rounded-2xl" style={{ backgroundColor: C.innerBg, border: `2px dashed ${C.cardBorder}` }}>
+                                        <Lock className="w-10 h-10 mx-auto mb-3" style={{ color: C.text, opacity: 0.25 }} />
+                                        <p className="mb-4" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.text, opacity: 0.55 }}>Enroll to access assignments</p>
                                         <DBtn onClick={handleEnroll} className="px-5 py-2.5 text-xs">Enroll Now</DBtn>
                                     </div>
                                 ) : assignments.length > 0 ? assignments.map(assignment => {
@@ -712,54 +808,61 @@ export default function CourseDetailPage({ params }) {
                                     const isSubmitted = sub?.status === 'submitted';
                                     return (
                                         <div key={assignment._id} onClick={() => router.push(`/student/courses/${id}/assignments/${assignment._id}`)}
-                                            className="flex items-start gap-4 p-4 border-2 border-slate-100 rounded-2xl hover:border-[var(--theme-primary)]/30 hover:shadow-sm transition-all cursor-pointer group">
-                                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white shrink-0 ${isGraded ? 'bg-emerald-500' : isSubmitted ? 'bg-amber-500' : 'bg-[var(--theme-primary)]'}`}>
+                                            className="flex items-start gap-4 p-4 rounded-2xl transition-all cursor-pointer"
+                                            style={{ border: `2px solid ${C.cardBorder}` }}
+                                            onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.boxShadow = S.active; }}
+                                            onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.boxShadow = 'none'; }}>
+                                            <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white shrink-0"
+                                                style={{ backgroundColor: isGraded ? C.success : isSubmitted ? C.warning : C.btnPrimary }}>
                                                 <ClipboardList className="w-5 h-5" />
                                             </div>
                                             <div className="flex-1">
                                                 <div className="flex items-center justify-between mb-1">
-                                                    <h4 className="font-black text-slate-800 text-sm group-hover:text-[var(--theme-primary)] transition-colors">{assignment.title}</h4>
-                                                    {isGraded ? <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-black rounded-full border border-emerald-200">{sub.grade}/{assignment.totalMarks}</span>
-                                                        : isSubmitted ? <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-black rounded-full border border-amber-200">Submitted</span>
-                                                            : <span className="px-2.5 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-black rounded-full">Pending</span>}
+                                                    <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>{assignment.title}</h4>
+                                                    {isGraded
+                                                        ? <span className="px-2.5 py-0.5 rounded-full" style={{ backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black }}>{sub.grade}/{assignment.totalMarks}</span>
+                                                        : isSubmitted
+                                                            ? <span className="px-2.5 py-0.5 rounded-full" style={{ backgroundColor: C.warningBg, color: C.warning, border: `1px solid ${C.warningBorder}`, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black }}>Submitted</span>
+                                                            : <span className="px-2.5 py-0.5 rounded-full" style={{ backgroundColor: C.innerBg, color: C.text, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black }}>Pending</span>}
                                                 </div>
-                                                <div className="flex items-center gap-4 text-[11px] text-slate-400 font-medium">
+                                                <div className="flex items-center gap-4" style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: C.text, opacity: 0.45 }}>
                                                     {assignment.dueDate && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />Due {new Date(assignment.dueDate).toLocaleDateString()}</span>}
-                                                    <span className="flex items-center gap-1"><Award className="w-3 h-3 text-[var(--theme-primary)]/70" />{assignment.totalMarks} pts</span>
+                                                    <span className="flex items-center gap-1"><Award className="w-3 h-3" style={{ color: C.btnPrimary, opacity: 0.70 }} />{assignment.totalMarks} pts</span>
                                                 </div>
                                             </div>
                                         </div>
                                     );
                                 }) : (
-                                    <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                                        <ClipboardList className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-                                        <p className="text-slate-400 text-sm font-medium">No assignments yet</p>
+                                    <div className="text-center py-12 rounded-2xl" style={{ backgroundColor: C.innerBg, border: `2px dashed ${C.cardBorder}` }}>
+                                        <ClipboardList className="w-10 h-10 mx-auto mb-3" style={{ color: C.text, opacity: 0.20 }} />
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, opacity: 0.40 }}>No assignments yet</p>
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        {/* ══ DISCUSSIONS ═════════════════════════════════ */}
+                        {/* ══ DISCUSSIONS ════════════════════════════════════ */}
                         {activeTab === 'discussions' && (
-                            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6">
+                            <div className="rounded-2xl p-6 space-y-6"
+                                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                                 {/* Rating hero */}
-                                <div className="flex items-start gap-6 p-5 rounded-2xl relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--theme-sidebar) 0%, var(--theme-sidebar) 100%)' }}>
-                                    <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+                                <div className="flex items-start gap-6 p-5 rounded-2xl relative overflow-hidden" style={GS}>
+                                    <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(#fff 1px,transparent 1px)', backgroundSize: '16px 16px' }} />
                                     <div className="relative text-center shrink-0">
-                                        <div className="text-5xl font-black text-white mb-1">{course.rating?.toFixed(1)}</div>
+                                        <div style={{ fontFamily: T.fontFamily, fontSize: '48px', fontWeight: T.weight.black, color: '#ffffff', marginBottom: 4 }}>{course.rating?.toFixed(1)}</div>
                                         <div className="flex gap-0.5 justify-center mb-1">
-                                            {[...Array(5)].map((_, i) => <Star key={i} className={`w-3.5 h-3.5 ${i < Math.round(course.rating) ? 'text-amber-400 fill-amber-400' : 'text-white/25 fill-white/25'}`} />)}
+                                            {[...Array(5)].map((_, i) => <Star key={i} className={`w-3.5 h-3.5 ${i < Math.round(course.rating) ? 'text-amber-400 fill-amber-400' : 'fill-white/25 text-white/25'}`} />)}
                                         </div>
-                                        <p className="text-[10px] text-[var(--theme-primary)]/70 font-bold">{course.reviewCount} reviews</p>
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.50)' }}>{course.reviewCount} reviews</p>
                                     </div>
                                     <div className="relative flex-1 space-y-2">
                                         {ratingDistribution.map(dist => (
                                             <div key={dist.rating} className="flex items-center gap-3">
-                                                <span className="text-[10px] font-black text-[var(--theme-primary)]/70 w-5">{dist.rating}★</span>
-                                                <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-[var(--theme-primary)]/20 rounded-full" style={{ width: `${dist.percentage}%`, transition: 'width 0.6s ease' }} />
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, color: 'rgba(255,255,255,0.55)', width: 20 }}>{dist.rating}★</span>
+                                                <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.10)' }}>
+                                                    <div className="h-full rounded-full" style={{ width: `${dist.percentage}%`, backgroundColor: 'rgba(255,255,255,0.55)', transition: 'width 0.6s ease' }} />
                                                 </div>
-                                                <span className="text-[10px] text-[var(--theme-primary)]/70 w-4 text-right font-medium">{dist.count}</span>
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: '10px', width: 16, textAlign: 'right', fontWeight: T.weight.medium, color: 'rgba(255,255,255,0.50)' }}>{dist.count}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -774,11 +877,13 @@ export default function CourseDetailPage({ params }) {
                                 )}
 
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.06em]">Sort:</span>
+                                    <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wide, color: C.text, opacity: 0.40 }}>Sort:</span>
                                     {['recent', 'helpful', 'rating'].map(s => (
                                         <button key={s} onClick={() => setSortBy(s)}
-                                            className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all capitalize ${sortBy === s ? 'text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-                                            style={sortBy === s ? darkGrad : {}}>
+                                            className="px-3 py-1.5 rounded-xl capitalize transition-all"
+                                            style={sortBy === s
+                                                ? { ...GS, color: '#ffffff', fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black }
+                                                : { backgroundColor: C.innerBg, color: C.text, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black }}>
                                             {s.charAt(0).toUpperCase() + s.slice(1)}
                                         </button>
                                     ))}
@@ -787,37 +892,57 @@ export default function CourseDetailPage({ params }) {
                                 {reviews.length > 0 ? (
                                     <div className="space-y-3">
                                         {reviews.map(review => (
-                                            <div key={review._id} className={`p-5 rounded-2xl border-2 transition-all ${review._id === myReview?._id ? 'border-[var(--theme-primary)]/30 bg-[var(--theme-primary)]/20/40' : 'border-slate-100 hover:shadow-sm'}`}>
+                                            <div key={review._id} className="p-5 rounded-2xl transition-all"
+                                                style={review._id === myReview?._id
+                                                    ? { border: `2px solid ${C.btnPrimary}`, backgroundColor: C.btnViewAllBg }
+                                                    : { border: `2px solid ${C.cardBorder}`, backgroundColor: C.surfaceWhite }}>
                                                 <div className="flex items-start justify-between mb-3">
                                                     <div className="flex items-center gap-3">
-                                                        <img src={review.student?.profileImage || '/default-avatar.png'} alt="" className="w-9 h-9 rounded-2xl border-2 border-white shadow-sm" />
+                                                        <img src={review.student?.profileImage || '/default-avatar.svg'} alt="" className="w-9 h-9 rounded-2xl" style={{ border: `2px solid ${C.cardBorder}` }} />
                                                         <div>
                                                             <div className="flex items-center gap-2">
-                                                                <p className="font-black text-slate-800 text-sm">{review.student?.name}</p>
-                                                                {review._id === myReview?._id && <span className="px-2 py-0.5 text-white text-[9px] font-black rounded-full" style={darkGrad}>You</span>}
+                                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>{review.student?.name}</p>
+                                                                {review._id === myReview?._id && <span className="px-2 py-0.5 text-white rounded-full" style={{ ...GS, fontFamily: T.fontFamily, fontSize: '9px', fontWeight: T.weight.black }}>You</span>}
                                                             </div>
                                                             <div className="flex items-center gap-2 mt-0.5">
-                                                                {[...Array(5)].map((_, i) => <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`} />)}
-                                                                <span className="text-[10px] text-slate-400">{new Date(review.createdAt).toLocaleDateString()}</span>
+                                                                {[...Array(5)].map((_, i) => <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'fill-current'}`} style={i >= review.rating ? { color: C.cardBorder } : {}} />)}
+                                                                <span style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.text, opacity: 0.40 }}>{new Date(review.createdAt).toLocaleDateString()}</span>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     {review._id === myReview?._id && (
                                                         <div className="flex gap-1">
-                                                            <button onClick={() => { setReviewForm({ rating: review.rating, comment: review.comment }); setShowReviewModal(true); }} className="p-1.5 text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/20 rounded-xl"><Edit3 className="w-3.5 h-3.5" /></button>
-                                                            <button onClick={handleDeleteReview} className="p-1.5 text-red-500 hover:bg-red-50 rounded-xl"><Trash2 className="w-3.5 h-3.5" /></button>
+                                                            <button onClick={() => { setReviewForm({ rating: review.rating, comment: review.comment }); setShowReviewModal(true); }}
+                                                                className="p-1.5 rounded-xl transition-colors" style={{ color: C.btnPrimary }}
+                                                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}
+                                                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                                                <Edit3 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                            <button onClick={handleDeleteReview}
+                                                                className="p-1.5 rounded-xl transition-colors" style={{ color: C.danger }}
+                                                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.dangerBg; }}
+                                                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
                                                         </div>
                                                     )}
                                                 </div>
-                                                <p className="text-slate-600 text-sm leading-relaxed">{review.comment}</p>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, lineHeight: T.leading.relaxed }}>{review.comment}</p>
                                                 {review.tutorResponse && (
-                                                    <div className="mt-3 p-3 bg-[var(--theme-primary)]/20 border-l-[3px] border-[var(--theme-primary)]/30 rounded-r-2xl">
-                                                        <p className="text-[10px] font-black text-[var(--theme-primary)] mb-1 uppercase tracking-wider flex items-center gap-1"><Award className="w-3 h-3" />Instructor</p>
-                                                        <p className="text-xs text-slate-700 font-medium">{review.tutorResponse.comment}</p>
+                                                    <div className="mt-3 p-3 rounded-r-2xl" style={{ backgroundColor: C.innerBg, borderLeft: `3px solid ${C.btnPrimary}` }}>
+                                                        <p className="flex items-center gap-1 mb-1"
+                                                            style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: C.btnPrimary }}>
+                                                            <Award className="w-3 h-3" />Instructor
+                                                        </p>
+                                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.text }}>{review.tutorResponse.comment}</p>
                                                     </div>
                                                 )}
                                                 {review._id !== myReview?._id && (
-                                                    <button onClick={() => toggleHelpful(review._id)} className="mt-3 flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-[11px] font-bold text-slate-600">
+                                                    <button onClick={() => toggleHelpful(review._id)}
+                                                        className="mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-colors"
+                                                        style={{ backgroundColor: C.innerBg, color: C.text, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold }}
+                                                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+                                                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}>
                                                         <ThumbsUp className="w-3.5 h-3.5" /> Helpful ({review.helpfulCount || 0})
                                                     </button>
                                                 )}
@@ -825,26 +950,29 @@ export default function CourseDetailPage({ params }) {
                                         ))}
                                         {hasMoreReviews && (
                                             <button onClick={() => loadReviews(true)} disabled={loadingReviews}
-                                                className="w-full py-3 border-2 border-dashed border-slate-200 hover:border-[var(--theme-primary)]/30 hover:bg-[var(--theme-primary)]/20/50 text-slate-400 text-xs font-black rounded-2xl transition-all">
+                                                className="w-full py-3 rounded-2xl transition-all"
+                                                style={{ border: `2px dashed ${C.cardBorder}`, color: C.text, opacity: 0.50, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}
+                                                onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.opacity = '1'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.opacity = '0.50'; }}>
                                                 {loadingReviews ? 'Loading…' : 'Load More Reviews'}
                                             </button>
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                                        <MessageSquare className="w-10 h-10 mx-auto mb-3 text-slate-200" />
-                                        <p className="text-slate-400 text-sm font-medium">No reviews yet. Be the first!</p>
+                                    <div className="text-center py-10 rounded-2xl" style={{ backgroundColor: C.innerBg, border: `2px dashed ${C.cardBorder}` }}>
+                                        <MessageSquare className="w-10 h-10 mx-auto mb-3" style={{ color: C.text, opacity: 0.18 }} />
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, opacity: 0.40 }}>No reviews yet. Be the first!</p>
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        {/* ══ RESOURCES ════════════════════════════════════ */}
+                        {/* ══ RESOURCES ══════════════════════════════════════ */}
                         {activeTab === 'resources' && (
-                            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-                                <h3 className="text-sm font-black text-slate-800">Course Resources</h3>
+                            <div className="rounded-2xl p-6 space-y-4"
+                                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                                <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>Course Resources</h3>
                                 {(() => {
-                                    // Aggregate all resources from all lessons
                                     const groupedResources = lessons.map(l => {
                                         const lessonRes = [];
                                         const c = typeof l.content === 'object' ? l.content : {};
@@ -853,39 +981,47 @@ export default function CourseDetailPage({ params }) {
                                         return { lessonId: l._id, title: l.title, resources: lessonRes };
                                     }).filter(g => g.resources.length > 0);
 
-                                    if (groupedResources.length === 0) {
-                                        return (
-                                            <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                                                <FileText className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-                                                <p className="text-slate-400 text-sm font-medium">No resources available for this course.</p>
-                                            </div>
-                                        );
-                                    }
+                                    if (groupedResources.length === 0) return (
+                                        <div className="text-center py-10 rounded-2xl" style={{ backgroundColor: C.innerBg, border: `2px dashed ${C.cardBorder}` }}>
+                                            <FileText className="w-10 h-10 mx-auto mb-3" style={{ color: C.text, opacity: 0.20 }} />
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, opacity: 0.40 }}>No resources available for this course.</p>
+                                        </div>
+                                    );
 
                                     return (
                                         <div className="space-y-6">
                                             {groupedResources.map((group, idx) => (
                                                 <div key={group.lessonId} className="space-y-3">
-                                                    <h4 className="font-bold border-b border-slate-100 pb-2 text-slate-800 flex items-center gap-2">
-                                                        <span className="w-6 h-6 rounded-lg bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] flex items-center justify-center text-xs font-black">{idx + 1}</span>
+                                                    <h4 className="pb-2 flex items-center gap-2"
+                                                        style={{ borderBottom: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontWeight: T.weight.bold, color: C.heading }}>
+                                                        <span className="w-6 h-6 rounded-lg flex items-center justify-center"
+                                                            style={{ backgroundColor: C.innerBg, color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
+                                                            {idx + 1}
+                                                        </span>
                                                         {group.title}
                                                     </h4>
                                                     <div className="space-y-2">
                                                         {group.resources.map((res, i) => (
-                                                            <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-[var(--theme-primary)]/30 hover:shadow-sm transition-all group">
+                                                            <div key={i} className="flex items-center justify-between p-4 rounded-2xl transition-all"
+                                                                style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}
+                                                                onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.boxShadow = S.active; }}
+                                                                onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.boxShadow = 'none'; }}>
                                                                 <div className="flex items-center gap-4 min-w-0">
-                                                                    <div className="w-10 h-10 bg-[var(--theme-primary)]/10 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-[var(--theme-primary)]/20 transition-colors">
-                                                                        <FileText className="w-5 h-5 text-[var(--theme-primary)]" />
+                                                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: C.btnViewAllBg }}>
+                                                                        <FileText className="w-5 h-5" style={{ color: C.btnPrimary }} />
                                                                     </div>
                                                                     <div className="min-w-0 pr-4">
-                                                                        <p className="font-bold text-slate-700 text-sm truncate group-hover:text-[var(--theme-primary)] transition-colors">{res.name || 'Document'}</p>
-                                                                        <div className="flex items-center gap-2 mt-0.5">
-                                                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{res.type?.split('/')[1] || 'File'}</span>
-                                                                        </div>
+                                                                        <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>{res.name || 'Document'}</p>
+                                                                        <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.widest, color: C.text, opacity: 0.40 }}>
+                                                                            {res.type?.split('/')[1] || 'File'}
+                                                                        </span>
                                                                     </div>
                                                                 </div>
                                                                 <a href={res.url} target="_blank" rel="noopener noreferrer"
-                                                                    className="px-4 py-2 text-[11px] font-black text-[var(--theme-primary)] bg-[var(--theme-primary)]/5 border-2 border-[var(--theme-primary)]/20 rounded-xl hover:bg-[var(--theme-primary)]/20 hover:border-[var(--theme-primary)]/30 transition-all shrink-0">
+                                                                    className="px-4 py-2 rounded-xl transition-all shrink-0"
+                                                                    style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black }}
+                                                                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnPrimary; e.currentTarget.style.color = '#ffffff'; }}
+                                                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; e.currentTarget.style.color = C.btnViewAllText; }}>
                                                                     View
                                                                 </a>
                                                             </div>
@@ -903,37 +1039,43 @@ export default function CourseDetailPage({ params }) {
                     {/* RIGHT SIDEBAR */}
                     <div className="lg:col-span-1 space-y-4">
 
-                        {/* Progress + Info + Quiz (Lessons tab only) */}
                         {activeTab === 'lessons' && (isEnrolled || isInstructor) && (
                             <>
-                                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+                                <div className="rounded-2xl p-5" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                                     <div className="flex items-center justify-between mb-4">
-                                        <h3 className="font-black text-slate-800 text-sm">Progress</h3>
-                                        <span className="text-xs font-black text-[var(--theme-primary)]">{completedCount}/{totalLessons}</span>
+                                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>Progress</h3>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: C.btnPrimary }}>{completedCount}/{totalLessons}</span>
                                     </div>
                                     <CircularProgress pct={pct} completed={completedCount} total={totalLessons} />
                                 </div>
 
-                                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                                    <h3 className="font-black text-slate-800 text-sm mb-4">Course Info</h3>
+                                <div className="rounded-2xl p-5" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                                    <h3 className="mb-4" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>Course Info</h3>
                                     <div className="flex items-center gap-3 mb-3">
-                                        <img src={course.tutorId?.userId?.profileImage || '/default-avatar.png'} alt="" className="w-10 h-10 rounded-2xl border border-slate-100" />
-                                        <p className="font-black text-slate-800 text-sm">{course.tutorId?.userId?.name || 'Instructor'}</p>
+                                        <img src={course.tutorId?.userId?.profileImage || '/default-avatar.svg'} alt="" className="w-10 h-10 rounded-2xl" style={{ border: `1px solid ${C.cardBorder}` }} />
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>{course.tutorId?.userId?.name || 'Instructor'}</p>
                                     </div>
-                                    <p className="text-[11px] text-slate-400 font-medium">Updated: {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString() : '—'}</p>
-                                    <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1 font-medium"><Users className="w-3 h-3" /> {(course.enrolledCount || 0).toLocaleString()} Students</p>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: C.text, opacity: 0.45 }}>Updated: {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString() : '—'}</p>
+                                    <p className="flex items-center gap-1 mt-1" style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: C.text, opacity: 0.45 }}>
+                                        <Users className="w-3 h-3" /> {(course.enrolledCount || 0).toLocaleString()} Students
+                                    </p>
                                 </div>
 
-                                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+                                <div className="rounded-2xl p-5" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                                     <div className="flex items-center gap-2 mb-4">
-                                        <div className="w-6 h-6 bg-[var(--theme-primary)]/20 rounded-lg flex items-center justify-center"><BarChart2 className="w-3.5 h-3.5 text-[var(--theme-primary)]" /></div>
-                                        <h3 className="font-black text-slate-800 text-sm">Quiz Performance</h3>
+                                        <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: C.innerBg }}>
+                                            <BarChart2 className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
+                                        </div>
+                                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>Quiz Performance</h3>
                                     </div>
                                     <div className="space-y-3.5">
                                         {quizScores.map((q, i) => <QuizScoreRow key={i} title={q.title} score={q.score} />)}
-                                        {quizScores.length === 0 && <p className="text-xs text-slate-400 text-center py-2">No quiz attempts yet</p>}
+                                        {quizScores.length === 0 && (
+                                            <p className="text-center py-2" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, opacity: 0.40 }}>No quiz attempts yet</p>
+                                        )}
                                     </div>
-                                    <Link href={`/student/courses/${id}`} className="text-[11px] font-black text-[var(--theme-primary)] mt-4 inline-flex items-center gap-1">
+                                    <Link href={`/student/courses/${id}`} className="inline-flex items-center gap-1 mt-4"
+                                        style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black, color: C.btnPrimary }}>
                                         View All <ChevronRight className="w-3 h-3" />
                                     </Link>
                                 </div>
@@ -941,23 +1083,26 @@ export default function CourseDetailPage({ params }) {
                         )}
 
                         {/* Enrollment / Pricing Card */}
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                            <div className="aspect-video relative overflow-hidden bg-slate-100 group">
+                        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                            <div className="aspect-video relative overflow-hidden group" style={{ backgroundColor: C.innerBg }}>
                                 <img src={course.thumbnail || 'https://via.placeholder.com/640x360'} alt={course.title}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30">
                                     <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
-                                        <Play className="w-6 h-6 text-[var(--theme-primary)] fill-[var(--theme-primary)] ml-0.5" />
+                                        <Play className="w-6 h-6 ml-0.5 fill-current" style={{ color: C.btnPrimary }} />
                                     </div>
                                 </div>
                             </div>
                             <div className="p-5">
                                 <div className="flex items-center gap-2 mb-4">
-                                    <span className="text-2xl font-black text-slate-800">{course.isFree ? 'Free' : `₹${course.price}`}</span>
+                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading }}>
+                                        {course.isFree ? 'Free' : `₹${course.price}`}
+                                    </span>
                                     {course.oldPrice && !course.isFree && (
                                         <>
-                                            <span className="text-base text-slate-400 line-through">₹{course.oldPrice}</span>
-                                            <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.md, textDecoration: 'line-through', color: C.text, opacity: 0.40 }}>₹{course.oldPrice}</span>
+                                            <span className="px-2 py-0.5 rounded-full"
+                                                style={{ backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black }}>
                                                 {Math.round((1 - course.price / course.oldPrice) * 100)}% OFF
                                             </span>
                                         </>
@@ -972,168 +1117,197 @@ export default function CourseDetailPage({ params }) {
                                         {enrolling ? 'Processing…' : course.isFree ? 'Enroll Now' : 'Buy Now'}
                                     </DBtn>
                                 ) : (
-                                    <div className="w-full py-3 bg-emerald-500 text-white font-black rounded-2xl text-sm flex items-center justify-center gap-2">
+                                    <div className="w-full py-3 text-white rounded-2xl flex items-center justify-center gap-2"
+                                        style={{ backgroundColor: C.success, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black }}>
                                         <CheckCircle className="w-4 h-4" /> Enrolled
                                     </div>
                                 )}
-                                <p className="text-center text-[11px] text-slate-400 mt-3 font-medium">30-Day Money-Back Guarantee</p>
+                                <p className="text-center mt-3" style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: C.text, opacity: 0.40 }}>
+                                    30-Day Money-Back Guarantee
+                                </p>
                             </div>
                         </div>
 
                         {/* Course Includes */}
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                            <h3 className="font-black text-slate-800 text-sm mb-4">This Course Includes</h3>
+                        <div className="rounded-2xl p-5" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                            <h3 className="mb-4" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>This Course Includes</h3>
                             <div className="space-y-2">
                                 {[
-                                    { icon: <PlayCircle className="w-4 h-4 text-[var(--theme-primary)]" />, label: `${totalLessons} video lessons`, bg: 'bg-[var(--theme-primary)]/20' },
-                                    { icon: <Clock className="w-4 h-4 text-[var(--theme-accent)]" />, label: `${Math.round(totalDuration / 3600)}h on-demand`, bg: 'bg-[var(--theme-accent)]/20' },
-                                    { icon: <Download className="w-4 h-4 text-emerald-600" />, label: 'Downloadable resources', bg: 'bg-emerald-50' },
-                                    { icon: <Trophy className="w-4 h-4 text-amber-500" />, label: 'Certificate of completion', bg: 'bg-amber-50' },
-                                    { icon: <Globe className="w-4 h-4 text-blue-500" />, label: 'Lifetime access', bg: 'bg-blue-50' },
+                                    { icon: <PlayCircle className="w-4 h-4" style={{ color: C.btnPrimary }} />, label: `${totalLessons} video lessons`,    bg: C.innerBg },
+                                    { icon: <Clock className="w-4 h-4" style={{ color: C.chartLine }} />,     label: `${Math.round(totalDuration / 3600)}h on-demand`, bg: 'rgba(94,157,157,0.08)' },
+                                    { icon: <Download className="w-4 h-4" style={{ color: C.success }} />,   label: 'Downloadable resources',         bg: C.successBg },
+                                    { icon: <Trophy className="w-4 h-4" style={{ color: C.warning }} />,     label: 'Certificate of completion',      bg: C.warningBg },
+                                    { icon: <Globe className="w-4 h-4" style={{ color: '#3B82F6' }} />,       label: 'Lifetime access',                bg: 'rgba(59,130,246,0.08)' },
                                 ].map((item, i) => (
-                                    <div key={i} className={`flex items-center gap-3 p-2.5 ${item.bg} rounded-xl`}>
+                                    <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl" style={{ backgroundColor: item.bg }}>
                                         {item.icon}
-                                        <span className="text-xs font-bold text-slate-700">{item.label}</span>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text }}>{item.label}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
                         {/* Instructor */}
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                            <h3 className="font-black text-slate-800 text-sm mb-4 pb-3 border-b border-slate-100">Course Instructor</h3>
+                        <div className="rounded-2xl p-5" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                            <h3 className="mb-4 pb-3" style={{ borderBottom: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>
+                                Course Instructor
+                            </h3>
                             <div className="flex flex-col items-center text-center">
-                                <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-slate-100 mb-3">
-                                    <img src={course.tutorId?.userId?.profileImage || '/default-avatar.png'} alt="" className="w-full h-full object-cover" />
+                                <div className="w-20 h-20 rounded-2xl overflow-hidden mb-3" style={{ border: `2px solid ${C.cardBorder}` }}>
+                                    <img src={course.tutorId?.userId?.profileImage || '/default-avatar.svg'} alt="" className="w-full h-full object-cover" />
                                 </div>
-                                <h4 className="font-black text-slate-800 text-sm">{course.tutorId?.userId?.name || 'Unknown'}</h4>
-                                {course.tutorId?.experience && <p className="text-[11px] font-bold text-[var(--theme-primary)] mt-1">{course.tutorId.experience} Years Experience</p>}
-                                {course.tutorId?.bio && <p className="text-xs text-slate-400 mt-2 line-clamp-3 leading-relaxed">{course.tutorId.bio}</p>}
+                                <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>{course.tutorId?.userId?.name || 'Unknown'}</h4>
+                                {course.tutorId?.experience && (
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.btnPrimary, marginTop: 4 }}>{course.tutorId.experience} Years Experience</p>
+                                )}
+                                {course.tutorId?.bio && (
+                                    <p className="line-clamp-3 mt-2" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, lineHeight: T.leading.relaxed, color: C.text, opacity: 0.50 }}>
+                                        {course.tutorId.bio}
+                                    </p>
+                                )}
                             </div>
                             <button onClick={() => router.push(`/tutor/${course.tutorId?._id}`)}
-                                className="w-full mt-4 py-2 border-2 border-[var(--theme-primary)]/30 text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/20 text-xs font-black rounded-2xl transition-colors">
+                                className="w-full mt-4 py-2 rounded-2xl transition-colors"
+                                style={{ border: `1.5px solid ${C.cardBorder}`, color: C.btnPrimary, backgroundColor: C.innerBg, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}
+                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}>
                                 View Full Profile
                             </button>
                         </div>
                     </div>
-                </div >
-            </div >
+                </div>
+            </div>
 
             {/* ══ MODALS ══════════════════════════════════════════════════ */}
-            {
-                showLessonPlayerModal && lessons[selectedLessonIndex] && (
-                    <LessonPlayerModal lessons={lessons} modules={course.modules} reviews={reviews}
-                        initialIndex={selectedLessonIndex} courseId={id}
-                        onClose={() => setShowLessonPlayerModal(false)} onLessonComplete={handleLessonComplete} />
-                )
-            }
-            {
-                showExamHistoryModal && selectedExam && (
-                    <ExamHistoryModal exam={selectedExam} onClose={() => setShowExamHistoryModal(false)}
-                        onViewAttempt={data => { setSelectedResult(data); setShowExamHistoryModal(false); setShowResultModal(true); }}
-                        onStartExam={handleStartExam} />
-                )
-            }
-            {
-                showResultModal && selectedResult && (
-                    <ExamResultModal result={selectedResult} onClose={() => { setShowResultModal(false); setShowExamHistoryModal(true); }} />
-                )
-            }
+            {showLessonPlayerModal && lessons[selectedLessonIndex] && (
+                <LessonPlayerModal lessons={lessons} modules={course.modules} reviews={reviews}
+                    initialIndex={selectedLessonIndex} courseId={id}
+                    onClose={() => setShowLessonPlayerModal(false)} onLessonComplete={handleLessonComplete} />
+            )}
+            {showExamHistoryModal && selectedExam && (
+                <ExamHistoryModal exam={selectedExam} onClose={() => setShowExamHistoryModal(false)}
+                    onViewAttempt={data => { setSelectedResult(data); setShowExamHistoryModal(false); setShowResultModal(true); }}
+                    onStartExam={handleStartExam} />
+            )}
+            {showResultModal && selectedResult && (
+                <ExamResultModal result={selectedResult} onClose={() => { setShowResultModal(false); setShowExamHistoryModal(true); }} />
+            )}
 
             {/* Review Modal */}
-            {
-                showReviewModal && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-                            <div className="p-6 border-b border-slate-100 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))' }}>
-                                <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '14px 14px' }} />
-                                <div className="relative flex items-center justify-between">
-                                    <div>
-                                        <h3 className="text-base font-black text-white">{myReview ? 'Edit Review' : 'Write a Review'}</h3>
-                                        <p className="text-[var(--theme-primary)]/70 text-xs mt-0.5 font-medium">{course.title}</p>
-                                    </div>
-                                    <button onClick={() => { setShowReviewModal(false); setReviewForm({ rating: 0, comment: '' }); }}
-                                        className="p-2 bg-white/10 hover:bg-white/20 rounded-xl"><X className="w-4 h-4 text-white" /></button>
+            {showReviewModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto" style={{ backgroundColor: C.surfaceWhite }}>
+                        <div className="p-6 relative overflow-hidden" style={{ ...GS, borderBottom: `1px solid ${C.cardBorder}` }}>
+                            <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(#fff 1px,transparent 1px)', backgroundSize: '14px 14px' }} />
+                            <div className="relative flex items-center justify-between">
+                                <div>
+                                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.black, color: '#ffffff' }}>
+                                        {myReview ? 'Edit Review' : 'Write a Review'}
+                                    </h3>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: 'rgba(255,255,255,0.50)', marginTop: 2 }}>{course.title}</p>
                                 </div>
+                                <button onClick={() => { setShowReviewModal(false); setReviewForm({ rating: 0, comment: '' }); }}
+                                    className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.10)' }}>
+                                    <X className="w-4 h-4 text-white" />
+                                </button>
                             </div>
-                            <form onSubmit={handleSubmitReview} className="p-6 space-y-5">
-                                <div>
-                                    <label className="block text-[10px] font-black text-slate-600 uppercase tracking-[0.08em] mb-3">Rating</label>
-                                    <div className="flex gap-2">
-                                        {[1, 2, 3, 4, 5].map(r => (
-                                            <button key={r} type="button" onClick={() => setReviewForm(prev => ({ ...prev, rating: r }))} className="transition-transform hover:scale-125">
-                                                <Star className={`w-9 h-9 ${r <= reviewForm.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`} />
-                                            </button>
-                                        ))}
-                                    </div>
-                                    {reviewForm.rating > 0 && <p className="mt-2 text-[11px] font-black text-[var(--theme-primary)] uppercase tracking-wider">{['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][reviewForm.rating - 1]}</p>}
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-black text-slate-600 uppercase tracking-[0.08em] mb-2">Your Review</label>
-                                    <textarea value={reviewForm.comment} onChange={e => setReviewForm(prev => ({ ...prev, comment: e.target.value }))}
-                                        rows={5} maxLength={500}
-                                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-2xl focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent text-sm resize-none font-medium"
-                                        placeholder="Share your experience…" />
-                                    <p className="text-[11px] text-slate-400 mt-1 text-right">{reviewForm.comment.length}/500</p>
-                                </div>
-                                <div className="flex gap-3">
-                                    <button type="button" onClick={() => { setShowReviewModal(false); setReviewForm({ rating: 0, comment: '' }); }}
-                                        className="flex-1 py-2.5 border-2 border-slate-200 text-slate-700 font-black rounded-2xl text-sm hover:bg-slate-50">Cancel</button>
-                                    <DBtn type="submit" disabled={submittingReview || reviewForm.rating === 0 || reviewForm.comment.trim().length < 10} className="flex-1 py-2.5 text-sm">
-                                        {submittingReview ? 'Submitting…' : myReview ? 'Update Review' : 'Submit Review'}
-                                    </DBtn>
-                                </div>
-                            </form>
                         </div>
+                        <form onSubmit={handleSubmitReview} className="p-6 space-y-5">
+                            <div>
+                                <label className="block mb-3"
+                                    style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: C.text, opacity: 0.55 }}>
+                                    Rating
+                                </label>
+                                <div className="flex gap-2">
+                                    {[1, 2, 3, 4, 5].map(r => (
+                                        <button key={r} type="button" onClick={() => setReviewForm(prev => ({ ...prev, rating: r }))} className="transition-transform hover:scale-125">
+                                            <Star className={`w-9 h-9 ${r <= reviewForm.rating ? 'text-amber-400 fill-amber-400' : 'fill-current'}`}
+                                                style={r > reviewForm.rating ? { color: C.cardBorder } : {}} />
+                                        </button>
+                                    ))}
+                                </div>
+                                {reviewForm.rating > 0 && (
+                                    <p className="mt-2"
+                                        style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: C.btnPrimary }}>
+                                        {['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][reviewForm.rating - 1]}
+                                    </p>
+                                )}
+                            </div>
+                            <div>
+                                <label className="block mb-2"
+                                    style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: C.text, opacity: 0.55 }}>
+                                    Your Review
+                                </label>
+                                <textarea value={reviewForm.comment} onChange={e => setReviewForm(prev => ({ ...prev, comment: e.target.value }))}
+                                    rows={5} maxLength={500} placeholder="Share your experience…"
+                                    className="w-full px-4 py-3 rounded-2xl resize-none focus:outline-none transition-all"
+                                    style={{ border: `1.5px solid ${C.cardBorder}`, color: C.heading, backgroundColor: C.cardBg, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium }}
+                                    onFocus={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
+                                    onBlur={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.boxShadow = 'none'; }} />
+                                <p className="text-right mt-1" style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.text, opacity: 0.40 }}>{reviewForm.comment.length}/500</p>
+                            </div>
+                            <div className="flex gap-3">
+                                <button type="button" onClick={() => { setShowReviewModal(false); setReviewForm({ rating: 0, comment: '' }); }}
+                                    className="flex-1 py-2.5 rounded-2xl transition-colors"
+                                    style={{ border: `1.5px solid ${C.cardBorder}`, color: C.text, backgroundColor: C.cardBg, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black }}>
+                                    Cancel
+                                </button>
+                                <DBtn type="submit" disabled={submittingReview || reviewForm.rating === 0 || reviewForm.comment.trim().length < 10} className="flex-1 py-2.5 text-sm">
+                                    {submittingReview ? 'Submitting…' : myReview ? 'Update Review' : 'Submit Review'}
+                                </DBtn>
+                            </div>
+                        </form>
                     </div>
-                )
-            }
+                </div>
+            )}
 
             {course && <ReportAbuseModal isOpen={showReportModal} onClose={() => setShowReportModal(false)} targetId={course._id} targetType="Course" />}
 
-            {/* ── Floating AI Button ────────────────────────────────────── */}
+            {/* Floating AI Button */}
             <button onClick={() => setAiWidgetOpen(true)}
-                className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 px-4 py-3 text-white text-sm font-bold rounded-2xl shadow-xl transition-all hover:scale-105 hover:shadow-2xl"
-                style={{ background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))' }}>
+                className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 px-4 py-3 text-white rounded-2xl shadow-xl transition-all hover:scale-105 hover:shadow-2xl"
+                style={{ ...GS, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
                 <div className="relative">
                     <Bot className="w-5 h-5" />
                     <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white" />
                 </div>
-               Sapience Course Assistant
+                Sapience Course Assistant
             </button>
 
-            {/* ── AI Drawer ─────────────────────────────────────────────── */}
-            {
-                aiWidgetOpen && (
-                    <>
-                        <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={() => setAiWidgetOpen(false)} />
-                        <div className="fixed bottom-0 right-0 z-50 w-full sm:w-[420px] h-[85vh] sm:h-[600px] sm:bottom-6 sm:right-6 sm:rounded-2xl bg-white shadow-2xl border border-slate-100 flex flex-col overflow-hidden"
-                            style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
-                            <div className="px-5 py-4 flex items-center justify-between relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--theme-sidebar) 0%, var(--theme-sidebar) 100%)' }}>
-                                <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '14px 14px' }} />
-                                <div className="relative flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-white/15 rounded-xl flex items-center justify-center"><Bot className="w-4 h-4 text-[var(--theme-primary)]/70" /></div>
-                                    <div>
-                                        <p className="text-sm font-black text-white">Sapience Course Assistant</p>
-                                        <p className="text-[11px] text-[var(--theme-primary)]/70 font-medium">Ask anything about this course</p>
-                                    </div>
+            {/* AI Drawer */}
+            {aiWidgetOpen && (
+                <>
+                    <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={() => setAiWidgetOpen(false)} />
+                    <div className="fixed bottom-0 right-0 z-50 w-full sm:w-[420px] h-[85vh] sm:h-[600px] sm:bottom-6 sm:right-6 sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+                        style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily }}>
+                        <div className="px-5 py-4 flex items-center justify-between relative overflow-hidden" style={GS}>
+                            <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(#fff 1px,transparent 1px)', backgroundSize: '14px 14px' }} />
+                            <div className="relative flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
+                                    <Bot className="w-4 h-4 text-white" />
                                 </div>
-                                <button onClick={() => setAiWidgetOpen(false)} className="relative w-8 h-8 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors">
-                                    <X className="w-4 h-4 text-white" />
-                                </button>
+                                <div>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: '#ffffff' }}>Sapience Course Assistant</p>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: 'rgba(255,255,255,0.50)' }}>Ask anything about this course</p>
+                                </div>
                             </div>
-                            <div className="flex-1 overflow-auto">
-                                <AiTutorWidget
-                                    title="Sapience Course Assistant"
-                                    subtitle="Curious about this course? Ask away!"
-                                    context={{ pageType: 'course_details', courseId: course._id }}
-                                    recommendedTopics={['What are the prerequisites?', 'What are the main learning outcomes?', 'Is this suitable for beginners?']}
-                                />
-                            </div>
+                            <button onClick={() => setAiWidgetOpen(false)}
+                                className="relative w-8 h-8 flex items-center justify-center rounded-xl transition-colors"
+                                style={{ backgroundColor: 'rgba(255,255,255,0.10)' }}>
+                                <X className="w-4 h-4 text-white" />
+                            </button>
                         </div>
-                    </>
-                )
-            }
-        </div >
+                        <div className="flex-1 overflow-auto">
+                            <AiTutorWidget
+                                title="Sapience Course Assistant"
+                                subtitle="Curious about this course? Ask away!"
+                                context={{ pageType: 'course_details', courseId: course._id }}
+                                recommendedTopics={['What are the prerequisites?', 'What are the main learning outcomes?', 'Is this suitable for beginners?']}
+                            />
+                        </div>
+                    </div>
+                </>
+            )}
+        </div>
     );
 }

@@ -12,6 +12,7 @@ import api from '@/lib/axios';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { toast } from 'react-hot-toast';
+import { C, T, FX } from '@/constants/tutorTokens';
 
 export default function QuestionBankPage() {
     const [questions, setQuestions] = useState([]);
@@ -76,15 +77,15 @@ export default function QuestionBankPage() {
     }[d] || 'bg-slate-100 text-slate-600 border-slate-200');
 
     return (
-        <div className="space-y-6" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-6" style={{ fontFamily: T.fontFamily }}>
 
             {/* Page Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <div className="flex items-center gap-2.5 mb-1">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                            <Database className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                            style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
+                            <Database className="w-4 h-4" style={{ color: C.btnPrimary }} />
                         </div>
                         <h1 className="text-xl font-bold text-slate-800">Question Bank</h1>
                     </div>
@@ -100,7 +101,7 @@ export default function QuestionBankPage() {
                     </Link>
                     <Link href="/tutor/questions/create">
                         <Button size="sm" className="gap-2 text-sm text-white shadow-sm"
-                            style={{ backgroundColor: 'var(--theme-primary)' }}
+                            style={{ backgroundColor: C.btnPrimary }}
                             onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
                             onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
                             <Plus className="w-4 h-4" /> Add Question
@@ -116,7 +117,7 @@ export default function QuestionBankPage() {
                     <Input
                         placeholder="Search questions by text, topic, or skill..."
                         className="pl-9 h-9 text-sm border-slate-200"
-                        style={{ '--tw-ring-color': 'var(--theme-primary)' }}
+                        style={{ '--tw-ring-color': C.btnPrimary }}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -136,14 +137,14 @@ export default function QuestionBankPage() {
             {/* States */}
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3">
-                    <Loader2 className="w-7 h-7 animate-spin" style={{ color: 'var(--theme-primary)' }} />
+                    <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
                     <p className="text-sm text-slate-400">Loading questions...</p>
                 </div>
             ) : filteredQuestions.length === 0 ? (
                 <div className="text-center py-16 bg-white rounded-xl border border-dashed border-slate-200">
                     <div className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                        <Database className="h-7 w-7" style={{ color: 'var(--theme-primary)' }} />
+                        style={{ backgroundColor: FX.primary10, border: `1px solid ${FX.primary20}` }}>
+                        <Database className="h-7 w-7" style={{ color: C.btnPrimary }} />
                     </div>
                     <h3 className="text-base font-semibold text-slate-800 mb-1">
                         {searchTerm ? 'No questions match your search' : 'No questions found'}
@@ -154,7 +155,7 @@ export default function QuestionBankPage() {
                     {!searchTerm && (
                         <Link href="/tutor/questions/create">
                             <Button size="sm" className="gap-2 text-white"
-                                style={{ backgroundColor: 'var(--theme-primary)' }}>
+                                style={{ backgroundColor: C.btnPrimary }}>
                                 <Plus className="w-4 h-4" /> Create Question
                             </Button>
                         </Link>
@@ -175,7 +176,7 @@ export default function QuestionBankPage() {
                                     className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50/60 transition-colors">
                                     <div className="flex items-center gap-3 flex-wrap">
                                         {isExpanded
-                                            ? <FolderOpen className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--theme-primary)' }} />
+                                            ? <FolderOpen className="w-4 h-4 flex-shrink-0" style={{ color: C.btnPrimary }} />
                                             : <Folder className="w-4 h-4 text-slate-400 flex-shrink-0" />}
                                         <span className="font-semibold text-slate-800 text-sm">{group.name}</span>
                                         <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">
@@ -226,7 +227,7 @@ export default function QuestionBankPage() {
                                                     </div>
                                                     <div className="flex gap-1 flex-shrink-0">
                                                         <Link href={`/tutor/questions/${q._id}/edit`}>
-                                                            <button className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[var(--theme-primary)]/10 transition-colors">
+                                                            <button className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#7573E8]/10 transition-colors">
                                                                 <Edit className="w-3.5 h-3.5 text-slate-400" />
                                                             </button>
                                                         </Link>

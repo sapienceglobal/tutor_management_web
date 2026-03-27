@@ -5,8 +5,36 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash } from 'lucide-react';
+import { C } from '@/constants/tutorTokens';
 
 export function QuestionFormFields({ formData, setFormData, topics, skills }) {
+    const handleTypeChange = (val) => {
+        if (val === 'true_false') {
+            const previousCorrect = formData.options?.find((option) => option.isCorrect)?.text?.toLowerCase();
+            setFormData({
+                ...formData,
+                type: val,
+                options: [
+                    { text: 'True', isCorrect: previousCorrect === 'true' },
+                    { text: 'False', isCorrect: previousCorrect === 'false' },
+                ],
+            });
+            return;
+        }
+
+        if (val === 'mcq') {
+            const existingOptions = Array.isArray(formData.options) ? formData.options : [];
+            const normalized = existingOptions.length >= 2
+                ? existingOptions
+                : [{ text: '', isCorrect: false }, { text: '', isCorrect: false }];
+            setFormData({ ...formData, type: val, options: normalized });
+            return;
+        }
+
+        setFormData({ ...formData, type: val, options: [] });
+    };
+
+    const isObjective = formData.type === 'mcq' || formData.type === 'true_false';
 
     const setCorrectAnswer = (index) => {
         setFormData({ ...formData, options: formData.options.map((o, i) => ({ ...o, isCorrect: i === index })) });
@@ -33,10 +61,12 @@ export function QuestionFormFields({ formData, setFormData, topics, skills }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label className="text-sm font-semibold text-slate-700">Question Type</Label>
-                    <Select value={formData.type} onValueChange={(val) => setFormData({ ...formData, type: val })}>
+                    <Select value={formData.type} onValueChange={handleTypeChange}>
                         <SelectTrigger className="h-10 border-slate-200"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="mcq">Multiple Choice (MCQ)</SelectItem>
+                            <SelectItem value="true_false">True / False</SelectItem>
+                            <SelectItem value="fill_blank">Fill In The Blank</SelectItem>
                             <SelectItem value="subjective">Subjective / Open-Ended</SelectItem>
                         </SelectContent>
                     </Select>
@@ -68,10 +98,12 @@ export function QuestionFormFields({ formData, setFormData, topics, skills }) {
             </div>
 
             {/* MCQ Options / Subjective Answer */}
-            {formData.type === 'mcq' ? (
+            {isObjective ? (
                 <div className="space-y-3">
                     <div>
-                        <Label className="text-sm font-semibold text-slate-700">Options <span className="text-red-500">*</span></Label>
+                        <Label className="text-sm font-semibold text-slate-700">
+                            {formData.type === 'true_false' ? 'Answer Options' : 'Options'} <span className="text-red-500">*</span>
+                        </Label>
                         <p className="text-xs text-slate-400 mt-0.5">Select the radio button next to the correct answer.</p>
                     </div>
                     {formData.options.map((option, index) => (
@@ -82,17 +114,18 @@ export function QuestionFormFields({ formData, setFormData, topics, skills }) {
                                 checked={option.isCorrect}
                                 onChange={() => setCorrectAnswer(index)}
                                 className="w-4 h-4 flex-shrink-0"
-                                style={{ accentColor: 'var(--theme-primary)' }}
+                                style={{ accentColor: C.btnPrimary }}
                             />
                             <Input
                                 value={option.text}
                                 onChange={(e) => handleOptionChange(index, e.target.value)}
-                                placeholder={`Option ${String.fromCharCode(65 + index)}`}
+                                placeholder={formData.type === 'true_false' ? '' : `Option ${String.fromCharCode(65 + index)}`}
+                                disabled={formData.type === 'true_false'}
                                 className={`h-9 text-sm ${option.isCorrect
                                     ? 'border-emerald-400 ring-1 ring-emerald-100 bg-emerald-50/50'
                                     : 'border-slate-200'}`}
                             />
-                            {formData.options.length > 2 && (
+                            {formData.type === 'mcq' && formData.options.length > 2 && (
                                 <button
                                     type="button"
                                     onClick={() => removeOption(index)}
@@ -102,17 +135,19 @@ export function QuestionFormFields({ formData, setFormData, topics, skills }) {
                             )}
                         </div>
                     ))}
-                    <Button type="button" variant="outline" size="sm" onClick={addOption} className="gap-1.5 border-dashed text-sm">
-                        <Plus className="w-3.5 h-3.5" /> Add Option
-                    </Button>
+                    {formData.type === 'mcq' && (
+                        <Button type="button" variant="outline" size="sm" onClick={addOption} className="gap-1.5 border-dashed text-sm">
+                            <Plus className="w-3.5 h-3.5" /> Add Option
+                        </Button>
+                    )}
                 </div>
             ) : (
                 <div className="space-y-2">
                     <Label className="text-sm font-semibold text-slate-700">
-                        Ideal Answer / Grading Rubric <span className="text-red-500">*</span>
+                        {formData.type === 'fill_blank' ? 'Correct Answer' : 'Ideal Answer / Grading Rubric'} <span className="text-red-500">*</span>
                     </Label>
                     <textarea
-                        className="w-full min-h-[110px] p-3 text-sm rounded-xl border border-slate-200 outline-none resize-y text-slate-700 focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/10 transition-colors"
+                        className="w-full min-h-[110px] p-3 text-sm rounded-xl border border-slate-200 outline-none resize-y text-slate-700 focus:border-[#7573E8] focus:ring-2 focus:ring-[#7573E8]/10 transition-colors"
                         value={formData.idealAnswer}
                         onChange={(e) => setFormData({ ...formData, idealAnswer: e.target.value })}
                         placeholder="Enter the expected answer or grading rubric..."

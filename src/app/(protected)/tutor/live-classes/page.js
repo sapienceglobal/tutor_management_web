@@ -17,6 +17,7 @@ import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 import AudienceSelector from '@/components/shared/AudienceSelector';
 import useInstitute from '@/hooks/useInstitute';
+import { C, T, FX } from '@/constants/tutorTokens';
 
 export default function TutorLiveClassesPage() {
     const router = useRouter();
@@ -142,21 +143,21 @@ export default function TutorLiveClassesPage() {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-7 h-7 animate-spin" style={{ color: 'var(--theme-primary)' }} />
+                <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
                 <p className="text-sm text-slate-400">Loading classes...</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-5" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-5" style={{ fontFamily: T.fontFamily }}>
 
             {/* ── Header ────────────────────────────────────────────────────── */}
             <div className="bg-white rounded-xl border border-slate-100 px-5 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                        <Video className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                        style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
+                        <Video className="w-4 h-4" style={{ color: C.btnPrimary }} />
                     </div>
                     <div>
                         <h1 className="text-lg font-bold text-slate-800">Live Classes</h1>
@@ -165,7 +166,7 @@ export default function TutorLiveClassesPage() {
                 </div>
                 <button onClick={() => setIsCreating(true)} disabled={isCreating && !editingId}
                     className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-sm transition-opacity disabled:opacity-50"
-                    style={{ backgroundColor: 'var(--theme-primary)' }}>
+                    style={{ backgroundColor: C.btnPrimary }}>
                     <Plus className="w-4 h-4" /> Schedule Class
                 </button>
             </div>
@@ -176,8 +177,8 @@ export default function TutorLiveClassesPage() {
                     <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                             <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)' }}>
-                                <Video className="w-3.5 h-3.5" style={{ color: 'var(--theme-primary)' }} />
+                                style={{ backgroundColor: FX.primary12 }}>
+                                <Video className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
                             </div>
                             <h3 className="text-sm font-bold text-slate-800">{editingId ? 'Edit Class Details' : 'Schedule New Class'}</h3>
                         </div>
@@ -194,7 +195,7 @@ export default function TutorLiveClassesPage() {
                                 <Input required value={formData.title}
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
                                     placeholder="e.g. Advanced Calculus Review"
-                                    className="border-slate-200 focus:border-[var(--theme-primary)] focus:ring-[var(--theme-primary)]/10" />
+                                    className="border-slate-200 focus:border-[#7573E8] focus:ring-[#7573E8]/10" />
                             </div>
                             <div className="space-y-1">
                                 <Label className="text-xs font-semibold text-slate-500">Link to Course (Optional)</Label>
@@ -212,13 +213,13 @@ export default function TutorLiveClassesPage() {
                                     min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
                                     value={formData.dateTime}
                                     onChange={e => setFormData({ ...formData, dateTime: e.target.value })}
-                                    className="border-slate-200 focus:border-[var(--theme-primary)]" />
+                                    className="border-slate-200 focus:border-[#7573E8]" />
                             </div>
                             <div className="space-y-1">
                                 <Label className="text-xs font-semibold text-slate-500">Duration (minutes)</Label>
                                 <Input type="number" required min="15" value={formData.duration}
                                     onChange={e => setFormData({ ...formData, duration: e.target.value })}
-                                    className="border-slate-200 focus:border-[var(--theme-primary)]" />
+                                    className="border-slate-200 focus:border-[#7573E8]" />
                             </div>
 
                             {/* Auto-create toggle */}
@@ -226,10 +227,10 @@ export default function TutorLiveClassesPage() {
                                 <label className="flex items-center gap-2.5 cursor-pointer">
                                     <input type="checkbox" id="autoCreate"
                                         className="w-4 h-4 rounded border-slate-300"
-                                        style={{ accentColor: 'var(--theme-primary)' }}
+                                        style={{ accentColor: C.btnPrimary }}
                                         checked={formData.autoCreate}
                                         onChange={e => setFormData({ ...formData, autoCreate: e.target.checked })} />
-                                    <span className="text-sm font-semibold" style={{ color: 'var(--theme-primary)' }}>
+                                    <span className="text-sm font-semibold" style={{ color: C.btnPrimary }}>
                                         Auto-generate Secure Class Room
                                     </span>
                                 </label>
@@ -240,7 +241,7 @@ export default function TutorLiveClassesPage() {
                                             placeholder="https://meet.google.com/..."
                                             value={formData.meetingLink}
                                             onChange={e => setFormData({ ...formData, meetingLink: e.target.value })}
-                                            className="border-slate-200 focus:border-[var(--theme-primary)]" />
+                                            className="border-slate-200 focus:border-[#7573E8]" />
                                         <p className="text-[11px] text-slate-400">Uncheck only if you want to use an external link like Google Meet.</p>
                                     </div>
                                 )}
@@ -251,14 +252,14 @@ export default function TutorLiveClassesPage() {
                                 <Input type="url" placeholder="https://drive.google.com/..."
                                     value={formData.recordingLink}
                                     onChange={e => setFormData({ ...formData, recordingLink: e.target.value })}
-                                    className="border-slate-200 focus:border-[var(--theme-primary)]" />
+                                    className="border-slate-200 focus:border-[#7573E8]" />
                             </div>
                             <div className="space-y-1">
                                 <Label className="text-xs font-semibold text-slate-500">Material/Notes Link <span className="text-slate-400 font-normal">(Optional)</span></Label>
                                 <Input type="url" placeholder="https://drive.google.com/..."
                                     value={formData.materialLink}
                                     onChange={e => setFormData({ ...formData, materialLink: e.target.value })}
-                                    className="border-slate-200 focus:border-[var(--theme-primary)]" />
+                                    className="border-slate-200 focus:border-[#7573E8]" />
                             </div>
                         </div>
 
@@ -267,7 +268,7 @@ export default function TutorLiveClassesPage() {
                             <Textarea value={formData.description}
                                 onChange={e => setFormData({ ...formData, description: e.target.value })}
                                 placeholder="What will be covered?"
-                                className="border-slate-200 focus:border-[var(--theme-primary)] resize-none" />
+                                className="border-slate-200 focus:border-[#7573E8] resize-none" />
                         </div>
 
                         <AudienceSelector
@@ -285,7 +286,7 @@ export default function TutorLiveClassesPage() {
                             </button>
                             <button type="submit"
                                 className="px-5 py-2 text-sm font-semibold text-white rounded-xl transition-opacity"
-                                style={{ backgroundColor: 'var(--theme-primary)' }}>
+                                style={{ backgroundColor: C.btnPrimary }}>
                                 {editingId ? 'Update Class' : 'Schedule Class'}
                             </button>
                         </div>
@@ -297,8 +298,8 @@ export default function TutorLiveClassesPage() {
             {classes.length === 0 && !isCreating ? (
                 <div className="text-center py-16 bg-white rounded-xl border border-dashed border-slate-200">
                     <div className="mx-auto w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 8%, white)' }}>
-                        <Video className="w-6 h-6" style={{ color: 'var(--theme-primary)' }} />
+                        style={{ backgroundColor: FX.primary08 }}>
+                        <Video className="w-6 h-6" style={{ color: C.btnPrimary }} />
                     </div>
                     <p className="text-sm font-semibold text-slate-600 mb-1">No live classes scheduled yet</p>
                     <p className="text-xs text-slate-400">Click "Schedule Class" to get started.</p>
@@ -313,8 +314,8 @@ export default function TutorLiveClassesPage() {
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="flex items-center gap-2">
                                         <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                                            style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, white)' }}>
-                                            <Video className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                                            style={{ backgroundColor: FX.primary10 }}>
+                                            <Video className="w-4 h-4" style={{ color: C.btnPrimary }} />
                                         </div>
                                         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${isCompleted ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
                                             {isCompleted ? 'Completed' : 'Upcoming'}
@@ -335,7 +336,7 @@ export default function TutorLiveClassesPage() {
                                 <h3 className="font-bold text-slate-800 line-clamp-1 mb-1">{cls.title}</h3>
                                 {cls.courseId?.title && (
                                     <div className="flex items-center gap-1.5 text-[11px] font-semibold mb-2 w-fit px-2 py-0.5 rounded-full"
-                                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 8%, white)', color: 'var(--theme-primary)' }}>
+                                        style={{ backgroundColor: FX.primary08, color: C.btnPrimary }}>
                                         <BookOpen className="w-3 h-3" /> {cls.courseId.title}
                                     </div>
                                 )}
@@ -356,7 +357,7 @@ export default function TutorLiveClassesPage() {
                                     <button
                                         onClick={() => window.open(cls.meetingId ? `https://meet.jit.si/${cls.meetingId}` : cls.meetingLink, '_blank')}
                                         className="flex items-center justify-center w-full gap-2 py-2 text-xs font-semibold text-white rounded-xl transition-opacity"
-                                        style={{ backgroundColor: 'var(--theme-primary)' }}>
+                                        style={{ backgroundColor: C.btnPrimary }}>
                                         <ExternalLink className="w-3.5 h-3.5" /> Start Class
                                     </button>
                                     <button

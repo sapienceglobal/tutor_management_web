@@ -5,6 +5,7 @@ import { Plus, Search, Loader2, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/axios';
 import { format } from 'date-fns';
+import { C, T, FX } from '@/constants/tutorTokens';
 
 export default function TopicsPage() {
     const [topics, setTopics]         = useState([]);
@@ -27,14 +28,14 @@ export default function TopicsPage() {
     );
 
     return (
-        <div className="space-y-5" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-5" style={{ fontFamily: T.fontFamily }}>
 
             {/* Header */}
             <div className="bg-white rounded-xl border border-slate-100 px-5 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                        <BookOpen className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                        style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
+                        <BookOpen className="w-4 h-4" style={{ color: C.btnPrimary }} />
                     </div>
                     <div>
                         <h1 className="text-lg font-bold text-slate-800">Topics</h1>
@@ -43,7 +44,7 @@ export default function TopicsPage() {
                 </div>
                 <Link href="/tutor/taxonomy/topics/create">
                     <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-sm transition-opacity"
-                        style={{ backgroundColor: 'var(--theme-primary)' }}>
+                        style={{ backgroundColor: C.btnPrimary }}>
                         <Plus className="w-4 h-4" /> Create Topic
                     </button>
                 </Link>
@@ -57,20 +58,20 @@ export default function TopicsPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                         <input placeholder="Search topics or courses..."
                             value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                            className="pl-8 pr-3 h-8 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/10 w-56 transition-colors" />
+                            className="pl-8 pr-3 h-8 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[#7573E8] focus:ring-2 focus:ring-[#7573E8]/10 w-56 transition-colors" />
                     </div>
                 </div>
 
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
-                        <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--theme-primary)' }} />
+                        <Loader2 className="w-6 h-6 animate-spin" style={{ color: C.btnPrimary }} />
                         <p className="text-xs text-slate-400">Loading topics...</p>
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="text-center py-14">
                         <div className="mx-auto w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
-                            style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 8%, white)' }}>
-                            <BookOpen className="w-6 h-6" style={{ color: 'var(--theme-primary)' }} />
+                            style={{ backgroundColor: FX.primary08 }}>
+                            <BookOpen className="w-6 h-6" style={{ color: C.btnPrimary }} />
                         </div>
                         <p className="text-sm font-semibold text-slate-600">No topics found.</p>
                         <p className="text-xs text-slate-400 mt-1">Create topics to categorize your questions.</p>
@@ -96,9 +97,9 @@ export default function TopicsPage() {
                                         {topic.courseId ? (
                                             <span className="inline-flex text-[11px] font-semibold px-2.5 py-1 rounded-full border"
                                                 style={{
-                                                    backgroundColor: 'color-mix(in srgb, var(--theme-primary) 8%, white)',
-                                                    color: 'var(--theme-primary)',
-                                                    borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, white)'
+                                                    backgroundColor: FX.primary08,
+                                                    color: C.btnPrimary,
+                                                    borderColor: FX.primary20
                                                 }}>
                                                 {topic.courseId.title}
                                             </span>

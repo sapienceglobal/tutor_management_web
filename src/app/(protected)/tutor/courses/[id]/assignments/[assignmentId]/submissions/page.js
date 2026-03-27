@@ -9,6 +9,7 @@ import {
 import api from '@/lib/axios';
 import assignmentService from '@/services/assignmentService';
 import { toast } from 'react-hot-toast';
+import { C, T, S, R, FX, cx, pageStyle } from '@/constants/tutorTokens';
 
 export default function AssignmentSubmissionsPage({ params }) {
     const router = useRouter();
@@ -34,7 +35,7 @@ export default function AssignmentSubmissionsPage({ params }) {
             ]);
             if (assignRes.success) setAssignment(assignRes.assignment);
             if (subsRes.success) setSubmissions(subsRes.submissions);
-        } catch { toast.error("Failed to load submissions"); }
+        } catch { toast.error('Failed to load submissions'); }
         finally { setLoading(false); }
     };
 
@@ -64,141 +65,182 @@ export default function AssignmentSubmissionsPage({ params }) {
                 rubricScores: rubricScores.map(rs => ({ criterionId: rs.criterionId, points: rs.points, comments: rs.comments }))
             });
             if (res.success) {
-                toast.success("Grade submitted successfully");
+                toast.success('Grade submitted successfully');
                 setSubmissions(prev => prev.map(s => s._id === selectedSubmission._id ? res.submission : s));
                 setIsGradeModalOpen(false);
             }
-        } catch { toast.error("Failed to submit grade"); }
+        } catch { toast.error('Failed to submit grade'); }
         finally { setSubmittingGrade(false); }
     };
 
-    if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-7 h-7 animate-spin" style={{ color: 'var(--theme-primary)' }} />
-                <p className="text-sm text-slate-400">Loading submissions...</p>
-            </div>
-        );
-    }
+    // ── Loading ──────────────────────────────────────────────────────────────
+    if (loading) return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+            <div className="w-11 h-11 rounded-full border-[3px] animate-spin"
+                style={{ borderColor: FX.primary25Transparent, borderTopColor: C.btnPrimary }} />
+            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted }}>Loading submissions…</p>
+        </div>
+    );
 
     const totalRubricPts = rubricScores.reduce((a, c) => a + Number(c.points || 0), 0);
 
-    return (
-        <div className="space-y-5" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+    const inp = { ...cx.input(), width: '100%', padding: '10px 14px' };
+    const applyFocus = (e) => Object.assign(e.target.style, cx.inputFocus);
+    const removeFocus = (e) => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; };
 
-            {/* Header */}
-            <div className="bg-white rounded-xl border border-slate-100 px-5 py-4 flex items-center gap-3">
+    return (
+        <div className="space-y-5" style={pageStyle}>
+
+            {/* ── Header ───────────────────────────────────────────────── */}
+            <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
+                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <button onClick={() => router.push(`/tutor/courses/${courseId}/assignments`)}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors">
-                    <ArrowLeft className="w-4 h-4 text-slate-500" />
+                    className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
+                    style={{ backgroundColor: C.innerBg, color: C.textMuted }}>
+                    <ArrowLeft className="w-4 h-4" />
                 </button>
                 <div>
                     <div className="flex items-center gap-2.5 mb-0.5">
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                            <ClipboardList className="w-3.5 h-3.5" style={{ color: 'var(--theme-primary)' }} />
+                        <div className="w-7 h-7 rounded-xl flex items-center justify-center"
+                            style={{ backgroundColor: FX.primary15, border: `1px solid ${FX.primary25}` }}>
+                            <ClipboardList className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
                         </div>
-                        <h1 className="text-lg font-bold text-slate-800">{assignment?.title} — Submissions</h1>
+                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>
+                            {assignment?.title} — Submissions
+                        </h1>
                     </div>
-                    <p className="text-xs text-slate-400 pl-0.5">
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
                         {submissions.length} total submission{submissions.length !== 1 && 's'}
                     </p>
                 </div>
             </div>
 
-            {/* Submissions */}
+            {/* ── Submissions table ─────────────────────────────────────── */}
             {submissions.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-xl border border-dashed border-slate-200">
-                    <div className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-4 bg-slate-50">
-                        <User className="w-7 h-7 text-slate-300" />
+                <div className="text-center py-16 rounded-2xl border-2 border-dashed"
+                    style={{ borderColor: C.cardBorder, backgroundColor: C.cardBg }}>
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                        style={{ backgroundColor: C.innerBg }}>
+                        <User className="w-7 h-7" style={{ color: C.cardBorder }} />
                     </div>
-                    <h3 className="text-base font-semibold text-slate-800 mb-1">No Submissions Yet</h3>
-                    <p className="text-sm text-slate-400 max-w-xs mx-auto">Students have not submitted any work for this assignment yet.</p>
+                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading, marginBottom: 4 }}>
+                        No Submissions Yet
+                    </h3>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, maxWidth: 300, margin: '0 auto' }}>
+                        Students have not submitted any work for this assignment yet.
+                    </p>
                 </div>
             ) : (
-                <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
-                    <div className="grid grid-cols-5 gap-4 px-5 py-3 border-b border-slate-100 bg-slate-50/60">
+                <div className="rounded-2xl overflow-hidden"
+                    style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    {/* Table head */}
+                    <div className="grid grid-cols-5 gap-4 px-5 py-3"
+                        style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
                         {['Student', 'Submitted At', 'Status', 'Score', 'Actions'].map(h => (
-                            <span key={h} className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{h}</span>
+                            <span key={h} style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
+                                {h}
+                            </span>
                         ))}
                     </div>
-                    <div className="divide-y divide-slate-50">
-                        {submissions.map(sub => (
-                            <div key={sub._id} className="grid grid-cols-5 gap-4 px-5 py-3.5 items-center hover:bg-slate-50/50 transition-colors">
-                                {/* Student */}
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                                        style={{ background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))' }}>
-                                        {sub.studentId?.name?.[0]?.toUpperCase() || 'U'}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-sm font-semibold text-slate-700 truncate">{sub.studentId?.name || 'Unknown'}</p>
-                                        <p className="text-[11px] text-slate-400 truncate">{sub.studentId?.email}</p>
-                                    </div>
+                    {/* Rows */}
+                    {submissions.map(sub => (
+                        <div key={sub._id} className="grid grid-cols-5 gap-4 px-5 py-3.5 items-center transition-all"
+                            style={{ borderBottom: `1px solid ${C.cardBorder}` }}
+                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}
+                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+
+                            {/* Student */}
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                                    style={{ background: C.gradientBtn }}>
+                                    {sub.studentId?.name?.[0]?.toUpperCase() || 'U'}
                                 </div>
-                                {/* Submitted */}
-                                <p className="text-xs text-slate-500">{new Date(sub.submittedAt).toLocaleString()}</p>
-                                {/* Status */}
-                                <div>
-                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border
-                                        ${sub.status === 'graded'
-                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                            : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                                        {sub.status === 'graded' && <CheckCircle className="w-3 h-3" />}
-                                        {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
-                                    </span>
-                                </div>
-                                {/* Score */}
-                                <div>
-                                    {sub.status === 'graded' ? (
-                                        <span className="text-sm font-bold text-slate-800">
-                                            {sub.grade} <span className="text-xs font-normal text-slate-400">/ {assignment?.totalMarks}</span>
-                                        </span>
-                                    ) : <span className="text-slate-300">—</span>}
-                                </div>
-                                {/* Action */}
-                                <div>
-                                    <button onClick={() => openGradeModal(sub)}
-                                        className="px-3 py-1.5 text-xs font-bold rounded-lg transition-colors"
-                                        style={sub.status === 'graded'
-                                            ? { border: '1px solid #e2e8f0', color: '#64748b', backgroundColor: 'white' }
-                                            : { backgroundColor: 'var(--theme-primary)', color: 'white' }}>
-                                        {sub.status === 'graded' ? 'Update Grade' : 'Grade Now'}
-                                    </button>
+                                <div className="min-w-0">
+                                    <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text }}>
+                                        {sub.studentId?.name || 'Unknown'}
+                                    </p>
+                                    <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.textMuted }}>
+                                        {sub.studentId?.email}
+                                    </p>
                                 </div>
                             </div>
-                        ))}
-                    </div>
+
+                            {/* Date */}
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+                                {new Date(sub.submittedAt).toLocaleString()}
+                            </p>
+
+                            {/* Status */}
+                            <div>
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border"
+                                    style={sub.status === 'graded'
+                                        ? { backgroundColor: C.successBg, color: C.success, borderColor: C.successBorder, fontFamily: T.fontFamily }
+                                        : { backgroundColor: C.warningBg, color: C.warning, borderColor: C.warningBorder, fontFamily: T.fontFamily }}>
+                                    {sub.status === 'graded' && <CheckCircle className="w-3 h-3" />}
+                                    {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
+                                </span>
+                            </div>
+
+                            {/* Score */}
+                            <div>
+                                {sub.status === 'graded' ? (
+                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                                        {sub.grade} <span style={{ fontSize: T.size.xs, fontWeight: T.weight.regular, color: C.textMuted }}>/ {assignment?.totalMarks}</span>
+                                    </span>
+                                ) : <span style={{ color: C.cardBorder }}>—</span>}
+                            </div>
+
+                            {/* Action */}
+                            <div>
+                                <button onClick={() => openGradeModal(sub)}
+                                    className="px-3 py-1.5 text-xs font-bold rounded-xl transition-all hover:opacity-80"
+                                    style={sub.status === 'graded'
+                                        ? { ...cx.btnSecondary(), fontFamily: T.fontFamily }
+                                        : { backgroundColor: C.btnPrimary, color: '#ffffff', fontFamily: T.fontFamily }}>
+                                    {sub.status === 'graded' ? 'Update Grade' : 'Grade Now'}
+                                </button>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
 
-            {/* ── Grading Modal (slide-in panel) ──────────────────────────── */}
+            {/* ── Grading Slide-in Panel ────────────────────────────────── */}
             {isGradeModalOpen && selectedSubmission && (
-                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex justify-end">
-                    <div className="w-full max-w-lg bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+                <div className="fixed inset-0 z-50 flex justify-end" style={{ backgroundColor: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(4px)' }}>
+                    <div className="w-full max-w-lg h-full shadow-2xl flex flex-col"
+                        style={{ backgroundColor: C.surfaceWhite }}>
 
-                        {/* Modal Header */}
-                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between flex-shrink-0">
+                        {/* Panel header */}
+                        <div className="px-6 py-4 flex items-center justify-between flex-shrink-0"
+                            style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
                             <div>
-                                <p className="text-sm font-bold text-slate-800">Grading: {selectedSubmission.studentId?.name}</p>
-                                <p className="text-xs text-slate-400">{selectedSubmission.studentId?.email}</p>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                                    Grading: {selectedSubmission.studentId?.name}
+                                </p>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+                                    {selectedSubmission.studentId?.email}
+                                </p>
                             </div>
                             <button onClick={() => setIsGradeModalOpen(false)}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors">
-                                <X className="w-4 h-4 text-slate-400" />
+                                className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:opacity-70"
+                                style={{ backgroundColor: C.cardBg }}>
+                                <X className="w-4 h-4" style={{ color: C.textMuted }} />
                             </button>
                         </div>
 
-                        {/* Scrollable Content */}
+                        {/* Scrollable content */}
                         <div className="flex-1 overflow-y-auto p-6 space-y-7">
 
                             {/* Student's Work */}
                             <section>
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 pb-2 border-b border-slate-100">
+                                <h3 className="pb-2 mb-3"
+                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>
                                     Student's Work
                                 </h3>
                                 {selectedSubmission.content && (
-                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-slate-700 text-sm whitespace-pre-wrap mb-3">
+                                    <div className="p-4 rounded-2xl mb-3 whitespace-pre-wrap"
+                                        style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text }}>
                                         {selectedSubmission.content}
                                     </div>
                                 )}
@@ -206,45 +248,61 @@ export default function AssignmentSubmissionsPage({ params }) {
                                     <div className="space-y-2">
                                         {selectedSubmission.attachments.map((file, idx) => (
                                             <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer"
-                                                className="flex items-center gap-3 p-3 bg-white border border-slate-200 hover:border-[var(--theme-primary)] hover:shadow-sm rounded-xl transition-all group">
-                                                <div className="p-2 rounded-lg transition-colors"
-                                                    style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, white)' }}>
-                                                    <Download className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                                                className="flex items-center gap-3 p-3 rounded-2xl border transition-all group hover:shadow-sm"
+                                                style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder }}
+                                                onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; }}
+                                                onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; }}>
+                                                <div className="p-2 rounded-xl" style={{ backgroundColor: FX.primary12 }}>
+                                                    <Download className="w-4 h-4" style={{ color: C.btnPrimary }} />
                                                 </div>
-                                                <p className="text-sm font-semibold text-slate-700 group-hover:text-[var(--theme-primary)] transition-colors flex-1">{file.name}</p>
+                                                <p className="flex-1" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text }}>
+                                                    {file.name}
+                                                </p>
                                             </a>
                                         ))}
                                     </div>
                                 ) : !selectedSubmission.content && (
-                                    <p className="text-xs text-slate-400 italic">No text or files in this submission.</p>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, fontStyle: 'italic' }}>
+                                        No text or files in this submission.
+                                    </p>
                                 )}
                             </section>
 
                             {/* Rubric */}
                             <section>
-                                <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
-                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Rubric Evaluation</h3>
-                                    <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, white)', color: 'var(--theme-primary)' }}>
+                                <div className="flex items-center justify-between pb-2 mb-3"
+                                    style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
+                                        Rubric Evaluation
+                                    </h3>
+                                    <span className="px-2.5 py-1 rounded-full text-xs font-bold"
+                                        style={{ backgroundColor: FX.primary12, color: C.btnPrimary, fontFamily: T.fontFamily }}>
                                         {totalRubricPts} / {assignment?.totalMarks} pts
                                     </span>
                                 </div>
                                 <div className="space-y-3">
                                     {rubricScores.map((score, idx) => (
-                                        <div key={idx} className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-2.5">
+                                        <div key={idx} className="p-4 rounded-2xl space-y-2.5"
+                                            style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
                                             <div className="flex items-center justify-between">
-                                                <p className="text-sm font-bold text-slate-800">{score.criterionName}</p>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                                                    {score.criterionName}
+                                                </p>
                                                 <div className="flex items-center gap-1.5">
                                                     <input type="number" min="0" max={score.maxPoints} value={score.points}
-                                                        onChange={(e) => handleUpdateScore(idx, 'points', e.target.value)}
-                                                        className="w-16 text-right text-sm font-bold px-2 py-1 border border-slate-200 rounded-lg bg-white focus:outline-none focus:border-[var(--theme-primary)] transition-colors" />
-                                                    <span className="text-xs text-slate-400">/ {score.maxPoints}</span>
+                                                        onChange={e => handleUpdateScore(idx, 'points', e.target.value)}
+                                                        style={{ ...cx.input(), width: 64, height: 32, padding: '0 8px', textAlign: 'right', fontWeight: T.weight.bold }}
+                                                        onFocus={applyFocus} onBlur={removeFocus} />
+                                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+                                                        / {score.maxPoints}
+                                                    </span>
                                                 </div>
                                             </div>
                                             <textarea rows={2} value={score.comments}
-                                                onChange={(e) => handleUpdateScore(idx, 'comments', e.target.value)}
+                                                onChange={e => handleUpdateScore(idx, 'comments', e.target.value)}
                                                 placeholder={`Feedback for ${score.criterionName}...`}
-                                                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-[var(--theme-primary)] bg-white resize-none transition-colors" />
+                                                style={{ ...cx.input(), width: '100%', padding: '8px 12px', resize: 'none', fontSize: T.size.xs }}
+                                                onFocus={applyFocus} onBlur={removeFocus} />
                                         </div>
                                     ))}
                                 </div>
@@ -252,20 +310,23 @@ export default function AssignmentSubmissionsPage({ params }) {
 
                             {/* Overall Feedback */}
                             <section>
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 pb-2 border-b border-slate-100">
+                                <h3 className="pb-2 mb-3"
+                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>
                                     Overall Feedback
                                 </h3>
-                                <textarea rows={4} value={feedback} onChange={(e) => setFeedback(e.target.value)}
+                                <textarea rows={4} value={feedback}
+                                    onChange={e => setFeedback(e.target.value)}
                                     placeholder="Provide comprehensive feedback for the student..."
-                                    className="w-full px-3.5 py-3 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--theme-primary)] resize-none transition-colors" />
+                                    style={{ ...inp, resize: 'none' }}
+                                    onFocus={applyFocus} onBlur={removeFocus} />
                             </section>
                         </div>
 
-                        {/* Footer */}
-                        <div className="p-4 border-t border-slate-100 flex-shrink-0">
+                        {/* Panel footer */}
+                        <div className="p-4 flex-shrink-0" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
                             <button onClick={submitGrade} disabled={submittingGrade}
-                                className="w-full py-3 text-white font-bold rounded-xl flex items-center justify-center gap-2 text-sm transition-opacity disabled:opacity-60"
-                                style={{ backgroundColor: 'var(--theme-primary)' }}>
+                                className="w-full py-3 text-white font-bold rounded-2xl flex items-center justify-center gap-2 text-sm transition-all disabled:opacity-60 hover:opacity-90"
+                                style={{ background: C.gradientBtn, fontFamily: T.fontFamily, boxShadow: S.btn }}>
                                 {submittingGrade ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calculator className="w-4 h-4" />}
                                 Submit Final Grade ({totalRubricPts} pts)
                             </button>

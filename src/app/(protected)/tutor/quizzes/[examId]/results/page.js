@@ -104,9 +104,16 @@ export default function ExamResultsPage({ params }) {
                     </div>
                     <p className="text-sm text-slate-400 pl-0.5">Performance Overview & Student Results</p>
                 </div>
-                <Button variant="outline" size="sm" className="border-slate-200 text-slate-600 gap-2 text-sm">
-                    <Download className="w-4 h-4" /> Export CSV
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Link href={`/tutor/quizzes/re-evaluations?examId=${examId}`}>
+                        <Button variant="outline" size="sm" className="border-orange-200 text-orange-600 gap-2 text-sm">
+                            <FileQuestion className="w-4 h-4" /> Re-evaluation Queue
+                        </Button>
+                    </Link>
+                    <Button variant="outline" size="sm" className="border-slate-200 text-slate-600 gap-2 text-sm">
+                        <Download className="w-4 h-4" /> Export CSV
+                    </Button>
+                </div>
             </div>
 
             {/* Stats Cards */}

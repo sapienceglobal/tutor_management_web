@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import {
     Dialog,
     DialogContent,
@@ -11,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Info } from 'lucide-react';
+import { C } from '@/constants/tutorTokens';
 
 const ConfirmContext = createContext();
 
@@ -19,6 +21,7 @@ export function useConfirm() {
 }
 
 export function ConfirmProvider({ children }) {
+    const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
     const [options, setOptions] = useState({
         title: 'Confirm Action',
@@ -28,6 +31,7 @@ export function ConfirmProvider({ children }) {
         variant: 'default', // 'default' or 'destructive'
     });
     const [resolveRef, setResolveRef] = useState(null);
+    const isTutorRoute = pathname?.startsWith('/tutor');
 
     const confirmDialog = useCallback((title, message, customOptions = {}) => {
         setOptions({
@@ -85,7 +89,16 @@ export function ConfirmProvider({ children }) {
                         </Button>
                         <Button
                             variant={options.variant === 'destructive' ? 'destructive' : 'default'}
-                            className={options.variant === 'destructive' ? "bg-red-600 hover:bg-red-700 text-white" : "bg-[var(--theme-primary)] text-white hover:opacity-90"}
+                            className={options.variant === 'destructive'
+                                ? "bg-red-600 hover:bg-red-700 text-white"
+                                : isTutorRoute
+                                    ? "text-white hover:opacity-90"
+                                    : "bg-[var(--theme-primary)] text-white hover:opacity-90"}
+                            style={options.variant === 'destructive'
+                                ? undefined
+                                : isTutorRoute
+                                    ? { backgroundColor: C.btnPrimary }
+                                    : undefined}
                             onClick={handleConfirm}
                         >
                             {options.confirmText}

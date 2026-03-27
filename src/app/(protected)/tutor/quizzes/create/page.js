@@ -8,7 +8,9 @@ import {
     Image as ImageIcon, Link as LinkIcon, Loader2, CheckCircle2,
     AlertCircle, Plus, Trash, Edit, BrainCircuit, X, Check,
     Calendar, Clock, Settings, ChevronRight, Save, Sparkles,
-    Layout, Type, UploadCloud, Library, Search
+    Layout, Type, UploadCloud, Library, Search, Mic, ShieldCheck,
+    HelpCircle,
+    Eye
 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,7 +19,6 @@ import { sanitizeHtml } from '@/lib/sanitize';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from 'react-hot-toast';
@@ -36,10 +37,42 @@ const examDetailsSchema = z.object({
     description: z.string().optional(),
 });
 
-// ── Wizard Steps ─────────────────────────────────────────────────────────────
+// 🔥 FIX: Custom Premium Switch Component (Guaranteed to show thumb and colors properly)
+const CustomSwitch = ({ checked, onChange, color = 'orange' }) => {
+    let bgClass = 'bg-slate-200';
+    if (checked) {
+        if (color === 'red') bgClass = 'bg-red-500';
+        else if (color === 'blue') bgClass = 'bg-blue-500';
+        else if (color === 'emerald') bgClass = 'bg-emerald-500';
+        else if (color === 'indigo') bgClass = 'bg-indigo-500';
+        else bgClass = 'bg-orange-500';
+    }
+
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={checked}
+            onClick={() => onChange(!checked)}
+            className={cn(
+                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2",
+                bgClass
+            )}
+        >
+            <span
+                className={cn(
+                    "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-300 ease-in-out",
+                    checked ? "translate-x-5" : "translate-x-0"
+                )}
+            />
+        </button>
+    );
+};
+
+// ── Premium Wizard Steps ─────────────────────────────────────────────────────
 const WizardSteps = ({ currentStep, steps, onStepClick }) => (
-    <div className="flex items-center justify-center w-full mb-8">
-        <div className="flex items-center gap-2 md:gap-4 relative z-10">
+    <div className="flex items-center justify-center w-full mb-10 mt-4">
+        <div className="flex items-center gap-2 md:gap-3 relative z-10 bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100">
             {steps.map((step, idx) => {
                 const isActive = currentStep === step.id;
                 const isCompleted = steps.findIndex(s => s.id === currentStep) > idx;
@@ -50,25 +83,25 @@ const WizardSteps = ({ currentStep, steps, onStepClick }) => (
                             onClick={() => isClickable && onStepClick(step.id)}
                             disabled={!isClickable}
                             className={cn(
-                                "flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 border",
+                                "flex items-center gap-2.5 px-4 py-2.5 rounded-xl transition-all duration-300",
                                 isActive
-                                    ? "bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-200 scale-105"
+                                    ? "bg-slate-900 text-white shadow-md scale-105"
                                     : isCompleted
-                                        ? "bg-white text-orange-500 border-orange-200 hover:bg-orange-50"
-                                        : "bg-white text-slate-400 border-slate-200"
+                                        ? "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                                        : "bg-transparent text-slate-400"
                             )}
                         >
                             <div className={cn(
-                                "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
-                                isActive ? "bg-white/20 text-white" : isCompleted ? "bg-orange-100 text-orange-600" : "bg-slate-100 text-slate-500"
+                                "w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black tracking-wider transition-colors",
+                                isActive ? "bg-white/20 text-white" : isCompleted ? "bg-slate-200 text-slate-700" : "bg-slate-100 text-slate-400"
                             )}>
                                 {isCompleted ? <Check className="w-3.5 h-3.5" /> : idx + 1}
                             </div>
-                            <span className={cn("text-sm font-semibold hidden md:inline-block", isActive || isCompleted ? "opacity-100" : "opacity-60")}>
+                            <span className={cn("text-sm font-bold hidden md:inline-block", isActive || isCompleted ? "opacity-100" : "opacity-60")}>
                                 {step.label}
                             </span>
                         </button>
-                        {idx < steps.length - 1 && <div className="w-8 h-0.5 bg-slate-200 mx-2 md:mx-4" />}
+                        {idx < steps.length - 1 && <div className={cn("w-6 h-[2px] mx-2 transition-colors duration-300", isCompleted ? "bg-slate-800" : "bg-slate-100")} />}
                     </div>
                 );
             })}
@@ -94,25 +127,22 @@ const RichTextEditor = ({ value, onChange }) => {
 
     return (
         <div className="border border-slate-200 rounded-xl bg-white overflow-hidden focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-400 transition-all hover:shadow-sm">
-            <div className="flex items-center gap-1 p-2 border-b border-slate-100 bg-slate-50/50">
+            <div className="flex items-center gap-1 p-2 border-b border-slate-100 bg-slate-50/80">
                 {[['bold', Bold], ['italic', Italic], ['underline', Underline]].map(([cmd, Icon]) => (
-                    <Button key={cmd} variant="ghost" size="sm" onClick={() => execCommand(cmd)} className="h-8 w-8 p-0 hover:bg-orange-50 text-slate-600 hover:text-orange-600"><Icon className="w-4 h-4" /></Button>
+                    <Button key={cmd} variant="ghost" size="sm" onClick={() => execCommand(cmd)} className="h-8 w-8 p-0 hover:bg-slate-200 text-slate-600"><Icon className="w-4 h-4" /></Button>
                 ))}
-                <div className="w-px h-4 bg-slate-300 mx-1" />
-                <Button variant="ghost" size="sm" onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 p-0 hover:bg-orange-50 text-slate-600 hover:text-orange-600"><List className="w-4 h-4" /></Button>
-                <Button variant="ghost" size="sm" onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 p-0 hover:bg-orange-50 text-slate-600 hover:text-orange-600"><ListOrdered className="w-4 h-4" /></Button>
-                <div className="w-px h-4 bg-slate-300 mx-1" />
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-300 cursor-not-allowed"><ImageIcon className="w-4 h-4" /></Button>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-300 cursor-not-allowed"><LinkIcon className="w-4 h-4" /></Button>
+                <div className="w-px h-4 bg-slate-300 mx-2" />
+                <Button variant="ghost" size="sm" onClick={() => execCommand('insertUnorderedList')} className="h-8 w-8 p-0 hover:bg-slate-200 text-slate-600"><List className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => execCommand('insertOrderedList')} className="h-8 w-8 p-0 hover:bg-slate-200 text-slate-600"><ListOrdered className="w-4 h-4" /></Button>
             </div>
-            <div ref={editorRef} contentEditable className="min-h-[150px] p-4 outline-none prose prose-sm max-w-none text-slate-700 font-medium" onInput={handleInput} />
+            <div ref={editorRef} contentEditable className="min-h-[160px] p-5 outline-none prose prose-sm max-w-none text-slate-700 font-medium leading-relaxed" onInput={handleInput} />
         </div>
     );
 };
 
-// ── Card wrapper shared style ─────────────────────────────────────────────────
+// ── Shared Card Wrapper ───────────────────────────────────────────────────────
 const StepCard = ({ children, className = '' }) => (
-    <div className={`bg-white rounded-2xl border border-slate-100 shadow-sm p-8 md:p-10 ${className}`}>
+    <div className={cn("bg-white rounded-[24px] border border-slate-200 shadow-sm p-8 md:p-12", className)}>
         {children}
     </div>
 );
@@ -134,13 +164,17 @@ function CreateExamPageClient() {
     const [availableStudents, setAvailableStudents] = useState([]);
     const [topics, setTopics] = useState([]);
     const [skills, setSkills] = useState([]);
+    
     const [examData, setExamData] = useState({
         title: '', courseId: '', type: defaultType, isFree: true, description: '',
         isPublic: true, duration: 30, passingMarks: 10, questions: [],
         shuffleQuestions: false, shuffleOptions: false, showResultImmediately: true,
         showCorrectAnswers: true, allowRetake: false, maxAttempts: 1, passingPercentage: 50,
         disableFinishButton: false, enableQuestionListView: true, hideSolutions: false,
-        negativeMarking: false, isScheduled: false, startDate: '', endDate: '',
+        negativeMarking: false, 
+        isProctoringEnabled: false, 
+        isAudioProctoringEnabled: false, 
+        strictTabSwitching: false, isScheduled: false, startDate: '', endDate: '',
         audience: { scope: 'institute', instituteId: null, batchIds: [], studentIds: [] },
     });
 
@@ -315,7 +349,7 @@ function CreateExamPageClient() {
             if (response.data.success) {
                 const savedExam = response.data.exam;
                 setExamId(savedExam._id);
-                toast.success(status === 'published' ? "Quiz published successfully!" : "Changes saved!");
+                toast.success(status === 'published' ? "Assessment published successfully!" : "Changes saved!");
                 if (shouldRedirect) router.push('/tutor/quizzes');
                 else {
                     if (activeTab === 'details') setActiveTab('settings');
@@ -328,16 +362,16 @@ function CreateExamPageClient() {
     };
 
     const variants = {
-        enter: { opacity: 0, x: 20 },
-        center: { zIndex: 1, x: 0, opacity: 1 },
-        exit: { opacity: 0, x: -20, zIndex: 0 }
+        enter: { opacity: 0, y: 15 },
+        center: { zIndex: 1, y: 0, opacity: 1 },
+        exit: { opacity: 0, y: -15, zIndex: 0 }
     };
 
     const steps = [
-        { id: 'details', label: 'Quiz Details' },
+        { id: 'details', label: 'Basic Details' },
         { id: 'settings', label: 'Configuration' },
-        { id: 'questions', label: 'Questions' },
-        { id: 'schedules', label: 'Schedule' }
+        { id: 'questions', label: 'Questions Setup' },
+        { id: 'schedules', label: 'Availability' }
     ];
 
     const handleStepChange = (newStep) => {
@@ -345,131 +379,151 @@ function CreateExamPageClient() {
         setActiveTab(newStep);
     };
 
-    // Shared toggle row
-    const ToggleRow = ({ label, desc, keyName, color = 'orange' }) => (
-        <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-                <Label className="text-sm font-medium text-slate-700 cursor-pointer" htmlFor={keyName}>{label}</Label>
-                {desc && <p className="text-xs text-slate-500">{desc}</p>}
+    // 🔥 Premium Toggle Row Component
+    const ToggleRow = ({ label, desc, keyName, color = 'orange', icon: Icon }) => (
+        <div className="flex items-center justify-between bg-white border border-slate-100 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
+            <div className="flex gap-4 items-center">
+                {Icon && (
+                    <div className={`w-10 h-10 rounded-xl bg-${color}-50 border border-${color}-100 flex items-center justify-center shrink-0`}>
+                        <Icon className={`w-5 h-5 text-${color}-500`} />
+                    </div>
+                )}
+                <div className="space-y-1">
+                    <Label className="text-base font-bold text-slate-800 cursor-pointer" htmlFor={keyName}>{label}</Label>
+                    {desc && <p className="text-xs font-semibold text-slate-500 leading-snug pr-4">{desc}</p>}
+                </div>
             </div>
-            <Switch id={keyName} checked={examData[keyName]} onCheckedChange={(checked) => setExamData({ ...examData, [keyName]: checked })}
-                className={`data-[state=checked]:bg-${color}-500`} />
+            <CustomSwitch checked={examData[keyName]} onChange={(val) => setExamData({ ...examData, [keyName]: val })} color={color} />
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-slate-50/50 pb-20">
-            {/* Sticky Header */}
-            <div className="bg-white/95 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100 shadow-sm">
-                <div className="max-w-6xl mx-auto px-6 h-[60px] flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+        <div className="min-h-screen bg-[#F8FAFC] pb-20 font-sans">
+            {/* Premium Sticky Header */}
+            <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-50 border-b border-slate-200 shadow-sm">
+                <div className="max-w-6xl mx-auto px-6 h-[72px] flex items-center justify-between">
+                    <div className="flex items-center gap-4">
                         <Link href="/tutor/quizzes">
-                            <button className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors group">
-                                <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:text-orange-500" />
+                            <button className="w-10 h-10 rounded-full border border-slate-200 bg-white flex items-center justify-center hover:bg-slate-50 hover:border-slate-300 transition-all group shadow-sm">
+                                <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:text-slate-900" />
                             </button>
                         </Link>
-                        <h1 className="text-base font-bold text-slate-800">
-                            {examId ? 'Edit Quiz' : 'Create New Quiz'}
-                        </h1>
+                        <div>
+                            <h1 className="text-xl font-black text-slate-900 tracking-tight">
+                                {examId ? 'Edit Assessment' : 'Create New Assessment'}
+                            </h1>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest hidden sm:block">Configuration Wizard</p>
+                        </div>
                     </div>
-                    <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="hidden sm:flex border-slate-200 text-slate-600 text-xs"
+                    <div className="flex gap-3">
+                        <Button variant="outline" className="hidden sm:flex border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl font-bold h-10 px-5"
                             onClick={() => handleSaveAndProceed({ status: 'draft', shouldRedirect: true })}>
                             Save Draft
                         </Button>
-                        <Button size="sm" onClick={() => handleSaveAndProceed({ status: 'draft' })} disabled={saving}
-                            className="bg-orange-500 hover:bg-orange-600 text-white shadow-sm shadow-orange-200 text-xs">
-                            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save & Continue'}
+                        <Button onClick={() => handleSaveAndProceed({ status: 'draft' })} disabled={saving}
+                            className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-md h-10 px-6 font-bold">
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save & Continue'}
                         </Button>
                     </div>
                 </div>
             </div>
 
-            <main className="max-w-5xl mx-auto px-6 py-8">
+            <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
                 <WizardSteps currentStep={activeTab} steps={steps} onStepClick={handleStepChange} />
 
                 <AnimatePresence mode="wait">
                     {/* ── STEP 1: Details ──────────────────────────────── */}
                     {activeTab === 'details' && (
-                        <motion.div key="details" variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25, ease: "easeInOut" }}>
+                        <motion.div key="details" variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3, ease: "easeOut" }}>
                             <StepCard>
                                 <div className="max-w-3xl mx-auto space-y-8">
+                                    <div className="text-center mb-8">
+                                        <h2 className="text-2xl font-black text-slate-800">Basic Information</h2>
+                                        <p className="text-sm font-semibold text-slate-500 mt-1">Start by providing the fundamental details of your assessment.</p>
+                                    </div>
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <Label className="text-sm font-semibold text-slate-800">Quiz Title <span className="text-red-500">*</span></Label>
+                                        <div className="space-y-2.5">
+                                            <Label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Assessment Title <span className="text-red-500">*</span></Label>
                                             <div className="relative group">
-                                                <Input placeholder="e.g. Thermodynamics Midterm" value={examData.title}
+                                                <Input placeholder="e.g. Advanced Thermodynamics" value={examData.title}
                                                     onChange={(e) => setExamData({ ...examData, title: e.target.value })}
-                                                    className={`h-12 text-base border-slate-200 focus:border-orange-400 focus:ring-orange-500/10 rounded-xl ${errors.title ? 'border-red-400' : ''}`} />
-                                                <Type className="absolute right-3 top-3.5 w-4 h-4 text-slate-300 group-focus-within:text-orange-400 transition-colors" />
+                                                    className={cn("h-14 pl-12 text-base font-semibold border-slate-200 focus:border-slate-800 focus:ring-slate-800/10 rounded-xl bg-slate-50 focus:bg-white transition-all", errors.title && 'border-red-400')} />
+                                                <Type className="absolute left-4 top-4 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-slate-800" />
                                             </div>
-                                            {errors.title && <p className="text-xs text-red-500 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.title[0]}</p>}
+                                            {errors.title && <p className="text-xs font-bold text-red-500 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{errors.title[0]}</p>}
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-sm font-semibold text-slate-800">Category / Course <span className="text-red-500">*</span></Label>
+                                        <div className="space-y-2.5">
+                                            <Label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Category / Course <span className="text-red-500">*</span></Label>
                                             <Select value={examData.courseId} onValueChange={(val) => setExamData({ ...examData, courseId: val })}>
-                                                <SelectTrigger className={`h-12 border-slate-200 rounded-xl focus:border-orange-400 ${errors.courseId ? 'border-red-400' : ''}`}>
-                                                    <SelectValue placeholder="Select Course" />
+                                                <SelectTrigger className={cn("h-14 font-semibold border-slate-200 rounded-xl focus:border-slate-800 bg-slate-50 focus:bg-white transition-all", errors.courseId && 'border-red-400')}>
+                                                    <SelectValue placeholder="Select associated course" />
                                                 </SelectTrigger>
-                                                <SelectContent>{courses.map(c => <SelectItem key={c._id} value={c._id}>{c.title}</SelectItem>)}</SelectContent>
+                                                <SelectContent className="font-semibold text-slate-700">
+                                                    {courses.map(c => <SelectItem key={c._id} value={c._id}>{c.title}</SelectItem>)}
+                                                </SelectContent>
                                             </Select>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <Label className="text-sm font-semibold text-slate-800">Description</Label>
+                                    <div className="space-y-2.5">
+                                        <Label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Detailed Description</Label>
                                         <RichTextEditor value={examData.description} onChange={(html) => setExamData({ ...examData, description: html })} />
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                        <div className="space-y-2">
-                                            <Label className="text-sm font-semibold text-slate-700">Quiz Type</Label>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="space-y-2.5">
+                                            <Label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Assessment Type</Label>
                                             <Select value={examData.type} onValueChange={(val) => setExamData({ ...examData, type: val })}>
-                                                <SelectTrigger className="h-11 border-slate-200"><SelectValue /></SelectTrigger>
-                                                <SelectContent>
+                                                <SelectTrigger className="h-12 font-semibold border-slate-200 rounded-xl bg-slate-50"><SelectValue /></SelectTrigger>
+                                                <SelectContent className="font-semibold">
                                                     <SelectItem value="quiz">Quiz</SelectItem>
                                                     <SelectItem value="assessment">Assessment</SelectItem>
                                                     <SelectItem value="practice">Practice Set</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-sm font-semibold text-slate-700">Duration (min)</Label>
+                                        <div className="space-y-2.5">
+                                            <Label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Duration (Mins)</Label>
                                             <div className="relative">
                                                 <Input type="number" min="1" value={examData.duration}
                                                     onChange={(e) => setExamData({ ...examData, duration: parseInt(e.target.value) || 0 })}
-                                                    className="h-11 border-slate-200 pr-10" />
-                                                <Clock className="absolute right-3 top-3 w-4 h-4 text-slate-400" />
+                                                    className="h-12 font-semibold border-slate-200 pl-10 rounded-xl bg-slate-50" />
+                                                <Clock className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
                                             </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-sm font-semibold text-slate-700">Passing Marks (Auto)</Label>
-                                            <Input type="number" value={derivedPassingMarks} readOnly className="h-11 bg-slate-50 border-slate-200 text-slate-500" />
-                                            <p className="text-xs text-slate-400">From pass % and {totalQuestionMarks} total pts.</p>
+                                        <div className="space-y-2.5">
+                                            <Label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Passing Marks</Label>
+                                            <div className="h-12 flex items-center px-4 bg-slate-100 border border-slate-200 rounded-xl">
+                                                <span className="font-black text-slate-700">{derivedPassingMarks}</span>
+                                                <span className="text-xs font-bold text-slate-400 ml-auto">Auto-calculated</span>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center justify-between p-4 rounded-xl bg-emerald-50/60 border border-emerald-100">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center">
-                                                <Sparkles className="w-4 h-4 text-emerald-600" />
+                                    <div className="pt-4 border-t border-slate-100">
+                                        <Label className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 block">Access & Enrollment</Label>
+                                        <div className="flex items-center justify-between p-5 rounded-2xl bg-emerald-50 border border-emerald-200 shadow-sm mb-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-full bg-white border border-emerald-100 flex items-center justify-center shadow-sm">
+                                                    <Sparkles className="w-5 h-5 text-emerald-500" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-black text-emerald-900 text-base">Make it Free</h3>
+                                                    <p className="text-xs font-semibold text-emerald-700 mt-0.5">Allow any student to access without prior enrollment</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h3 className="font-semibold text-slate-800 text-sm">Free Access</h3>
-                                                <p className="text-xs text-slate-500">Accessible without enrollment</p>
-                                            </div>
+                                            <CustomSwitch checked={examData.isFree} onChange={(val) => setExamData({ ...examData, isFree: val })} color="emerald" />
                                         </div>
-                                        <Switch checked={examData.isFree} onCheckedChange={(checked) => setExamData({ ...examData, isFree: checked })} className="data-[state=checked]:bg-emerald-500" />
+                                        <AudienceSelector value={examData.audience} onChange={(audience) => setExamData({ ...examData, audience })}
+                                            availableBatches={availableBatches} availableStudents={availableStudents}
+                                            allowGlobal={Boolean(!institute?._id || institute?.features?.allowGlobalPublishingByInstituteTutors)}
+                                            instituteId={institute?._id || null} />
                                     </div>
 
-                                    <AudienceSelector value={examData.audience} onChange={(audience) => setExamData({ ...examData, audience })}
-                                        availableBatches={availableBatches} availableStudents={availableStudents}
-                                        allowGlobal={Boolean(!institute?._id || institute?.features?.allowGlobalPublishingByInstituteTutors)}
-                                        instituteId={institute?._id || null} />
-
-                                    <div className="flex justify-end pt-4">
-                                        <Button onClick={handleSaveAndProceed} className="h-11 px-7 bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-sm shadow-orange-200 font-semibold gap-2">
-                                            Next Step <ChevronRight className="w-4 h-4" />
+                                    <div className="flex justify-end pt-6 border-t border-slate-100">
+                                        <Button onClick={handleSaveAndProceed} className="h-12 px-8 bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-md font-bold gap-2 transition-transform hover:-translate-y-0.5">
+                                            Continue to Configuration <ChevronRight className="w-4 h-4" />
                                         </Button>
                                     </div>
                                 </div>
@@ -479,77 +533,103 @@ function CreateExamPageClient() {
 
                     {/* ── STEP 2: Settings ─────────────────────────────── */}
                     {activeTab === 'settings' && (
-                        <motion.div key="settings" variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25, ease: "easeInOut" }}>
+                        <motion.div key="settings" variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3, ease: "easeOut" }}>
                             <StepCard>
                                 <div className="max-w-4xl mx-auto space-y-10">
-                                    <div>
+                                    <div className="text-center mb-10">
+                                        <h2 className="text-2xl font-black text-slate-800">Exam Configuration</h2>
+                                        <p className="text-sm font-semibold text-slate-500 mt-1">Setup rules, scoring, and high-level security for this assessment.</p>
+                                    </div>
+
+                                    {/* Security Section (Most Important) */}
+                                    <div className="bg-red-50/30 rounded-3xl p-6 border border-red-100 shadow-sm">
                                         <div className="flex items-center gap-3 mb-6">
-                                            <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center">
-                                                <Settings className="w-4 h-4 text-orange-500" />
+                                            <div className="w-10 h-10 rounded-xl bg-red-100 border border-red-200 flex items-center justify-center shadow-sm">
+                                                <ShieldCheck className="w-5 h-5 text-red-600" />
                                             </div>
-                                            <h2 className="text-lg font-bold text-slate-800">Scoring & Configuration</h2>
+                                            <div>
+                                                <h2 className="text-lg font-black text-slate-800">Advanced Security & Integrity</h2>
+                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Industry-level Proctoring</p>
+                                            </div>
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="bg-slate-50/50 rounded-xl p-5 border border-slate-100 space-y-5">
-                                                <h3 className="font-semibold text-slate-700 text-sm flex items-center gap-2">
-                                                    <Clock className="w-4 h-4 text-slate-400" /> Timing & Scoring
-                                                </h3>
-                                                <div className="space-y-2">
-                                                    <Label className="text-sm font-medium text-slate-700">Pass Percentage <span className="text-red-500">*</span></Label>
-                                                    <div className="relative">
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                            <ToggleRow icon={Eye} label="Visual AI Proctoring" desc="Requires webcam. Flags absence & multiple faces." keyName="isProctoringEnabled" color="red" />
+                                            <ToggleRow icon={Mic} label="Audio & Gaze Proctoring" desc="Requires mic. Flags noise & looking away/down." keyName="isAudioProctoringEnabled" color="red" />
+                                            <div className="lg:col-span-2">
+                                                <ToggleRow icon={Layout} label="Strict Environment Lock" desc="Aggressively tracks and flags tab switching or minimizing the browser." keyName="strictTabSwitching" color="red" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="space-y-6">
+                                            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                                                <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center">
+                                                    <Clock className="w-4 h-4 text-blue-600" />
+                                                </div>
+                                                <h3 className="font-black text-slate-800 text-base">Scoring Rules</h3>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between bg-white border border-slate-100 p-4 rounded-xl shadow-sm">
+                                                    <Label className="text-base font-bold text-slate-800">Required Pass Percentage</Label>
+                                                    <div className="relative w-28">
                                                         <Input type="number" min="0" max="100" value={examData.passingPercentage}
                                                             onChange={(e) => setExamData({ ...examData, passingPercentage: parseInt(e.target.value) || 0 })}
-                                                            className="pr-8 h-10 border-slate-200" />
-                                                        <span className="absolute right-3 top-2.5 text-slate-400 font-bold text-sm">%</span>
+                                                            className="pr-8 h-10 font-black text-center border-slate-200 bg-slate-50 focus:bg-white" />
+                                                        <span className="absolute right-3 top-2.5 text-slate-400 font-bold">%</span>
                                                     </div>
                                                 </div>
-                                                <ToggleRow label="Negative Marking" desc="Deduct points for wrong answers" keyName="negativeMarking" />
+                                                <ToggleRow icon={AlertCircle} label="Negative Marking" desc="Deduct points for incorrect answers" keyName="negativeMarking" color="blue" />
                                             </div>
-                                            <div className="bg-slate-50/50 rounded-xl p-5 border border-slate-100 space-y-4">
-                                                <h3 className="font-semibold text-slate-700 text-sm flex items-center gap-2">
-                                                    <BrainCircuit className="w-4 h-4 text-slate-400" /> Exam Experience
-                                                </h3>
-                                                <ToggleRow label="Shuffle Questions" desc="Randomize question order" keyName="shuffleQuestions" />
-                                                <ToggleRow label="Shuffle Options" desc="Randomize answer choices" keyName="shuffleOptions" />
-                                                <ToggleRow label="Show Results Info" desc="Show score after submission" keyName="showResultImmediately" />
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                                                <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                                                    <BrainCircuit className="w-4 h-4 text-emerald-600" />
+                                                </div>
+                                                <h3 className="font-black text-slate-800 text-base">Exam Experience</h3>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <ToggleRow icon={List} label="Shuffle Questions" desc="Randomize question sequence" keyName="shuffleQuestions" color="emerald" />
+                                                <ToggleRow icon={ListOrdered} label="Shuffle Options" desc="Randomize A, B, C, D choices" keyName="shuffleOptions" color="emerald" />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-6 md:col-span-2">
+                                            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                                                <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center">
+                                                    <Layout className="w-4 h-4 text-orange-600" />
+                                                </div>
+                                                <h3 className="font-black text-slate-800 text-base">Post-Exam Review</h3>
+                                            </div>
+                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                                <ToggleRow label="Show Results Instantly" desc="Display score immediately after submit" keyName="showResultImmediately" color="orange" />
+                                                <ToggleRow label="Show Correct Answers" desc="Reveal correct options during review" keyName="showCorrectAnswers" color="orange" />
+                                                <ToggleRow label="Hide Detailed Solutions" desc="Do not show explanations to students" keyName="hideSolutions" color="orange" />
+                                                <div className="space-y-3">
+                                                    <ToggleRow label="Allow Multiple Attempts" desc="Let students retake the exam" keyName="allowRetake" color="orange" />
+                                                    <AnimatePresence>
+                                                        {examData.allowRetake && (
+                                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                                                                <div className="flex items-center justify-between p-4 bg-orange-50 border border-orange-200 rounded-xl mt-2">
+                                                                    <Label className="text-sm font-bold text-orange-900">Maximum Allowed Attempts</Label>
+                                                                    <Input type="number" min="1" value={examData.maxAttempts}
+                                                                        onChange={(e) => setExamData({ ...examData, maxAttempts: parseInt(e.target.value) || 1 })}
+                                                                        className="w-24 h-9 text-center font-black bg-white border-orange-200 focus:border-orange-400" />
+                                                                </div>
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <div className="flex items-center gap-3 mb-6">
-                                            <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
-                                                <Layout className="w-4 h-4 text-blue-500" />
-                                            </div>
-                                            <h2 className="text-lg font-bold text-slate-800">Attempts & Review</h2>
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="bg-slate-50/50 rounded-xl p-5 border border-slate-100 space-y-4">
-                                                <ToggleRow label="Allow Retakes" desc="Enable multiple attempts" keyName="allowRetake" color="blue" />
-                                                <AnimatePresence>
-                                                    {examData.allowRetake && (
-                                                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                                                            <div className="pt-2 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-                                                                <Label className="text-sm font-medium text-slate-700">Max Attempts</Label>
-                                                                <Input type="number" min="1" value={examData.maxAttempts}
-                                                                    onChange={(e) => setExamData({ ...examData, maxAttempts: parseInt(e.target.value) || 1 })}
-                                                                    className="h-10 mt-2 bg-white border-slate-200" />
-                                                            </div>
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
-                                            <div className="bg-slate-50/50 rounded-xl p-5 border border-slate-100 space-y-4">
-                                                <ToggleRow label="Show Correct Answers" desc="Reveal answers after submission" keyName="showCorrectAnswers" color="blue" />
-                                                <ToggleRow label="Hide Solutions" desc="Keep detailed solutions hidden" keyName="hideSolutions" color="blue" />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex justify-between pt-4">
-                                        <Button variant="ghost" onClick={() => setActiveTab('details')} className="text-slate-500">Back</Button>
-                                        <Button onClick={handleSaveAndProceed} className="h-11 px-7 bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-sm shadow-orange-200 font-semibold gap-2">
-                                            Next Step <ChevronRight className="w-4 h-4" />
+                                    <div className="flex justify-between pt-8 border-t border-slate-100 mt-10">
+                                        <Button variant="ghost" onClick={() => setActiveTab('details')} className="text-slate-500 font-bold h-12 px-6">Go Back</Button>
+                                        <Button onClick={handleSaveAndProceed} className="h-12 px-8 bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-md font-bold gap-2 transition-transform hover:-translate-y-0.5">
+                                            Setup Questions <ChevronRight className="w-4 h-4" />
                                         </Button>
                                     </div>
                                 </div>
@@ -559,68 +639,71 @@ function CreateExamPageClient() {
 
                     {/* ── STEP 3: Questions ────────────────────────────── */}
                     {activeTab === 'questions' && (
-                        <motion.div key="questions" variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25, ease: "easeInOut" }}>
+                        <motion.div key="questions" variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3, ease: "easeOut" }}>
                             <StepCard>
-                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 pb-6 border-b border-slate-100">
                                     <div>
-                                        <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2.5">
-                                            Questions
-                                            <span className="bg-orange-100 text-orange-600 text-xs py-0.5 px-2.5 rounded-full font-bold">{examData.questions.length}</span>
+                                        <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
+                                            Questions Setup
+                                            <span className="bg-slate-900 text-white text-sm py-1 px-3 rounded-full font-black shadow-sm">{examData.questions.length}</span>
                                         </h2>
-                                        <p className="text-sm text-slate-400">Manage your quiz content manually or with AI</p>
+                                        <p className="text-sm font-semibold text-slate-500 mt-1">Manually author questions or use AI to generate them instantly.</p>
                                     </div>
-                                    <div className="flex gap-2 w-full md:w-auto flex-wrap">
-                                        <Button variant="outline" onClick={() => setIsAIOpen(true)} className="gap-2 text-orange-600 border-orange-200 hover:bg-orange-50 text-sm">
-                                            <Sparkles className="w-4 h-4" /> Generate via AI
+                                    <div className="flex gap-3 w-full md:w-auto flex-wrap">
+                                        <Button variant="outline" onClick={() => setIsAIOpen(true)} className="gap-2 text-indigo-600 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300 font-bold h-11 px-5 rounded-xl transition-all shadow-sm">
+                                            <Sparkles className="w-4 h-4" /> AI Generate
                                         </Button>
-                                        <Button variant="outline" onClick={() => setIsBankOpen(true)} className="gap-2 text-blue-600 border-blue-200 hover:bg-blue-50 text-sm">
-                                            <Library className="w-4 h-4" /> Import from Bank
+                                        <Button variant="outline" onClick={() => setIsBankOpen(true)} className="gap-2 text-slate-700 border-slate-200 hover:bg-slate-50 font-bold h-11 px-5 rounded-xl shadow-sm">
+                                            <Library className="w-4 h-4" /> Import
                                         </Button>
-                                        <Button onClick={() => { resetQuestionForm(); setIsAddOpen(true); }} className="gap-2 bg-orange-500 hover:bg-orange-600 text-white shadow-sm shadow-orange-200 text-sm">
-                                            <Plus className="w-4 h-4" /> Add Question
+                                        <Button onClick={() => { resetQuestionForm(); setIsAddOpen(true); }} className="gap-2 bg-slate-900 hover:bg-slate-800 text-white font-bold h-11 px-5 rounded-xl shadow-md transition-transform hover:-translate-y-0.5">
+                                            <Plus className="w-4 h-4" /> Add Manual
                                         </Button>
                                     </div>
                                 </div>
 
                                 {examData.questions.length === 0 ? (
-                                    <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 flex flex-col items-center">
-                                        <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-5 border border-slate-100">
-                                            <List className="w-7 h-7 text-orange-400" />
+                                    <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-[24px] bg-slate-50 flex flex-col items-center">
+                                        <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-6 border border-slate-100">
+                                            <HelpCircle className="w-8 h-8 text-slate-400" />
                                         </div>
-                                        <h3 className="text-base font-bold text-slate-800 mb-1.5">No questions yet</h3>
-                                        <p className="text-sm text-slate-400 mb-7 max-w-xs">Start building your quiz by adding questions manually or using AI.</p>
-                                        <div className="flex gap-3 flex-wrap justify-center">
-                                            <Button variant="outline" onClick={() => setIsAIOpen(true)} className="gap-2 text-sm"><Sparkles className="w-4 h-4" /> AI Generate</Button>
-                                            <Button variant="outline" onClick={() => setIsBankOpen(true)} className="gap-2 text-sm"><Library className="w-4 h-4" /> Import Bank</Button>
-                                            <Button onClick={() => setIsAddOpen(true)} className="gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm"><Plus className="w-4 h-4" /> Manual Add</Button>
-                                        </div>
+                                        <h3 className="text-lg font-black text-slate-800 mb-2">The question bank is empty</h3>
+                                        <p className="text-sm font-semibold text-slate-500 mb-8 max-w-sm">Build your assessment by adding questions manually, pulling from the bank, or let AI do the heavy lifting.</p>
+                                        <Button onClick={() => setIsAIOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 font-bold rounded-xl h-12 px-8 gap-2">
+                                            <Sparkles className="w-4 h-4" /> Auto-Generate with AI
+                                        </Button>
                                     </div>
                                 ) : (
-                                    <div className="space-y-3">
+                                    <div className="space-y-4">
                                         {examData.questions.map((q, idx) => (
-                                            <div key={idx} className="bg-slate-50/50 p-5 rounded-xl border border-slate-100 hover:shadow-sm transition-all group relative">
-                                                <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button onClick={() => handleEditQuestion(idx)} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-orange-100 transition-colors">
-                                                        <Edit className="w-3.5 h-3.5 text-orange-500" />
+                                            <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-md transition-all group relative">
+                                                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white p-1 rounded-lg shadow-sm border border-slate-100">
+                                                    <button onClick={() => handleEditQuestion(idx)} className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-slate-100 transition-colors">
+                                                        <Edit className="w-4 h-4 text-slate-600" />
                                                     </button>
-                                                    <button onClick={() => handleDeleteQuestion(idx)} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-100 transition-colors">
-                                                        <Trash className="w-3.5 h-3.5 text-red-500" />
+                                                    <button onClick={() => handleDeleteQuestion(idx)} className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-red-50 transition-colors">
+                                                        <Trash className="w-4 h-4 text-red-500" />
                                                     </button>
                                                 </div>
-                                                <div className="flex gap-3">
-                                                    <span className="w-7 h-7 rounded-full bg-slate-200 text-slate-600 font-bold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">{idx + 1}</span>
-                                                    <div className="flex-1 pr-14">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${q.difficulty === 'hard' ? 'bg-red-100 text-red-700' : q.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>{q.difficulty}</span>
-                                                            <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">{q.points} pts</span>
+                                                <div className="flex gap-4">
+                                                    <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 font-black text-sm flex items-center justify-center shrink-0 shadow-sm">{idx + 1}</div>
+                                                    <div className="flex-1 pr-20">
+                                                        <div className="flex items-center gap-3 mb-3">
+                                                            <span className={cn(
+                                                                "text-[10px] px-2.5 py-1 rounded-md font-black uppercase tracking-wider",
+                                                                q.difficulty === 'hard' ? 'bg-red-50 text-red-600 border border-red-100' : 
+                                                                q.difficulty === 'medium' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 
+                                                                'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                                            )}>{q.difficulty}</span>
+                                                            <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200 px-2.5 py-1 rounded-md">{q.points} Point{q.points>1?'s':''}</span>
                                                         </div>
-                                                        <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(q.question) }} className="font-medium text-slate-800 mb-3 prose prose-sm max-w-none line-clamp-2 text-sm" />
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                        <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(q.question) }} className="font-bold text-slate-800 mb-5 prose prose-base max-w-none line-clamp-3" />
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                             {q.options.map((opt, i) => (
-                                                                <div key={i} className={`text-xs p-2.5 rounded-lg border flex items-center gap-2.5 ${opt.isCorrect ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-white border-slate-100 text-slate-500'}`}>
-                                                                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${opt.isCorrect ? 'bg-emerald-200 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{String.fromCharCode(65 + i)}</span>
+                                                                <div key={i} className={cn("text-sm p-3 rounded-xl border-2 flex items-center gap-3 transition-colors", opt.isCorrect ? 'bg-emerald-50/50 border-emerald-500 text-emerald-900 font-bold' : 'bg-white border-slate-100 text-slate-600 font-medium')}>
+                                                                    <span className={cn("w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0 border-2", opt.isCorrect ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-200 bg-slate-50 text-slate-400')}>{String.fromCharCode(65 + i)}</span>
                                                                     <span className="flex-1 truncate">{opt.text}</span>
-                                                                    {opt.isCorrect && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />}
+                                                                    {opt.isCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -631,10 +714,10 @@ function CreateExamPageClient() {
                                     </div>
                                 )}
 
-                                <div className="flex justify-between pt-6 border-t border-slate-100 mt-6">
-                                    <Button variant="ghost" onClick={() => setActiveTab('settings')} className="text-slate-500">Back</Button>
-                                    <Button onClick={handleSaveAndProceed} className="h-11 px-7 bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-sm shadow-orange-200 font-semibold gap-2">
-                                        Next Step <ChevronRight className="w-4 h-4" />
+                                <div className="flex justify-between pt-8 border-t border-slate-100 mt-10">
+                                    <Button variant="ghost" onClick={() => setActiveTab('settings')} className="text-slate-500 font-bold h-12 px-6">Go Back</Button>
+                                    <Button onClick={handleSaveAndProceed} className="h-12 px-8 bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-md font-bold gap-2 transition-transform hover:-translate-y-0.5">
+                                        Finalize Schedule <ChevronRight className="w-4 h-4" />
                                     </Button>
                                 </div>
                             </StepCard>
@@ -643,67 +726,68 @@ function CreateExamPageClient() {
 
                     {/* ── STEP 4: Schedule ─────────────────────────────── */}
                     {activeTab === 'schedules' && (
-                        <motion.div key="schedules" variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25, ease: "easeInOut" }}>
+                        <motion.div key="schedules" variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3, ease: "easeOut" }}>
                             <StepCard>
-                                <div className="max-w-3xl mx-auto space-y-8">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
-                                            <Calendar className="w-5 h-5 text-emerald-600" />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-lg font-bold text-slate-800">Quiz Availability</h2>
-                                            <p className="text-sm text-slate-400">Control when students can access this quiz</p>
-                                        </div>
+                                <div className="max-w-3xl mx-auto space-y-10">
+                                    <div className="text-center mb-8">
+                                        <h2 className="text-2xl font-black text-slate-800">Publish & Availability</h2>
+                                        <p className="text-sm font-semibold text-slate-500 mt-1">Decide when students can view and attempt this assessment.</p>
                                     </div>
 
-                                    <div className="bg-slate-50/50 p-6 rounded-xl border border-slate-100">
-                                        <div className="flex items-center justify-between mb-5">
-                                            <div>
-                                                <Label className="text-sm font-semibold text-slate-800">Enable Scheduling</Label>
-                                                <p className="text-xs text-slate-400 mt-0.5">Restrict access to a specific time window</p>
+                                    <div className="bg-white border border-slate-200 p-8 rounded-[24px] shadow-sm">
+                                        <div className="flex items-start justify-between mb-8 pb-6 border-b border-slate-100">
+                                            <div className="flex gap-4">
+                                                <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
+                                                    <Calendar className="w-6 h-6 text-indigo-600" />
+                                                </div>
+                                                <div>
+                                                    <Label className="text-lg font-black text-slate-800">Strict Time Window</Label>
+                                                    <p className="text-sm font-semibold text-slate-500 mt-1 max-w-sm">Enable this to lock the exam outside of the specified start and end dates.</p>
+                                                </div>
                                             </div>
-                                            <Switch checked={examData.isScheduled} onCheckedChange={(checked) => setExamData({ ...examData, isScheduled: checked })} className="data-[state=checked]:bg-emerald-500" />
+                                            <CustomSwitch checked={examData.isScheduled} onChange={(val) => setExamData({ ...examData, isScheduled: val })} color="indigo" />
                                         </div>
 
                                         <AnimatePresence>
-                                            {examData.isScheduled && (
+                                            {examData.isScheduled ? (
                                                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200/60">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100">
                                                         <div className="space-y-2">
-                                                            <Label className="text-sm font-semibold text-slate-700">Start Date & Time</Label>
+                                                            <Label className="text-xs font-black text-slate-500 uppercase tracking-widest">Opening Time</Label>
                                                             <Input type="datetime-local" value={examData.startDate ? new Date(examData.startDate).toISOString().slice(0, 16) : ''}
                                                                 onChange={(e) => setExamData({ ...examData, startDate: e.target.value })}
-                                                                className="h-11 border-slate-200 focus:border-orange-400 focus:ring-orange-500/10" />
-                                                            <p className="text-xs text-slate-400">Quiz becomes available to students</p>
+                                                                className="h-14 font-bold text-slate-800 border-slate-200 rounded-xl focus:border-indigo-400 bg-white" />
                                                         </div>
                                                         <div className="space-y-2">
-                                                            <Label className="text-sm font-semibold text-slate-700">End Date & Time</Label>
+                                                            <Label className="text-xs font-black text-slate-500 uppercase tracking-widest">Closing Time</Label>
                                                             <Input type="datetime-local" value={examData.endDate ? new Date(examData.endDate).toISOString().slice(0, 16) : ''}
                                                                 onChange={(e) => setExamData({ ...examData, endDate: e.target.value })}
-                                                                className="h-11 border-slate-200 focus:border-orange-400 focus:ring-orange-500/10" />
-                                                            <p className="text-xs text-slate-400">Quiz closes automatically</p>
+                                                                className="h-14 font-bold text-slate-800 border-slate-200 rounded-xl focus:border-indigo-400 bg-white" />
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            ) : (
+                                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                                                    <div className="mt-4 p-5 bg-emerald-50 text-emerald-900 rounded-2xl flex items-center gap-4 border border-emerald-200 shadow-sm">
+                                                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
+                                                            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-black text-base mb-0.5">Always Open</h4>
+                                                            <p className="text-sm font-semibold text-emerald-700">Once published, students can access this quiz immediately and anytime.</p>
                                                         </div>
                                                     </div>
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>
-
-                                        {!examData.isScheduled && (
-                                            <div className="mt-4 p-3.5 bg-emerald-50 text-emerald-800 rounded-xl flex items-start gap-3 border border-emerald-100">
-                                                <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-emerald-600" />
-                                                <div>
-                                                    <h4 className="font-semibold text-sm mb-0.5">Always Available</h4>
-                                                    <p className="text-xs text-emerald-700">Once published, students can access this quiz at any time.</p>
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
 
-                                    <div className="flex justify-between pt-4">
-                                        <Button variant="ghost" onClick={() => setActiveTab('questions')} className="text-slate-500">Back</Button>
+                                    <div className="flex justify-between pt-8 border-t border-slate-100 mt-10">
+                                        <Button variant="ghost" onClick={() => setActiveTab('questions')} className="text-slate-500 font-bold h-12 px-6">Go Back</Button>
                                         <Button onClick={() => handleSaveAndProceed({ status: 'published', shouldRedirect: true })} disabled={saving}
-                                            className="h-11 px-7 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-sm shadow-emerald-200 gap-2">
-                                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><UploadCloud className="w-4 h-4" /> Save & Publish</>}
+                                            className="h-12 px-10 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-xl shadow-lg shadow-emerald-200 gap-3 transition-transform hover:-translate-y-0.5 text-base">
+                                            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <UploadCloud className="w-5 h-5" />}
+                                            Publish Assessment
                                         </Button>
                                     </div>
                                 </div>
@@ -714,22 +798,22 @@ function CreateExamPageClient() {
             </main>
 
             {/* AI Modal */}
-            <Modal isOpen={isAIOpen} onClose={() => setIsAIOpen(false)} title="Generate Questions with AI">
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Label className="text-sm font-medium">Topic</Label>
-                        <Input placeholder="e.g. World War II, Calculus Derivatives" value={aiParams.topic} onChange={(e) => setAiParams({ ...aiParams, topic: e.target.value })} className="border-slate-200 focus:border-orange-400 focus:ring-orange-500/10" />
+            <Modal isOpen={isAIOpen} onClose={() => setIsAIOpen(false)} title="Generate Questions with AI" className="sm:max-w-md">
+                <div className="space-y-6 p-2">
+                    <div className="space-y-3">
+                        <Label className="text-sm font-bold text-slate-700">Topic or Subject</Label>
+                        <Input placeholder="e.g. Newton's Laws of Motion" value={aiParams.topic} onChange={(e) => setAiParams({ ...aiParams, topic: e.target.value })} className="h-12 border-slate-200 focus:border-indigo-400 font-medium rounded-xl" />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium">Question Count</Label>
-                            <Input type="number" min="1" max="20" value={aiParams.count} onChange={(e) => setAiParams({ ...aiParams, count: parseInt(e.target.value) || 5 })} className="border-slate-200" />
+                    <div className="grid grid-cols-2 gap-5">
+                        <div className="space-y-3">
+                            <Label className="text-sm font-bold text-slate-700">Number of Questions</Label>
+                            <Input type="number" min="1" max="20" value={aiParams.count} onChange={(e) => setAiParams({ ...aiParams, count: parseInt(e.target.value) || 5 })} className="h-12 border-slate-200 rounded-xl font-medium" />
                         </div>
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium">Difficulty</Label>
+                        <div className="space-y-3">
+                            <Label className="text-sm font-bold text-slate-700">Difficulty</Label>
                             <Select value={aiParams.difficulty} onValueChange={(val) => setAiParams({ ...aiParams, difficulty: val })}>
-                                <SelectTrigger className="border-slate-200"><SelectValue /></SelectTrigger>
-                                <SelectContent>
+                                <SelectTrigger className="h-12 border-slate-200 rounded-xl font-medium"><SelectValue /></SelectTrigger>
+                                <SelectContent className="font-medium">
                                     <SelectItem value="easy">Easy</SelectItem>
                                     <SelectItem value="medium">Medium</SelectItem>
                                     <SelectItem value="hard">Hard</SelectItem>
@@ -737,50 +821,54 @@ function CreateExamPageClient() {
                             </Select>
                         </div>
                     </div>
-                    <Button onClick={handleAIGenerate} disabled={aiLoading} className="w-full bg-orange-500 hover:bg-orange-600 text-white gap-2">
-                        {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BrainCircuit className="w-4 h-4" />}
-                        Generate Questions
+                    <Button onClick={handleAIGenerate} disabled={aiLoading} className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md gap-2 mt-4">
+                        {aiLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                        Generate Now
                     </Button>
                 </div>
             </Modal>
 
             {/* Add/Edit Question Modal */}
             <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title={editingIndex >= 0 ? "Edit Question" : "Add New Question"} className="max-w-4xl">
-                <div className="space-y-5 max-h-[80vh] overflow-y-auto pr-1">
-                    <div className="space-y-2">
-                        <Label className="text-sm font-semibold">Question Text</Label>
+                <div className="space-y-6 max-h-[80vh] overflow-y-auto p-1 custom-scrollbar">
+                    <div className="space-y-3">
+                        <Label className="text-sm font-bold text-slate-700">Question Content</Label>
                         <RichTextEditor value={currentQuestion.question} onChange={(html) => setCurrentQuestion({ ...currentQuestion, question: html })} />
                     </div>
-                    <div className="space-y-3">
-                        <Label className="text-sm font-semibold">Options</Label>
+                    <div className="space-y-4 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                        <Label className="text-sm font-bold text-slate-800">Answer Options</Label>
                         {currentQuestion.options.map((opt, idx) => (
-                            <div key={idx} className="flex items-center gap-3">
-                                <input type="radio" name="correctAnswer" checked={opt.isCorrect} onChange={() => handleCorrectSelect(idx)} className="w-4 h-4 text-orange-500 focus:ring-orange-500" />
+                            <div key={idx} className="flex items-center gap-4">
+                                <div className="flex items-center justify-center w-8">
+                                    <input type="radio" name="correctAnswer" checked={opt.isCorrect} onChange={() => handleCorrectSelect(idx)} className="w-5 h-5 text-emerald-500 focus:ring-emerald-500 border-slate-300" />
+                                </div>
                                 <Input value={opt.text} onChange={(e) => handleOptionChange(idx, e.target.value)} placeholder={`Option ${String.fromCharCode(65 + idx)}`}
-                                    className={`flex-1 ${opt.isCorrect ? 'border-emerald-400 ring-1 ring-emerald-100' : 'border-slate-200'}`} />
+                                    className={cn("flex-1 h-12 rounded-xl font-medium transition-all", opt.isCorrect ? 'border-emerald-400 bg-emerald-50/30 ring-1 ring-emerald-200' : 'border-slate-200 bg-white')} />
                                 {currentQuestion.options.length > 2 && (
-                                    <button onClick={() => handleRemoveOption(idx)} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors">
-                                        <X className="w-4 h-4 text-red-400" />
+                                    <button onClick={() => handleRemoveOption(idx)} className="w-10 h-10 rounded-xl flex items-center justify-center bg-white border border-slate-200 hover:bg-red-50 hover:border-red-200 transition-colors shrink-0 shadow-sm">
+                                        <Trash className="w-4 h-4 text-red-500" />
                                     </button>
                                 )}
                             </div>
                         ))}
                         {currentQuestion.options.length < 6 && (
-                            <Button variant="outline" size="sm" onClick={handleAddOption} className="text-xs gap-1.5 border-dashed">
-                                <Plus className="w-3 h-3" /> Add Option
-                            </Button>
+                            <div className="pl-12 pt-2">
+                                <Button variant="outline" size="sm" onClick={handleAddOption} className="text-xs font-bold gap-2 border-dashed border-slate-300 text-slate-600 rounded-lg h-9">
+                                    <Plus className="w-3.5 h-3.5" /> Add Another Option
+                                </Button>
+                            </div>
                         )}
                     </div>
-                    <div className="grid grid-cols-2 gap-5">
-                        <div className="space-y-2">
-                            <Label className="text-sm font-semibold">Points</Label>
-                            <Input type="number" min="1" value={currentQuestion.points} onChange={(e) => setCurrentQuestion({ ...currentQuestion, points: parseFloat(e.target.value) || 1 })} className="border-slate-200" />
+                    <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                            <Label className="text-sm font-bold text-slate-700">Points / Marks</Label>
+                            <Input type="number" min="1" value={currentQuestion.points} onChange={(e) => setCurrentQuestion({ ...currentQuestion, points: parseFloat(e.target.value) || 1 })} className="h-12 border-slate-200 rounded-xl font-bold" />
                         </div>
-                        <div className="space-y-2">
-                            <Label className="text-sm font-semibold">Difficulty</Label>
+                        <div className="space-y-3">
+                            <Label className="text-sm font-bold text-slate-700">Difficulty Level</Label>
                             <Select value={currentQuestion.difficulty} onValueChange={(val) => setCurrentQuestion({ ...currentQuestion, difficulty: val })}>
-                                <SelectTrigger className="border-slate-200"><SelectValue /></SelectTrigger>
-                                <SelectContent>
+                                <SelectTrigger className="h-12 border-slate-200 rounded-xl font-bold"><SelectValue /></SelectTrigger>
+                                <SelectContent className="font-bold">
                                     <SelectItem value="easy">Easy</SelectItem>
                                     <SelectItem value="medium">Medium</SelectItem>
                                     <SelectItem value="hard">Hard</SelectItem>
@@ -788,15 +876,15 @@ function CreateExamPageClient() {
                             </Select>
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label className="text-sm font-semibold">Explanation (Optional)</Label>
-                        <Textarea value={currentQuestion.explanation} onChange={(e) => setCurrentQuestion({ ...currentQuestion, explanation: e.target.value })} placeholder="Explain why this answer is correct..." className="h-20 border-slate-200 resize-none" />
+                    <div className="space-y-3">
+                        <Label className="text-sm font-bold text-slate-700">Explanation (Optional)</Label>
+                        <Textarea value={currentQuestion.explanation} onChange={(e) => setCurrentQuestion({ ...currentQuestion, explanation: e.target.value })} placeholder="Explain why the selected answer is correct..." className="min-h-[100px] border-slate-200 rounded-xl resize-y p-4 font-medium" />
                     </div>
-                    <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                        <Button variant="outline" onClick={() => setIsAddOpen(false)} className="text-sm">Cancel</Button>
-                        <Button onClick={handleSaveQuestion} className="bg-orange-500 hover:bg-orange-600 text-white text-sm gap-2">
+                    <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+                        <Button variant="ghost" onClick={() => setIsAddOpen(false)} className="font-bold h-11 px-6 rounded-xl">Cancel</Button>
+                        <Button onClick={handleSaveQuestion} className="bg-slate-900 hover:bg-slate-800 text-white font-bold h-11 px-8 rounded-xl shadow-md gap-2">
                             <Save className="w-4 h-4" />
-                            {editingIndex >= 0 ? "Update Question" : "Add Question"}
+                            {editingIndex >= 0 ? "Save Changes" : "Add to Quiz"}
                         </Button>
                     </div>
                 </div>
@@ -804,21 +892,21 @@ function CreateExamPageClient() {
 
             {/* Import from Bank Modal */}
             <Modal isOpen={isBankOpen} onClose={() => setIsBankOpen(false)} title="Import from Question Bank" className="max-w-5xl">
-                <div className="space-y-4 max-h-[85vh] flex flex-col">
-                    <div className="flex gap-3 items-end shrink-0">
-                        <div className="flex-1 space-y-1">
-                            <Label className="text-xs text-slate-500">Search Questions</Label>
+                <div className="space-y-5 max-h-[85vh] flex flex-col p-1">
+                    <div className="flex gap-4 items-end shrink-0 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <div className="flex-1 space-y-2">
+                            <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Search Questions</Label>
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                <Input placeholder="Search by question text..." className="pl-9 border-slate-200" value={bankFilters.search || ''} onChange={(e) => setBankFilters({ ...bankFilters, search: e.target.value })} />
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                <Input placeholder="Type to search..." className="pl-10 h-11 border-slate-200 rounded-xl font-medium bg-white" value={bankFilters.search || ''} onChange={(e) => setBankFilters({ ...bankFilters, search: e.target.value })} />
                             </div>
                         </div>
-                        <div className="space-y-1">
-                            <Label className="text-xs text-slate-500">Difficulty</Label>
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Difficulty</Label>
                             <Select value={bankFilters.difficulty} onValueChange={(val) => setBankFilters({ ...bankFilters, difficulty: val })}>
-                                <SelectTrigger className="w-[130px] border-slate-200"><SelectValue placeholder="All" /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
+                                <SelectTrigger className="w-[150px] h-11 border-slate-200 rounded-xl font-medium bg-white"><SelectValue placeholder="All Levels" /></SelectTrigger>
+                                <SelectContent className="font-medium">
+                                    <SelectItem value="all">All Levels</SelectItem>
                                     <SelectItem value="easy">Easy</SelectItem>
                                     <SelectItem value="medium">Medium</SelectItem>
                                     <SelectItem value="hard">Hard</SelectItem>
@@ -827,18 +915,19 @@ function CreateExamPageClient() {
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto border border-slate-200 rounded-xl bg-slate-50/50 p-4 space-y-3 min-h-[400px]">
+                    <div className="flex-1 overflow-y-auto rounded-2xl bg-white border border-slate-200 p-5 space-y-4 min-h-[400px] shadow-sm custom-scrollbar">
                         {bankLoading ? (
-                            <div className="flex justify-center items-center min-h-[300px]">
-                                <Loader2 className="w-7 h-7 animate-spin text-orange-500" />
+                            <div className="flex flex-col justify-center items-center min-h-[300px] gap-3">
+                                <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+                                <p className="text-sm font-bold text-slate-500">Loading bank...</p>
                             </div>
                         ) : (() => {
                             const searchFiltered = bankQuestions.filter(q => !bankFilters.search || q.question.toLowerCase().includes(bankFilters.search.toLowerCase()));
                             if (searchFiltered.length === 0) {
                                 return (
                                     <div className="flex flex-col items-center justify-center min-h-[300px] text-slate-400">
-                                        <Library className="w-10 h-10 mb-3 opacity-40" />
-                                        <p className="text-sm">No questions found.</p>
+                                        <Library className="w-12 h-12 mb-4 opacity-20" />
+                                        <p className="text-base font-bold text-slate-500">No matching questions found.</p>
                                     </div>
                                 );
                             }
@@ -849,37 +938,39 @@ function CreateExamPageClient() {
                                 return acc;
                             }, {});
                             return Object.entries(grouped).map(([topicName, questions]) => (
-                                <div key={topicName} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                                    <div className="px-4 py-3 bg-slate-50 border-b flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-semibold text-sm text-slate-800">{topicName}</span>
-                                            <span className="text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full">{questions.length}</span>
+                                <div key={topicName} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                                    <div className="px-5 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-black text-slate-800">{topicName}</span>
+                                            <span className="text-xs font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md">{questions.length} items</span>
                                         </div>
                                         <button type="button" onClick={() => {
                                             const topicIds = questions.map(q => q._id);
                                             const allSelected = topicIds.every(id => selectedBankIds.includes(id));
                                             if (allSelected) setSelectedBankIds(selectedBankIds.filter(id => !topicIds.includes(id)));
                                             else setSelectedBankIds([...new Set([...selectedBankIds, ...topicIds])]);
-                                        }} className="text-xs text-orange-500 hover:text-orange-600 font-medium">
+                                        }} className="text-xs text-[var(--theme-primary)] hover:underline font-black uppercase tracking-wider bg-[var(--theme-primary)]/10 px-3 py-1.5 rounded-lg">
                                             {questions.every(q => selectedBankIds.includes(q._id)) ? 'Deselect All' : 'Select All'}
                                         </button>
                                     </div>
                                     <div className="divide-y divide-slate-100">
                                         {questions.map((q) => (
-                                            <div key={q._id} className="px-4 py-3 flex items-start gap-3 hover:bg-slate-50/50">
-                                                <input type="checkbox" checked={selectedBankIds.includes(q._id)}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) setSelectedBankIds([...selectedBankIds, q._id]);
-                                                        else setSelectedBankIds(selectedBankIds.filter(id => id !== q._id));
-                                                    }}
-                                                    className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-400 mt-0.5" />
+                                            <div key={q._id} className="px-5 py-4 flex items-start gap-4 hover:bg-slate-50/50 transition-colors">
+                                                <div className="pt-1">
+                                                    <input type="checkbox" checked={selectedBankIds.includes(q._id)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) setSelectedBankIds([...selectedBankIds, q._id]);
+                                                            else setSelectedBankIds(selectedBankIds.filter(id => id !== q._id));
+                                                        }}
+                                                        className="w-5 h-5 rounded border-slate-300 text-[var(--theme-primary)] focus:ring-[var(--theme-primary)] cursor-pointer" />
+                                                </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="flex gap-1.5 mb-1">
-                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${q.difficulty === 'hard' ? 'bg-red-100 text-red-700' : q.difficulty === 'easy' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{q.difficulty}</span>
-                                                        <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">{(q.type || 'mcq').toUpperCase()}</span>
-                                                        <span className="text-[10px] text-slate-400">{q.points || 1} pts</span>
+                                                    <div className="flex gap-2 mb-2">
+                                                        <span className={cn("text-[10px] px-2 py-0.5 rounded-md font-black uppercase tracking-wider", q.difficulty === 'hard' ? 'bg-red-50 text-red-600 border border-red-100' : q.difficulty === 'easy' ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-yellow-50 text-yellow-600 border border-yellow-100')}>{q.difficulty}</span>
+                                                        <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-bold border border-slate-200">{(q.type || 'mcq').toUpperCase()}</span>
+                                                        <span className="text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">{q.points || 1} Pts</span>
                                                     </div>
-                                                    <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(q.question) }} className="text-sm font-medium text-slate-800 line-clamp-2" />
+                                                    <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(q.question) }} className="text-sm font-semibold text-slate-800 line-clamp-2 prose prose-sm max-w-none" />
                                                 </div>
                                             </div>
                                         ))}
@@ -889,14 +980,14 @@ function CreateExamPageClient() {
                         })()}
                     </div>
 
-                    <div className="flex justify-between items-center pt-3 border-t border-slate-100 shrink-0">
-                        <span className="text-sm text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full font-medium">
-                            {selectedBankIds.length} selected
+                    <div className="flex justify-between items-center pt-5 shrink-0 border-t border-slate-200">
+                        <span className="text-sm font-black text-slate-700 bg-slate-100 px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+                            <span className="text-[var(--theme-primary)]">{selectedBankIds.length}</span> questions selected
                         </span>
-                        <div className="flex gap-2">
-                            <Button variant="ghost" onClick={() => { setIsBankOpen(false); setSelectedBankIds([]); }} className="text-sm">Cancel</Button>
-                            <Button onClick={handleImportFromBank} disabled={selectedBankIds.length === 0} className="bg-orange-500 hover:bg-orange-600 text-white gap-2 text-sm">
-                                <Library className="w-4 h-4" /> Import Selected
+                        <div className="flex gap-3">
+                            <Button variant="ghost" onClick={() => { setIsBankOpen(false); setSelectedBankIds([]); }} className="font-bold rounded-xl px-6 h-11">Cancel</Button>
+                            <Button onClick={handleImportFromBank} disabled={selectedBankIds.length === 0} className="bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl px-8 h-11 gap-2 shadow-md">
+                                <Library className="w-4 h-4" /> Import to Quiz
                             </Button>
                         </div>
                     </div>

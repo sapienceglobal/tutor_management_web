@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { Loader2, Search, Users, Calendar, Plus, Eye } from 'lucide-react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
+import { C, T, FX } from '@/constants/tutorTokens';
 
-const inp = "w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/10 transition-colors bg-white";
+const inp = "w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[#7573E8] focus:ring-2 focus:ring-[#7573E8]/10 transition-colors bg-white";
 
 export default function TutorBatchesPage() {
     const router = useRouter();
@@ -69,21 +70,21 @@ export default function TutorBatchesPage() {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-7 h-7 animate-spin" style={{ color: 'var(--theme-primary)' }} />
+                <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
                 <p className="text-sm text-slate-400">Loading batches...</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-5" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-5" style={{ fontFamily: T.fontFamily }}>
 
             {/* ── Header ────────────────────────────────────────────────────── */}
             <div className="bg-white rounded-xl border border-slate-100 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                        <Users className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                        style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
+                        <Users className="w-4 h-4" style={{ color: C.btnPrimary }} />
                     </div>
                     <div>
                         <h1 className="text-lg font-bold text-slate-800">My Batches</h1>
@@ -94,12 +95,12 @@ export default function TutorBatchesPage() {
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <input type="text" placeholder="Search batches..."
-                            className="pl-9 pr-4 h-9 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/10 transition-colors w-full sm:w-52"
+                            className="pl-9 pr-4 h-9 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[#7573E8] focus:ring-2 focus:ring-[#7573E8]/10 transition-colors w-full sm:w-52"
                             value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                     </div>
                     <button onClick={() => setShowForm(!showForm)}
                         className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-sm transition-opacity flex-shrink-0"
-                        style={{ backgroundColor: 'var(--theme-primary)' }}>
+                        style={{ backgroundColor: C.btnPrimary }}>
                         <Plus className="w-4 h-4" /> New Batch
                     </button>
                 </div>
@@ -157,7 +158,7 @@ export default function TutorBatchesPage() {
                             </button>
                             <button type="submit" disabled={saving}
                                 className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white rounded-xl transition-opacity disabled:opacity-60"
-                                style={{ backgroundColor: 'var(--theme-primary)' }}>
+                                style={{ backgroundColor: C.btnPrimary }}>
                                 {saving && <Loader2 className="w-4 h-4 animate-spin" />} Create Batch
                             </button>
                         </div>
@@ -169,8 +170,8 @@ export default function TutorBatchesPage() {
             {filtered.length === 0 ? (
                 <div className="text-center py-16 bg-white rounded-xl border border-dashed border-slate-200">
                     <div className="mx-auto w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 8%, white)' }}>
-                        <Users className="w-6 h-6" style={{ color: 'var(--theme-primary)' }} />
+                        style={{ backgroundColor: FX.primary08 }}>
+                        <Users className="w-6 h-6" style={{ color: C.btnPrimary }} />
                     </div>
                     <p className="text-sm font-semibold text-slate-600 mb-1">No batches found</p>
                     <p className="text-xs text-slate-400">
@@ -184,8 +185,8 @@ export default function TutorBatchesPage() {
                             className="bg-white rounded-xl border border-slate-100 p-5 hover:shadow-sm transition-shadow group">
                             <div className="flex items-start justify-between mb-3">
                                 <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                                    style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, white)' }}>
-                                    <Users className="w-5 h-5" style={{ color: 'var(--theme-primary)' }} />
+                                    style={{ backgroundColor: FX.primary10 }}>
+                                    <Users className="w-5 h-5" style={{ color: C.btnPrimary }} />
                                 </div>
                                 <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold border capitalize ${statusStyle(batch.status)}`}>
                                     {batch.status || 'Active'}
@@ -212,7 +213,7 @@ export default function TutorBatchesPage() {
                             <div className="border-t border-slate-100 pt-3">
                                 <button onClick={() => router.push(`/tutor/batches/${batch._id}`)}
                                     className="flex items-center justify-center w-full gap-1.5 py-2 text-xs font-semibold rounded-xl border transition-colors"
-                                    style={{ color: 'var(--theme-primary)', borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, white)', backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, white)' }}>
+                                    style={{ color: C.btnPrimary, borderColor: FX.primary20, backgroundColor: FX.primary05 }}>
                                     <Eye className="w-3.5 h-3.5" /> View Details
                                 </button>
                             </div>

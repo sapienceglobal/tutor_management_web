@@ -2,8 +2,9 @@
 
 import { PlusCircle, Video, BookOpen, Users, DollarSign, Star, Settings, FileQuestion } from 'lucide-react';
 import Link from 'next/link';
+import { C, T, S } from '@/constants/tutorTokens';
 
-export default function QuickLinksWidget({ stats }) {
+export default function QuickLinksWidget({ stats, isTutor }) {
     const links = [
         {
             title: 'Create Course',
@@ -73,7 +74,7 @@ export default function QuickLinksWidget({ stats }) {
 
     return (
         <div className="h-full">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">Quick Actions & Stats</h3>
+            <h3 className={isTutor ? "mb-4" : "text-lg font-semibold text-slate-800 mb-4"} style={isTutor ? { color: C.heading, fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.bold } : {}}>Quick Actions & Stats</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 h-full">
                 {links.map((link, index) => {
                     const Icon = link.icon;
@@ -81,14 +82,16 @@ export default function QuickLinksWidget({ stats }) {
                         <Link
                             key={index}
                             href={link.href}
-                            className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-all flex flex-col items-center justify-center gap-3 group"
+                            className={isTutor ? "p-4 rounded-2xl transition-all duration-200 flex flex-col items-center justify-center gap-3 group hover:-translate-y-0.5 hover:shadow-lg" : "bg-white p-4 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-all flex flex-col items-center justify-center gap-3 group"}
+                            style={isTutor ? { backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card } : {}}
                         >
-                            <div className={`w-12 h-12 rounded-full ${link.bg} flex items-center justify-center transition-transform group-hover:scale-110`}>
-                                <Icon className={`w-6 h-6 ${link.color}`} />
+                            <div className={isTutor ? "w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110" : `w-12 h-12 rounded-full ${link.bg} flex items-center justify-center transition-transform group-hover:scale-110`}
+                                 style={isTutor ? { backgroundColor: C.iconBg } : {}}>
+                                <Icon className={isTutor ? "w-5 h-5" : `w-6 h-6 ${link.color}`} style={isTutor ? { color: C.iconColor } : {}} />
                             </div>
                             <div className="text-center">
-                                <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">{link.title}</p>
-                                <p className="text-lg font-bold text-slate-800">{link.value}</p>
+                                <p className={isTutor ? "mb-1 uppercase" : "text-xs text-slate-500 font-medium uppercase tracking-wide mb-1"} style={isTutor ? { fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, letterSpacing: T.tracking.wider, color: C.statLabel } : {}}>{link.title}</p>
+                                <p className={isTutor ? "" : "text-lg font-bold text-slate-800"} style={isTutor ? { fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.black, color: C.statValue } : {}}>{link.value}</p>
                             </div>
                         </Link>
                     )

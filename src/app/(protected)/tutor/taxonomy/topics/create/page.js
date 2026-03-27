@@ -7,8 +7,9 @@ import Link from 'next/link';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
+import { C, T, FX } from '@/constants/tutorTokens';
 
-const inp = "w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/10 transition-colors bg-white";
+const inp = "w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[#7573E8] focus:ring-2 focus:ring-[#7573E8]/10 transition-colors bg-white";
 
 export default function CreateTopicPage() {
     const router = useRouter();
@@ -41,7 +42,7 @@ export default function CreateTopicPage() {
     };
 
     return (
-        <div className="space-y-5 max-w-2xl" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-5 max-w-2xl" style={{ fontFamily: T.fontFamily }}>
 
             {/* Header */}
             <div className="bg-white rounded-xl border border-slate-100 px-5 py-4 flex items-center gap-3">
@@ -52,8 +53,8 @@ export default function CreateTopicPage() {
                 </Link>
                 <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                        <BookOpen className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                        style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
+                        <BookOpen className="w-4 h-4" style={{ color: C.btnPrimary }} />
                     </div>
                     <div>
                         <h1 className="text-lg font-bold text-slate-800">Create New Topic</h1>
@@ -85,7 +86,7 @@ export default function CreateTopicPage() {
                         <Select
                             value={formData.courseId}
                             onValueChange={val => setFormData({ ...formData, courseId: val })}>
-                            <SelectTrigger className="border-slate-200 focus:border-[var(--theme-primary)] rounded-xl h-auto py-2.5">
+                            <SelectTrigger className="border-slate-200 focus:border-[#7573E8] rounded-xl h-auto py-2.5">
                                 <SelectValue placeholder="Select a course to link (optional)" />
                             </SelectTrigger>
                             <SelectContent>
@@ -116,7 +117,7 @@ export default function CreateTopicPage() {
                         </Link>
                         <button type="submit" disabled={loading}
                             className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl transition-opacity disabled:opacity-60"
-                            style={{ backgroundColor: 'var(--theme-primary)' }}>
+                            style={{ backgroundColor: C.btnPrimary }}>
                             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                             {loading ? 'Creating...' : 'Create Topic'}
                         </button>

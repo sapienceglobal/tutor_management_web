@@ -11,6 +11,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
+import { T } from '@/constants/studentTokens';
+
+// Note: This page uses var(--theme-*) CSS variables set by ThemeContext.
+// T.fontFamily is used for typography; all colors use CSS vars for theme support.
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const getStatus = (item) => {
@@ -39,17 +43,18 @@ const getGradeInfo = (pct) => {
 function MetaChip({ label, value }) {
     return (
         <div className="flex items-center gap-1.5">
-            <span className="text-slate-400 text-xs">{label}:</span>
-            <span className="text-slate-600 text-xs font-semibold">{value}</span>
+            <span className="text-slate-400" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs }}>{label}:</span>
+            <span className="text-slate-600 font-semibold" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs }}>{value}</span>
         </div>
     );
 }
 
 function StatBox({ label, children, gradient }) {
     return (
-        <div className={`rounded-2xl p-4 border shadow-sm ${gradient ? 'border-[var(--theme-primary)]/20 text-white' : 'bg-white border-slate-100'}`}
-            style={gradient ? { background: 'linear-gradient(135deg, var(--theme-sidebar) 0%, var(--theme-sidebar) 100%)' } : {}}>
-            <p className={`text-[10px] font-bold uppercase tracking-[0.08em] mb-1.5 ${gradient ? 'text-[var(--theme-primary)]/70' : 'text-slate-400'}`}>
+        <div className={`rounded-2xl p-4 border shadow-sm ${gradient ? 'border-[var(--theme-primary)]/20' : 'bg-white border-slate-100'}`}
+            style={gradient ? { background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))' } : {}}>
+            <p className={`font-bold uppercase mb-1.5`}
+                style={{ fontFamily: T.fontFamily, fontSize: '10px', letterSpacing: T.tracking.wider, color: gradient ? 'rgba(255,255,255,0.55)' : '#94a3b8' }}>
                 {label}
             </p>
             {children}
@@ -64,8 +69,8 @@ function StatusPill({ status }) {
         unanswered: { bg: 'var(--theme-background)', color: '#94a3b8', label: 'Skipped' },
     }[status] || { bg: 'var(--theme-background)', color: '#94a3b8', label: status };
     return (
-        <span className="px-2.5 py-1 text-[11px] font-bold rounded-full whitespace-nowrap"
-            style={{ background: cfg.bg, color: cfg.color }}>
+        <span className="px-2.5 py-1 rounded-full whitespace-nowrap"
+            style={{ background: cfg.bg, color: cfg.color, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold }}>
             {cfg.label}
         </span>
     );
@@ -86,26 +91,40 @@ function ExamResultPageClient() {
     const [examData, setExamData] = useState(null);
     const [expandedRow, setExpandedRow] = useState(null);
 
-    useEffect(() => {
-        const fetchResult = async () => {
-            if (!attemptId) { setLoading(false); return; }
-            try {
-                const res = await api.get(`/exams/attempt/${attemptId}`);
-                if (res.data.success) {
-                    setResult(res.data.attempt);
-                    setDetailedResults(Array.isArray(res.data.detailedResults) ? res.data.detailedResults : []);
-                    setExamTitle(res.data.exam?.title || '');
-                    setExamData(res.data.exam || null);
-                    if (res.data.attempt?.isPassed) triggerConfetti();
-                }
-            } catch {
-                toast.error('Failed to load result details');
-            } finally {
-                setLoading(false);
+  useEffect(() => {
+    const fetchResult = async () => {
+        if (!attemptId) {
+            router.push('/student/exams');  // ✅ redirect
+            return;
+        }
+        try {
+            // ✅ /student/exams/ prefix
+            const res = await api.get(`/student/exams/attempt/${attemptId}`);
+            if (res.data.success) {
+                const attempt = res.data.attempt;
+                setResult(attempt);
+
+                // ✅ analysis attempt ke andar hai
+                setDetailedResults(Array.isArray(attempt.analysis) ? attempt.analysis : []);
+
+                // ✅ title aur data bhi attempt ke andar hai
+                setExamTitle(attempt.examTitle || '');
+                setExamData({
+                    duration: attempt.duration || null,
+                    totalMarks: attempt.totalMarks,
+                });
+
+                if (attempt.isPassed) triggerConfetti();
             }
-        };
-        fetchResult();
-    }, [attemptId]);
+        } catch {
+            toast.error('Failed to load result details');
+            router.push('/student/exams');
+        } finally {
+            setLoading(false);
+        }
+    };
+    fetchResult();
+}, [attemptId, router]);
 
     const triggerConfetti = () => {
         const end = Date.now() + 3000;
@@ -116,7 +135,6 @@ function ExamResultPageClient() {
         }, 250);
     };
 
-    // ── Loading ──────────────────────────────────────────────────────────────
     if (loading) return (
         <div className="flex items-center justify-center min-h-[60vh]">
             <div className="flex flex-col items-center gap-3">
@@ -126,12 +144,12 @@ function ExamResultPageClient() {
                         <Sparkles className="w-4 h-4 text-[var(--theme-primary)] animate-pulse" />
                     </div>
                 </div>
-                <p className="text-sm text-slate-400 font-medium">Calculating Results…</p>
+                <p className="text-sm text-slate-400 font-medium" style={{ fontFamily: T.fontFamily }}>Calculating Results…</p>
             </div>
         </div>
     );
 
-    if (!result) return <div className="p-10 text-center text-slate-400 text-sm">Result not found</div>;
+    if (!result) return <div className="p-10 text-center text-slate-400 text-sm" style={{ fontFamily: T.fontFamily }}>Result not found</div>;
 
     const isPassed = result.isPassed;
     const percentage = result.percentage || (result.totalMarks > 0 ? Math.round((result.score / result.totalMarks) * 100) : 0);
@@ -145,9 +163,9 @@ function ExamResultPageClient() {
     const accuracy = allResults.length > 0 ? Math.round((correctCount / allResults.length) * 100) : 0;
 
     return (
-        <div className="space-y-4 pb-10" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-4 pb-10" style={{ fontFamily: T.fontFamily }}>
 
-            {/* ── Breadcrumb + actions ─────────────────────────────────────── */}
+            {/* Breadcrumb + actions */}
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-1.5 text-sm text-slate-400">
                     <Link href="/student/dashboard" className="hover:text-[var(--theme-primary)] transition-colors">Home</Link>
@@ -166,7 +184,7 @@ function ExamResultPageClient() {
                         <Download className="w-3.5 h-3.5" /> Report
                     </button>
                     {!isPassed && (
-                        <button onClick={() => router.push(`/student/exams/${examId}`)}
+                        <button onClick={() => router.push(`/student/exams/${examId}/take`)}
                             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all"
                             style={{ background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))' }}>
                             <RotateCcw className="w-3.5 h-3.5" /> Retake Test
@@ -175,7 +193,7 @@ function ExamResultPageClient() {
                 </div>
             </div>
 
-            {/* ── Exam header card ─────────────────────────────────────────── */}
+            {/* Exam header card */}
             <div className="bg-white rounded-2xl px-6 py-5 shadow-sm border border-slate-100">
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="flex items-start gap-3">
@@ -203,7 +221,7 @@ function ExamResultPageClient() {
                 </div>
             </div>
 
-            {/* ── Stat cards ───────────────────────────────────────────────── */}
+            {/* Stat cards */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 <StatBox label="Score Obtained">
                     <div className="flex items-end gap-1">
@@ -242,10 +260,10 @@ function ExamResultPageClient() {
                 </StatBox>
             </div>
 
-            {/* ── Main grid ────────────────────────────────────────────────── */}
+            {/* Main grid */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
-                {/* ── Left 2/3 ─────────────────────────────────────────────── */}
+                {/* Left 2/3 */}
                 <div className="xl:col-span-2 space-y-4">
 
                     {/* Performance Analytics */}
@@ -258,7 +276,6 @@ function ExamResultPageClient() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Left: breakdown */}
                             <div className="space-y-4">
                                 {/* 3-box counts */}
                                 <div className="grid grid-cols-3 gap-2.5">
@@ -269,17 +286,19 @@ function ExamResultPageClient() {
                                     ].map(b => (
                                         <div key={b.label} className="rounded-2xl p-3 text-center border"
                                             style={{ background: b.bg, borderColor: b.border }}>
-                                            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: b.color }}>{b.label}</p>
-                                            <p className="text-2xl font-black" style={{ color: b.color }}>{b.count}</p>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: b.color, marginBottom: 4 }}>
+                                                {b.label}
+                                            </p>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: b.color }}>{b.count}</p>
                                         </div>
                                     ))}
                                 </div>
 
                                 {/* Score progress bar */}
                                 <div>
-                                    <div className="flex justify-between text-xs font-semibold text-slate-500 mb-1.5">
-                                        <span>Score Progress</span>
-                                        <span className={isPassed ? 'text-emerald-600' : 'text-red-500'}>{percentage}%</span>
+                                    <div className="flex justify-between mb-1.5">
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: '#64748b' }}>Score Progress</span>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: isPassed ? '#059669' : '#ef4444' }}>{percentage}%</span>
                                     </div>
                                     <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
                                         <motion.div
@@ -305,7 +324,7 @@ function ExamResultPageClient() {
                                             { label: 'Skipped', count: unansweredCount, color: '#cbd5e1' },
                                         ].map(b => (
                                             <div key={b.label} className="flex items-center gap-3">
-                                                <span className="w-16 text-xs text-slate-500 font-medium shrink-0">{b.label}</span>
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: '#64748b', width: 64, flexShrink: 0 }}>{b.label}</span>
                                                 <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                                     <motion.div
                                                         initial={{ width: 0 }}
@@ -315,14 +334,14 @@ function ExamResultPageClient() {
                                                         style={{ background: b.color }}
                                                     />
                                                 </div>
-                                                <span className="text-xs font-bold text-slate-600 w-5 text-right shrink-0">{b.count}</span>
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: '#334155', width: 20, textAlign: 'right', flexShrink: 0 }}>{b.count}</span>
                                             </div>
                                         ))}
                                     </div>
                                 )}
                             </div>
 
-                            {/* Right: SVG ring */}
+                            {/* SVG ring */}
                             <div className="flex items-center justify-center">
                                 <div className="relative w-36 h-36">
                                     <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
@@ -340,12 +359,12 @@ function ExamResultPageClient() {
                                         />
                                     </svg>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-                                        <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Total</span>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.semibold, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>Total</span>
                                         <span className="text-2xl font-black text-slate-800 leading-tight">
                                             {result.score}
                                             <span className="text-sm text-slate-400 font-medium">/{result.totalMarks}</span>
                                         </span>
-                                        <span className={`text-base font-black ${isPassed ? 'text-emerald-600' : 'text-red-500'}`}>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.black, color: isPassed ? '#059669' : '#ef4444' }}>
                                             {percentage}%
                                         </span>
                                     </div>
@@ -354,18 +373,18 @@ function ExamResultPageClient() {
                         </div>
                     </div>
 
-                    {/* Perfect score banner */}
+                    {/* Perfect score */}
                     {allResults.length > 0 && incorrectCount === 0 && unansweredCount === 0 && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.97 }}
-                            animate={{ opacity: 1, scale: 1 }}
+                        <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
                             className="rounded-2xl p-5 border border-emerald-200 text-center overflow-hidden relative"
                             style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)' }}>
                             <div className="absolute -right-4 -top-4 w-24 h-24 bg-emerald-200/30 rounded-full" />
                             <div className="relative">
                                 <div className="text-3xl mb-1">🎉</div>
                                 <h3 className="text-base font-black text-emerald-800">Perfect Score!</h3>
-                                <p className="text-sm text-emerald-600 mt-1">You answered all questions correctly. Exceptional work!</p>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#059669', marginTop: 4 }}>
+                                    You answered all questions correctly. Exceptional work!
+                                </p>
                             </div>
                         </motion.div>
                     )}
@@ -381,7 +400,7 @@ function ExamResultPageClient() {
                                     <div>
                                         <h2 className="text-base font-bold text-slate-800">Question Review</h2>
                                         {(hiddenAnswers || hiddenSolutions) && (
-                                            <p className="text-[11px] text-amber-600 mt-0.5">
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: '11px', color: '#B45309', marginTop: 2 }}>
                                                 {hiddenAnswers && 'Answer key hidden for some questions. '}
                                                 {hiddenSolutions && 'Solution hidden for some questions.'}
                                             </p>
@@ -391,11 +410,12 @@ function ExamResultPageClient() {
                             </div>
 
                             <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
+                                <table className="w-full" style={{ fontFamily: T.fontFamily }}>
                                     <thead>
                                         <tr className="bg-slate-50/80 border-b border-slate-100">
                                             {['Q.No', 'Question', 'Status', 'Your Answer', 'Correct Answer', 'Marks', 'Action'].map(h => (
-                                                <th key={h} className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-[0.08em] whitespace-nowrap">
+                                                <th key={h} className="px-4 py-3 text-left whitespace-nowrap"
+                                                    style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
                                                     {h}
                                                 </th>
                                             ))}
@@ -414,85 +434,78 @@ function ExamResultPageClient() {
 
                                             return (
                                                 <React.Fragment key={item.questionId || idx}>
-                                                    <tr
-                                                        style={{ borderLeft: `3px solid ${leftBorder}` }}
-                                                        className={`border-b border-slate-50 transition-colors ${isExpanded ? 'bg-[var(--theme-primary)]/20/40' : 'hover:bg-slate-50/60'}`}>
-                                                        <td className="px-4 py-3 text-xs font-bold text-slate-500 whitespace-nowrap">
+                                                    <tr style={{ borderLeft: `3px solid ${leftBorder}` }}
+                                                        className={`border-b border-slate-50 transition-colors ${isExpanded ? 'bg-[var(--theme-primary)]/10' : 'hover:bg-slate-50/60'}`}>
+                                                        <td className="px-4 py-3 whitespace-nowrap"
+                                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: '#64748b' }}>
                                                             Q{item.questionNumber || idx + 1}
                                                         </td>
-                                                        <td className="px-4 py-3 text-xs text-slate-700 max-w-[180px]">
-                                                            <p className="truncate font-medium">{item.question}</p>
+                                                        <td className="px-4 py-3 max-w-[180px]">
+                                                            <p className="truncate font-medium" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#334155' }}>{item.question}</p>
                                                         </td>
-                                                        <td className="px-4 py-3 whitespace-nowrap">
-                                                            <StatusPill status={status} />
+                                                        <td className="px-4 py-3 whitespace-nowrap"><StatusPill status={status} /></td>
+                                                        <td className="px-4 py-3 max-w-[120px]">
+                                                            <p className="truncate font-medium" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#475569' }}>{selectedAnswer}</p>
                                                         </td>
-                                                        <td className="px-4 py-3 text-xs text-slate-600 max-w-[120px]">
-                                                            <p className="truncate font-medium">{selectedAnswer}</p>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-xs max-w-[120px]">
-                                                            <p className={`truncate font-semibold ${item.canViewCorrectAnswer ? 'text-emerald-700' : 'text-slate-300 italic'}`}>
+                                                        <td className="px-4 py-3 max-w-[120px]">
+                                                            <p className={`truncate font-semibold ${item.canViewCorrectAnswer ? 'text-emerald-700' : 'text-slate-300 italic'}`}
+                                                                style={{ fontFamily: T.fontFamily, fontSize: T.size.xs }}>
                                                                 {correctAnswer}
                                                             </p>
                                                         </td>
-                                                        <td className="px-4 py-3 text-xs font-bold whitespace-nowrap">
-                                                            <span className={item.pointsEarned > 0 ? 'text-emerald-600' : 'text-slate-400'}>
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: item.pointsEarned > 0 ? '#059669' : '#94a3b8' }}>
                                                                 {item.pointsEarned}
                                                             </span>
-                                                            <span className="text-slate-300"> / {item.pointsPossible}</span>
+                                                            <span style={{ color: '#cbd5e1', fontFamily: T.fontFamily, fontSize: T.size.xs }}> / {item.pointsPossible}</span>
                                                         </td>
                                                         <td className="px-4 py-3">
-                                                            <button
-                                                                onClick={() => setExpandedRow(isExpanded ? null : idx)}
-                                                                className={`flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-bold rounded-lg transition-all
+                                                            <button onClick={() => setExpandedRow(isExpanded ? null : idx)}
+                                                                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all
                                                                     ${isExpanded
                                                                         ? 'bg-[var(--theme-primary)]/20 text-[var(--theme-primary)]'
-                                                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                                                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                                                                style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold }}>
                                                                 {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                                                                 {isExpanded ? 'Hide' : 'Review'}
                                                             </button>
                                                         </td>
                                                     </tr>
 
-                                                    {/* Inline solution expansion */}
                                                     <AnimatePresence>
                                                         {isExpanded && (
-                                                            <motion.tr
-                                                                key={`sol-${idx}`}
-                                                                initial={{ opacity: 0 }}
-                                                                animate={{ opacity: 1 }}
-                                                                exit={{ opacity: 0 }}
+                                                            <motion.tr key={`sol-${idx}`}
+                                                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                                                                 className="border-b border-[var(--theme-primary)]/30">
                                                                 <td colSpan={7} className="px-6 py-5 bg-slate-50/80">
                                                                     <div className="flex flex-col gap-4">
-                                                                        {/* Full Question */}
                                                                         <div>
-                                                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Question</p>
-                                                                            <p className="text-sm font-medium text-slate-800 leading-relaxed whitespace-pre-wrap">{item.question}</p>
+                                                                            <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 4 }}>Question</p>
+                                                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: '#1e293b', lineHeight: T.leading.relaxed }}>{item.question}</p>
                                                                         </div>
-
-                                                                        {/* Full Answers */}
                                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                                             <div className="p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
-                                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Your Answer</p>
-                                                                                <p className="text-sm font-medium text-slate-700 leading-relaxed whitespace-pre-wrap">{selectedAnswer}</p>
+                                                                                <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 4 }}>Your Answer</p>
+                                                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: '#334155', lineHeight: T.leading.relaxed }}>{selectedAnswer}</p>
                                                                             </div>
                                                                             <div className="p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
-                                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Correct Answer / AI Feedback</p>
-                                                                                <div className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${item.canViewCorrectAnswer ? 'text-emerald-700' : 'text-slate-400 italic'}`}>
+                                                                                <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 4 }}>Correct Answer / AI Feedback</p>
+                                                                                <div className={`${item.canViewCorrectAnswer ? 'text-emerald-700' : 'text-slate-400 italic'}`}
+                                                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, lineHeight: T.leading.relaxed }}>
                                                                                     {item.aiFeedback || correctAnswer}
                                                                                 </div>
                                                                             </div>
                                                                         </div>
-
-                                                                        {/* Solution Explanation if exists */}
                                                                         {hasSolution && (
                                                                             <div className="flex items-start gap-3 mt-1 p-4 bg-[var(--theme-primary)]/10 rounded-xl border border-[var(--theme-primary)]/20">
                                                                                 <div className="w-6 h-6 bg-[var(--theme-primary)]/20 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
                                                                                     <Sparkles className="w-3.5 h-3.5 text-[var(--theme-primary)]" />
                                                                                 </div>
                                                                                 <div>
-                                                                                    <p className="text-[10px] font-bold text-[var(--theme-primary)] uppercase tracking-wider mb-1">Solution Explanation</p>
-                                                                                    <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{item.solutionText}</p>
+                                                                                    <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: 'var(--theme-primary)', textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 4 }}>
+                                                                                        Solution Explanation
+                                                                                    </p>
+                                                                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#334155', lineHeight: T.leading.relaxed }}>{item.solutionText}</p>
                                                                                 </div>
                                                                             </div>
                                                                         )}
@@ -511,7 +524,7 @@ function ExamResultPageClient() {
                     )}
                 </div>
 
-                {/* ── Right sidebar ────────────────────────────────────────── */}
+                {/* Right sidebar */}
                 <div className="space-y-4">
 
                     {/* Question Analysis */}
@@ -527,22 +540,22 @@ function ExamResultPageClient() {
                                 <>
                                     <div className="flex items-center gap-2.5 p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl">
                                         <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
-                                        <span className="text-xs font-medium text-slate-700">Strong performance overall</span>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: '#334155' }}>Strong performance overall</span>
                                     </div>
                                     <div className="flex items-center gap-2.5 p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl">
                                         <Star className="w-4 h-4 text-emerald-500 shrink-0" />
-                                        <span className="text-xs font-medium text-slate-700">Excellent accuracy rate</span>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: '#334155' }}>Excellent accuracy rate</span>
                                     </div>
                                 </>
                             ) : (
                                 <>
                                     <div className="flex items-center gap-2.5 p-2.5 bg-amber-50 border border-amber-100 rounded-xl">
                                         <TrendingUp className="w-4 h-4 text-amber-500 shrink-0" />
-                                        <span className="text-xs font-medium text-slate-700">Room for improvement</span>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: '#334155' }}>Room for improvement</span>
                                     </div>
                                     <div className="flex items-center gap-2.5 p-2.5 bg-amber-50 border border-amber-100 rounded-xl">
                                         <Zap className="w-4 h-4 text-amber-500 shrink-0" />
-                                        <span className="text-xs font-medium text-slate-700">Review incorrect answers</span>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: '#334155' }}>Review incorrect answers</span>
                                     </div>
                                 </>
                             )}
@@ -561,18 +574,14 @@ function ExamResultPageClient() {
                             <div className="space-y-2">
                                 {incorrectCount > 0 && (
                                     <div className="flex items-center gap-2.5 p-2.5 bg-red-50 border border-red-100 rounded-xl">
-                                        <span className="w-6 h-6 rounded-lg bg-red-500 flex items-center justify-center text-[10px] font-black text-white shrink-0">
-                                            {incorrectCount}
-                                        </span>
-                                        <span className="text-xs font-medium text-slate-600">incorrect questions</span>
+                                        <span className="w-6 h-6 rounded-lg bg-red-500 flex items-center justify-center text-white text-[10px] font-black shrink-0">{incorrectCount}</span>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: '#475569' }}>incorrect questions</span>
                                     </div>
                                 )}
                                 {unansweredCount > 0 && (
                                     <div className="flex items-center gap-2.5 p-2.5 bg-slate-50 border border-slate-100 rounded-xl">
-                                        <span className="w-6 h-6 rounded-lg bg-slate-400 flex items-center justify-center text-[10px] font-black text-white shrink-0">
-                                            {unansweredCount}
-                                        </span>
-                                        <span className="text-xs font-medium text-slate-600">unanswered questions</span>
+                                        <span className="w-6 h-6 rounded-lg bg-slate-400 flex items-center justify-center text-white text-[10px] font-black shrink-0">{unansweredCount}</span>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: '#475569' }}>unanswered questions</span>
                                     </div>
                                 )}
                             </div>
@@ -581,43 +590,42 @@ function ExamResultPageClient() {
 
                     {/* AI Recommendation */}
                     <div className="rounded-2xl overflow-hidden shadow-sm border border-[var(--theme-primary)]/20 relative"
-                        style={{ background: 'linear-gradient(135deg, var(--theme-sidebar) 0%, var(--theme-sidebar) 100%)' }}>
-                        {/* dot grid */}
+                        style={{ background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))' }}>
                         <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
                             style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
-                        {/* glow */}
                         <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[var(--theme-accent)]/20 blur-2xl pointer-events-none" />
 
                         <div className="relative p-5">
                             <div className="flex items-center gap-2.5 mb-3">
                                 <div className="w-7 h-7 bg-white/15 rounded-xl flex items-center justify-center">
-                                    <Brain className="w-4 h-4 text-[var(--theme-primary)]/70" />
+                                    <Brain className="w-4 h-4 text-white/70" />
                                 </div>
-                                <h3 className="text-sm font-bold text-white">AI Recommendation</h3>
+                                <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: '#ffffff' }}>AI Recommendation</h3>
                             </div>
 
                             <div className="space-y-2 mb-4">
                                 {isPassed ? (
                                     <div className="flex items-center gap-2 p-2.5 bg-white/10 rounded-xl">
                                         <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                                        <span className="text-xs text-[var(--theme-primary)]/70 font-medium">Move on to next module</span>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: 'rgba(255,255,255,0.70)' }}>Move on to next module</span>
                                     </div>
                                 ) : (
                                     <>
                                         <div className="flex items-center gap-2 p-2.5 bg-white/10 rounded-xl">
                                             <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                                            <span className="text-xs text-[var(--theme-primary)]/70 font-medium">Practice similar questions</span>
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: 'rgba(255,255,255,0.70)' }}>Practice similar questions</span>
                                         </div>
                                         <div className="flex items-center gap-2 p-2.5 bg-white/10 rounded-xl">
                                             <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                                            <span className="text-xs text-[var(--theme-primary)]/70 font-medium">Revise weak topics with AI Tutor</span>
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: 'rgba(255,255,255,0.70)' }}>Revise weak topics with AI Tutor</span>
                                         </div>
                                     </>
                                 )}
                             </div>
 
                             <Link href="/student/ai-analytics"
-                                className="flex items-center justify-center gap-2 w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold rounded-xl transition-colors">
+                                className="flex items-center justify-center gap-2 w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl transition-colors"
+                                style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
                                 <Sparkles className="w-3.5 h-3.5" /> Generate AI Study Plan
                             </Link>
                         </div>
@@ -626,13 +634,14 @@ function ExamResultPageClient() {
                     {/* CTA buttons */}
                     <div className="space-y-2.5">
                         <button onClick={() => router.push('/student/dashboard')}
-                            className="w-full flex items-center justify-center gap-2 py-3 text-white text-sm font-bold rounded-2xl transition-all"
-                            style={{ background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))' }}>
+                            className="w-full flex items-center justify-center gap-2 py-3 text-white rounded-2xl transition-all"
+                            style={{ background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
                             <Home className="w-4 h-4" /> Back to Dashboard
                         </button>
                         {!isPassed && (
                             <button onClick={() => router.push(`/student/exams/${examId}`)}
-                                className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm font-bold rounded-2xl transition-colors">
+                                className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-2xl transition-colors"
+                                style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
                                 <RotateCcw className="w-4 h-4" /> Try Again
                             </button>
                         )}

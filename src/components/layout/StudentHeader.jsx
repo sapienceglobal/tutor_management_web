@@ -43,7 +43,7 @@ export function StudentHeader({ user, institute, onLogout, onMenuClick, onSideba
 
     return (
         <>
-            <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-sm border-b border-slate-200/70 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]">
+            <header className="sticky top-0 z-40 w-full bg-[#f1eefa] backdrop-blur-sm border-b border-slate-200/70 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]">
                 <div className="h-[60px] flex items-center justify-between px-4 lg:px-5 gap-3">
 
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -98,7 +98,7 @@ export function StudentHeader({ user, institute, onLogout, onMenuClick, onSideba
                                 <button suppressHydrationWarning
                                     className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-xl hover:bg-slate-100 transition-colors group">
                                     <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-[var(--theme-primary)]/80 flex-shrink-0">
-                                        <img src={user?.profileImage || '/default-avatar.png'} alt="User" className="w-full h-full object-cover" />
+                                        <img src={user?.profileImage || '/default-avatar.svg'} alt="User" className="w-full h-full object-cover" />
                                     </div>
                                     <div className="hidden sm:flex flex-col items-start min-w-0">
                                         <span className="text-[13px] font-semibold text-slate-700 max-w-[100px] truncate leading-tight">{user?.name || 'Student'}</span>
@@ -111,7 +111,7 @@ export function StudentHeader({ user, institute, onLogout, onMenuClick, onSideba
                                 <DropdownMenuLabel className="px-3 py-2">
                                     <div className="flex items-center gap-2.5">
                                         <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-[var(--theme-primary)] flex-shrink-0">
-                                            <img src={user?.profileImage || '/default-avatar.png'} alt="" className="w-full h-full object-cover" />
+                                            <img src={user?.profileImage || '/default-avatar.svg'} alt="" className="w-full h-full object-cover" />
                                         </div>
                                         <div className="min-w-0">
                                             <p className="text-sm font-bold text-slate-800 truncate">{user?.name || 'Student'}</p>

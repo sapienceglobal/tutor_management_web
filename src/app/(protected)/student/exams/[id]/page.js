@@ -8,11 +8,14 @@ import {
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { sanitizeHtml } from '@/lib/sanitize';
-import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 import Link from 'next/link';
+import { T } from '@/constants/studentTokens';
+
+// Note: This page uses var(--theme-*) CSS variables set by ThemeContext.
+// T.fontFamily is the only token needed here — everything else uses CSS vars directly.
 
 export default function ExamPlayerPage() {
     const params = useParams();
@@ -45,9 +48,7 @@ export default function ExamPlayerPage() {
             } catch (error) {
                 toast.error('Failed to load exam.');
                 router.back();
-            } finally {
-                setLoading(false);
-            }
+            } finally { setLoading(false); }
         };
         fetchExam();
     }, [examId, router]);
@@ -77,29 +78,22 @@ export default function ExamPlayerPage() {
         setAnswers(prev => ({ ...prev, [questionId]: { index: optionIndex, text: optionText } }));
         setQuestionStatus(prev => ({ ...prev, [questionId]: prev[questionId] === 'marked' ? 'answered-marked' : 'answered' }));
     };
-
     const handleNumericAnswer = (questionId, value) => {
         setAnswers(prev => ({ ...prev, [questionId]: { value } }));
         setQuestionStatus(prev => ({ ...prev, [questionId]: prev[questionId] === 'marked' ? 'answered-marked' : (value ? 'answered' : 'visited') }));
     };
-
     const handleSubjectiveAnswer = (questionId, text) => {
         setAnswers(prev => ({ ...prev, [questionId]: { textAnswer: text } }));
         setQuestionStatus(prev => ({ ...prev, [questionId]: prev[questionId] === 'marked' ? 'answered-marked' : (text.trim() ? 'answered' : 'visited') }));
     };
-
     const handleMatchAnswer = (questionId, leftItem, rightItem) => {
         setAnswers(prev => ({ ...prev, [questionId]: { match: { ...(prev[questionId]?.match || {}), [leftItem]: rightItem } } }));
         setQuestionStatus(prev => ({ ...prev, [questionId]: prev[questionId] === 'marked' ? 'answered-marked' : 'answered' }));
     };
-
     const handleClearResponse = (questionId) => {
-        const newAnswers = { ...answers };
-        delete newAnswers[questionId];
-        setAnswers(newAnswers);
+        const newAnswers = { ...answers }; delete newAnswers[questionId]; setAnswers(newAnswers);
         setQuestionStatus(prev => ({ ...prev, [questionId]: 'visited' }));
     };
-
     const handleMarkForReview = (questionId) => {
         setQuestionStatus(prev => {
             const current = prev[questionId];
@@ -109,7 +103,6 @@ export default function ExamPlayerPage() {
             return { ...prev, [questionId]: 'marked' };
         });
     };
-
     const handleSkip = () => { if (currentQuestionIndex < exam.questions.length - 1) setCurrentQuestionIndex(prev => prev + 1); };
     const handleSaveAndNext = () => { if (currentQuestionIndex < exam.questions.length - 1) setCurrentQuestionIndex(prev => prev + 1); };
 
@@ -134,7 +127,7 @@ export default function ExamPlayerPage() {
                 startedAt: startedAt || new Date().toISOString(),
             };
             const res = await api.post(`/exams/${examId}/submit`, payload);
-            if (res.data.success) router.push(`/student/exams/${examId}/result?attemptId=${res.data.attemptId}`);
+            if (res.data.success) router.push(`/student/exams/attempt/${res.data.attemptId}`);
         } catch (error) {
             toast.error('Submission failed. Please try again.');
         } finally { setSubmitting(false); }
@@ -148,7 +141,6 @@ export default function ExamPlayerPage() {
 
     const handleStartExam = () => { setIsStarted(true); setStartedAt(new Date().toISOString()); };
 
-    // ── Loading ──────────────────────────────────────────────────────────────
     if (loading) return (
         <div className="flex items-center justify-center min-h-[60vh]">
             <div className="flex flex-col items-center gap-3">
@@ -158,19 +150,17 @@ export default function ExamPlayerPage() {
                         <Sparkles className="w-4 h-4 text-[var(--theme-primary)] animate-pulse" />
                     </div>
                 </div>
-                <p className="text-sm text-slate-400 font-medium">Loading exam…</p>
+                <p className="text-sm text-slate-400 font-medium" style={{ fontFamily: T.fontFamily }}>Loading exam…</p>
             </div>
         </div>
     );
 
-    if (!exam) return <div className="p-8 text-center text-slate-500">Exam not found</div>;
+    if (!exam) return <div className="p-8 text-center text-slate-500" style={{ fontFamily: T.fontFamily }}>Exam not found</div>;
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // SCREEN 1 — INSTRUCTIONS
-    // ══════════════════════════════════════════════════════════════════════════
+    // ══ SCREEN 1 — INSTRUCTIONS ══════════════════════════════════════════
     if (!isStarted) {
         return (
-            <div className="space-y-5" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+            <div className="space-y-5" style={{ fontFamily: T.fontFamily }}>
                 {/* Breadcrumb */}
                 <div className="flex items-center gap-1.5 text-sm text-slate-400">
                     <Link href="/student/dashboard" className="hover:text-[var(--theme-primary)] transition-colors">Dashboard</Link>
@@ -191,7 +181,9 @@ export default function ExamPlayerPage() {
                         </div>
 
                         <div className="p-6 space-y-5">
-                            <h2 className="text-sm font-bold text-slate-700 uppercase tracking-[0.06em]">Please Read the Instructions Carefully</h2>
+                            <h2 className="text-sm font-bold text-slate-700 uppercase tracking-[0.06em]">
+                                Please Read the Instructions Carefully
+                            </h2>
 
                             <ul className="space-y-2.5">
                                 {[
@@ -218,13 +210,13 @@ export default function ExamPlayerPage() {
                             </ul>
 
                             {(exam.description || exam.instructions) && (
-                                <div className="bg-[var(--theme-primary)]/20/60 rounded-xl p-4 border border-[var(--theme-primary)]/30">
+                                <div className="bg-[var(--theme-primary)]/10 rounded-xl p-4 border border-[var(--theme-primary)]/20">
                                     <p className="text-[11px] font-bold text-[var(--theme-primary)] uppercase tracking-wider mb-2">Additional Instructions</p>
                                     <div className="prose prose-sm max-w-none text-slate-600" dangerouslySetInnerHTML={{ __html: sanitizeHtml(exam.description || exam.instructions) }} />
                                 </div>
                             )}
 
-                            <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-[var(--theme-primary)]/20/50 transition-colors border border-slate-100">
+                            <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-[var(--theme-primary)]/10 transition-colors border border-slate-100">
                                 <input type="checkbox" checked={agreedToInstructions}
                                     onChange={e => setAgreedToInstructions(e.target.checked)}
                                     className="w-4 h-4 rounded border-slate-300 text-[var(--theme-primary)] focus:ring-[var(--theme-primary)] cursor-pointer" />
@@ -253,7 +245,7 @@ export default function ExamPlayerPage() {
                             <h3 className="text-sm font-bold text-slate-800">Test Summary</h3>
                         </div>
                         <div className="p-5 space-y-3">
-                            <div className="flex items-center gap-2.5 p-3 bg-[var(--theme-primary)]/20 rounded-xl">
+                            <div className="flex items-center gap-2.5 p-3 bg-[var(--theme-primary)]/10 rounded-xl">
                                 <AlertCircle className="w-4 h-4 text-[var(--theme-primary)] shrink-0" />
                                 <span className="text-sm font-semibold text-[var(--theme-primary)] truncate">{exam.title}</span>
                             </div>
@@ -279,9 +271,7 @@ export default function ExamPlayerPage() {
         );
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // SCREEN 2 — EXAM PLAYER
-    // ══════════════════════════════════════════════════════════════════════════
+    // ══ SCREEN 2 — EXAM PLAYER ═══════════════════════════════════════════
     const currentQuestion = exam.questions[currentQuestionIndex];
     const answeredCount = Object.values(questionStatus).filter(s => s === 'answered' || s === 'answered-marked').length;
     const notAnsweredCount = Object.values(questionStatus).filter(s => s === 'visited').length;
@@ -292,7 +282,6 @@ export default function ExamPlayerPage() {
     const marksProgress = Math.round((answeredCount / exam.questions.length) * 100);
     const isLowTime = timeLeft < 300;
 
-    // navigator box color helper — matching reference image exactly
     const getNavBoxStyle = (status, isCurrent) => {
         if (isCurrent) return { bg: 'var(--theme-sidebar)', text: 'white', border: 'var(--theme-sidebar)', ring: true };
         switch (status) {
@@ -305,9 +294,9 @@ export default function ExamPlayerPage() {
     };
 
     return (
-        <div className="space-y-3" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-3" style={{ fontFamily: T.fontFamily }}>
 
-            {/* ── Top bar ──────────────────────────────────────────────────── */}
+            {/* Top bar */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl">
                     <div className="w-6 h-6 bg-[var(--theme-primary)]/20 rounded-lg flex items-center justify-center shrink-0">
@@ -316,17 +305,17 @@ export default function ExamPlayerPage() {
                     <span className="text-sm font-semibold text-slate-700">Test: <span className="text-slate-900">{exam.title}</span></span>
                 </div>
                 <button onClick={() => handleSubmit(false)} disabled={submitting}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[var(--theme-sidebar)] to-[var(--theme-primary)] hover:from-[var(--theme-primary)] hover:to-[var(--theme-primary)] text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-[var(--theme-primary)]/30 disabled:opacity-60">
+                    className="flex items-center gap-2 px-6 py-2.5 text-white text-sm font-bold rounded-xl transition-all shadow-md disabled:opacity-60"
+                    style={{ background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))' }}>
                     {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                     Submit Test
                 </button>
             </div>
 
-            {/* ── Stats bar ────────────────────────────────────────────────── */}
+            {/* Stats bar */}
             <div className="flex items-center gap-3 flex-wrap">
                 {/* Timer */}
-                <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border font-semibold
-                    ${isLowTime ? 'bg-red-50 border-red-200 text-red-700' : 'bg-white border-slate-200 text-slate-700'}`}>
+                <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border font-semibold ${isLowTime ? 'bg-red-50 border-red-200 text-red-700' : 'bg-white border-slate-200 text-slate-700'}`}>
                     <Timer className={`w-4 h-4 ${isLowTime ? 'text-red-500 animate-pulse' : 'text-slate-500'}`} />
                     <span className="text-xs text-slate-400 mr-1">Time Left:</span>
                     <span className={`text-sm font-black tabular-nums ${isLowTime ? 'text-red-700' : 'text-slate-900'}`}>{formatTime(timeLeft)}</span>
@@ -355,12 +344,11 @@ export default function ExamPlayerPage() {
                 </div>
             </div>
 
-            {/* ── Main grid ────────────────────────────────────────────────── */}
+            {/* Main grid */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
                 {/* Question area */}
                 <div className="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
-                    {/* Question header */}
                     <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/60 flex items-center gap-3">
                         <span className="text-sm font-bold text-slate-800">Q{currentQuestionIndex + 1} of {exam.questions.length}</span>
                         {currentQuestion.section && (
@@ -371,7 +359,6 @@ export default function ExamPlayerPage() {
                         )}
                     </div>
 
-                    {/* Question body */}
                     <div className="p-6 flex-1">
                         <motion.div key={currentQuestion._id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }}>
                             {/* Passage */}
@@ -385,7 +372,6 @@ export default function ExamPlayerPage() {
                                 </div>
                             )}
 
-                            {/* Question text */}
                             <div className="prose prose-base max-w-none text-slate-800 font-semibold mb-1"
                                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(`Q${currentQuestionIndex + 1}. ${currentQuestion.question}`) }} />
 
@@ -399,10 +385,7 @@ export default function ExamPlayerPage() {
                                             return (
                                                 <div key={idx} onClick={() => handleSelectOption(currentQuestion._id, idx, option.text)}
                                                     className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-150
-                                                        ${isSelected
-                                                            ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)]/20/60'
-                                                            : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50/80'}`}>
-                                                    {/* Letter badge */}
+                                                        ${isSelected ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)]/10' : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50/80'}`}>
                                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 shrink-0 transition-all
                                                         ${isSelected ? 'bg-[var(--theme-sidebar)] border-[var(--theme-sidebar)] text-white' : 'bg-white border-slate-200 text-slate-500'}`}>
                                                         {String.fromCharCode(65 + idx)}
@@ -419,13 +402,14 @@ export default function ExamPlayerPage() {
 
                             {/* Subjective */}
                             {(!currentQuestion.options || currentQuestion.options.length === 0 || currentQuestion.questionType === 'subjective') && (
-                                <div className="mt-5 animate-in fade-in duration-300">
+                                <div className="mt-5">
                                     <label className="block text-sm font-semibold text-slate-600 mb-2">Type your detailed answer:</label>
                                     <textarea
                                         value={answers[currentQuestion._id]?.textAnswer || ''}
                                         onChange={e => handleSubjectiveAnswer(currentQuestion._id, e.target.value)}
                                         placeholder="Type your detailed answer here..."
                                         className="w-full p-5 rounded-2xl border-2 border-slate-200 focus:border-[var(--theme-primary)] focus:ring-4 focus:ring-[var(--theme-primary)]/10 min-h-[240px] resize-y text-slate-800 bg-slate-50 transition-all text-base shadow-inner font-medium placeholder:text-slate-400"
+                                        style={{ fontFamily: T.fontFamily }}
                                     />
                                 </div>
                             )}
@@ -438,11 +422,12 @@ export default function ExamPlayerPage() {
                                         value={answers[currentQuestion._id]?.value || ''}
                                         onChange={e => handleNumericAnswer(currentQuestion._id, e.target.value)}
                                         className="w-full max-w-sm px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[var(--theme-primary)] focus:ring-0 text-lg font-bold text-slate-800 transition-colors"
+                                        style={{ fontFamily: T.fontFamily }}
                                         placeholder="e.g. 42.5" />
                                 </div>
                             )}
 
-                            {/* Match the following */}
+                            {/* Match */}
                             {currentQuestion.questionType === 'match_the_following' && currentQuestion.pairs && (
                                 <div className="mt-5 space-y-3">
                                     <p className="text-sm font-medium text-slate-500 mb-3">Match the items on the left with the correct options on the right.</p>
@@ -453,7 +438,8 @@ export default function ExamPlayerPage() {
                                             <div className="flex-1">
                                                 <select value={answers[currentQuestion._id]?.match?.[pair.left] || ''}
                                                     onChange={e => handleMatchAnswer(currentQuestion._id, pair.left, e.target.value)}
-                                                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-700 focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-[var(--theme-primary)]">
+                                                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-700 focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-[var(--theme-primary)]"
+                                                    style={{ fontFamily: T.fontFamily }}>
                                                     <option value="" disabled>Select match…</option>
                                                     {currentQuestion.pairs.map((p, i) => (
                                                         <option key={i} value={p.right}>{String.fromCharCode(65 + i)}. {p.right}</option>
@@ -470,8 +456,7 @@ export default function ExamPlayerPage() {
                     {/* Bottom actions */}
                     <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-2">
-                            <button onClick={() => handleClearResponse(currentQuestion._id)}
-                                disabled={!answers[currentQuestion._id]}
+                            <button onClick={() => handleClearResponse(currentQuestion._id)} disabled={!answers[currentQuestion._id]}
                                 className="px-3 py-2 text-xs font-bold text-orange-600 border border-orange-200 rounded-xl hover:bg-orange-50 transition-colors disabled:opacity-40">
                                 Clear Answer
                             </button>
@@ -489,26 +474,22 @@ export default function ExamPlayerPage() {
                         </div>
                         <button onClick={handleSaveAndNext}
                             className="flex items-center gap-2 px-5 py-2.5 bg-[var(--theme-sidebar)] hover:bg-[var(--theme-primary)] text-white text-sm font-bold rounded-xl transition-colors">
-                            Save & Next <ArrowRight className="w-4 h-4" />
+                            Save &amp; Next <ArrowRight className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
 
-                {/* ── RIGHT: Question Navigator (matches reference image) ── */}
+                {/* Question Navigator */}
                 <div className="space-y-3">
                     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                        {/* Header */}
                         <div className="px-4 py-3.5 border-b border-slate-100 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
-                                <span className="text-sm font-bold text-slate-800">
-                                    {answeredCount}/{exam.questions.length} Answered
-                                </span>
+                                <span className="text-sm font-bold text-slate-800">{answeredCount}/{exam.questions.length} Answered</span>
                             </div>
                             <LayoutGrid className="w-4 h-4 text-slate-400" />
                         </div>
 
-                        {/* Question number grid */}
                         <div className="p-4">
                             <div className="grid grid-cols-6 gap-2 mb-5">
                                 {exam.questions.map((q, idx) => {
@@ -524,6 +505,7 @@ export default function ExamPlayerPage() {
                                                 borderColor: style.border,
                                                 outline: style.ring ? '2px solid var(--theme-sidebar)' : 'none',
                                                 outlineOffset: '2px',
+                                                fontFamily: T.fontFamily,
                                             }}>
                                             {idx + 1}
                                         </button>
@@ -531,52 +513,33 @@ export default function ExamPlayerPage() {
                                 })}
                             </div>
 
-                            {/* Legend — exactly matching reference image */}
+                            {/* Legend */}
                             <div className="grid grid-cols-2 gap-2">
-                                {/* Answered */}
                                 <div className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-100 bg-slate-50">
-                                    <div className="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center text-white text-sm font-black shrink-0">
-                                        {answeredCount}
-                                    </div>
+                                    <div className="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center text-white text-sm font-black shrink-0">{answeredCount}</div>
                                     <span className="text-xs font-semibold text-slate-600 leading-tight">Answered</span>
                                 </div>
-
-                                {/* Not Answered */}
                                 <div className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-100 bg-slate-50">
-                                    <div className="w-9 h-9 rounded-lg bg-red-500 flex items-center justify-center text-white text-sm font-black shrink-0">
-                                        {notAnsweredCount}
-                                    </div>
+                                    <div className="w-9 h-9 rounded-lg bg-red-500 flex items-center justify-center text-white text-sm font-black shrink-0">{notAnsweredCount}</div>
                                     <span className="text-xs font-semibold text-slate-600 leading-tight">Not Answered</span>
                                 </div>
-
-                                {/* Marked for Review */}
                                 <div className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-100 bg-slate-50">
-                                    <div className="w-9 h-9 rounded-lg bg-[var(--theme-accent)] flex items-center justify-center text-white text-sm font-black shrink-0">
-                                        {markedCount}
-                                    </div>
+                                    <div className="w-9 h-9 rounded-lg bg-[var(--theme-accent)] flex items-center justify-center text-white text-sm font-black shrink-0">{markedCount}</div>
                                     <span className="text-xs font-semibold text-slate-600 leading-tight">Marked for Review</span>
                                 </div>
-
-                                {/* Answered & Marked */}
                                 <div className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-100 bg-slate-50">
-                                    <div className="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center text-white text-sm font-black shrink-0">
-                                        {answeredMarkedCount}
-                                    </div>
-                                    <span className="text-xs font-semibold text-slate-600 leading-tight">Answered & Marked for Review</span>
+                                    <div className="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center text-white text-sm font-black shrink-0">{answeredMarkedCount}</div>
+                                    <span className="text-xs font-semibold text-slate-600 leading-tight">Answered &amp; Marked for Review</span>
                                 </div>
-
-                                {/* Not Visited — full width */}
                                 <div className="col-span-2 flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-100 bg-slate-50">
-                                    <div className="w-9 h-9 rounded-lg bg-slate-200 flex items-center justify-center text-slate-600 text-sm font-black shrink-0">
-                                        {notVisitedCount}
-                                    </div>
+                                    <div className="w-9 h-9 rounded-lg bg-slate-200 flex items-center justify-center text-slate-600 text-sm font-black shrink-0">{notVisitedCount}</div>
                                     <span className="text-xs font-semibold text-slate-600">Not Visited</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Finish Test button */}
+                    {/* Finish button */}
                     <button onClick={() => handleSubmit(false)} disabled={submitting}
                         className="w-full flex items-center justify-center gap-2 py-3.5 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-2xl transition-all shadow-sm shadow-red-900/20 disabled:opacity-60">
                         <LogOut className="w-4 h-4" />

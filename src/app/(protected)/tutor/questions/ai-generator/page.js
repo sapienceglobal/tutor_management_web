@@ -11,6 +11,7 @@ import { ArrowLeft, Loader2, Sparkles, Save, BrainCircuit, CheckCircle2, AlertCi
 import Link from 'next/link';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
+import { C, T, FX } from '@/constants/tutorTokens';
 
 export default function BulkAIGeneratorPage() {
     const router = useRouter();
@@ -90,7 +91,7 @@ export default function BulkAIGeneratorPage() {
     }[d] || 'bg-slate-100 text-slate-600 border-slate-200');
 
     return (
-        <div className="space-y-6" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-6" style={{ fontFamily: T.fontFamily }}>
 
             {/* Page Header */}
             <div className="flex items-center gap-3">
@@ -102,8 +103,8 @@ export default function BulkAIGeneratorPage() {
                 <div>
                     <div className="flex items-center gap-2.5 mb-0.5">
                         <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                            <BrainCircuit className="w-3.5 h-3.5" style={{ color: 'var(--theme-primary)' }} />
+                            style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
+                            <BrainCircuit className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
                         </div>
                         <h1 className="text-lg font-bold text-slate-800">Bulk AI Question Generator</h1>
                     </div>
@@ -119,8 +120,8 @@ export default function BulkAIGeneratorPage() {
                     {/* AI Prompt Card */}
                     <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
                         <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2.5"
-                            style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 6%, white)' }}>
-                            <Sparkles className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                            style={{ backgroundColor: FX.primary06 }}>
+                            <Sparkles className="w-4 h-4" style={{ color: C.btnPrimary }} />
                             <h2 className="text-sm font-bold text-slate-800">1. AI Prompt</h2>
                         </div>
                         <div className="p-5 space-y-4">
@@ -164,7 +165,7 @@ export default function BulkAIGeneratorPage() {
                             </div>
                             <Button onClick={handleGenerate} disabled={loading}
                                 className="w-full text-white gap-2"
-                                style={{ backgroundColor: 'var(--theme-primary)' }}>
+                                style={{ backgroundColor: C.btnPrimary }}>
                                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BrainCircuit className="w-4 h-4" />}
                                 Generate Questions
                             </Button>
@@ -211,7 +212,7 @@ export default function BulkAIGeneratorPage() {
                 <div className="lg:col-span-2 space-y-4">
                     {loading ? (
                         <div className="min-h-[400px] flex flex-col items-center justify-center bg-white rounded-xl border border-dashed border-slate-200">
-                            <BrainCircuit className="w-12 h-12 animate-pulse mb-4" style={{ color: 'color-mix(in srgb, var(--theme-primary) 40%, white)' }} />
+                            <BrainCircuit className="w-12 h-12 animate-pulse mb-4" style={{ color: FX.primary40 }} />
                             <h3 className="text-base font-bold text-slate-700 mb-1">AI is thinking...</h3>
                             <p className="text-sm text-slate-400 max-w-xs text-center">Analyzing topic and generating high-quality questions.</p>
                         </div>
@@ -257,7 +258,7 @@ export default function BulkAIGeneratorPage() {
                                                                 checked={opt === q.correctAnswer}
                                                                 onChange={() => updateQ(idx, 'correctAnswer', opt)}
                                                                 className="w-4 h-4 flex-shrink-0"
-                                                                style={{ accentColor: 'var(--theme-primary)' }} />
+                                                                style={{ accentColor: C.btnPrimary }} />
                                                             <input className="flex-1 text-sm bg-transparent outline-none text-slate-700"
                                                                 value={opt}
                                                                 onChange={(e) => {
@@ -293,8 +294,8 @@ export default function BulkAIGeneratorPage() {
                     ) : (
                         <div className="min-h-[400px] flex flex-col items-center justify-center bg-white rounded-xl border border-dashed border-slate-200 p-8">
                             <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-                                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                                <AlertCircle className="w-7 h-7" style={{ color: 'var(--theme-primary)' }} />
+                                style={{ backgroundColor: FX.primary10, border: `1px solid ${FX.primary20}` }}>
+                                <AlertCircle className="w-7 h-7" style={{ color: C.btnPrimary }} />
                             </div>
                             <h3 className="text-base font-bold text-slate-700 mb-1">No Questions Yet</h3>
                             <p className="text-sm text-slate-400 max-w-xs text-center">

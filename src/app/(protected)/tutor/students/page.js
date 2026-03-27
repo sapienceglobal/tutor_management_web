@@ -14,6 +14,7 @@ import {
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
+import { C, T, FX } from '@/constants/tutorTokens';
 
 export default function TutorStudentsPage() {
     const [students, setStudents]         = useState([]);
@@ -75,21 +76,21 @@ export default function TutorStudentsPage() {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-7 h-7 animate-spin" style={{ color: 'var(--theme-primary)' }} />
+                <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
                 <p className="text-sm text-slate-400">Loading students...</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-5" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-5" style={{ fontFamily: T.fontFamily }}>
 
             {/* ── Header ────────────────────────────────────────────────────── */}
             <div className="bg-white rounded-xl border border-slate-100 px-5 py-4">
                 <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                        <Users className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                        style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
+                        <Users className="w-4 h-4" style={{ color: C.btnPrimary }} />
                     </div>
                     <div>
                         <h1 className="text-lg font-bold text-slate-800">My Students</h1>
@@ -161,7 +162,7 @@ export default function TutorStudentsPage() {
                                 <div className="flex items-center gap-2.5 min-w-0">
                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0
                                         ${student.isBlockedByTutor ? 'bg-red-100 text-red-600' : 'text-white'}`}
-                                        style={!student.isBlockedByTutor ? { background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))' } : {}}>
+                                        style={!student.isBlockedByTutor ? { background: C.gradientBtn } : {}}>
                                         {student.name.charAt(0).toUpperCase()}
                                     </div>
                                     <div className="min-w-0">
@@ -177,7 +178,7 @@ export default function TutorStudentsPage() {
                                     {student.enrolledCourses?.length > 0
                                         ? student.enrolledCourses.map((ec, idx) => (
                                             <span key={idx} className="text-[10px] px-2 py-0.5 rounded-full font-semibold border"
-                                                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 8%, white)', color: 'var(--theme-primary)', borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
+                                                style={{ backgroundColor: FX.primary08, color: C.btnPrimary, borderColor: FX.primary20 }}>
                                                 {ec.title}
                                             </span>
                                         ))
@@ -195,7 +196,7 @@ export default function TutorStudentsPage() {
                                     <span className="text-[10px] font-bold text-slate-600">{student.averageProgress || 0}%</span>
                                     <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mt-1">
                                         <div className="h-full rounded-full transition-all"
-                                            style={{ width: `${student.averageProgress || 0}%`, backgroundColor: 'var(--theme-primary)' }} />
+                                            style={{ width: `${student.averageProgress || 0}%`, backgroundColor: C.btnPrimary }} />
                                     </div>
                                 </div>
 
@@ -228,8 +229,8 @@ export default function TutorStudentsPage() {
                 ) : (
                     <div className="text-center py-14">
                         <div className="mx-auto w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
-                            style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 8%, white)' }}>
-                            <Users className="w-6 h-6" style={{ color: 'var(--theme-primary)' }} />
+                            style={{ backgroundColor: FX.primary08 }}>
+                            <Users className="w-6 h-6" style={{ color: C.btnPrimary }} />
                         </div>
                         <p className="text-sm font-semibold text-slate-600 mb-1">
                             {students.length === 0 ? 'No students found.' : 'No matching students.'}

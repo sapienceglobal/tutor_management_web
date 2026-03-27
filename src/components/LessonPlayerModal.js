@@ -92,6 +92,25 @@ export default function LessonPlayerModal({
     const [currentUser, setCurrentUser] = useState(null);
     const { confirmDialog } = useConfirm();
 
+    const getCommentStudent = (comment) => comment?.student || comment?.studentId || {};
+    const getCommentStudentId = (comment) => {
+        const student = getCommentStudent(comment);
+        return student?._id || student?.id || comment?.studentId?._id || comment?.studentId || null;
+    };
+    const getCommentAvatar = (comment) => {
+        const student = getCommentStudent(comment);
+        return student?.profileImage || student?.avatar?.url || comment?.studentId?.avatar?.url || null;
+    };
+    const isOwnComment = (comment) => {
+        const currentId = currentUser?._id || currentUser?.id;
+        const ownerId = getCommentStudentId(comment);
+        return Boolean(currentId && ownerId && String(currentId) === String(ownerId));
+    };
+    const getCommentAuthorName = (comment) => {
+        const student = getCommentStudent(comment);
+        return student?.name || 'Student';
+    };
+
     const lesson = lessons[currentIndex];
 
     // ── Normalise lesson content ─────────────────────────────────────────────
@@ -887,28 +906,51 @@ export default function LessonPlayerModal({
                                         <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-indigo-400" /></div>
                                     ) : comments.length > 0 ? (
                                         <div className="space-y-3">
-                                            {comments.map(c => (
-                                                <div key={c._id} className="flex gap-3 group p-3 bg-white/4 border border-white/8 rounded-2xl">
-                                                    <div className="w-8 h-8 rounded-xl shrink-0 overflow-hidden border border-white/10">
-                                                        {c.studentId?.avatar?.url
-                                                            ? <img src={c.studentId.avatar.url} alt="" className="w-full h-full object-cover" />
-                                                            : <div className="w-full h-full flex items-center justify-center text-xs font-black text-white bg-slate-700">{c.studentId?.name?.[0] || '?'}</div>}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <span className="text-xs font-black text-white">{c.studentId?.name || 'Unknown'}</span>
-                                                            <span className="text-[10px] text-slate-500">{new Date(c.createdAt).toLocaleDateString()}</span>
+                                            {comments.map(c => {
+                                                const avatarUrl = getCommentAvatar(c);
+                                                const authorName = getCommentAuthorName(c);
+                                                const moderationStatus = String(c.moderationStatus || 'visible').toLowerCase();
+                                                const hasTutorReply = Boolean(c.tutorReply?.text && c.tutorReply.text.trim());
+                                                const showDelete = isOwnComment(c);
+
+                                                return (
+                                                    <div key={c._id} className="flex gap-3 group p-3 bg-white/4 border border-white/8 rounded-2xl">
+                                                        <div className="w-8 h-8 rounded-xl shrink-0 overflow-hidden border border-white/10">
+                                                            {avatarUrl
+                                                                ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                                                                : <div className="w-full h-full flex items-center justify-center text-xs font-black text-white bg-slate-700">{authorName[0] || '?'}</div>}
                                                         </div>
-                                                        <p className="text-sm text-slate-300 font-medium leading-relaxed">{c.text}</p>
+                                                        <div className="flex-1 min-w-0 space-y-2">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="text-xs font-black text-white">{authorName}</span>
+                                                                <span className="text-[10px] text-slate-500">{new Date(c.createdAt).toLocaleString()}</span>
+                                                                {moderationStatus !== 'visible' && (
+                                                                    <span className="px-1.5 py-0.5 rounded-md text-[9px] uppercase tracking-wide font-black border border-emerald-500/30 text-emerald-300 bg-emerald-500/10">
+                                                                        {moderationStatus}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-sm text-slate-300 font-medium leading-relaxed whitespace-pre-wrap">{c.text}</p>
+
+                                                            {hasTutorReply && (
+                                                                <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-2.5">
+                                                                    <p className="text-[10px] font-black uppercase tracking-[0.06em] text-indigo-300">Tutor Reply</p>
+                                                                    <p className="text-xs text-slate-200 font-medium mt-1 whitespace-pre-wrap">{c.tutorReply.text}</p>
+                                                                    {c.tutorReply?.repliedAt && (
+                                                                        <p className="text-[10px] text-slate-500 mt-1">{new Date(c.tutorReply.repliedAt).toLocaleString()}</p>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        {showDelete && (
+                                                            <button onClick={() => handleDeleteComment(c._id)}
+                                                                className="opacity-0 group-hover:opacity-100 w-6 h-6 text-red-400 hover:bg-red-500/15 rounded-lg flex items-center justify-center transition-all shrink-0">
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        )}
                                                     </div>
-                                                    {currentUser && (currentUser._id === c.studentId?._id || currentUser._id === c.studentId) && (
-                                                        <button onClick={() => handleDeleteComment(c._id)}
-                                                            className="opacity-0 group-hover:opacity-100 w-6 h-6 text-red-400 hover:bg-red-500/15 rounded-lg flex items-center justify-center transition-all shrink-0">
-                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     ) : (
                                         <div className="text-center py-8">

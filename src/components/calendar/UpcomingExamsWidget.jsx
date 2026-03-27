@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, ArrowRight, Bell } from 'lucide-react';
 import api from '@/lib/axios';
+import { C, T, S } from '@/constants/tutorTokens';
 
 export function UpcomingExamsWidget({ isTutor = false }) {
     const [upcomingExams, setUpcomingExams] = useState([]);
@@ -59,17 +60,20 @@ export function UpcomingExamsWidget({ isTutor = false }) {
         }
     };
 
+    const wrapperClass = isTutor ? "rounded-2xl overflow-hidden shadow-sm flex flex-col h-full" : "bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full";
+    const wrapperStyle = isTutor ? { backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card, fontFamily: T.fontFamily } : {};
+
     if (loading) {
         return (
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex items-center justify-center min-h-[300px]">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <div className={wrapperClass} style={{ ...wrapperStyle, alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: isTutor ? C.btnPrimary : '#4f46e5' }}></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col items-center justify-center text-slate-500 min-h-[300px]">
+            <div className={wrapperClass} style={{ ...wrapperStyle, alignItems: 'center', justifyContent: 'center', minHeight: '300px', color: isTutor ? C.warning : '#64748b' }}>
                 <Bell className="w-8 h-8 mb-2 opacity-50" />
                 <p>{error}</p>
             </div>
@@ -78,12 +82,12 @@ export function UpcomingExamsWidget({ isTutor = false }) {
 
     if (upcomingExams.length === 0) {
         return (
-            <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm flex flex-col items-center justify-center min-h-[300px] text-center">
-                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                    <CalendarIcon className="w-8 h-8 text-slate-400" />
+            <div className={wrapperClass} style={{ ...wrapperStyle, alignItems: 'center', justifyContent: 'center', minHeight: '300px', textAlign: 'center', padding: '2rem' }}>
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: isTutor ? C.innerBg : '#f8fafc' }}>
+                    <CalendarIcon className="w-8 h-8" style={{ color: isTutor ? C.iconColor : '#94a3b8' }} />
                 </div>
-                <h3 className="text-lg font-bold text-slate-800">No Upcoming Exams</h3>
-                <p className="text-sm text-slate-500 mt-2">
+                <h3 className="text-lg font-bold" style={{ color: isTutor ? C.heading : '#1e293b' }}>No Upcoming Exams</h3>
+                <p className="text-sm mt-2" style={{ color: isTutor ? C.text : '#64748b' }}>
                     {isTutor ? 'You have not scheduled any upcoming exams.' : 'You have no scheduled exams at this time. Relax!'}
                 </p>
             </div>
@@ -94,10 +98,12 @@ export function UpcomingExamsWidget({ isTutor = false }) {
     const otherExams = upcomingExams.slice(1, 4); // Show max 3 other exams
 
     return (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
-            <div className="p-5 border-b border-slate-100 flex items-center gap-2">
-                <CalendarIcon className="w-5 h-5 text-indigo-500" />
-                <h3 className="font-bold text-slate-800">Upcoming Exams</h3>
+        <div className={wrapperClass} style={wrapperStyle}>
+            <div className="p-5 border-b flex items-center gap-3" style={{ borderColor: isTutor ? C.cardBorder : '#f1f5f9' }}>
+                <div className="flex items-center justify-center rounded-xl flex-shrink-0" style={isTutor ? { width: 32, height: 32, backgroundColor: C.iconBg } : {}}>
+                    <CalendarIcon className="w-4 h-4" style={{ color: isTutor ? C.iconColor : '#6366f1' }} />
+                </div>
+                <h3 className="font-bold" style={{ color: isTutor ? C.heading : '#1e293b' }}>Upcoming Exams</h3>
             </div>
 
             {/* Countdown Hero Section */}

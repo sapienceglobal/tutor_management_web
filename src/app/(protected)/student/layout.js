@@ -7,14 +7,15 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import Cookies from 'js-cookie';
 import useInstitute from '@/hooks/useInstitute';
+import { C, T } from '@/constants/studentTokens';
 // ✅ ThemeProvider removed — root layout already wraps everything in ThemeProvider
 
 export default function StudentLayout({ children }) {
     const router = useRouter();
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [sidebarOpen, setSidebarOpen]           = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const [user, setUser] = useState(null);
-    const { institute } = useInstitute();
+    const [user, setUser]                         = useState(null);
+    const { institute }                           = useInstitute();
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -22,7 +23,7 @@ export default function StudentLayout({ children }) {
                 const res = await api.get('/auth/me');
                 if (res.data.success) setUser(res.data.user);
             } catch (err) {
-                console.warn("Failed to fetch user in layout", err);
+                console.warn('Failed to fetch user in layout', err);
             }
         };
         fetchUser();
@@ -38,7 +39,7 @@ export default function StudentLayout({ children }) {
     };
 
     return (
-        <div className="min-h-screen" style={{ backgroundColor: 'var(--theme-background)' }}>
+        <div className="min-h-screen" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}>
             <StudentSidebar
                 isOpen={sidebarOpen}
                 setIsOpen={setSidebarOpen}

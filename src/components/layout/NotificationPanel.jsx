@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
     X, Bell, CheckCheck, BookOpen, FileQuestion, Megaphone,
-    AlertCircle, GraduationCap, Loader2, ExternalLink, Clock
+    AlertCircle, GraduationCap, Loader2, ExternalLink, Clock, MessageSquare
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { useRouter } from 'next/navigation';
@@ -16,6 +16,7 @@ const CATEGORY_META = {
     announcement: { icon: Megaphone,    color: '#10b981', bg: 'bg-emerald-500/15',label: 'Announcement' },
     result:       { icon: GraduationCap,color: '#8b5cf6', bg: 'bg-[var(--theme-accent)]/15', label: 'Result' },
     alert:        { icon: AlertCircle,  color: '#ef4444', bg: 'bg-red-500/15',    label: 'Alert' },
+    direct_message: { icon: MessageSquare, color: '#6366f1', bg: 'bg-indigo-500/15', label: 'Message' },
 };
 
 function NotifIcon({ type }) {
@@ -38,6 +39,30 @@ export default function NotificationPanel({ onClose }) {
     const [markingAll, setMarkingAll]       = useState(false);
 
     const filters = ['all', 'exam', 'course', 'announcement', 'result'];
+    const normalizeNotification = (item) => {
+        const readState = Boolean(item?.isRead ?? item?.read);
+        return {
+            ...item,
+            isRead: readState,
+            read: readState,
+        };
+    };
+    const isNotificationRead = (item) => Boolean(item?.isRead ?? item?.read);
+    const resolveNotificationLink = (item) => {
+        if (item?.link) return item.link;
+        if (item?.type === 'direct_message') return '/student/messages';
+
+        const courseId = item?.data?.courseId?._id || item?.data?.courseId;
+        const lessonId = item?.data?.lessonId?._id || item?.data?.lessonId;
+
+        if (item?.type === 'tutor_reply' && courseId) {
+            return `/student/courses/${courseId}${lessonId ? `?lesson=${lessonId}` : ''}`;
+        }
+        if (item?.type === 'assignment_created' || item?.type === 'assignment_graded') {
+            return '/student/assignments';
+        }
+        return null;
+    };
 
     useEffect(() => {
         fetchNotifications();
@@ -51,7 +76,9 @@ export default function NotificationPanel({ onClose }) {
         setLoading(true);
         try {
             const res = await api.get('/notifications');
-            if (res.data?.success) setNotifications(res.data.notifications || []);
+            if (res.data?.success) {
+                setNotifications((res.data.notifications || []).map(normalizeNotification));
+            }
         } catch (_) {
             // fallback demo
             setNotifications([]);
@@ -61,26 +88,34 @@ export default function NotificationPanel({ onClose }) {
     const markRead = async (id) => {
         try {
             await api.patch(`/notifications/${id}/read`);
-            setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
+            setNotifications(prev => prev.map((n) => (
+                n._id === id
+                    ? normalizeNotification({ ...n, read: true, isRead: true })
+                    : n
+            )));
         } catch (_) {}
     };
 
     const markAllRead = async () => {
         setMarkingAll(true);
         try {
-            await api.patch('/notifications/mark-all-read');
-            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+            await api.patch('/notifications/read-all');
+            setNotifications(prev => prev.map((n) => normalizeNotification({ ...n, read: true, isRead: true })));
         } catch (_) {}
         finally { setMarkingAll(false); }
     };
 
     const handleClick = (n) => {
         markRead(n._id);
-        if (n.link) { router.push(n.link); onClose?.(); }
+        const target = resolveNotificationLink(n);
+        if (target) {
+            router.push(target);
+            onClose?.();
+        }
     };
 
     const filtered = activeFilter === 'all' ? notifications : notifications.filter(n => n.type === activeFilter);
-    const unreadCount = notifications.filter(n => !n.read).length;
+    const unreadCount = notifications.filter((n) => !isNotificationRead(n)).length;
 
     const fmtTime = (dateStr) => {
         const d = new Date(dateStr);
@@ -163,14 +198,14 @@ export default function NotificationPanel({ onClose }) {
                             {filtered.map(n => (
                                 <button key={n._id} onClick={() => handleClick(n)}
                                     className={`w-full flex items-start gap-3 px-4 py-3.5 text-left transition-all hover:bg-white/5
-                                        ${!n.read ? 'bg-[var(--theme-accent)]/5' : ''}`}>
+                                        ${!isNotificationRead(n) ? 'bg-[var(--theme-accent)]/5' : ''}`}>
                                     <NotifIcon type={n.type} />
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-start justify-between gap-2">
-                                            <p className={`text-xs leading-snug ${!n.read ? 'font-black text-white' : 'font-bold text-slate-300'}`}>
+                                            <p className={`text-xs leading-snug ${!isNotificationRead(n) ? 'font-black text-white' : 'font-bold text-slate-300'}`}>
                                                 {n.title}
                                             </p>
-                                            {!n.read && <span className="w-2 h-2 rounded-full shrink-0 mt-1" style={{ background: 'var(--theme-accent)' }} />}
+                                            {!isNotificationRead(n) && <span className="w-2 h-2 rounded-full shrink-0 mt-1" style={{ background: 'var(--theme-accent)' }} />}
                                         </div>
                                         {n.message && (
                                             <p className="text-[11px] text-slate-500 font-medium mt-0.5 line-clamp-2">{n.message}</p>
@@ -178,7 +213,7 @@ export default function NotificationPanel({ onClose }) {
                                         <div className="flex items-center gap-2 mt-1.5">
                                             <Clock className="w-3 h-3 text-slate-600" />
                                             <span className="text-[10px] text-slate-600 font-medium">{fmtTime(n.createdAt)}</span>
-                                            {n.link && <ExternalLink className="w-3 h-3 text-slate-600 ml-auto" />}
+                                            {resolveNotificationLink(n) && <ExternalLink className="w-3 h-3 text-slate-600 ml-auto" />}
                                         </div>
                                     </div>
                                 </button>
@@ -189,7 +224,7 @@ export default function NotificationPanel({ onClose }) {
 
                 {/* Footer */}
                 <div className="px-4 py-2.5 border-t border-white/8 shrink-0" style={{ background: 'var(--theme-background)' }}>
-                    <button onClick={() => { router.push('/student/notifications'); onClose?.(); }}
+                    <button onClick={() => { router.push('/student/profile/notifications'); onClose?.(); }}
                         className="w-full py-2 rounded-xl text-[11px] font-black text-[var(--theme-accent)] hover:bg-[var(--theme-accent)]/10 transition-colors">
                         View all notifications →
                     </button>

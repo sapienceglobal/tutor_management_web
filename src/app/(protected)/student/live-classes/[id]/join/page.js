@@ -3,96 +3,76 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
-import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { JitsiMeeting } from '@jitsi/react-sdk';
+import { T } from '@/constants/studentTokens';
 
 export default function JoinLiveClassPage({ params }) {
-    // Unwrap params using React.use()
     const { id } = use(params);
-    const router = useRouter();
+    const router  = useRouter();
 
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [loading, setLoading]     = useState(true);
+    const [error, setError]         = useState(null);
     const [classData, setClassData] = useState(null);
-    const [user, setUser] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch Class Details (Reusing join-config primarily for user/class checking)
-                // We'll just fetch the class directly or use the join-config endpoint if it returns the needed basics
-                // But join-config was Zoom specific. Let's try fetching the class detail directly if possible, 
-                // OR ideally create a generic 'join-auth' endpoint. 
-                // For speed, let's assume valid user is logged in (middleware checks) and we fetch class details.
-
-                // We can use the existing /join-config route but we modified the backend controller to return config.
-                // In Jitsi case, we just need room name (meetingId) and user details.
-                // The current controller's getJoinConfig likely returns config object differently now?
-                // Actually, I haven't updated getJoinConfig in the backend yet! I only updated createLiveClass.
-                // I need to update getJoinConfig to return Jitsi details.
-
-                // Let's assume getJoinConfig returns { config: { meetingNumber: 'RoomName', userName: '...' } }
-                // I will update backend getJoinConfig next.
-
                 const res = await api.post(`/live-classes/${id}/join-config`);
-                if (res.data.success) {
-                    setClassData(res.data.config);
-                    // config contains: meetingNumber (RoomID), userName, userEmail
-                }
+                if (res.data.success) setClassData(res.data.config);
             } catch (err) {
                 console.error('Failed to join:', err);
                 setError(err.response?.data?.message || 'Failed to load class');
-            } finally {
-                setLoading(false);
-            }
+            } finally { setLoading(false); }
         };
-
         fetchData();
     }, [id]);
 
-    if (loading) {
-        return (
-            <div className="h-screen w-full flex items-center justify-center bg-gray-900 text-white">
-                <Loader2 className="w-8 h-8 animate-spin mb-4" />
-                <p>Preparing Global Classroom...</p>
-            </div>
-        );
-    }
+    if (loading) return (
+        <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-900 text-white gap-4"
+            style={{ fontFamily: T.fontFamily }}>
+            <Loader2 className="w-8 h-8 animate-spin" />
+            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm }}>Preparing Global Classroom...</p>
+        </div>
+    );
 
-    if (error || !classData) {
-        return (
-            <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-900 text-white">
-                <h2 className="text-xl font-bold text-red-500 mb-2">Unavailable</h2>
-                <p>{error || 'Class data not found'}</p>
-                <Button variant="outline" className="mt-4" onClick={() => router.back()}>
-                    Go Back
-                </Button>
-            </div>
-        );
-    }
+    if (error || !classData) return (
+        <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-900 text-white gap-4"
+            style={{ fontFamily: T.fontFamily }}>
+            <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.bold, color: '#f87171' }}>
+                Unavailable
+            </h2>
+            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm }}>{error || 'Class data not found'}</p>
+            <button onClick={() => router.back()}
+                className="mt-2 px-5 py-2.5 border border-white/20 rounded-xl text-white transition-colors hover:bg-white/10"
+                style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>
+                Go Back
+            </button>
+        </div>
+    );
 
     return (
         <div className="h-screen w-full flex flex-col bg-black">
             {/* Header */}
             <div className="absolute top-4 left-4 z-50">
-                <Button
-                    variant="secondary"
-                    className="bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm border border-white/10"
+                <button
                     onClick={() => router.push('/student/live-classes')}
-                >
-                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-white transition-colors"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.50)', border: '1px solid rgba(255,255,255,0.10)', backdropFilter: 'blur(8px)', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.70)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.50)'; }}>
+                    <ArrowLeft className="w-4 h-4" />
                     Leave Class
-                </Button>
+                </button>
             </div>
 
             <JitsiMeeting
                 domain="meet.jit.si"
-                roomName={classData.meetingNumber} // Use the meetingId as Room Name
+                roomName={classData.meetingNumber}
                 configOverwrite={{
-                    startWithAudioMuted: true,
+                    startWithAudioMuted:       true,
                     disableThirdPartyRequests: true,
-                    prejoinPageEnabled: false,
+                    prejoinPageEnabled:        false,
                 }}
                 interfaceConfigOverwrite={{
                     TOOLBAR_BUTTONS: [
@@ -106,15 +86,12 @@ export default function JoinLiveClassPage({ params }) {
                 }}
                 userInfo={{
                     displayName: classData.userName || 'Student',
-                    email: classData.userEmail
+                    email:       classData.userEmail,
                 }}
-                onApiReady={(externalApi) => {
-                    // here you can attach custom event listeners to the Jitsi Meet External API
-                    // e.g., externalApi.addEventListeners({ ... });
-                }}
+                onApiReady={(externalApi) => {}}
                 getIFrameRef={(iframeRef) => {
                     iframeRef.style.height = '100%';
-                    iframeRef.style.width = '100%';
+                    iframeRef.style.width  = '100%';
                 }}
             />
         </div>

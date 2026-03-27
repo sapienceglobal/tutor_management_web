@@ -187,7 +187,7 @@ export default function StudentExamsPage() {
                                         </td>
                                         <td className="px-5 py-3.5">
                                             {status === 'available' ? (
-                                                <Link href={`/student/exams/${exam._id}`} className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors inline-block">
+                                                <Link href={`/student/exams/${exam._id}/take`} className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors inline-block">
                                                     Start Exam
                                                 </Link>
                                             ) : status === 'completed' ? (

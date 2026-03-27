@@ -16,6 +16,13 @@ import {
     Heart,
     Search,
     Compass,
+    MessageSquare,
+    Sparkles,
+    HelpCircle,
+    BookMarked,
+    ScrollText,
+    Target,
+    CalendarCheck,
 } from 'lucide-react';
 
 export const studentNavItems = [
@@ -61,9 +68,21 @@ export const studentNavItems = [
                 type: "link"
             },
             {
-                title: "AI Tutor",
-                icon: Brain,
-                href: "/student/ai-tutor",
+                title: "AI Buddy",
+                icon: Sparkles,
+                submenu: [
+                    { title: "AI Tutor Chat", href: "/student/ai-tutor" },
+                    { title: "Doubt Solver", href: "/student/ai-buddy/doubt-solver" },
+                    { title: "Shared Notes", href: "/student/ai-buddy/shared-notes" },
+                    { title: "Lecture Summaries", href: "/student/ai-buddy/lecture-summaries" },
+                    { title: "Study Plans", href: "/student/ai-buddy/study-plans" },
+                    { title: "My Weak Areas", href: "/student/ai-buddy/weak-topics" },
+                ]
+            },
+            {
+                title: "Messages",
+                icon: MessageSquare,
+                href: "/student/messages",
                 type: "link"
             },
         ]

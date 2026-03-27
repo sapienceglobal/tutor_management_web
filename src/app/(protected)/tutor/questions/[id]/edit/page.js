@@ -8,6 +8,7 @@ import Link from 'next/link';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { QuestionFormFields } from '@/components/shared/QuestionFormFields';
+import { C, T, FX } from '@/constants/tutorTokens';
 
 export default function EditQuestionPage({ params }) {
     const { id } = use(params);
@@ -58,7 +59,7 @@ export default function EditQuestionPage({ params }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.question) return toast.error('Question text is required');
-        if (formData.type === 'mcq') {
+        if (['mcq', 'true_false'].includes(formData.type)) {
             if (formData.options.some(o => !o.text)) return toast.error('All options must have text');
             if (!formData.options.some(o => o.isCorrect)) return toast.error('Select at least one correct answer');
         } else if (!formData.idealAnswer) return toast.error('Ideal Answer is required');
@@ -78,14 +79,14 @@ export default function EditQuestionPage({ params }) {
     if (fetching) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--theme-primary)' }} />
+                <Loader2 className="w-8 h-8 animate-spin" style={{ color: C.btnPrimary }} />
                 <p className="text-sm text-slate-400">Loading question...</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-6" style={{ fontFamily: T.fontFamily }}>
 
             {/* Page Header */}
             <div className="flex items-center gap-3">
@@ -97,8 +98,8 @@ export default function EditQuestionPage({ params }) {
                 <div>
                     <div className="flex items-center gap-2.5 mb-0.5">
                         <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                            <Edit className="w-3.5 h-3.5" style={{ color: 'var(--theme-primary)' }} />
+                            style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
+                            <Edit className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
                         </div>
                         <h1 className="text-lg font-bold text-slate-800">Edit Question</h1>
                     </div>
@@ -113,7 +114,7 @@ export default function EditQuestionPage({ params }) {
                     <Button
                         type="submit" disabled={loading}
                         className="w-full h-10 text-white font-semibold gap-2 mt-2"
-                        style={{ backgroundColor: 'var(--theme-primary)' }}>
+                        style={{ backgroundColor: C.btnPrimary }}>
                         {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                         <Save className="w-4 h-4" /> Update Question
                     </Button>

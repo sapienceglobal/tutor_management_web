@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Save, Plus, X, BookOpen } from 'lucide-react';
 import api from '@/lib/axios';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,33 +11,45 @@ import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import AudienceSelector from '@/components/shared/AudienceSelector';
 import useInstitute from '@/hooks/useInstitute';
+import { C, T, S, R, FX, cx, pageStyle } from '@/constants/tutorTokens';
 
-// ─── Shared styled select ────────────────────────────────────────────────────
+// ─── Shared styled select ─────────────────────────────────────────────────────
 function StyledSelect({ id, name, value, onChange, required, children }) {
     return (
         <select id={id} name={name} value={value} onChange={onChange} required={required}
-            className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700
-                focus:outline-none focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/10
-                disabled:cursor-not-allowed disabled:opacity-50 transition-colors">
+            style={{ ...cx.input(), width: '100%', height: 40, padding: '0 12px', cursor: 'pointer', appearance: 'none' }}
+            onFocus={e => Object.assign(e.target.style, cx.inputFocus)}
+            onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}>
             {children}
         </select>
     );
 }
 
-// ─── Section heading ─────────────────────────────────────────────────────────
+// ─── Section heading ──────────────────────────────────────────────────────────
 function SectionHeading({ children }) {
     return (
-        <h3 className="text-sm font-bold text-slate-800 pb-2 border-b border-slate-100 flex items-center gap-2">
-            <span className="w-1 h-4 rounded-full inline-block" style={{ backgroundColor: 'var(--theme-primary)' }} />
+        <h3 className="flex items-center gap-2 pb-2"
+            style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, borderBottom: `1px solid ${C.cardBorder}` }}>
+            <span className="w-1 h-4 rounded-full inline-block flex-shrink-0"
+                style={{ backgroundColor: C.btnPrimary }} />
             {children}
         </h3>
+    );
+}
+
+// ─── Field label ──────────────────────────────────────────────────────────────
+function FieldLabel({ children, required }) {
+    return (
+        <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text, marginBottom: 6 }}>
+            {children} {required && <span style={{ color: C.danger }}>*</span>}
+        </label>
     );
 }
 
 export default function CreateCoursePage() {
     const router = useRouter();
     const { institute } = useInstitute();
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading]     = useState(false);
     const [categories, setCategories] = useState([]);
 
     const [formData, setFormData] = useState({
@@ -63,7 +74,7 @@ export default function CreateCoursePage() {
         try {
             const res = await api.get('/categories');
             if (res.data.success) setCategories(res.data.categories || res.data.data || []);
-        } catch (error) { console.error('Error fetching categories:', error); }
+        } catch (err) { console.error('Error fetching categories:', err); }
     };
 
     const handleChange = (e) => {
@@ -74,8 +85,7 @@ export default function CreateCoursePage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.title || !formData.description || !formData.category || !formData.price) {
-            toast.error('Please fill in all required fields');
-            return;
+            toast.error('Please fill in all required fields'); return;
         }
         setLoading(true);
         try {
@@ -92,78 +102,89 @@ export default function CreateCoursePage() {
             };
             const res = await api.post('/courses', payload);
             if (res.data.success) { router.push('/tutor/courses'); router.refresh(); }
-        } catch (error) {
-            console.error('Error creating course:', error);
-            toast.error(error.response?.data?.message || 'Failed to create course');
+        } catch (err) {
+            console.error('Error creating course:', err);
+            toast.error(err.response?.data?.message || 'Failed to create course');
         } finally { setLoading(false); }
     };
 
     const listField = (key) => ({
-        onChange: (idx, val) => setFormData(prev => {
-            const updated = [...prev[key]];
-            updated[idx] = val;
-            return { ...prev, [key]: updated };
-        }),
-        add: () => setFormData(prev => ({ ...prev, [key]: [...prev[key], ''] })),
+        onChange: (idx, val) => setFormData(prev => { const u = [...prev[key]]; u[idx] = val; return { ...prev, [key]: u }; }),
+        add:    () => setFormData(prev => ({ ...prev, [key]: [...prev[key], ''] })),
         remove: (idx) => setFormData(prev => ({ ...prev, [key]: prev[key].filter((_, i) => i !== idx) })),
     });
 
     const learn = listField('whatYouWillLearn');
-    const req = listField('requirements');
+    const req   = listField('requirements');
+
+    const inputSt = { ...cx.input(), width: '100%', height: 40, padding: '0 12px' };
 
     return (
-        <div className="max-w-2xl mx-auto space-y-5" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="max-w-2xl mx-auto space-y-5" style={pageStyle}>
 
-            {/* Page Header */}
+            {/* ── Page Header ───────────────────────────────────────────── */}
             <div className="flex items-center gap-3">
                 <Link href="/tutor/courses">
-                    <button className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors">
-                        <ArrowLeft className="w-4 h-4 text-slate-500" />
+                    <button className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
+                        style={{ backgroundColor: C.innerBg, color: C.textMuted }}>
+                        <ArrowLeft className="w-4 h-4" />
                     </button>
                 </Link>
                 <div>
                     <div className="flex items-center gap-2.5 mb-0.5">
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                            <BookOpen className="w-3.5 h-3.5" style={{ color: 'var(--theme-primary)' }} />
+                        <div className="w-7 h-7 rounded-xl flex items-center justify-center"
+                            style={{ backgroundColor: FX.primary15, border: `1px solid ${FX.primary25}` }}>
+                            <BookOpen className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
                         </div>
-                        <h1 className="text-lg font-bold text-slate-800">Create New Course</h1>
+                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>
+                            Create New Course
+                        </h1>
                     </div>
-                    <p className="text-xs text-slate-400 pl-0.5">Fill in the details to publish your course.</p>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+                        Fill in the details to publish your course.
+                    </p>
                 </div>
             </div>
 
-            {/* Form */}
-            <div className="bg-white rounded-xl border border-slate-100 p-6">
+            {/* ── Form Card ─────────────────────────────────────────────── */}
+            <div className="rounded-2xl p-6"
+                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <form onSubmit={handleSubmit} className="space-y-7">
 
-                    {/* ── Basic Info ──────────────────────────────────── */}
+                    {/* Basic Info */}
                     <div className="space-y-4">
                         <SectionHeading>Basic Information</SectionHeading>
-                        <div className="space-y-1.5">
-                            <Label className="text-sm font-semibold text-slate-700">Course Title <span className="text-red-500">*</span></Label>
-                            <Input name="title" placeholder="e.g. Complete Web Development Bootcamp"
+
+                        <div>
+                            <FieldLabel required>Course Title</FieldLabel>
+                            <input name="title" placeholder="e.g. Complete Web Development Bootcamp"
                                 value={formData.title} onChange={handleChange} required
-                                className="h-10 border-slate-200 focus:border-[var(--theme-primary)] focus:ring-[var(--theme-primary)]/10" />
+                                style={inputSt}
+                                onFocus={e => Object.assign(e.target.style, cx.inputFocus)}
+                                onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
+                            />
                         </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-sm font-semibold text-slate-700">Description <span className="text-red-500">*</span></Label>
-                            <Textarea name="description" placeholder="Tell students what they will learn..."
-                                className="h-28 border-slate-200 resize-none focus:border-[var(--theme-primary)] focus:ring-[var(--theme-primary)]/10"
-                                value={formData.description} onChange={handleChange} required />
+
+                        <div>
+                            <FieldLabel required>Description</FieldLabel>
+                            <textarea name="description" placeholder="Tell students what they will learn..."
+                                value={formData.description} onChange={handleChange} required rows={4}
+                                style={{ ...cx.input(), width: '100%', padding: '10px 12px', resize: 'none' }}
+                                onFocus={e => Object.assign(e.target.style, cx.inputFocus)}
+                                onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
+                            />
                         </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <Label className="text-sm font-semibold text-slate-700">Category <span className="text-red-500">*</span></Label>
+                            <div>
+                                <FieldLabel required>Category</FieldLabel>
                                 <StyledSelect id="category" name="category" value={formData.category} onChange={handleChange} required>
                                     <option value="">Select a category</option>
-                                    {Array.isArray(categories) && categories.map(cat => (
-                                        <option key={cat._id} value={cat._id}>{cat.name}</option>
-                                    ))}
+                                    {categories.map(cat => <option key={cat._id} value={cat._id}>{cat.name}</option>)}
                                 </StyledSelect>
                             </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-sm font-semibold text-slate-700">Difficulty Level</Label>
+                            <div>
+                                <FieldLabel>Difficulty Level</FieldLabel>
                                 <StyledSelect id="level" name="level" value={formData.level} onChange={handleChange}>
                                     <option value="beginner">Beginner</option>
                                     <option value="intermediate">Intermediate</option>
@@ -171,6 +192,7 @@ export default function CreateCoursePage() {
                                 </StyledSelect>
                             </div>
                         </div>
+
                         <AudienceSelector
                             value={formData.audience}
                             onChange={(audience) => setFormData(prev => ({ ...prev, audience }))}
@@ -180,93 +202,111 @@ export default function CreateCoursePage() {
                         />
                     </div>
 
-                    {/* ── Pricing & Media ─────────────────────────────── */}
+                    {/* Pricing & Media */}
                     <div className="space-y-4">
                         <SectionHeading>Pricing & Media</SectionHeading>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <Label className="text-sm font-semibold text-slate-700">Price (₹) <span className="text-red-500">*</span></Label>
-                                <Input name="price" type="number" placeholder="999" min="0"
-                                    value={formData.price} onChange={handleChange} required
-                                    className="h-10 border-slate-200" />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-sm font-semibold text-slate-700">Thumbnail URL</Label>
-                                <Input name="thumbnail" placeholder="https://example.com/image.jpg"
-                                    value={formData.thumbnail} onChange={handleChange}
-                                    className="h-10 border-slate-200" />
-                                <p className="text-[11px] text-slate-400">Paste an image URL for now.</p>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-sm font-semibold text-slate-700">Duration (minutes)</Label>
-                                <Input name="duration" type="number" placeholder="120"
-                                    value={formData.duration} onChange={handleChange}
-                                    className="h-10 border-slate-200" />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-sm font-semibold text-slate-700">Language</Label>
-                                <Input name="language" placeholder="English"
-                                    value={formData.language} onChange={handleChange}
-                                    className="h-10 border-slate-200" />
-                            </div>
+                            {[
+                                { name: 'price',     label: 'Price (₹)',      required: true,  type: 'number', placeholder: '999',                             min: '0' },
+                                { name: 'thumbnail', label: 'Thumbnail URL',  required: false, type: 'text',   placeholder: 'https://example.com/image.jpg' },
+                                { name: 'duration',  label: 'Duration (mins)', required: false, type: 'number', placeholder: '120' },
+                                { name: 'language',  label: 'Language',       required: false, type: 'text',   placeholder: 'English' },
+                            ].map(field => (
+                                <div key={field.name}>
+                                    <FieldLabel required={field.required}>{field.label}</FieldLabel>
+                                    <input name={field.name} type={field.type} placeholder={field.placeholder}
+                                        min={field.min} required={field.required}
+                                        value={formData[field.name]} onChange={handleChange}
+                                        style={inputSt}
+                                        onFocus={e => Object.assign(e.target.style, cx.inputFocus)}
+                                        onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
+                                    />
+                                    {field.name === 'thumbnail' && (
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.textMuted, marginTop: 4 }}>
+                                            Paste an image URL for now.
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
                         </div>
                     </div>
 
-                    {/* ── What students will learn ─────────────────────── */}
+                    {/* What students will learn */}
                     <div className="space-y-3">
                         <SectionHeading>What Students Will Learn</SectionHeading>
-                        <p className="text-xs text-slate-400">Add key learning outcomes shown on the course landing page.</p>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+                            Add key learning outcomes shown on the course landing page.
+                        </p>
                         {formData.whatYouWillLearn.map((item, idx) => (
                             <div key={idx} className="flex items-center gap-2">
-                                <Input value={item} placeholder={`Learning outcome ${idx + 1}`}
-                                    onChange={(e) => learn.onChange(idx, e.target.value)}
-                                    className="h-9 border-slate-200 text-sm" />
+                                <input value={item} placeholder={`Learning outcome ${idx + 1}`}
+                                    onChange={e => learn.onChange(idx, e.target.value)}
+                                    style={{ ...inputSt, height: 36, fontSize: T.size.sm }}
+                                    onFocus={e => Object.assign(e.target.style, cx.inputFocus)}
+                                    onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
+                                />
                                 {formData.whatYouWillLearn.length > 1 && (
                                     <button type="button" onClick={() => learn.remove(idx)}
-                                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors flex-shrink-0">
-                                        <X className="w-4 h-4 text-red-400" />
+                                        className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:opacity-80"
+                                        style={{ backgroundColor: C.dangerBg, color: C.danger }}>
+                                        <X className="w-4 h-4" />
                                     </button>
                                 )}
                             </div>
                         ))}
-                        <Button type="button" variant="outline" size="sm" onClick={learn.add}
-                            className="gap-1.5 border-dashed text-sm">
-                            <Plus className="w-3.5 h-3.5" /> Add Learning Outcome
-                        </Button>
+                        <button type="button" onClick={learn.add}
+                            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm border-2 border-dashed transition-all hover:opacity-80 w-full"
+                            style={{ borderColor: FX.primary40, color: C.btnPrimary, backgroundColor: FX.primary10, fontFamily: T.fontFamily, fontWeight: T.weight.bold }}>
+                            <Plus className="w-4 h-4" /> Add Learning Outcome
+                        </button>
                     </div>
 
-                    {/* ── Requirements ────────────────────────────────── */}
+                    {/* Requirements */}
                     <div className="space-y-3">
                         <SectionHeading>Prerequisites & Requirements</SectionHeading>
-                        <p className="text-xs text-slate-400">What should students know before enrolling?</p>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+                            What should students know before enrolling?
+                        </p>
                         {formData.requirements.map((item, idx) => (
                             <div key={idx} className="flex items-center gap-2">
-                                <Input value={item} placeholder={`Requirement ${idx + 1}`}
-                                    onChange={(e) => req.onChange(idx, e.target.value)}
-                                    className="h-9 border-slate-200 text-sm" />
+                                <input value={item} placeholder={`Requirement ${idx + 1}`}
+                                    onChange={e => req.onChange(idx, e.target.value)}
+                                    style={{ ...inputSt, height: 36, fontSize: T.size.sm }}
+                                    onFocus={e => Object.assign(e.target.style, cx.inputFocus)}
+                                    onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
+                                />
                                 {formData.requirements.length > 1 && (
                                     <button type="button" onClick={() => req.remove(idx)}
-                                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors flex-shrink-0">
-                                        <X className="w-4 h-4 text-red-400" />
+                                        className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:opacity-80"
+                                        style={{ backgroundColor: C.dangerBg, color: C.danger }}>
+                                        <X className="w-4 h-4" />
                                     </button>
                                 )}
                             </div>
                         ))}
-                        <Button type="button" variant="outline" size="sm" onClick={req.add}
-                            className="gap-1.5 border-dashed text-sm">
-                            <Plus className="w-3.5 h-3.5" /> Add Requirement
-                        </Button>
+                        <button type="button" onClick={req.add}
+                            className="flex items-center gap-1.5 justify-center px-3 py-2 rounded-xl text-sm border-2 border-dashed transition-all hover:opacity-80 w-full"
+                            style={{ borderColor: FX.primary40, color: C.btnPrimary, backgroundColor: FX.primary10, fontFamily: T.fontFamily, fontWeight: T.weight.bold }}>
+                            <Plus className="w-4 h-4" /> Add Requirement
+                        </button>
                     </div>
 
                     {/* Submit */}
-                    <div className="pt-2 flex justify-end gap-3 border-t border-slate-100">
+                    <div className="pt-2 flex justify-end gap-3" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
                         <Link href="/tutor/courses">
-                            <Button type="button" variant="outline" className="border-slate-200">Cancel</Button>
+                            <button type="button"
+                                className="px-5 py-2.5 rounded-xl text-sm transition-all hover:opacity-80"
+                                style={cx.btnSecondary()}>
+                                Cancel
+                            </button>
                         </Link>
-                        <Button type="submit" disabled={loading} className="min-w-[140px] text-white gap-2"
-                            style={{ backgroundColor: 'var(--theme-primary)' }}>
-                            {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating...</> : <><Save className="w-4 h-4" /> Create Course</>}
-                        </Button>
+                        <button type="submit" disabled={loading}
+                            className="min-w-[140px] px-5 py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
+                            style={{ backgroundColor: C.btnPrimary, color: C.surfaceWhite, fontFamily: T.fontFamily, fontWeight: T.weight.bold, boxShadow: S.btn }}>
+                            {loading
+                                ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</>
+                                : <><Save className="w-4 h-4" /> Create Course</>}
+                        </button>
                     </div>
                 </form>
             </div>

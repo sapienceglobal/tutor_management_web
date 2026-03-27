@@ -7,6 +7,7 @@ import {
     AlertCircle, Settings, Star, Loader2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { C, T, FX } from '@/constants/tutorTokens';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -18,7 +19,7 @@ const TABS = [
 ];
 
 // ─── Shared input class ────────────────────────────────────────────────────────
-const inp = "w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/10 transition-colors bg-white";
+const inp = "w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[#7573E8] focus:ring-2 focus:ring-[#7573E8]/10 transition-colors bg-white";
 
 export default function ScheduleManagementPage() {
     const [activeTab, setActiveTab]       = useState('weekly');
@@ -123,21 +124,21 @@ export default function ScheduleManagementPage() {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-7 h-7 animate-spin" style={{ color: 'var(--theme-primary)' }} />
+                <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
                 <p className="text-sm text-slate-400">Loading schedule...</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-5" style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)" }}>
+        <div className="space-y-5" style={{ fontFamily: T.fontFamily }}>
 
             {/* ── Header ────────────────────────────────────────────────────── */}
             <div className="bg-white rounded-xl border border-slate-100 px-5 py-4">
                 <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)', border: '1px solid color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
-                        <Calendar className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+                        style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
+                        <Calendar className="w-4 h-4" style={{ color: C.btnPrimary }} />
                     </div>
                     <div>
                         <h1 className="text-lg font-bold text-slate-800">Schedule Management</h1>
@@ -152,7 +153,7 @@ export default function ScheduleManagementPage() {
                     <button key={id} onClick={() => setActiveTab(id)}
                         className="flex items-center gap-1.5 px-5 py-3.5 text-sm font-semibold border-b-2 transition-colors"
                         style={activeTab === id
-                            ? { borderColor: 'var(--theme-primary)', color: 'var(--theme-primary)' }
+                            ? { borderColor: C.btnPrimary, color: C.btnPrimary }
                             : { borderColor: 'transparent', color: '#94a3b8' }}>
                         <Icon className="w-4 h-4" /> {label}
                     </button>
@@ -181,7 +182,7 @@ export default function ScheduleManagementPage() {
                                         </div>
                                         <button onClick={() => handleAddSlot(day)}
                                             className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-colors"
-                                            style={{ color: 'var(--theme-primary)', borderColor: 'color-mix(in srgb, var(--theme-primary) 25%, white)', backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, white)' }}>
+                                            style={{ color: C.btnPrimary, borderColor: FX.primary25, backgroundColor: FX.primary05 }}>
                                             <Plus className="w-3 h-3" /> Add Slot
                                         </button>
                                     </div>
@@ -212,7 +213,7 @@ export default function ScheduleManagementPage() {
                     <div className="flex justify-end">
                         <button onClick={handleSaveSchedule}
                             className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl shadow-sm transition-opacity"
-                            style={{ backgroundColor: 'var(--theme-primary)' }}>
+                            style={{ backgroundColor: C.btnPrimary }}>
                             <Save className="w-4 h-4" /> Save Weekly Schedule
                         </button>
                     </div>
@@ -228,8 +229,8 @@ export default function ScheduleManagementPage() {
                     <div className="bg-white rounded-xl border border-slate-100 p-6 space-y-4 h-fit">
                         <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                             <div className="w-6 h-6 rounded-lg flex items-center justify-center"
-                                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 12%, white)' }}>
-                                <Star className="w-3.5 h-3.5" style={{ color: 'var(--theme-primary)' }} />
+                                style={{ backgroundColor: FX.primary12 }}>
+                                <Star className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
                             </div>
                             Set Custom Availability
                         </h3>
@@ -249,7 +250,7 @@ export default function ScheduleManagementPage() {
                             </div>
                             <button type="submit"
                                 className="w-full py-2.5 text-sm font-semibold text-white rounded-xl transition-opacity"
-                                style={{ backgroundColor: 'var(--theme-primary)' }}>
+                                style={{ backgroundColor: C.btnPrimary }}>
                                 Set Custom Slots
                             </button>
                         </form>
@@ -273,7 +274,7 @@ export default function ScheduleManagementPage() {
                                                 {new Date(override.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                                             </p>
                                             {override.reason && (
-                                                <p className="text-xs mt-0.5" style={{ color: 'var(--theme-primary)' }}>{override.reason}</p>
+                                                <p className="text-xs mt-0.5" style={{ color: C.btnPrimary }}>{override.reason}</p>
                                             )}
                                         </div>
                                         <button onClick={() => handleUnblockDate(override.date)}
@@ -284,7 +285,7 @@ export default function ScheduleManagementPage() {
                                     <div className="flex flex-wrap gap-1.5">
                                         {override.customSlots.map((slot, i) => (
                                             <span key={i} className="text-[11px] px-2.5 py-1 rounded-lg font-semibold border"
-                                                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 8%, white)', color: 'var(--theme-primary)', borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, white)' }}>
+                                                style={{ backgroundColor: FX.primary08, color: C.btnPrimary, borderColor: FX.primary20 }}>
                                                 {slot}
                                             </span>
                                         ))}
@@ -388,7 +389,7 @@ export default function ScheduleManagementPage() {
                                 <input type="number"
                                     value={settings[key]}
                                     onChange={(e) => setSettings(s => ({ ...s, [key]: parseInt(e.target.value) }))}
-                                    className="w-20 h-9 text-center text-sm font-bold border border-slate-200 rounded-xl focus:outline-none focus:border-[var(--theme-primary)] transition-colors" />
+                                    className="w-20 h-9 text-center text-sm font-bold border border-slate-200 rounded-xl focus:outline-none focus:border-[#7573E8] transition-colors" />
                                 <span className="text-xs text-slate-400 w-14">{unit}</span>
                             </div>
                         </div>
@@ -397,7 +398,7 @@ export default function ScheduleManagementPage() {
                     <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
                         <button onClick={handleSaveSettings}
                             className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl transition-opacity"
-                            style={{ backgroundColor: 'var(--theme-primary)' }}>
+                            style={{ backgroundColor: C.btnPrimary }}>
                             <Save className="w-4 h-4" /> Save Settings
                         </button>
                     </div>
