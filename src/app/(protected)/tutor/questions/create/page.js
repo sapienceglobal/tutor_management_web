@@ -2,16 +2,36 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ArrowLeft, Loader2, Save, Plus, BrainCircuit, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Plus, Sparkles, X } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { QuestionFormFields } from '@/components/shared/QuestionFormFields';
-import { C, T, FX } from '@/constants/tutorTokens';
+import { C, T, S, R } from '@/constants/tutorTokens';
+
+// Focus Handlers
+const onFocusHandler = e => {
+    e.target.style.borderColor = C.btnPrimary;
+    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)';
+};
+const onBlurHandler = e => {
+    e.target.style.borderColor = 'transparent';
+    e.target.style.boxShadow = 'none';
+};
+
+const baseInputStyle = {
+    backgroundColor: '#E3DFF8',
+    border: '1.5px solid transparent',
+    borderRadius: R.xl,
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.sm,
+    fontWeight: T.weight.medium,
+    outline: 'none',
+    width: '100%',
+    padding: '10px 16px',
+    transition: 'all 0.2s ease',
+};
 
 export default function CreateQuestionPage() {
     const router = useRouter();
@@ -33,8 +53,8 @@ export default function CreateQuestionPage() {
     const fetchTaxonomy = async () => {
         try {
             const [topicsRes, skillsRes] = await Promise.all([api.get('/taxonomy/topics'), api.get('/taxonomy/skills')]);
-            if (topicsRes.data.success) setTopics(topicsRes.data.topics);
-            if (skillsRes.data.success) setSkills(skillsRes.data.skills);
+            if (topicsRes?.data?.success) setTopics(topicsRes.data.topics);
+            if (skillsRes?.data?.success) setSkills(skillsRes.data.skills);
         } catch (error) { console.error('Failed to load taxonomy', error); }
     };
 
@@ -49,12 +69,12 @@ export default function CreateQuestionPage() {
         setLoading(true);
         try {
             const res = await api.post('/question-bank/questions', formData);
-            if (res.data.success) {
+            if (res?.data?.success) {
                 toast.success('Question created successfully!');
                 router.push('/tutor/questions');
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to create question');
+            toast.error(error?.response?.data?.message || 'Failed to create question');
         } finally { setLoading(false); }
     };
 
@@ -63,7 +83,7 @@ export default function CreateQuestionPage() {
         setAiLoading(true);
         try {
             const res = await api.post('/ai/generate-questions', { ...aiParams, count: 1 });
-            if (res.data.success && res.data.questions.length > 0) {
+            if (res?.data?.success && res.data.questions.length > 0) {
                 const q = res.data.questions[0];
                 setFormData({
                     ...formData,
@@ -82,107 +102,89 @@ export default function CreateQuestionPage() {
     };
 
     return (
-        <div className="space-y-6" style={{ fontFamily: T.fontFamily }}>
-
-            {/* Page Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <Link href="/tutor/questions">
-                        <button className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors">
-                            <ArrowLeft className="w-4 h-4 text-slate-500" />
-                        </button>
-                    </Link>
-                    <div>
-                        <div className="flex items-center gap-2.5 mb-0.5">
-                            <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                                style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
-                                <Plus className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
-                            </div>
-                            <h1 className="text-lg font-bold text-slate-800">Create New Question</h1>
+        <div className="w-full min-h-screen p-6 flex flex-col items-center" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+            
+            <div className="w-full max-w-3xl space-y-6">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="flex items-center gap-4">
+                        <Link href="/tutor/questions" className="text-decoration-none">
+                            <button className="w-10 h-10 flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80 shrink-0"
+                                style={{ backgroundColor: '#E3DFF8', borderRadius: R.full }}>
+                                <ArrowLeft size={18} color={C.heading} />
+                            </button>
+                        </Link>
+                        <div>
+                            <h1 className="flex items-center gap-2" style={{ color: C.heading, fontSize: T.size.xl, fontWeight: T.weight.black, margin: '0 0 4px 0' }}>
+                                <Plus size={20} color={C.btnPrimary} /> Create New Question
+                            </h1>
+                            <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, margin: 0 }}>
+                                Add a question to your bank manually or with AI
+                            </p>
                         </div>
-                        <p className="text-xs text-slate-400 pl-0.5">Add a question to your bank manually or with AI</p>
                     </div>
+                    <button onClick={() => setIsAIOpen(true)} className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-80 shadow-sm w-full sm:w-auto"
+                        style={{ backgroundColor: '#E3DFF8', color: C.btnPrimary, borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}>
+                        <Sparkles size={16} /> Generate with AI
+                    </button>
                 </div>
-                <Button
-                    variant="outline" size="sm"
-                    onClick={() => setIsAIOpen(true)}
-                    className="gap-2 text-sm border-slate-200"
-                    style={{ color: C.btnPrimary }}>
-                    <Sparkles className="w-4 h-4" /> Generate with AI
-                </Button>
-            </div>
 
-            {/* Form Card */}
-            <div className="max-w-2xl bg-white rounded-xl border border-slate-100 p-6">
-                <form onSubmit={handleSubmit} className="space-y-5">
-                    <QuestionFormFields formData={formData} setFormData={setFormData} topics={topics} skills={skills} />
-                    <Button
-                        type="submit" disabled={loading}
-                        className="w-full h-10 text-white font-semibold gap-2 mt-2"
-                        style={{ backgroundColor: C.btnPrimary }}>
-                        {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                        <Save className="w-4 h-4" /> Save Question
-                    </Button>
-                </form>
+                {/* Form Wrapper */}
+                <div className="p-6 space-y-6" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Note: Assuming QuestionFormFields is updated to match theme internally, or it just outputs raw fields. Passing styles if needed might require modifying that component, but we will leave it as is if it handles its own. If it relies on global CSS, it's fine. */}
+                        <div className="p-5" style={{ backgroundColor: C.surfaceWhite, borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                             <QuestionFormFields formData={formData} setFormData={setFormData} topics={topics} skills={skills} />
+                        </div>
+                        
+                        <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 h-12 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md"
+                            style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                            {loading && <Loader2 size={16} className="animate-spin" />} <Save size={16} /> Save Question
+                        </button>
+                    </form>
+                </div>
             </div>
 
             {/* AI Modal */}
             {isAIOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-100">
-                        <div className="p-5 border-b border-slate-100 flex justify-between items-center">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                                    style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
-                                    <BrainCircuit className="w-4 h-4" style={{ color: C.btnPrimary }} />
-                                </div>
-                                <h2 className="text-base font-bold text-slate-800">Generate with AI</h2>
-                            </div>
-                            <button onClick={() => setIsAIOpen(false)}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors">
-                                <X className="w-4 h-4 text-slate-400" />
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(21, 22, 86, 0.4)', backdropFilter: 'blur(4px)' }}>
+                    <div className="w-full max-w-md p-6" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.cardHover }}>
+                        <div className="flex items-center justify-between mb-6 pb-4" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                            <h3 className="flex items-center gap-2" style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+                                <Sparkles size={18} color={C.btnPrimary} /> Generate with AI
+                            </h3>
+                            <button onClick={() => setIsAIOpen(false)} className="bg-transparent border-none cursor-pointer hover:opacity-70 flex items-center justify-center" style={{ width: '32px', height: '32px', backgroundColor: '#E3DFF8', borderRadius: R.md }}>
+                                <X size={16} color={C.heading} />
                             </button>
                         </div>
-                        <div className="p-5 space-y-4">
+                        
+                        <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-sm font-medium text-slate-700">Topic</Label>
-                                <Input
-                                    placeholder="e.g. Newton's Laws"
-                                    value={aiParams.topic}
-                                    onChange={(e) => setAiParams({ ...aiParams, topic: e.target.value })}
-                                    className="border-slate-200"
-                                />
+                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>Topic</label>
+                                <input type="text" value={aiParams.topic} onChange={(e) => setAiParams({ ...aiParams, topic: e.target.value })}
+                                    placeholder="e.g. Newton's Laws" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-slate-700">Type</Label>
-                                    <Select value={aiParams.type} onValueChange={(val) => setAiParams({ ...aiParams, type: val })}>
-                                        <SelectTrigger className="border-slate-200"><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="mcq">MCQ</SelectItem>
-                                            <SelectItem value="subjective">Subjective</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>Type</label>
+                                    <select value={aiParams.type} onChange={(e) => setAiParams({ ...aiParams, type: e.target.value })} style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+                                        <option value="mcq">MCQ</option>
+                                        <option value="subjective">Subjective</option>
+                                    </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-slate-700">Difficulty</Label>
-                                    <Select value={aiParams.difficulty} onValueChange={(val) => setAiParams({ ...aiParams, difficulty: val })}>
-                                        <SelectTrigger className="border-slate-200"><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="easy">Easy</SelectItem>
-                                            <SelectItem value="medium">Medium</SelectItem>
-                                            <SelectItem value="hard">Hard</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>Difficulty</label>
+                                    <select value={aiParams.difficulty} onChange={(e) => setAiParams({ ...aiParams, difficulty: e.target.value })} style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+                                        <option value="easy">Easy</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="hard">Hard</option>
+                                    </select>
                                 </div>
                             </div>
-                            <Button
-                                onClick={handleAIGenerate} disabled={aiLoading}
-                                className="w-full text-white gap-2 mt-2"
-                                style={{ backgroundColor: C.btnPrimary }}>
-                                {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BrainCircuit className="w-4 h-4" />}
-                                Generate Question
-                            </Button>
+                            <button onClick={handleAIGenerate} disabled={aiLoading} className="w-full flex items-center justify-center gap-2 h-11 mt-4 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md"
+                                style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                {aiLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />} Generate Question
+                            </button>
                         </div>
                     </div>
                 </div>

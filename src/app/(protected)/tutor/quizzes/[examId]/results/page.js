@@ -5,12 +5,34 @@ import Link from 'next/link';
 import {
     ArrowLeft, Trophy, Users, CheckCircle, XCircle, Clock,
     Search, Download, ChevronDown, ChevronUp, TrendingUp, TrendingDown,
-    Minus, Calendar, Eye, BarChart3, FileQuestion, Loader2
+    Minus, Calendar, Eye, BarChart3, FileQuestion, Loader2, X
 } from 'lucide-react';
 import api from '@/lib/axios';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { C, T, S, R } from '@/constants/tutorTokens';
+
+// Focus Handlers
+const onFocusHandler = e => {
+    e.target.style.borderColor = C.btnPrimary;
+    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)';
+};
+const onBlurHandler = e => {
+    e.target.style.borderColor = 'transparent';
+    e.target.style.boxShadow = 'none';
+};
+
+const baseInputStyle = {
+    backgroundColor: C.surfaceWhite,
+    border: `1.5px solid transparent`,
+    borderRadius: R.xl,
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.sm,
+    fontWeight: T.weight.medium,
+    outline: 'none',
+    width: '100%',
+    padding: '10px 16px',
+    transition: 'all 0.2s ease',
+};
 
 export default function ExamResultsPage({ params }) {
     const { examId } = use(params);
@@ -24,7 +46,7 @@ export default function ExamResultsPage({ params }) {
         const fetchData = async () => {
             try {
                 const res = await api.get(`/exams/${examId}/all-attempts`);
-                if (res.data.success) setData(res.data);
+                if (res?.data?.success) setData(res.data);
             } catch (error) {
                 console.error('Error fetching results:', error);
             } finally {
@@ -45,9 +67,9 @@ export default function ExamResultsPage({ params }) {
         if (attempts.length < 2) return null;
         const sorted = [...attempts].sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt));
         const diff = sorted[sorted.length - 1].percentage - sorted[0].percentage;
-        if (diff > 5) return { icon: TrendingUp, color: 'text-emerald-600', label: 'Improving' };
-        if (diff < -5) return { icon: TrendingDown, color: 'text-red-500', label: 'Declining' };
-        return { icon: Minus, color: 'text-slate-500', label: 'Stable' };
+        if (diff > 5) return { icon: TrendingUp, color: C.success, label: 'Improving' };
+        if (diff < -5) return { icon: TrendingDown, color: C.danger, label: 'Declining' };
+        return { icon: Minus, color: C.textMuted, label: 'Stable' };
     };
 
     const filteredStudents = data?.attempts.filter(item =>
@@ -57,19 +79,22 @@ export default function ExamResultsPage({ params }) {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-                <p className="text-sm text-slate-400">Loading results...</p>
+            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
+                <Loader2 className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
+                <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading results...</p>
             </div>
         );
     }
 
     if (!data) {
         return (
-            <div className="p-8 text-center">
-                <h2 className="text-base font-semibold text-red-500">Error loading results</h2>
-                <Link href="/tutor/quizzes">
-                    <Button variant="link" className="mt-3 text-orange-500">Go Back</Button>
+            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
+                <p style={{ color: C.danger, fontSize: T.size.md, fontWeight: T.weight.bold }}>Error loading results</p>
+                <Link href="/tutor/quizzes" className="text-decoration-none">
+                    <button className="px-5 py-2 cursor-pointer border-none transition-opacity hover:opacity-80 shadow-md"
+                        style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.md, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                        Go Back
+                    </button>
                 </Link>
             </div>
         );
@@ -78,211 +103,203 @@ export default function ExamResultsPage({ params }) {
     const { exam, overallStats } = data;
 
     const statsConfig = [
-        { label: 'Average Score', value: `${overallStats.averageScore}%`, sub: 'Class average', icon: Trophy, color: 'text-yellow-500', bg: 'bg-yellow-50', border: 'border-yellow-100' },
-        { label: 'Pass Rate', value: `${overallStats.passRate}%`, sub: `${overallStats.passedCount} students passed`, icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-        { label: 'Total Attempts', value: overallStats.totalAttempts, sub: `Across ${overallStats.uniqueStudents} students`, icon: Clock, color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-100' },
-        { label: 'Unique Students', value: overallStats.uniqueStudents, sub: 'Participated', icon: Users, color: 'text-orange-500', bg: 'bg-orange-50', border: 'border-orange-100' },
+        { label: 'Average Score', value: `${overallStats.averageScore}%`, sub: 'Class average', icon: Trophy, color: '#F59E0B', bg: 'rgba(245,158,11,0.15)' },
+        { label: 'Pass Rate', value: `${overallStats.passRate}%`, sub: `${overallStats.passedCount} students passed`, icon: CheckCircle, color: '#10B981', bg: 'rgba(16,185,129,0.15)' },
+        { label: 'Total Attempts', value: overallStats.totalAttempts, sub: `Across ${overallStats.uniqueStudents} students`, icon: Clock, color: '#3b82f6', bg: 'rgba(59,130,246,0.15)' },
+        { label: 'Unique Students', value: overallStats.uniqueStudents, sub: 'Participated', icon: Users, color: '#7573E8', bg: '#E3DFF8' },
     ];
 
     return (
-        <div className="space-y-6">
+        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+            
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <div className="flex items-center gap-2 text-xs text-slate-400 mb-2">
-                        <Link href="/tutor/quizzes" className="hover:text-orange-500 transition-colors flex items-center gap-1 font-medium">
-                            <ArrowLeft className="w-3.5 h-3.5" /> Exams
-                        </Link>
-                        <span>/</span>
-                        <span>Results</span>
-                    </div>
-                    <div className="flex items-center gap-2.5 mb-0.5">
-                        <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center">
-                            <BarChart3 className="w-4 h-4 text-orange-500" />
-                        </div>
-                        <h1 className="text-xl font-bold text-slate-800">{exam.title}</h1>
-                    </div>
-                    <p className="text-sm text-slate-400 pl-0.5">Performance Overview & Student Results</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Link href={`/tutor/quizzes/re-evaluations?examId=${examId}`}>
-                        <Button variant="outline" size="sm" className="border-orange-200 text-orange-600 gap-2 text-sm">
-                            <FileQuestion className="w-4 h-4" /> Re-evaluation Queue
-                        </Button>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-5" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                <div className="flex items-center gap-4">
+                    <Link href="/tutor/quizzes" className="text-decoration-none">
+                        <button className="w-10 h-10 flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80 shrink-0"
+                            style={{ backgroundColor: '#E3DFF8', borderRadius: R.full }}>
+                            <ArrowLeft size={18} color={C.heading} />
+                        </button>
                     </Link>
-                    <Button variant="outline" size="sm" className="border-slate-200 text-slate-600 gap-2 text-sm">
-                        <Download className="w-4 h-4" /> Export CSV
-                    </Button>
+                    <div>
+                        <h1 className="flex items-center gap-2" style={{ color: C.heading, fontSize: T.size.xl, fontWeight: T.weight.black, margin: '0 0 4px 0' }}>
+                            <BarChart3 size={20} color={C.btnPrimary} /> {exam.title}
+                        </h1>
+                        <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, margin: 0 }}>Performance Overview & Student Results</p>
+                    </div>
+                </div>
+                <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                    <Link href={`/tutor/quizzes/re-evaluations?examId=${examId}`} className="text-decoration-none flex-1 md:flex-none">
+                        <button className="w-full flex items-center justify-center h-10 px-4 gap-2 cursor-pointer border-none transition-opacity hover:opacity-80 shadow-md"
+                            style={{ backgroundColor: '#E3DFF8', color: C.btnPrimary, borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                            <FileQuestion size={16} /> Re-evaluation Queue
+                        </button>
+                    </Link>
+                    <button className="flex-1 md:flex-none flex items-center justify-center h-10 px-4 gap-2 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-md"
+                        style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                        <Download size={16} /> Export
+                    </button>
                 </div>
             </div>
 
             {/* Stats Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {statsConfig.map((stat, i) => {
-                    const Icon = stat.icon;
-                    return (
-                        <div key={i} className={`bg-white p-5 rounded-xl border ${stat.border} hover:shadow-md hover:-translate-y-0.5 transition-all duration-200`}>
-                            <div className="flex items-center justify-between mb-3">
-                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{stat.label}</p>
-                                <div className={`w-8 h-8 rounded-lg ${stat.bg} flex items-center justify-center`}>
-                                    <Icon className={`w-4 h-4 ${stat.color}`} />
-                                </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {statsConfig.map((stat, i) => (
+                    <div key={i} className="p-5 flex flex-col justify-between transition-transform hover:-translate-y-0.5" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card, minHeight: '120px' }}>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ backgroundColor: stat.bg, borderRadius: R.md }}>
+                                <stat.icon size={16} color={stat.color} />
                             </div>
-                            <p className="text-2xl font-bold text-slate-800 leading-none mb-1">{stat.value}</p>
-                            <p className="text-xs text-slate-400">{stat.sub}</p>
+                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{stat.label}</p>
                         </div>
-                    );
-                })}
+                        <div className="flex items-end justify-between mt-auto">
+                            <p style={{ fontSize: T.size['3xl'], fontWeight: T.weight.black, color: C.heading, margin: 0, lineHeight: 1 }}>{stat.value}</p>
+                            <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, margin: '0 0 2px 0' }}>{stat.sub}</p>
+                        </div>
+                    </div>
+                ))}
             </div>
 
             {/* Students Table */}
-            <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-base font-semibold text-slate-800">Student Performance</h2>
-                    <div className="relative">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                        <Input placeholder="Search student..." className="pl-9 w-56 h-9 text-sm border-slate-200 focus:border-orange-400 focus:ring-orange-500/10"
-                            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            <div className="p-5 overflow-hidden" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+                    <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Student Performance</h2>
+                    <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2" size={16} color={C.textMuted} />
+                        <input placeholder="Search student..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{ ...baseInputStyle, paddingLeft: '36px', backgroundColor: '#E3DFF8' }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
                     </div>
                 </div>
 
-                <div className="rounded-xl border border-slate-100 bg-white overflow-hidden">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-slate-50/80">
-                                <TableHead className="w-10"></TableHead>
-                                <TableHead className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Student</TableHead>
-                                <TableHead className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Attempts</TableHead>
-                                <TableHead className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Best Score</TableHead>
-                                <TableHead className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Trend</TableHead>
-                                <TableHead className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</TableHead>
-                                <TableHead className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredStudents.length > 0 ? (
-                                filteredStudents.map((item) => {
+                <div className="overflow-x-auto custom-scrollbar">
+                    <div className="min-w-[800px]">
+                        <div className="grid grid-cols-[40px_2.5fr_1fr_1.5fr_1.5fr_1fr_100px] gap-4 px-4 pb-3 mb-2" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                            {['', 'Student', 'Attempts', 'Best Score', 'Trend', 'Status', 'Actions'].map((h, i) => (
+                                <span key={i} className={i === 2 || i === 3 || i === 4 || i === 5 ? 'text-center' : i === 6 ? 'text-right' : ''} style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>{h}</span>
+                            ))}
+                        </div>
+
+                        {filteredStudents.length > 0 ? (
+                            <div className="flex flex-col gap-2">
+                                {filteredStudents.map((item) => {
                                     const trend = getScoreTrend(item.attempts);
                                     const isExpanded = expandedStudents.has(item.student._id);
                                     const sortedAttempts = [...item.attempts].sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
 
                                     return (
-                                        <React.Fragment key={item.student._id}>
-                                            <TableRow className="hover:bg-slate-50/50 transition-colors">
-                                                <TableCell>
-                                                    <button onClick={() => toggleStudentExpansion(item.student._id)}
-                                                        className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-200 transition-colors">
-                                                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5 text-slate-500" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500" />}
-                                                    </button>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0">
-                                                            {item.student.name.charAt(0).toUpperCase()}
-                                                        </div>
-                                                        <div>
-                                                            <div className="font-semibold text-slate-800 text-sm">{item.student.name}</div>
-                                                            <div className="text-xs text-slate-400">{item.student.email}</div>
-                                                        </div>
+                                        <div key={item.student._id} className="flex flex-col transition-colors hover:opacity-90" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+                                            <div className="grid grid-cols-[40px_2.5fr_1fr_1.5fr_1.5fr_1fr_100px] gap-4 px-4 py-3 items-center">
+                                                <button onClick={() => toggleStudentExpansion(item.student._id)} className="w-8 h-8 flex items-center justify-center cursor-pointer border-none bg-transparent hover:opacity-70" style={{ borderRadius: R.sm }}>
+                                                    {isExpanded ? <ChevronUp size={16} color={C.heading} /> : <ChevronDown size={16} color={C.textMuted} />}
+                                                </button>
+                                                
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className="w-9 h-9 flex items-center justify-center shrink-0" style={{ background: C.gradientBtn, color: '#fff', borderRadius: R.full, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
+                                                        {item.student.name.charAt(0).toUpperCase()}
                                                     </div>
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    <span className="inline-flex items-center justify-center w-7 h-7 bg-slate-100 rounded-full font-bold text-slate-700 text-xs">
+                                                    <div className="min-w-0">
+                                                        <p className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 2px 0' }}>{item.student.name}</p>
+                                                        <p className="truncate" style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>{item.student.email}</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="text-center">
+                                                    <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, backgroundColor: C.surfaceWhite, padding: '2px 10px', borderRadius: R.full, border: `1px solid ${C.cardBorder}` }}>
                                                         {item.totalAttempts}
                                                     </span>
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    <div className="flex flex-col items-center">
-                                                        <span className="text-base font-bold text-slate-800">{item.bestScore}</span>
-                                                        <span className="text-[10px] text-slate-400">/ {exam.totalMarks || exam.passingMarks}</span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-center">
+                                                </div>
+
+                                                <div className="text-center flex flex-col items-center">
+                                                    <span style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, lineHeight: 1 }}>{item.bestScore}</span>
+                                                    <span style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted }}>/ {exam.totalMarks || exam.passingMarks}</span>
+                                                </div>
+
+                                                <div className="text-center">
                                                     {trend && (
-                                                        <div className={`inline-flex items-center gap-1 ${trend.color} text-xs font-semibold`}>
-                                                            {React.createElement(trend.icon, { className: 'w-3.5 h-3.5' })}
-                                                            {trend.label}
+                                                        <div className="inline-flex items-center gap-1.5" style={{ color: trend.color, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
+                                                            <trend.icon size={14} /> {trend.label}
                                                         </div>
                                                     )}
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold
-                                                        ${item.passed ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
-                                                        {item.passed ? <><CheckCircle className="w-3 h-3" /> Passed</> : <><XCircle className="w-3 h-3" /> Failed</>}
+                                                </div>
+
+                                                <div className="text-center">
+                                                    <span style={{ 
+                                                        fontSize: '10px', fontWeight: T.weight.black, padding: '4px 8px', borderRadius: R.md, textTransform: 'uppercase',
+                                                        backgroundColor: item.passed ? C.successBg : C.dangerBg, 
+                                                        color: item.passed ? C.success : C.danger, 
+                                                        border: `1px solid ${item.passed ? C.successBorder : C.dangerBorder}`
+                                                    }}>
+                                                        {item.passed ? 'Passed' : 'Failed'}
                                                     </span>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <button onClick={() => toggleStudentExpansion(item.student._id)}
-                                                        className="text-xs text-orange-500 hover:text-orange-600 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-orange-50 transition-colors">
-                                                        {isExpanded ? 'Hide' : 'View'} Attempts
+                                                </div>
+
+                                                <div className="text-right">
+                                                    <button onClick={() => toggleStudentExpansion(item.student._id)} className="px-3 py-1.5 cursor-pointer border-none transition-opacity hover:opacity-80 w-full"
+                                                        style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, borderRadius: R.md, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                                                        {isExpanded ? 'Hide' : 'View'}
                                                     </button>
-                                                </TableCell>
-                                            </TableRow>
+                                                </div>
+                                            </div>
 
                                             {isExpanded && (
-                                                <TableRow>
-                                                    <TableCell colSpan={7} className="bg-slate-50/50 p-0">
-                                                        <div className="p-5">
-                                                            <h4 className="font-semibold text-slate-800 text-sm mb-3 flex items-center gap-2">
-                                                                <Calendar className="w-4 h-4 text-orange-500" />
-                                                                Attempt History ({sortedAttempts.length} total)
-                                                            </h4>
-                                                            <div className="space-y-2">
-                                                                {sortedAttempts.map((attempt) => (
-                                                                    <div key={attempt._id}
-                                                                        className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-100 hover:shadow-sm transition-shadow">
-                                                                        <div className="flex items-center gap-3">
-                                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm text-white shadow-sm
-                                                                                ${attempt.isPassed ? 'bg-emerald-500' : 'bg-slate-400'}`}>
-                                                                                #{attempt.attemptNumber}
-                                                                            </div>
-                                                                            <div>
-                                                                                <div className="flex items-center gap-2 mb-0.5">
-                                                                                    <span className="font-bold text-slate-800">{attempt.percentage}%</span>
-                                                                                    <span className="text-xs text-slate-400">({attempt.score}/{exam.totalMarks || exam.passingMarks})</span>
-                                                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold border
-                                                                                        ${attempt.isPassed ? 'border-emerald-200 text-emerald-700 bg-emerald-50' : 'border-red-200 text-red-600 bg-red-50'}`}>
-                                                                                        {attempt.isPassed ? 'Passed' : 'Failed'}
-                                                                                    </span>
-                                                                                </div>
-                                                                                <div className="flex items-center gap-3 text-[10px] text-slate-400">
-                                                                                    <span className="flex items-center gap-1">
-                                                                                        <Calendar className="w-3 h-3" />
-                                                                                        {new Date(attempt.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                                                                    </span>
-                                                                                    <span className="flex items-center gap-1">
-                                                                                        <Clock className="w-3 h-3" />
-                                                                                        {Math.floor(attempt.timeSpent / 60)}m {attempt.timeSpent % 60}s
-                                                                                    </span>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                        <Button size="sm" onClick={() => setSelectedAttemptId(attempt._id)}
-                                                                            className="bg-orange-500 hover:bg-orange-600 text-white gap-1.5 text-xs shadow-sm shadow-orange-200">
-                                                                            <Eye className="w-3.5 h-3.5" /> View Details
-                                                                        </Button>
+                                                <div className="p-4" style={{ backgroundColor: C.surfaceWhite, borderTop: `1px solid ${C.cardBorder}`, borderBottomLeftRadius: R.xl, borderBottomRightRadius: R.xl }}>
+                                                    <h4 className="flex items-center gap-2 mb-3" style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: '0 0 12px 0' }}>
+                                                        <Calendar size={16} color={C.btnPrimary} /> Attempt History ({sortedAttempts.length} total)
+                                                    </h4>
+                                                    <div className="space-y-2">
+                                                        {sortedAttempts.map((attempt) => (
+                                                            <div key={attempt._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 transition-colors hover:opacity-90"
+                                                                style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                                                                
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-8 h-8 flex items-center justify-center shrink-0"
+                                                                        style={{ backgroundColor: attempt.isPassed ? C.success : C.textMuted, color: '#fff', borderRadius: R.md, fontSize: T.size.xs, fontWeight: T.weight.black }}>
+                                                                        #{attempt.attemptNumber}
                                                                     </div>
-                                                                ))}
+                                                                    <div>
+                                                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                                            <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>{attempt.percentage}%</span>
+                                                                            <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>({attempt.score}/{exam.totalMarks || exam.passingMarks})</span>
+                                                                            <span style={{ 
+                                                                                fontSize: '9px', fontWeight: T.weight.black, padding: '2px 6px', borderRadius: R.md, textTransform: 'uppercase',
+                                                                                backgroundColor: attempt.isPassed ? C.successBg : C.dangerBg, 
+                                                                                color: attempt.isPassed ? C.success : C.danger, 
+                                                                                border: `1px solid ${attempt.isPassed ? C.successBorder : C.dangerBorder}`
+                                                                            }}>
+                                                                                {attempt.isPassed ? 'Passed' : 'Failed'}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-3 flex-wrap">
+                                                                            <span className="flex items-center gap-1" style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted }}>
+                                                                                <Calendar size={10} /> {new Date(attempt.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                                            </span>
+                                                                            <span className="flex items-center gap-1" style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted }}>
+                                                                                <Clock size={10} /> {Math.floor(attempt.timeSpent / 60)}m {attempt.timeSpent % 60}s
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <button onClick={() => setSelectedAttemptId(attempt._id)} className="flex items-center justify-center gap-1.5 h-8 px-4 cursor-pointer border-none transition-opacity hover:opacity-80 w-full sm:w-auto"
+                                                                    style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.md, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, boxShadow: S.card }}>
+                                                                    <Eye size={12} /> View Details
+                                                                </button>
                                                             </div>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
+                                                        ))}
+                                                    </div>
+                                                </div>
                                             )}
-                                        </React.Fragment>
-                                    );
-                                })
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="h-32 text-center">
-                                        <div className="flex flex-col items-center justify-center text-slate-400">
-                                            <Users className="w-10 h-10 mb-2 opacity-40" />
-                                            <p className="text-sm">No students found</p>
                                         </div>
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="text-center py-16 flex flex-col items-center">
+                                <Users size={32} color={C.textMuted} style={{ opacity: 0.3, marginBottom: '12px' }} />
+                                <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>No students found</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -302,7 +319,7 @@ function AttemptDetailsModal({ attemptId, examTitle, onClose }) {
         const fetchDetails = async () => {
             try {
                 const res = await api.get(`/exams/tutor/attempt/${attemptId}`);
-                if (res.data.success) setDetails(res.data);
+                if (res?.data?.success) setDetails(res.data);
             } catch (error) { console.error('Error fetching attempt details:', error); }
             finally { setLoading(false); }
         };
@@ -312,123 +329,114 @@ function AttemptDetailsModal({ attemptId, examTitle, onClose }) {
     if (!attemptId) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(21, 22, 86, 0.4)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
+            <div className="w-full max-w-4xl p-0 flex flex-col max-h-[90vh] overflow-hidden" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.cardHover }} onClick={e => e.stopPropagation()}>
+                
                 {/* Modal Header */}
-                <div className="bg-white border-b border-slate-100 p-5 flex items-center justify-between">
+                <div className="p-6 flex items-center justify-between shrink-0" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: '#E3DFF8' }}>
                     <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center">
-                            <BarChart3 className="w-4 h-4 text-orange-500" />
+                        <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ backgroundColor: C.surfaceWhite, borderRadius: R.xl }}>
+                            <BarChart3 size={20} color={C.btnPrimary} />
                         </div>
                         <div>
-                            <h2 className="text-base font-bold text-slate-800">Detailed Performance Report</h2>
-                            <p className="text-xs text-slate-400">{examTitle}</p>
+                            <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 2px 0' }}>Detailed Performance Report</h3>
+                            <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, margin: 0 }}>{examTitle}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors">
-                        <XCircle className="w-5 h-5 text-slate-400" />
+                    <button onClick={onClose} className="bg-transparent border-none cursor-pointer hover:opacity-70 flex items-center justify-center" style={{ width: '32px', height: '32px', backgroundColor: C.surfaceWhite, borderRadius: R.md }}>
+                        <X size={16} color={C.heading} />
                     </button>
                 </div>
 
                 {/* Modal Content */}
-                <div className="flex-1 overflow-y-auto p-5">
+                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-16 gap-3">
-                            <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-                            <p className="text-sm text-slate-400">Loading detailed analytics...</p>
+                            <Loader2 className="animate-spin" style={{ color: C.btnPrimary, width: '32px', height: '32px' }} />
+                            <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading detailed analytics...</p>
                         </div>
                     ) : details ? (
-                        <div className="space-y-5">
-                            {/* Summary */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="space-y-6">
+                            {/* Summary Stats */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {[
-                                    { label: 'Status', value: details.attempt.isPassed ? '✓ Passed' : '✗ Failed', color: details.attempt.isPassed ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-600 bg-red-50 border-red-200' },
-                                    { label: 'Score', value: `${details.attempt.score}/${details.attempt.examId.totalMarks}`, sub: `${details.attempt.percentage}%`, color: 'text-blue-700 bg-blue-50 border-blue-200' },
-                                    { label: 'Time Spent', value: `${Math.floor(details.attempt.timeSpent / 60)}m ${details.attempt.timeSpent % 60}s`, color: 'text-orange-700 bg-orange-50 border-orange-200' },
-                                    { label: 'Attempt', value: `#${details.attempt.attemptNumber}`, color: 'text-slate-700 bg-slate-50 border-slate-200' },
+                                    { label: 'Status', value: details.attempt.isPassed ? '✓ Passed' : '✗ Failed', color: details.attempt.isPassed ? C.success : C.danger, bg: details.attempt.isPassed ? C.successBg : C.dangerBg, border: details.attempt.isPassed ? C.successBorder : C.dangerBorder },
+                                    { label: 'Score', value: `${details.attempt.score}/${details.attempt.examId.totalMarks || details.attempt.examId.passingMarks}`, sub: `${details.attempt.percentage}%`, color: '#3b82f6', bg: 'rgba(59,130,246,0.15)', border: 'rgba(59,130,246,0.2)' },
+                                    { label: 'Time Spent', value: `${Math.floor(details.attempt.timeSpent / 60)}m ${details.attempt.timeSpent % 60}s`, color: '#F59E0B', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.2)' },
+                                    { label: 'Attempt', value: `#${details.attempt.attemptNumber}`, color: C.textMuted, bg: C.surfaceWhite, border: C.cardBorder },
                                 ].map((item, i) => (
-                                    <div key={i} className={`p-4 rounded-xl border text-center ${item.color}`}>
-                                        <p className="text-[10px] font-semibold uppercase tracking-wider opacity-70 mb-1">{item.label}</p>
-                                        <p className="text-lg font-bold">{item.value}</p>
-                                        {item.sub && <p className="text-xs opacity-70 mt-0.5">{item.sub}</p>}
+                                    <div key={i} className="p-4 text-center" style={{ backgroundColor: item.bg, border: `1px solid ${item.border}`, borderRadius: R.xl }}>
+                                        <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.heading, textTransform: 'uppercase', margin: '0 0 4px 0', opacity: 0.7 }}>{item.label}</p>
+                                        <p style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: item.color, margin: 0 }}>{item.value}</p>
+                                        {item.sub && <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: item.color, margin: '2px 0 0 0', opacity: 0.8 }}>{item.sub}</p>}
                                     </div>
                                 ))}
                             </div>
 
                             {/* Question Breakdown */}
-                            {details.detailedResults && details.detailedResults.length > 0 ? (
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                            <BarChart3 className="w-4 h-4 text-orange-500" /> Question Analysis
+                            {details.detailedResults && details.detailedResults.length > 0 && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between pb-2" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                                        <h3 className="flex items-center gap-2" style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+                                            <BarChart3 size={18} color={C.btnPrimary} /> Question Analysis
                                         </h3>
-                                        <div className="flex gap-2 text-xs">
-                                            <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-lg font-bold">
+                                        <div className="flex gap-2">
+                                            <span style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.success, backgroundColor: C.successBg, border: `1px solid ${C.successBorder}`, padding: '4px 8px', borderRadius: R.md }}>
                                                 ✓ {details.detailedResults.filter(q => q.isCorrect).length} Correct
                                             </span>
-                                            <span className="px-2.5 py-1 bg-red-100 text-red-600 rounded-lg font-bold">
+                                            <span style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.danger, backgroundColor: C.dangerBg, border: `1px solid ${C.dangerBorder}`, padding: '4px 8px', borderRadius: R.md }}>
                                                 ✗ {details.detailedResults.filter(q => !q.isCorrect).length} Wrong
                                             </span>
                                         </div>
                                     </div>
 
                                     {details.detailedResults.map((q, idx) => (
-                                        <div key={idx} className={`p-4 rounded-xl border-2 ${q.isCorrect ? 'bg-emerald-50/50 border-emerald-200' : 'bg-red-50/50 border-red-200'}`}>
-                                            <div className="flex justify-between items-start mb-3">
+                                        <div key={idx} className="p-5" style={{ backgroundColor: q.isCorrect ? C.successBg : C.dangerBg, border: `2px solid ${q.isCorrect ? C.successBorder : C.dangerBorder}`, borderRadius: R.xl }}>
+                                            <div className="flex justify-between items-start mb-4 gap-4">
                                                 <div className="flex items-start gap-3">
-                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs text-white flex-shrink-0 ${q.isCorrect ? 'bg-emerald-500' : 'bg-red-500'}`}>
+                                                    <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ backgroundColor: q.isCorrect ? C.success : C.danger, color: '#fff', borderRadius: R.md, fontSize: T.size.sm, fontWeight: T.weight.black }}>
                                                         {idx + 1}
                                                     </div>
-                                                    <p className="font-medium text-slate-800 text-sm leading-relaxed">{q.question}</p>
+                                                    <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0, lineHeight: 1.5 }}>{q.question}</p>
                                                 </div>
-                                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ml-3 flex-shrink-0 ${q.isCorrect ? 'bg-emerald-200 text-emerald-700' : 'bg-red-200 text-red-700'}`}>
+                                                <span style={{ fontSize: '11px', fontWeight: T.weight.black, color: q.isCorrect ? C.success : C.danger, backgroundColor: q.isCorrect ? '#fff' : '#fff', padding: '4px 8px', borderRadius: R.full, shrink: 0 }}>
                                                     {q.pointsEarned}/{q.pointsPossible} pts
                                                 </span>
                                             </div>
 
-                                            <div className="ml-11 space-y-2">
-                                                <div className={`p-2.5 rounded-lg border text-sm ${q.isCorrect ? 'bg-emerald-100 border-emerald-300' : 'bg-red-100 border-red-300'}`}>
-                                                    <p className="text-[10px] font-bold text-slate-600 uppercase mb-1">Student's Answer</p>
-                                                    <p className={`font-medium ${q.isCorrect ? 'text-emerald-900' : 'text-red-900'}`}>
+                                            <div className="ml-11 space-y-3">
+                                                <div className="p-3" style={{ backgroundColor: q.isCorrect ? '#E8F5E9' : '#FEECEB', border: `1px solid ${q.isCorrect ? '#C8E6C9' : '#FFCDD2'}`, borderRadius: R.lg }}>
+                                                    <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 4px 0' }}>Student's Answer</p>
+                                                    <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: q.isCorrect ? '#1B5E20' : '#B71C1C', margin: 0 }}>
                                                         {q.selectedIndex !== undefined && q.selectedIndex !== -1 && q.options?.[q.selectedIndex]
                                                             ? q.options[q.selectedIndex]
                                                             : q.selectedText || q.selectedOption || "Not Answered"}
                                                     </p>
                                                 </div>
                                                 {!q.isCorrect && q.correctIndex !== undefined && q.options && (
-                                                    <div className="p-2.5 rounded-lg border bg-emerald-50 border-emerald-200 text-sm">
-                                                        <p className="text-[10px] font-bold text-emerald-700 uppercase mb-1">Correct Answer</p>
-                                                        <p className="font-medium text-emerald-900">{q.options[q.correctIndex]}</p>
+                                                    <div className="p-3" style={{ backgroundColor: C.successBg, border: `1px solid ${C.successBorder}`, borderRadius: R.lg }}>
+                                                        <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.success, textTransform: 'uppercase', margin: '0 0 4px 0' }}>Correct Answer</p>
+                                                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: '#1B5E20', margin: 0 }}>{q.options[q.correctIndex]}</p>
                                                     </div>
                                                 )}
                                                 {q.explanation && (
-                                                    <div className="p-2.5 rounded-lg bg-blue-50 border border-blue-200 text-sm">
-                                                        <p className="text-[10px] font-bold text-blue-700 uppercase mb-1">Explanation</p>
-                                                        <p className="text-blue-900 leading-relaxed text-xs">{q.explanation}</p>
+                                                    <div className="p-3" style={{ backgroundColor: '#E3F2FD', border: `1px solid #BBDEFB`, borderRadius: R.lg }}>
+                                                        <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: '#1976D2', textTransform: 'uppercase', margin: '0 0 4px 0' }}>Explanation</p>
+                                                        <p style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: '#0D47A1', margin: 0, lineHeight: 1.5 }}>{q.explanation}</p>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                            ) : (
-                                <div className="text-center py-10 bg-slate-50 rounded-xl border border-slate-100">
-                                    <BarChart3 className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                                    <p className="text-sm text-slate-500 font-medium">Detailed breakdowns not available</p>
-                                    <p className="text-xs text-slate-400 mt-1">This may be due to exam settings</p>
-                                </div>
                             )}
                         </div>
                     ) : (
-                        <div className="text-center py-12">
-                            <XCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
-                            <p className="text-sm text-red-500 font-semibold">Failed to load attempt details</p>
+                        <div className="text-center py-16">
+                            <XCircle size={48} color={C.danger} style={{ opacity: 0.5, margin: '0 auto 12px' }} />
+                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.danger }}>Failed to load attempt details</p>
                         </div>
                     )}
-                </div>
-
-                <div className="p-4 border-t border-slate-100 flex justify-end">
-                    <Button variant="outline" onClick={onClose} className="border-slate-200 text-sm">Close</Button>
                 </div>
             </div>
         </div>

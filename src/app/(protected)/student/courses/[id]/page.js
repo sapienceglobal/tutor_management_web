@@ -14,7 +14,6 @@ import api from '@/lib/axios';
 import assignmentService from '@/services/assignmentService';
 import LessonPlayerModal from '@/components/LessonPlayerModal';
 import ExamHistoryModal from '@/components/ExamHistoryModal';
-import ExamResultModal from '@/components/ExamResultModal';
 import { ReportAbuseModal } from '@/components/shared/ReportAbuseModal';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';

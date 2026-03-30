@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import { ArrowLeft, CalendarDays, CheckCircle2, Download, Loader2, Users, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { C, T, FX, S, pageStyle } from '@/constants/tutorTokens';
+import { C, T, S, R } from '@/constants/tutorTokens';
 
 function safeArray(value) {
     return Array.isArray(value) ? value : [];
@@ -147,141 +147,134 @@ export default function TutorBatchAttendancePage({ params }) {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
-                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted }}>Loading batch attendance...</p>
+            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
+                <Loader2 className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
+                <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading batch attendance...</p>
             </div>
         );
     }
 
     if (!batch) {
         return (
-            <div className="p-8 text-center" style={pageStyle}>
-                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.danger }}>
-                    Failed to load batch attendance data.
-                </p>
+            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
+                <p style={{ color: C.danger, fontSize: T.size.md, fontWeight: T.weight.bold }}>Failed to load batch attendance data.</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-5" style={pageStyle}>
-            <div className="rounded-2xl p-4" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => router.back()}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: FX.primary08 }}
-                    >
-                        <ArrowLeft className="w-4 h-4" style={{ color: C.btnPrimary }} />
+        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+            
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80"
+                        style={{ backgroundColor: '#EAE8FA', borderRadius: R.full }}>
+                        <ArrowLeft size={18} color={C.heading} />
                     </button>
-                    <div className="min-w-0">
-                        <h1 className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>
+                    <div>
+                        <h1 style={{ fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, margin: '0 0 2px 0' }}>
                             {batch.name} Attendance
                         </h1>
-                        <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>
                             Course: {batch.courseId?.title || 'N/A'} • Students: {safeArray(batch.students).length}
                         </p>
                     </div>
-                    <button
-                        onClick={() => window.print()}
-                        className="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border"
-                        style={{ borderColor: C.cardBorder, color: C.btnPrimary, backgroundColor: FX.primary08 }}
-                    >
-                        <Download className="w-3.5 h-3.5" />
-                        Export
-                    </button>
                 </div>
+                <button
+                    onClick={() => window.print()}
+                    className="flex items-center gap-2 h-11 px-5 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-md"
+                    style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}
+                >
+                    <Download size={16} /> Export Report
+                </button>
             </div>
 
+            {/* Stats Row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: 'Sessions Marked', value: stats.sessions, icon: CalendarDays, color: C.btnPrimary, bg: FX.primary08 },
+                    { label: 'Sessions Marked', value: stats.sessions, icon: CalendarDays, color: C.btnPrimary, bg: '#E3DFF8' },
                     { label: 'Present + Late', value: stats.presentEntries, icon: CheckCircle2, color: C.success, bg: C.successBg },
                     { label: 'Absent', value: stats.absentEntries, icon: XCircle, color: C.danger, bg: C.dangerBg },
                     { label: 'Attendance Rate', value: `${stats.attendanceRate}%`, icon: Users, color: C.warning, bg: C.warningBg },
                 ].map((item) => (
-                    <div key={item.label} className="rounded-2xl border p-4" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}>
-                        <div className="flex items-center justify-between mb-2.5">
-                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, fontWeight: T.weight.bold }}>{item.label}</p>
-                            <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: item.bg }}>
-                                <item.icon className="w-4 h-4" style={{ color: item.color }} />
-                            </span>
+                    <div key={item.label} className="p-5 flex flex-col justify-between" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ backgroundColor: item.bg, borderRadius: R.md }}>
+                                <item.icon size={18} color={item.color} />
+                            </div>
+                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{item.label}</p>
                         </div>
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading }}>{item.value}</p>
+                        <p style={{ fontSize: T.size['3xl'], fontWeight: T.weight.black, color: C.heading, margin: 0, lineHeight: 1 }}>{item.value}</p>
                     </div>
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                <div className="rounded-2xl border overflow-hidden" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}>
-                    <div className="px-4 py-3 border-b" style={{ borderColor: C.cardBorder }}>
-                        <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                
+                {/* Student Attendance Summary */}
+                <div className="overflow-hidden flex flex-col h-[500px]" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="px-5 py-4 shrink-0" style={{ backgroundColor: C.surfaceWhite, borderBottom: `1px solid ${C.cardBorder}` }}>
+                        <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
                             Student Attendance Summary
                         </h2>
                     </div>
-                    <div className="max-h-[430px] overflow-auto">
-                        <table className="w-full min-w-[560px]">
-                            <thead style={{ backgroundColor: FX.primary05 }}>
-                                <tr>
-                                    {['Student', 'Rate', 'Present', 'Absent', 'Late'].map((h) => (
-                                        <th key={h} className="text-left px-4 py-2.5" style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
-                                            {h}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {studentRows.map((student) => (
-                                    <tr key={student.studentId} className="border-t" style={{ borderColor: C.cardBorder }}>
-                                        <td className="px-4 py-3">
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.semibold }}>{student.name}</p>
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>{student.email}</p>
-                                        </td>
-                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text }}>{student.attendanceRate}%</td>
-                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.success }}>{student.present + student.late}</td>
-                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.danger }}>{student.absent}</td>
-                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.warning }}>{student.late}</td>
-                                    </tr>
+                    <div className="flex-1 overflow-auto custom-scrollbar">
+                        <div className="min-w-[600px]">
+                            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] px-5 py-3" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                                {['Student', 'Rate', 'Present', 'Absent', 'Late'].map((h) => (
+                                    <span key={h} style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>{h}</span>
                                 ))}
-                            </tbody>
-                        </table>
+                            </div>
+                            <div className="flex flex-col gap-2 p-3">
+                                {studentRows.map((student) => (
+                                    <div key={student.studentId} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] px-3 py-3 items-center" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+                                        <div>
+                                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 2px 0' }}>{student.name}</p>
+                                            <p style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>{student.email}</p>
+                                        </div>
+                                        <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>{student.attendanceRate}%</span>
+                                        <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.success }}>{student.present + student.late}</span>
+                                        <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.danger }}>{student.absent}</span>
+                                        <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.warning }}>{student.late}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div className="rounded-2xl border overflow-hidden" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}>
-                    <div className="px-4 py-3 border-b" style={{ borderColor: C.cardBorder }}>
-                        <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                {/* Session History */}
+                <div className="overflow-hidden flex flex-col h-[500px]" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="px-5 py-4 shrink-0" style={{ backgroundColor: C.surfaceWhite, borderBottom: `1px solid ${C.cardBorder}` }}>
+                        <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
                             Session History
                         </h2>
                     </div>
-                    <div className="max-h-[430px] overflow-auto">
-                        <table className="w-full min-w-[560px]">
-                            <thead style={{ backgroundColor: FX.primary05 }}>
-                                <tr>
-                                    {['Date', 'Entries', 'Present', 'Absent', 'Rate'].map((h) => (
-                                        <th key={h} className="text-left px-4 py-2.5" style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
-                                            {h}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {sessionRows.map((session) => (
-                                    <tr key={session.id} className="border-t" style={{ borderColor: C.cardBorder }}>
-                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.semibold }}>
-                                            {session.date ? format(new Date(session.date), 'PPP') : 'N/A'}
-                                        </td>
-                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text }}>{session.records}</td>
-                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.success }}>{session.present}</td>
-                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.danger }}>{session.absent}</td>
-                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text }}>{session.rate}%</td>
-                                    </tr>
+                    <div className="flex-1 overflow-auto custom-scrollbar">
+                        <div className="min-w-[600px]">
+                            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] px-5 py-3" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                                {['Date', 'Entries', 'Present', 'Absent', 'Rate'].map((h) => (
+                                    <span key={h} style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>{h}</span>
                                 ))}
-                            </tbody>
-                        </table>
+                            </div>
+                            <div className="flex flex-col gap-2 p-3">
+                                {sessionRows.map((session) => (
+                                    <div key={session.id} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] px-3 py-3 items-center" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+                                        <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                                            {session.date ? format(new Date(session.date), 'PPP') : 'N/A'}
+                                        </span>
+                                        <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted }}>{session.records}</span>
+                                        <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.success }}>{session.present}</span>
+                                        <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.danger }}>{session.absent}</span>
+                                        <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>{session.rate}%</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
+
             </div>
         </div>
     );

@@ -18,11 +18,35 @@ import {
   UserRound,
   CircleAlert,
 } from 'lucide-react';
-import { C, T, FX, S, pageStyle } from '@/constants/tutorTokens';
+import { C, T, FX, S, R } from '@/constants/tutorTokens';
+
+// Input focus handlers
+const onFocusHandler = e => {
+  e.target.style.borderColor = C.btnPrimary;
+  e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)';
+};
+const onBlurHandler = e => {
+  e.target.style.borderColor = 'transparent';
+  e.target.style.boxShadow = 'none';
+};
+
+const baseInputStyle = {
+  backgroundColor: '#E3DFF8',
+  border: '1.5px solid transparent',
+  borderRadius: R.xl,
+  color: C.heading,
+  fontFamily: T.fontFamily,
+  fontSize: T.size.sm,
+  fontWeight: T.weight.medium,
+  outline: 'none',
+  width: '100%',
+  padding: '10px 16px',
+  transition: 'all 0.2s ease',
+};
 
 function MetricCard({ title, value, subtext, tone = 'default', icon: Icon }) {
   const toneMap = {
-    default: { bg: FX.primary08, color: C.btnPrimary },
+    default: { bg: '#EAE8FA', color: C.btnPrimary },
     success: { bg: C.successBg, color: C.success },
     warning: { bg: C.warningBg, color: C.warning },
     danger: { bg: C.dangerBg, color: C.danger },
@@ -30,24 +54,24 @@ function MetricCard({ title, value, subtext, tone = 'default', icon: Icon }) {
   const toneStyle = toneMap[tone] || toneMap.default;
 
   return (
-    <div className="rounded-2xl border p-4" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}>
-      <div className="flex items-center justify-between mb-2">
-        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, fontWeight: T.weight.bold }}>{title}</p>
-        <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: toneStyle.bg }}>
-          <Icon className="w-4 h-4" style={{ color: toneStyle.color }} />
-        </span>
+    <div className="p-4 flex items-center justify-between" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+      <div className="flex items-center gap-4">
+        <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ backgroundColor: toneStyle.bg, borderRadius: R.md }}>
+          <Icon size={20} color={toneStyle.color} />
+        </div>
+        <div>
+          <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{title}</p>
+          <div className="flex items-center gap-3 mt-1">
+            <p style={{ fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, margin: 0, lineHeight: 1 }}>{value}</p>
+            <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: toneStyle.color, backgroundColor: toneStyle.bg, padding: '2px 8px', borderRadius: R.md }}>
+              {subtext}
+            </span>
+          </div>
+        </div>
       </div>
-      <p style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], color: C.heading, fontWeight: T.weight.black }}>{value}</p>
-      <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, marginTop: 2 }}>{subtext}</p>
     </div>
   );
 }
-
-const priorityStyle = (priority) => {
-  if (priority === 'critical') return { backgroundColor: C.dangerBg, borderColor: C.dangerBorder, color: C.danger };
-  if (priority === 'high') return { backgroundColor: C.warningBg, borderColor: C.warningBorder, color: C.warning };
-  return { backgroundColor: FX.primary08, borderColor: FX.primary20, color: C.btnPrimary };
-};
 
 const riskStyle = (risk) => {
   if (risk === 'high') return { backgroundColor: C.dangerBg, borderColor: C.dangerBorder, color: C.danger };
@@ -153,62 +177,59 @@ export default function TutorAtRiskStudentsPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
-        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted }}>Loading at-risk students...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
+        <Loader2 className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
+        <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading at-risk students...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-5" style={pageStyle}>
-      <div className="rounded-2xl px-4 py-3.5 flex items-center justify-between gap-3" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: C.warningBg, border: `1px solid ${C.warningBorder}` }}>
-            <AlertTriangle className="w-4 h-4" style={{ color: C.warning }} />
-          </div>
-          <div>
-            <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading }}>At-Risk Students</h1>
-            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-              Identify and intervene early using AI risk signals
-            </p>
-          </div>
+    <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+      
+      {/* ── Header ────────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 style={{ color: C.heading, fontSize: T.size['2xl'], fontWeight: T.weight.black, margin: '0 0 4px 0' }}>At-Risk Students</h1>
+          <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.medium, margin: 0 }}>Dashboard / At-Risk Students</p>
         </div>
         <button
           onClick={() => fetchAtRiskStudents(false)}
           disabled={refreshing}
-          className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 border text-xs font-semibold disabled:opacity-60"
-          style={{ borderColor: C.cardBorder, color: C.btnPrimary, backgroundColor: FX.primary08 }}
+          className="flex items-center justify-center h-10 px-5 gap-2 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
+          style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}
         >
-          {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-          Refresh
+          {refreshing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+          Refresh Data
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <MetricCard title="Filtered At-Risk" value={summary?.filteredAtRiskCount ?? 0} subtext={`of ${summary?.atRiskCount ?? 0} at-risk total`} tone="warning" icon={ShieldAlert} />
+      {/* ── Stats Section ─────────────────────────────────────────────── */}
+      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+        <MetricCard title="Filtered At-Risk" value={summary?.filteredAtRiskCount ?? 0} subtext={`of ${summary?.atRiskCount ?? 0} total`} tone="warning" icon={ShieldAlert} />
         <MetricCard title="High Risk" value={summary?.highRiskCount ?? 0} subtext="Immediate action needed" tone={(summary?.highRiskCount ?? 0) > 0 ? 'danger' : 'default'} icon={AlertTriangle} />
         <MetricCard title="Medium Risk" value={summary?.mediumRiskCount ?? 0} subtext="Monitor and support" tone="warning" icon={UserRound} />
         <MetricCard title="Tracked Students" value={summary?.totalStudents ?? 0} subtext="Across your courses" icon={UserRound} />
       </div>
 
-      <div className="rounded-2xl border p-3 grid grid-cols-1 lg:grid-cols-4 gap-3" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}>
-        <label className="relative lg:col-span-2">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.textMuted }} />
+      {/* ── Filters Section ───────────────────────────────────────────── */}
+      <div className="p-4 grid grid-cols-1 lg:grid-cols-5 gap-4" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+        <div className="relative lg:col-span-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2" size={16} color={C.textMuted} />
           <input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search by student, reason, course..."
-            className="w-full h-10 rounded-xl border pl-9 pr-3 text-sm"
-            style={{ borderColor: C.cardBorder, fontFamily: T.fontFamily, color: C.heading, backgroundColor: C.surfaceWhite }}
+            placeholder="Search students..."
+            style={{ ...baseInputStyle, paddingLeft: '36px' }}
+            onFocus={onFocusHandler} onBlur={onBlurHandler}
           />
-        </label>
+        </div>
 
         <select
           value={riskFilter}
           onChange={(e) => setRiskFilter(e.target.value)}
-          className="h-10 rounded-xl border px-3 text-sm"
-          style={{ borderColor: C.cardBorder, fontFamily: T.fontFamily, color: C.heading, backgroundColor: C.surfaceWhite }}
+          style={baseInputStyle}
+          onFocus={onFocusHandler} onBlur={onBlurHandler}
         >
           <option value="all">High + Medium</option>
           <option value="high">High Risk Only</option>
@@ -218,8 +239,8 @@ export default function TutorAtRiskStudentsPage() {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="h-10 rounded-xl border px-3 text-sm"
-          style={{ borderColor: C.cardBorder, fontFamily: T.fontFamily, color: C.heading, backgroundColor: C.surfaceWhite }}
+          style={baseInputStyle}
+          onFocus={onFocusHandler} onBlur={onBlurHandler}
         >
           <option value="riskScore">Sort by Risk Score</option>
           <option value="inactivityDays">Sort by Inactivity</option>
@@ -230,8 +251,8 @@ export default function TutorAtRiskStudentsPage() {
           <option value="name">Sort by Name</option>
         </select>
 
-        <div className="lg:col-span-4">
-          <label style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>Minimum Risk Score: {minRiskScore}</label>
+        <div className="flex flex-col justify-center px-2">
+          <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, marginBottom: '6px' }}>Min Risk Score: <span style={{ color: C.heading }}>{minRiskScore}</span></label>
           <input
             type="range"
             min={0}
@@ -239,167 +260,153 @@ export default function TutorAtRiskStudentsPage() {
             step={5}
             value={minRiskScore}
             onChange={(e) => setMinRiskScore(Number(e.target.value))}
-            className="w-full mt-1"
+            style={{ width: '100%', cursor: 'pointer', accentColor: C.btnPrimary }}
           />
         </div>
       </div>
 
-      <div className="space-y-3">
-        {students.length > 0 ? (
-          students.map((student) => (
-            <div key={String(student.studentId)} className="rounded-2xl border p-4" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.bold }}>
-                    {student.name}
-                  </p>
-                  <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                    {student.email}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-wide" style={riskStyle(student.riskLevel)}>
-                    {student.riskLevel} • {student.riskScore}
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-wide" style={priorityStyle(student.interventionPriority)}>
-                    {student.interventionPriority}
-                  </span>
-                  {student.isBlockedByTutor && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-wide" style={{ backgroundColor: C.dangerBg, borderColor: C.dangerBorder, color: C.danger }}>
-                      blocked
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mt-3">
-                <div className="rounded-xl border p-2" style={{ borderColor: C.cardBorder, backgroundColor: FX.primary04 }}>
-                  <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted }}>Progress</p>
-                  <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.bold }}>{student.indicators?.progress ?? 0}%</p>
-                </div>
-                <div className="rounded-xl border p-2" style={{ borderColor: C.cardBorder, backgroundColor: FX.primary04 }}>
-                  <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted }}>Exam Avg</p>
-                  <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.bold }}>
-                    {student.indicators?.examAverage === null ? 'N/A' : `${student.indicators?.examAverage}%`}
-                  </p>
-                </div>
-                <div className="rounded-xl border p-2" style={{ borderColor: C.cardBorder, backgroundColor: FX.primary04 }}>
-                  <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted }}>Assignment</p>
-                  <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.bold }}>{student.indicators?.assignmentRate ?? 0}%</p>
-                </div>
-                <div className="rounded-xl border p-2" style={{ borderColor: C.cardBorder, backgroundColor: FX.primary04 }}>
-                  <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted }}>Attendance</p>
-                  <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.bold }}>{student.indicators?.attendanceRate ?? 0}%</p>
-                </div>
-                <div className="rounded-xl border p-2" style={{ borderColor: C.cardBorder, backgroundColor: FX.primary04 }}>
-                  <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted }}>Inactive</p>
-                  <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.bold }}>
-                    {student.indicators?.inactivityDays ?? 'N/A'} days
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
-                <div className="rounded-xl border p-2.5" style={{ borderColor: C.cardBorder, backgroundColor: FX.primary04 }}>
-                  <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wide, marginBottom: 6 }}>
-                    Risk Reasons
-                  </p>
-                  <div className="space-y-1">
-                    {(student.reasons || []).slice(0, 3).map((reason, idx) => (
-                      <p key={`${student.studentId}-reason-${idx}`} style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
-                        • {reason}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="rounded-xl border p-2.5" style={{ borderColor: C.cardBorder, backgroundColor: FX.primary04 }}>
-                  <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wide, marginBottom: 6 }}>
-                    Recommended Actions
-                  </p>
-                  <div className="space-y-1">
-                    {(student.recommendedActions || []).map((action, idx) => (
-                      <p key={`${student.studentId}-action-${idx}`} style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
-                        • {action}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
-                <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                  Courses: {(student.courses || []).join(', ')}
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={() => router.push(`/tutor/messages?studentId=${student.studentId}`)}
-                    className="h-8 px-3 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5"
-                    style={{ borderColor: C.cardBorder, color: C.btnPrimary, backgroundColor: FX.primary08 }}
-                  >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    Message
-                  </button>
-                  <Link
-                    href={`/tutor/students/${student.studentId}`}
-                    className="h-8 px-3 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5"
-                    style={{ borderColor: C.cardBorder, color: C.btnPrimary, backgroundColor: FX.primary08 }}
-                  >
-                    <UserRound className="w-3.5 h-3.5" />
-                    View Profile
-                  </Link>
-                  <button
-                    onClick={() => handleToggleBlock(student)}
-                    disabled={blockingId === student.studentId}
-                    className="h-8 px-3 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 disabled:opacity-60"
-                    style={student.isBlockedByTutor
-                      ? { borderColor: C.successBorder, color: C.success, backgroundColor: C.successBg }
-                      : { borderColor: C.dangerBorder, color: C.danger, backgroundColor: C.dangerBg }}
-                  >
-                    {blockingId === student.studentId ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : student.isBlockedByTutor ? (
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                    ) : (
-                      <ShieldBan className="w-3.5 h-3.5" />
-                    )}
-                    {student.isBlockedByTutor ? 'Unblock' : 'Block'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="rounded-2xl border p-10 text-center" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}>
-            <CircleAlert className="w-7 h-7 mx-auto mb-2" style={{ color: C.textMuted }} />
-            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted }}>
-              No at-risk students matched current filters.
-            </p>
+      {/* ── Data Table ────────────────────────────────────────────────── */}
+      <div className="p-5 overflow-x-auto" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+        <div className="min-w-[1050px]">
+          {/* Table Header */}
+          <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_2.5fr_2fr] gap-4 px-4 pb-3 mb-2" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+            <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>Student</span>
+            <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>Courses</span>
+            <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>Progress</span>
+            <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>Risk</span>
+            <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>Indicators (Exam / Assgn / Inactive)</span>
+            <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>Actions</span>
           </div>
-        )}
-      </div>
 
-      <div className="flex items-center justify-between gap-2">
-        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-          Showing page {pagination.page} of {pagination.pages} • {pagination.total} total
-        </p>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-            disabled={pagination.page <= 1}
-            className="h-8 px-3 rounded-xl border text-xs font-semibold disabled:opacity-60"
-            style={{ borderColor: C.cardBorder, color: C.btnPrimary, backgroundColor: FX.primary08 }}
-          >
-            Previous
-          </button>
-          <button
-            onClick={() => setPage((prev) => Math.min(pagination.pages || 1, prev + 1))}
-            disabled={pagination.page >= (pagination.pages || 1)}
-            className="h-8 px-3 rounded-xl border text-xs font-semibold disabled:opacity-60"
-            style={{ borderColor: C.cardBorder, color: C.btnPrimary, backgroundColor: FX.primary08 }}
-          >
-            Next
-          </button>
+          {/* Rows */}
+          {students.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {students.map((student) => (
+                <div key={String(student.studentId)} className="grid grid-cols-[2fr_1.5fr_1fr_1fr_2.5fr_2fr] gap-4 px-4 py-4 items-center"
+                     style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+                  
+                  {/* Student */}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center justify-center shrink-0"
+                        style={{ 
+                            width: '40px', height: '40px', borderRadius: R.full, 
+                            background: student.isBlockedByTutor ? C.dangerBg : C.gradientBtn,
+                            color: student.isBlockedByTutor ? C.danger : '#ffffff',
+                            fontSize: T.size.md, fontWeight: T.weight.bold,
+                            border: student.isBlockedByTutor ? `1px solid ${C.dangerBorder}` : 'none'
+                        }}>
+                        {student.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 2px 0' }}>{student.name}</p>
+                      <p className="truncate" style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>{student.email}</p>
+                    </div>
+                  </div>
+
+                  {/* Courses */}
+                  <p className="truncate" style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
+                    {(student.courses || []).join(', ') || 'N/A'}
+                  </p>
+
+                  {/* Progress */}
+                  <div className="flex flex-col justify-center">
+                    <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>{student.indicators?.progress ?? 0}%</span>
+                    <div style={{ width: '100%', height: '6px', backgroundColor: '#EAE8FA', borderRadius: R.full, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${student.indicators?.progress ?? 0}%`, backgroundColor: student.riskLevel === 'high' ? C.danger : C.warning, borderRadius: R.full, transition: 'width 0.3s ease' }} />
+                    </div>
+                  </div>
+
+                  {/* Risk */}
+                  <div className="flex items-center">
+                    <span className="uppercase" style={{ ...riskStyle(student.riskLevel), fontSize: '10px', fontWeight: T.weight.black, padding: '4px 8px', borderRadius: R.md, border: `1px solid ${riskStyle(student.riskLevel).borderColor}` }}>
+                      {student.riskLevel} • {student.riskScore}
+                    </span>
+                  </div>
+
+                  {/* Indicators */}
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <span style={{ display: 'block', fontSize: '10px', color: C.textMuted, fontWeight: T.weight.bold, marginBottom: '2px' }}>Exam Avg</span>
+                      <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>{student.indicators?.examAverage === null ? 'N/A' : `${student.indicators?.examAverage}%`}</span>
+                    </div>
+                    <div>
+                      <span style={{ display: 'block', fontSize: '10px', color: C.textMuted, fontWeight: T.weight.bold, marginBottom: '2px' }}>Assgn</span>
+                      <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>{student.indicators?.assignmentRate ?? 0}%</span>
+                    </div>
+                    <div>
+                      <span style={{ display: 'block', fontSize: '10px', color: C.textMuted, fontWeight: T.weight.bold, marginBottom: '2px' }}>Inactive</span>
+                      <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>{student.indicators?.inactivityDays ?? 'N/A'} d</span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => router.push(`/tutor/messages?studentId=${student.studentId}`)}
+                      className="flex items-center justify-center w-8 h-8 cursor-pointer transition-opacity hover:opacity-70"
+                      style={{ backgroundColor: '#EAE8FA', border: `1px solid ${C.cardBorder}`, borderRadius: R.md, color: C.btnPrimary }} title="Message">
+                      <MessageSquare size={14} />
+                    </button>
+                    <Link href={`/tutor/students/${student.studentId}`}>
+                      <button className="flex items-center justify-center w-8 h-8 cursor-pointer transition-opacity hover:opacity-70"
+                        style={{ backgroundColor: '#EAE8FA', border: `1px solid ${C.cardBorder}`, borderRadius: R.md, color: C.btnPrimary }} title="View Profile">
+                        <UserRound size={14} />
+                      </button>
+                    </Link>
+                    <button onClick={() => handleToggleBlock(student)} disabled={blockingId === student.studentId}
+                      className="flex items-center justify-center w-8 h-8 cursor-pointer transition-opacity hover:opacity-70 disabled:opacity-50"
+                      style={{ 
+                          backgroundColor: student.isBlockedByTutor ? C.successBg : C.dangerBg, 
+                          color: student.isBlockedByTutor ? C.success : C.danger,
+                          border: `1px solid ${student.isBlockedByTutor ? C.successBorder : C.dangerBorder}`,
+                          borderRadius: R.md 
+                      }} 
+                      title={student.isBlockedByTutor ? 'Unblock' : 'Block'}>
+                      {blockingId === student.studentId ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : student.isBlockedByTutor ? (
+                        <ShieldCheck size={14} />
+                      ) : (
+                        <ShieldBan size={14} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20 flex flex-col items-center">
+              <div className="flex items-center justify-center mb-4" style={{ width: '64px', height: '64px', backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+                <CircleAlert size={32} color={C.textMuted} />
+              </div>
+              <p style={{ fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 8px 0' }}>No at-risk students found.</p>
+              <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>Try adjusting your filters or search term.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between pt-5 mt-3" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+          <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted, margin: 0 }}>
+            Showing page {pagination.page} of {pagination.pages} • {pagination.total} total
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              disabled={pagination.page <= 1}
+              className="h-8 px-4 flex items-center justify-center cursor-pointer transition-opacity hover:opacity-70 disabled:opacity-50"
+              style={{ backgroundColor: '#E3DFF8', border: `1px solid ${C.cardBorder}`, borderRadius: R.md, color: C.heading, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage((prev) => Math.min(pagination.pages || 1, prev + 1))}
+              disabled={pagination.page >= (pagination.pages || 1)}
+              className="h-8 px-4 flex items-center justify-center cursor-pointer transition-opacity hover:opacity-70 disabled:opacity-50"
+              style={{ backgroundColor: '#E3DFF8', border: `1px solid ${C.cardBorder}`, borderRadius: R.md, color: C.heading, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,12 +1,35 @@
-// ─── ManageQuizPage.jsx ───────────────────────────────────────────────────────
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Save, AlertCircle, FileText, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, AlertCircle, FileText, CheckCircle2, Loader2, Check } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import api from '@/lib/api';
-import { C, T, S, R, FX, cx, pageStyle } from '@/constants/tutorTokens';
+import api from '@/lib/axios';
+import { C, T, S, R } from '@/constants/tutorTokens';
+
+// Focus Handlers
+const onFocusHandler = e => {
+    e.target.style.borderColor = C.btnPrimary;
+    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)';
+};
+const onBlurHandler = e => {
+    e.target.style.borderColor = 'transparent';
+    e.target.style.boxShadow = 'none';
+};
+
+const baseInputStyle = {
+    backgroundColor: '#E3DFF8',
+    border: '1.5px solid transparent',
+    borderRadius: R.xl,
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.sm,
+    fontWeight: T.weight.medium,
+    outline: 'none',
+    width: '100%',
+    padding: '10px 16px',
+    transition: 'all 0.2s ease',
+};
 
 export default function ManageQuizPage() {
     const params = useParams();
@@ -25,7 +48,7 @@ export default function ManageQuizPage() {
         const fetchLesson = async () => {
             try {
                 const res = await api.get(`/lessons/${lessonId}`);
-                if (res.data.success) {
+                if (res?.data?.success) {
                     setLesson(res.data.lesson);
                     if (res.data.lesson.content?.quiz) setQuizData(res.data.lesson.content.quiz);
                 }
@@ -79,7 +102,7 @@ export default function ManageQuizPage() {
         for (let i = 0; i < quizData.questions.length; i++) {
             const q = quizData.questions[i];
             if (!q.question.trim())              { toast.error(`Question ${i + 1} cannot be empty`);                        return; }
-            if (q.options.some(o => !o.text.trim())) { toast.error(`All options in Question ${i + 1} must have text`);     return; }
+            if (q.options.some(o => !o.text.trim())) { toast.error(`All options in Question ${i + 1} must have text`);      return; }
             if (!q.options.some(o => o.isCorrect))   { toast.error(`Question ${i + 1} must have at least one correct option`); return; }
         }
         setSaving(true);
@@ -97,224 +120,153 @@ export default function ManageQuizPage() {
         } finally { setSaving(false); }
     };
 
-    // ── Loading ──────────────────────────────────────────────────────────────
-    if (loading) return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-            <div className="w-11 h-11 rounded-full border-[3px] animate-spin"
-                style={{ borderColor: FX.primary25Transparent, borderTopColor: C.btnPrimary }} />
-            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted }}>Loading quiz…</p>
-        </div>
-    );
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
+                <Loader2 className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
+                <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading quiz...</p>
+            </div>
+        );
+    }
 
     if (!lesson) return (
-        <div className="p-8" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted }}>
-            Lesson not found.
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
+            <p style={{ color: C.danger, fontSize: T.size.md, fontWeight: T.weight.bold }}>Lesson not found.</p>
         </div>
     );
 
     const totalPoints = quizData.questions.reduce((sum, q) => sum + Number(q.points || 0), 0);
 
-    const settingInputSt = {
-        width: 64, textAlign: 'center', padding: '4px 8px',
-        fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold,
-        border: `1px solid ${C.cardBorder}`, borderRadius: R.md,
-        backgroundColor: C.surfaceWhite, color: C.heading, outline: 'none',
-    };
-
     return (
-        <div className="max-w-3xl mx-auto space-y-5" style={pageStyle}>
-
-            {/* ── Header ───────────────────────────────────────────────── */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => router.push(`/tutor/courses/${courseId}`)}
-                        className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-                        style={{ backgroundColor: C.innerBg, color: C.textMuted }}>
-                        <ArrowLeft className="w-4 h-4" />
-                    </button>
-                    <div>
-                        <div className="flex items-center gap-2.5 mb-0.5">
-                            <div className="w-7 h-7 rounded-xl flex items-center justify-center"
-                                style={{ backgroundColor: FX.primary15, border: `1px solid ${FX.primary25}` }}>
-                                <FileText className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
-                            </div>
-                            <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>
-                                Quiz Builder
-                            </h1>
-                        </div>
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                            Lesson: {lesson.title}
-                        </p>
-                    </div>
-                </div>
-                <button onClick={saveQuiz} disabled={saving}
-                    className="px-4 py-2 text-white rounded-xl flex items-center gap-2 text-sm disabled:opacity-60 hover:opacity-90 transition-all"
-                    style={{ backgroundColor: C.btnPrimary, fontFamily: T.fontFamily, fontWeight: T.weight.semibold, boxShadow: S.btn }}>
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {saving ? 'Saving…' : 'Save Quiz'}
-                </button>
-            </div>
-
-            {/* ── Settings + Questions card ─────────────────────────────── */}
-            <div className="rounded-2xl overflow-hidden"
-                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-
-                {/* Settings bar */}
-                <div className="px-5 py-4 flex items-center justify-between"
-                    style={{ backgroundColor: FX.primary07, borderBottom: `1px solid ${C.cardBorder}` }}>
-                    <div className="flex items-center gap-2.5">
-                        <div className="p-1.5 rounded-xl" style={{ backgroundColor: FX.primary15 }}>
-                            <AlertCircle className="w-4 h-4" style={{ color: C.btnPrimary }} />
-                        </div>
+        <div className="w-full min-h-screen p-6 pb-24" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+            <div className="max-w-3xl mx-auto space-y-6">
+                
+                {/* Header */}
+                <div className="flex items-center justify-between p-5" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => router.push(`/tutor/courses/${courseId}`)} className="w-10 h-10 flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80 shrink-0"
+                            style={{ backgroundColor: '#E3DFF8', borderRadius: R.full }}>
+                            <ArrowLeft size={18} color={C.heading} />
+                        </button>
                         <div>
-                            <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
-                                Quiz Settings
-                            </h2>
-                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                                Configure passing criteria and time limit.
+                            <h1 className="flex items-center gap-2" style={{ color: C.heading, fontSize: T.size.xl, fontWeight: T.weight.black, margin: '0 0 2px 0' }}>
+                                <FileText size={20} color={C.btnPrimary} /> Quiz Builder
+                            </h1>
+                            <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, margin: 0 }}>
+                                Lesson: {lesson.title}
                             </p>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-5">
-                        {[
-                            { label: 'Total Points', content: <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.black, color: C.btnPrimary }}>{totalPoints}</span> },
-                            { label: 'Passing %',    content: <input type="number" value={quizData.passingScore} onChange={e => setQuizData(p => ({ ...p, passingScore: e.target.value }))} style={settingInputSt} /> },
-                            { label: 'Time (mins)',  content: <input type="number" placeholder="∞" value={quizData.timeLimit} onChange={e => setQuizData(p => ({ ...p, timeLimit: e.target.value }))} style={settingInputSt} /> },
-                        ].map(({ label, content }) => (
-                            <div key={label} className="text-center">
-                                <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 4 }}>
-                                    {label}
-                                </p>
-                                {content}
-                            </div>
-                        ))}
                     </div>
                 </div>
 
-                {/* Questions area */}
-                <div className="p-5 space-y-5">
-                    {quizData.questions.length === 0 ? (
-                        <div className="text-center py-12 rounded-2xl border-2 border-dashed"
-                            style={{ borderColor: C.cardBorder }}>
-                            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                                style={{ backgroundColor: FX.primary12 }}>
-                                <FileText className="w-6 h-6" style={{ color: C.btnPrimary }} />
+                {/* Settings Card */}
+                <div className="overflow-hidden" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="px-6 py-4 flex items-center justify-between" style={{ backgroundColor: '#E3DFF8', borderBottom: `1px solid ${C.cardBorder}` }}>
+                        <div className="flex items-center gap-3">
+                            <AlertCircle size={18} color={C.btnPrimary} />
+                            <div>
+                                <h2 style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Quiz Settings</h2>
+                                <p style={{ fontSize: '11px', fontWeight: T.weight.bold, color: C.textMuted, margin: 0 }}>Configure criteria</p>
                             </div>
-                            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading, marginBottom: 4 }}>
-                                No questions yet
-                            </h3>
-                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, marginBottom: 16 }}>
-                                Start building your quiz by adding the first question.
-                            </p>
-                            <button onClick={addQuestion}
-                                className="px-4 py-2 text-sm font-semibold rounded-xl flex items-center gap-2 mx-auto transition-all hover:opacity-80"
-                                style={{ backgroundColor: FX.primary12, color: C.btnPrimary, fontFamily: T.fontFamily }}>
-                                <Plus className="w-4 h-4" /> Add First Question
-                            </button>
                         </div>
-                    ) : (
-                        <div className="space-y-5">
-                            {quizData.questions.map((q, qIndex) => (
-                                <div key={q.id || qIndex} className="rounded-2xl overflow-hidden relative group"
-                                    style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                                    {/* Left accent */}
-                                    <div className="absolute top-0 left-0 w-1 h-full" style={{ backgroundColor: C.btnPrimary }} />
+                        <div className="flex items-center gap-6">
+                            <div className="text-center">
+                                <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 2px 0' }}>Total Pts</p>
+                                <span style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.btnPrimary }}>{totalPoints}</span>
+                            </div>
+                            <div>
+                                <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 2px 0' }}>Passing %</p>
+                                <input type="number" min="0" max="100" value={quizData.passingScore} onChange={e => setQuizData(p => ({ ...p, passingScore: e.target.value }))}
+                                    style={{ ...baseInputStyle, width: '70px', padding: '6px 8px', textAlign: 'center', backgroundColor: C.surfaceWhite }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                            </div>
+                            <div>
+                                <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 2px 0' }}>Time (mins)</p>
+                                <input type="number" placeholder="∞" value={quizData.timeLimit} onChange={e => setQuizData(p => ({ ...p, timeLimit: e.target.value }))}
+                                    style={{ ...baseInputStyle, width: '70px', padding: '6px 8px', textAlign: 'center', backgroundColor: C.surfaceWhite }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                            </div>
+                        </div>
+                    </div>
 
-                                    <div className="p-5 pl-5">
-                                        {/* Question row */}
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div className="flex items-center gap-3 flex-1">
-                                                <span className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-black"
-                                                    style={{ backgroundColor: C.btnPrimary }}>
-                                                    {qIndex + 1}
-                                                </span>
-                                                <input type="text" value={q.question}
-                                                    onChange={e => updateQuestion(qIndex, 'question', e.target.value)}
-                                                    placeholder="Enter your question here..."
-                                                    className="flex-1 bg-transparent min-w-0 pb-0.5 border-b border-transparent transition-all"
-                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading, outline: 'none' }}
-                                                    onFocus={e => { e.target.style.borderBottomColor = C.btnPrimary; }}
-                                                    onBlur={e => { e.target.style.borderBottomColor = 'transparent'; }}
-                                                />
+                    <div className="p-6 space-y-6">
+                        {quizData.questions.length === 0 ? (
+                            <div className="text-center py-12 flex flex-col items-center" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl, border: `1px dashed ${C.cardBorder}` }}>
+                                <FileText size={32} color={C.textMuted} style={{ opacity: 0.3, marginBottom: '12px' }} />
+                                <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>No questions yet</h3>
+                                <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: '0 0 16px 0' }}>Start building your quiz by adding the first question.</p>
+                                <button onClick={addQuestion} className="flex items-center justify-center gap-2 h-10 px-6 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-md"
+                                    style={{ backgroundColor: C.btnPrimary, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                    <Plus size={16} /> Add First Question
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                {quizData.questions.map((q, qIndex) => (
+                                    <div key={q.id || qIndex} className="p-5" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                                        <div className="flex items-start justify-between gap-4 mb-4">
+                                            <div className="flex items-center gap-3 w-full">
+                                                <span className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0" style={{ backgroundColor: C.btnPrimary }}>{qIndex + 1}</span>
+                                                <input type="text" value={q.question} onChange={e => updateQuestion(qIndex, 'question', e.target.value)}
+                                                    placeholder="Enter your question here..." style={{ ...baseInputStyle, backgroundColor: C.surfaceWhite, flex: 1 }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
                                             </div>
-                                            <div className="flex items-center gap-2 flex-shrink-0">
-                                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl"
-                                                    style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
-                                                    <label style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.statLabel }}>PTS</label>
-                                                    <input type="number" value={q.points}
-                                                        onChange={e => updateQuestion(qIndex, 'points', e.target.value)}
-                                                        className="w-10 text-center bg-transparent"
-                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, outline: 'none' }}
-                                                    />
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <div className="flex items-center gap-2 px-3 py-1.5" style={{ backgroundColor: C.surfaceWhite, borderRadius: R.md, border: `1px solid ${C.cardBorder}` }}>
+                                                    <span style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted }}>PTS</span>
+                                                    <input type="number" min="1" value={q.points} onChange={e => updateQuestion(qIndex, 'points', e.target.value)}
+                                                        style={{ width: '40px', border: 'none', outline: 'none', textAlign: 'center', fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }} />
                                                 </div>
-                                                <button onClick={() => removeQuestion(qIndex)}
-                                                    className="w-7 h-7 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-                                                    style={{ backgroundColor: C.dangerBg, color: C.danger }}>
-                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                <button onClick={() => removeQuestion(qIndex)} className="w-9 h-9 flex items-center justify-center shrink-0 cursor-pointer border-none transition-opacity hover:opacity-80"
+                                                    style={{ backgroundColor: C.dangerBg, borderRadius: R.md }}>
+                                                    <Trash2 size={16} color={C.danger} />
                                                 </button>
                                             </div>
                                         </div>
 
-                                        {/* Options */}
-                                        <div className="pl-10 space-y-2">
+                                        <div className="ml-11 space-y-3">
                                             {q.options.map((opt, oIndex) => (
-                                                <div key={oIndex} className="flex items-center gap-2.5 p-2.5 rounded-xl border transition-all"
-                                                    style={opt.isCorrect
-                                                        ? { borderColor: C.successBorder, backgroundColor: C.successBg }
-                                                        : { borderColor: C.cardBorder, backgroundColor: C.surfaceWhite }}>
-                                                    <button onClick={() => updateOption(qIndex, oIndex, 'isCorrect', true)}
-                                                        className="flex-shrink-0 transition-colors"
-                                                        style={{ color: opt.isCorrect ? C.success : C.textMuted }}>
-                                                        <CheckCircle2 className="w-5 h-5" />
+                                                <div key={oIndex} className="flex items-center gap-3 p-3 transition-colors"
+                                                    style={{ backgroundColor: opt.isCorrect ? C.successBg : C.surfaceWhite, borderRadius: R.xl, border: `1px solid ${opt.isCorrect ? C.successBorder : C.cardBorder}` }}>
+                                                    <button type="button" onClick={() => updateOption(qIndex, oIndex, 'isCorrect', true)} className="border-none bg-transparent cursor-pointer flex items-center justify-center transition-colors hover:opacity-70">
+                                                        <CheckCircle2 size={20} color={opt.isCorrect ? C.success : C.textMuted} />
                                                     </button>
-                                                    <input type="text" value={opt.text}
-                                                        onChange={e => updateOption(qIndex, oIndex, 'text', e.target.value)}
-                                                        placeholder={`Option ${oIndex + 1}`}
-                                                        className="flex-1 bg-transparent border-none"
-                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, outline: 'none' }}
-                                                    />
-                                                    <button onClick={() => removeOption(qIndex, oIndex)}
-                                                        className="w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:opacity-80"
-                                                        style={{ backgroundColor: C.dangerBg, color: C.danger }}>
-                                                        <Trash2 className="w-3 h-3" />
+                                                    <input type="text" value={opt.text} onChange={(e) => updateOption(qIndex, oIndex, 'text', e.target.value)}
+                                                        placeholder={`Option ${oIndex + 1}`} style={{ flex: 1, backgroundColor: 'transparent', border: 'none', outline: 'none', fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, fontFamily: T.fontFamily }} />
+                                                    <button type="button" onClick={() => removeOption(qIndex, oIndex)} className="w-7 h-7 flex items-center justify-center shrink-0 cursor-pointer border-none transition-opacity hover:opacity-80 opacity-50 hover:opacity-100"
+                                                        style={{ backgroundColor: C.dangerBg, borderRadius: R.md }}>
+                                                        <Trash2 size={14} color={C.danger} />
                                                     </button>
                                                 </div>
                                             ))}
-                                            <button onClick={() => addOption(qIndex)}
-                                                className="text-xs font-semibold flex items-center gap-1 mt-1 transition-opacity hover:opacity-70"
-                                                style={{ color: C.btnPrimary, fontFamily: T.fontFamily }}>
-                                                <Plus className="w-3 h-3" /> Add Option
+                                            <button onClick={() => addOption(qIndex)} className="flex items-center gap-1.5 cursor-pointer border-none bg-transparent transition-opacity hover:opacity-70 mt-2"
+                                                style={{ color: C.btnPrimary, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                                <Plus size={14} /> Add Option
                                             </button>
-                                        </div>
 
-                                        {/* Explanation */}
-                                        <div className="pl-10 mt-3 pt-3" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
-                                            <input type="text" value={q.explanation || ''}
-                                                onChange={e => updateQuestion(qIndex, 'explanation', e.target.value)}
-                                                placeholder="Explanation (shown after answering, optional)"
-                                                style={{ ...cx.input(), width: '100%', padding: '8px 12px', fontSize: T.size.xs }}
-                                                onFocus={e => Object.assign(e.target.style, cx.inputFocus)}
-                                                onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
-                                            />
+                                            <div className="mt-4 pt-4" style={{ borderTop: `1px dashed ${C.cardBorder}` }}>
+                                                <input type="text" value={q.explanation || ''} onChange={e => updateQuestion(qIndex, 'explanation', e.target.value)}
+                                                    placeholder="Explanation (shown after answering, optional)" style={{ ...baseInputStyle, backgroundColor: C.surfaceWhite, fontSize: T.size.xs }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                                ))}
 
-                    {/* Add question button */}
-                    {quizData.questions.length > 0 && (
-                        <button onClick={addQuestion}
-                            className="w-full py-3 rounded-2xl text-sm font-semibold border-2 border-dashed flex items-center justify-center gap-2 transition-all hover:opacity-80"
-                            style={{ borderColor: FX.primary40, color: C.btnPrimary, fontFamily: T.fontFamily }}
-                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = FX.primary07; }}
-                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                            <Plus className="w-4 h-4" /> Add Another Question
-                        </button>
-                    )}
+                                <button onClick={addQuestion} className="w-full flex items-center justify-center gap-2 h-12 cursor-pointer transition-opacity hover:opacity-80 border-2 border-dashed"
+                                    style={{ backgroundColor: '#E3DFF8', borderColor: C.btnPrimary, color: C.btnPrimary, borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                    <Plus size={16} /> Add Another Question
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
-              
+
+                {/* Fixed Bottom Save Button */}
+                <div className="fixed bottom-0 left-0 right-0 z-20 p-4 flex justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderTop: `1px solid ${C.cardBorder}`, boxShadow: '0 -4px 16px rgba(0,0,0,0.04)' }}>
+                    <div className="w-full max-w-3xl flex items-center justify-end">
+                        <button onClick={saveQuiz} disabled={saving} className="flex items-center justify-center gap-2 h-11 px-8 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md w-full sm:w-auto"
+                            style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save Quiz
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

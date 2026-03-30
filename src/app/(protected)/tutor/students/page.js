@@ -2,11 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
-import { Input } from '@/components/ui/input';
-import {
-    Select, SelectContent, SelectItem,
-    SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import {
     Search, Mail, BookOpen, Calendar, User,
     ShieldBan, ShieldCheck, Users, Loader2
@@ -14,7 +9,30 @@ import {
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
-import { C, T, FX } from '@/constants/tutorTokens';
+import { C, T, S, R } from '@/constants/tutorTokens';
+
+const onFocusHandler = e => {
+    e.target.style.borderColor = C.btnPrimary;
+    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)';
+};
+const onBlurHandler = e => {
+    e.target.style.borderColor = 'transparent';
+    e.target.style.boxShadow = 'none';
+};
+
+const baseInputStyle = {
+    backgroundColor: '#E3DFF8',
+    border: '1.5px solid transparent',
+    borderRadius: R.xl,
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.sm,
+    fontWeight: T.weight.medium,
+    outline: 'none',
+    width: '100%',
+    padding: '10px 16px',
+    transition: 'all 0.2s ease',
+};
 
 export default function TutorStudentsPage() {
     const [students, setStudents]         = useState([]);
@@ -34,8 +52,8 @@ export default function TutorStudentsPage() {
                 api.get('/courses/my-courses'),
                 api.get('/tutor/dashboard/students'),
             ]);
-            if (coursesRes.data.success)  setCourses(coursesRes.data.courses);
-            if (studentsRes.data.success) setStudents(studentsRes.data.students);
+            if (coursesRes?.data?.success)  setCourses(coursesRes.data.courses);
+            if (studentsRes?.data?.success) setStudents(studentsRes.data.students);
             else setStudents([]);
         } catch { setStudents([]); }
         finally { setLoading(false); }
@@ -57,7 +75,7 @@ export default function TutorStudentsPage() {
                 s._id === studentId ? { ...s, isBlockedByTutor: !isBlocked } : s
             ));
         } catch (error) {
-            toast.error(error.response?.data?.message || `Failed to ${action} student`);
+            toast.error(error?.response?.data?.message || `Failed to ${action} student`);
         } finally { setBlockingId(null); }
     };
 
@@ -75,171 +93,185 @@ export default function TutorStudentsPage() {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
-                <p className="text-sm text-slate-400">Loading students...</p>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
+                <Loader2 className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
+                <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading students...</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-5" style={{ fontFamily: T.fontFamily }}>
-
+        <div className="w-full min-h-screen p-6" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
+            
             {/* ── Header ────────────────────────────────────────────────────── */}
-            <div className="bg-white rounded-xl border border-slate-100 px-5 py-4">
-                <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
-                        <Users className="w-4 h-4" style={{ color: C.btnPrimary }} />
-                    </div>
-                    <div>
-                        <h1 className="text-lg font-bold text-slate-800">My Students</h1>
-                        <p className="text-xs text-slate-400">Manage and monitor student progress across your courses</p>
-                    </div>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                <div>
+                    <h1 style={{ color: C.heading, fontSize: T.size['2xl'], fontWeight: T.weight.black, margin: '0 0 4px 0' }}>All Students</h1>
+                    <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.medium, margin: 0 }}>Students / All Students</p>
                 </div>
             </div>
 
             {/* ── Stats ─────────────────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {[
-                    { label: 'Total Students',  value: totalStudents,   sub: 'Across all courses',      icon: User,      color: 'text-blue-500',    bg: 'bg-blue-50' },
-                    { label: 'Active Learners', value: activeStudents,  sub: 'Active in last 7 days',   icon: Users,     color: 'text-emerald-500', bg: 'bg-emerald-50' },
-                    { label: 'Courses',         value: courses.length,  sub: 'Active courses',          icon: BookOpen,  color: 'text-amber-500',   bg: 'bg-amber-50' },
-                    { label: 'Blocked',         value: blockedStudents, sub: 'Students blocked by you', icon: ShieldBan, color: 'text-red-500',     bg: 'bg-red-50' },
+                    { label: 'Total Students',  value: totalStudents,   sub: 'Across all courses',      icon: User,      color: C.btnPrimary, bg: '#E3DFF8' },
+                    { label: 'Active Learners', value: activeStudents,  sub: 'Active in last 7 days',   icon: Users,     color: C.success,    bg: C.successBg },
+                    { label: 'Courses',         value: courses.length,  sub: 'Active courses',          icon: BookOpen,  color: C.warning,    bg: C.warningBg },
+                    { label: 'Blocked',         value: blockedStudents, sub: 'Students blocked by you', icon: ShieldBan, color: C.danger,     bg: C.dangerBg },
                 ].map(({ label, value, sub, icon: Icon, color, bg }) => (
-                    <div key={label} className="bg-white rounded-xl border border-slate-100 p-5 hover:shadow-sm transition-shadow">
-                        <div className="flex items-center justify-between mb-3">
-                            <p className="text-xs font-semibold text-slate-500">{label}</p>
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${bg}`}>
-                                <Icon className={`w-4 h-4 ${color}`} />
+                    <div key={label} className="p-5 flex flex-col justify-between" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="flex items-center justify-center shrink-0" style={{ width: '36px', height: '36px', borderRadius: R.md, backgroundColor: bg }}>
+                                <Icon size={18} color={color} />
                             </div>
+                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{label}</p>
                         </div>
-                        <p className="text-2xl font-black text-slate-800">{value}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">{sub}</p>
+                        <div className="flex items-end gap-3 mt-auto">
+                            <p style={{ fontSize: T.size['3xl'], fontWeight: T.weight.black, color: C.heading, margin: 0, lineHeight: 1 }}>{value}</p>
+                            <p style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: '0 0 4px 0' }}>{sub}</p>
+                        </div>
                     </div>
                 ))}
             </div>
 
             {/* ── Filters ───────────────────────────────────────────────────── */}
-            <div className="bg-white rounded-xl border border-slate-100 p-3 flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6 p-4" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input placeholder="Search by name or email..."
-                        className="pl-9 h-9 border-slate-200 text-sm"
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2" size={16} color={C.textMuted} />
+                    <input 
+                        placeholder="Search students by name, email..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)} />
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{ ...baseInputStyle, paddingLeft: '36px' }}
+                        onFocus={onFocusHandler} onBlur={onBlurHandler}
+                    />
                 </div>
-                <Select value={courseFilter} onValueChange={setCourseFilter}>
-                    <SelectTrigger className="w-full sm:w-52 h-9 border-slate-200 text-sm">
-                        <SelectValue placeholder="Filter by Course" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Courses</SelectItem>
-                        {courses.map(course => (
-                            <SelectItem key={course._id} value={course._id}>{course.title}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                <select 
+                    value={courseFilter} 
+                    onChange={(e) => setCourseFilter(e.target.value)}
+                    style={{ ...baseInputStyle, width: '100%', maxWidth: '250px' }}
+                    onFocus={onFocusHandler} onBlur={onBlurHandler}
+                >
+                    <option value="all">All Courses</option>
+                    {courses.map(course => (
+                        <option key={course._id} value={course._id}>{course.title}</option>
+                    ))}
+                </select>
             </div>
 
             {/* ── Table ─────────────────────────────────────────────────────── */}
-            <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
-                {/* Head */}
-                <div className="grid grid-cols-[2fr_2fr_1fr_1fr_80px_100px] gap-4 px-5 py-3 border-b border-slate-100 bg-slate-50/60">
-                    {['Student', 'Enrolled Courses', 'Joined', 'Progress', 'Status', 'Actions'].map(h => (
-                        <span key={h} className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{h}</span>
-                    ))}
-                </div>
-
-                {filtered.length > 0 ? (
-                    <div className="divide-y divide-slate-50">
-                        {filtered.map(student => (
-                            <div key={student._id}
-                                className={`grid grid-cols-[2fr_2fr_1fr_1fr_80px_100px] gap-4 px-5 py-4 items-center transition-colors
-                                    ${student.isBlockedByTutor ? 'bg-red-50/30' : 'hover:bg-slate-50/40'}`}>
-
-                                {/* Student */}
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0
-                                        ${student.isBlockedByTutor ? 'bg-red-100 text-red-600' : 'text-white'}`}
-                                        style={!student.isBlockedByTutor ? { background: C.gradientBtn } : {}}>
-                                        {student.name.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-sm font-semibold text-slate-800 truncate">{student.name}</p>
-                                        <p className="text-[11px] text-slate-400 flex items-center gap-1 truncate">
-                                            <Mail className="w-3 h-3 flex-shrink-0" /> {student.email}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Courses */}
-                                <div className="flex flex-wrap gap-1">
-                                    {student.enrolledCourses?.length > 0
-                                        ? student.enrolledCourses.map((ec, idx) => (
-                                            <span key={idx} className="text-[10px] px-2 py-0.5 rounded-full font-semibold border"
-                                                style={{ backgroundColor: FX.primary08, color: C.btnPrimary, borderColor: FX.primary20 }}>
-                                                {ec.title}
-                                            </span>
-                                        ))
-                                        : <span className="text-xs text-slate-400">None</span>}
-                                </div>
-
-                                {/* Joined */}
-                                <div className="flex items-center gap-1 text-xs text-slate-500">
-                                    <Calendar className="w-3 h-3 flex-shrink-0" />
-                                    {format(new Date(student.joinedAt || Date.now()), 'MMM d, yyyy')}
-                                </div>
-
-                                {/* Progress */}
-                                <div>
-                                    <span className="text-[10px] font-bold text-slate-600">{student.averageProgress || 0}%</span>
-                                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mt-1">
-                                        <div className="h-full rounded-full transition-all"
-                                            style={{ width: `${student.averageProgress || 0}%`, backgroundColor: C.btnPrimary }} />
-                                    </div>
-                                </div>
-
-                                {/* Status */}
-                                <div>
-                                    {student.isBlockedByTutor
-                                        ? <span className="text-[10px] px-2 py-1 rounded-full font-bold bg-red-50 text-red-600 border border-red-200">Blocked</span>
-                                        : <span className="text-[10px] px-2 py-1 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Active</span>}
-                                </div>
-
-                                {/* Action */}
-                                <div>
-                                    <button
-                                        disabled={blockingId === student._id}
-                                        onClick={() => handleBlockStudent(student._id, student.name, student.isBlockedByTutor)}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-colors disabled:opacity-50
-                                            ${student.isBlockedByTutor
-                                                ? 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                                                : 'border-red-200 text-red-600 hover:bg-red-50'}`}>
-                                        {blockingId === student._id
-                                            ? <Loader2 className="w-3 h-3 animate-spin" />
-                                            : student.isBlockedByTutor
-                                                ? <><ShieldCheck className="w-3 h-3" /> Unblock</>
-                                                : <><ShieldBan className="w-3 h-3" /> Block</>}
-                                    </button>
-                                </div>
-                            </div>
+            <div className="p-5 overflow-x-auto" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                <div className="min-w-[800px]">
+                    {/* Head */}
+                    <div className="grid grid-cols-[2fr_2fr_1fr_1fr_80px_100px] gap-4 px-4 pb-3 mb-2" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                        {['Student', 'Enrolled Courses', 'Joined', 'Progress', 'Status', 'Action'].map(h => (
+                            <span key={h} style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>{h}</span>
                         ))}
                     </div>
-                ) : (
-                    <div className="text-center py-14">
-                        <div className="mx-auto w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
-                            style={{ backgroundColor: FX.primary08 }}>
-                            <Users className="w-6 h-6" style={{ color: C.btnPrimary }} />
+
+                    {filtered.length > 0 ? (
+                        <div className="flex flex-col gap-2">
+                            {filtered.map(student => (
+                                <div key={student._id} className="grid grid-cols-[2fr_2fr_1fr_1fr_80px_100px] gap-4 px-4 py-3 items-center"
+                                    style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+
+                                    {/* Student */}
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="flex items-center justify-center shrink-0"
+                                            style={{ 
+                                                width: '40px', height: '40px', borderRadius: R.full, 
+                                                background: student.isBlockedByTutor ? C.dangerBg : C.gradientBtn,
+                                                color: student.isBlockedByTutor ? C.danger : '#ffffff',
+                                                fontSize: T.size.md, fontWeight: T.weight.bold,
+                                                border: student.isBlockedByTutor ? `1px solid ${C.dangerBorder}` : 'none'
+                                            }}>
+                                            {student.name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 2px 0' }}>{student.name}</p>
+                                            <p className="flex items-center gap-1.5 truncate" style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>
+                                                <Mail size={12} /> {student.email}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Courses */}
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {student.enrolledCourses?.length > 0
+                                            ? student.enrolledCourses.map((ec, idx) => (
+                                                <span key={idx} className="truncate max-w-full"
+                                                    style={{ 
+                                                        fontSize: '11px', fontWeight: T.weight.bold, color: C.heading, 
+                                                        backgroundColor: '#EAE8FA', padding: '4px 8px', borderRadius: R.md,
+                                                        border: `1px solid ${C.cardBorder}`
+                                                    }}>
+                                                    {ec.title}
+                                                </span>
+                                            ))
+                                            : <span style={{ fontSize: T.size.xs, color: C.textMuted }}>None</span>}
+                                    </div>
+
+                                    {/* Joined */}
+                                    <div className="flex items-center gap-1.5" style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted }}>
+                                        <Calendar size={14} />
+                                        {format(new Date(student.joinedAt || Date.now()), 'MMM d, yyyy')}
+                                    </div>
+
+                                    {/* Progress */}
+                                    <div className="flex flex-col justify-center">
+                                        <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>{student.averageProgress || 0}%</span>
+                                        <div style={{ width: '100%', height: '6px', backgroundColor: '#EAE8FA', borderRadius: R.full, overflow: 'hidden' }}>
+                                            <div style={{ height: '100%', width: `${student.averageProgress || 0}%`, backgroundColor: C.btnPrimary, borderRadius: R.full, transition: 'width 0.3s ease' }} />
+                                        </div>
+                                    </div>
+
+                                    {/* Status */}
+                                    <div>
+                                        {student.isBlockedByTutor ? (
+                                            <span style={{ fontSize: '11px', fontWeight: T.weight.bold, color: C.danger, backgroundColor: C.dangerBg, border: `1px solid ${C.dangerBorder}`, padding: '4px 8px', borderRadius: R.md }}>Blocked</span>
+                                        ) : (
+                                            <span style={{ fontSize: '11px', fontWeight: T.weight.bold, color: C.success, backgroundColor: C.successBg, border: `1px solid ${C.successBorder}`, padding: '4px 8px', borderRadius: R.md }}>Active</span>
+                                        )}
+                                    </div>
+
+                                    {/* Action */}
+                                    <div>
+                                        <button
+                                            disabled={blockingId === student._id}
+                                            onClick={() => handleBlockStudent(student._id, student.name, student.isBlockedByTutor)}
+                                            className="flex items-center justify-center gap-1.5 cursor-pointer transition-opacity hover:opacity-70 disabled:opacity-50"
+                                            style={{ 
+                                                backgroundColor: student.isBlockedByTutor ? C.successBg : C.dangerBg, 
+                                                color: student.isBlockedByTutor ? C.success : C.danger,
+                                                border: `1px solid ${student.isBlockedByTutor ? C.successBorder : C.dangerBorder}`,
+                                                padding: '6px 12px', borderRadius: R.md, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily
+                                            }}>
+                                            {blockingId === student._id ? (
+                                                <Loader2 size={14} className="animate-spin" />
+                                            ) : student.isBlockedByTutor ? (
+                                                <><ShieldCheck size={14} /> Unblock</>
+                                            ) : (
+                                                <><ShieldBan size={14} /> Block</>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                        <p className="text-sm font-semibold text-slate-600 mb-1">
-                            {students.length === 0 ? 'No students found.' : 'No matching students.'}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                            {searchTerm || courseFilter !== 'all' ? 'Try adjusting your search or filter.' : 'Students will appear here once they enroll.'}
-                        </p>
-                    </div>
-                )}
+                    ) : (
+                        <div className="text-center py-20 flex flex-col items-center">
+                            <div className="flex items-center justify-center mb-4" style={{ width: '64px', height: '64px', backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+                                <Users size={32} color={C.textMuted} />
+                            </div>
+                            <p style={{ fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 8px 0' }}>
+                                {students.length === 0 ? 'No students found.' : 'No matching students.'}
+                            </p>
+                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>
+                                {searchTerm || courseFilter !== 'all' ? 'Try adjusting your search or filter.' : 'Students will appear here once they enroll.'}
+                            </p>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

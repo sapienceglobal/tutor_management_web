@@ -8,8 +8,7 @@ import {
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { C, T, S, R } from '@/constants/tutorTokens';
 
 export default function ExamDashboard() {
     const [exams, setExams] = useState([]);
@@ -20,8 +19,8 @@ export default function ExamDashboard() {
         const fetchExams = async () => {
             try {
                 const res = await api.get('/exams/tutor/all');
-                if (res.data.success) {
-                    setExams(res.data.exams.filter(e => e.type !== 'practice'));
+                if (res?.data?.success) {
+                    setExams(res.data.exams.filter(e => e?.type !== 'practice'));
                 }
             } catch (error) {
                 console.error('Error fetching exams:', error);
@@ -33,12 +32,17 @@ export default function ExamDashboard() {
     }, []);
 
     const handleDelete = async (id) => {
-        const isConfirmed = await confirmDialog("Delete Exam", "Are you sure you want to delete this exam? This action cannot be undone.", { variant: 'destructive' });
+        const isConfirmed = await confirmDialog(
+            "Delete Exam", 
+            "Are you sure you want to delete this exam? This action cannot be undone.", 
+            { variant: 'destructive' }
+        );
         if (!isConfirmed) return;
+        
         try {
             const res = await api.delete(`/exams/${id}`);
-            if (res.data.success) {
-                setExams(exams.filter(exam => exam._id !== id));
+            if (res?.data?.success) {
+                setExams(exams.filter(exam => exam?._id !== id));
                 toast.success('Exam deleted successfully');
             }
         } catch (error) {
@@ -52,7 +56,7 @@ export default function ExamDashboard() {
         try {
             await api.patch(`/exams/${examId}`, { status: newStatus });
             setExams(exams.map(e =>
-                e._id === examId ? { ...e, status: newStatus, isPublished: newStatus === 'published' } : e
+                e?._id === examId ? { ...e, status: newStatus, isPublished: newStatus === 'published' } : e
             ));
             toast.success(`Exam ${newStatus} successfully!`);
         } catch (error) {
@@ -62,107 +66,255 @@ export default function ExamDashboard() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full" style={{ fontFamily: T.fontFamily }}>
             {/* Page Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <div className="flex items-center gap-2.5 mb-1">
-                        <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center">
-                            <FileQuestion className="w-4 h-4 text-orange-500" />
+                        <div 
+                            className="w-8 h-8 flex items-center justify-center shrink-0"
+                            style={{ 
+                                backgroundColor: C.iconBg, 
+                                borderRadius: R.md 
+                            }}
+                        >
+                            <FileQuestion size={18} color={C.iconColor} />
                         </div>
-                        <h1 className="text-xl font-bold text-slate-800">Exams & Quizzes</h1>
+                        <h1 style={{ 
+                            color: C.heading, 
+                            fontSize: T.size['2xl'], 
+                            fontWeight: T.weight.black 
+                        }}>
+                            Exams & Quizzes
+                        </h1>
                     </div>
-                    <p className="text-sm text-slate-400 pl-0.5">Create and manage assessments for your students.</p>
+                    <p style={{ 
+                        color: C.textMuted, 
+                        fontSize: T.size.sm, 
+                        fontWeight: T.weight.medium,
+                        paddingLeft: '2px' 
+                    }}>
+                        Create and manage assessments for your students.
+                    </p>
                 </div>
-                <Link href="/tutor/quizzes/create">
-                    <Button className="bg-orange-500 hover:bg-orange-600 text-white shadow-sm shadow-orange-200 gap-2">
-                        <Sparkles className="w-4 h-4" />
+                <Link href="/tutor/quizzes/create" className="shrink-0">
+                    <button 
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 transition-opacity hover:opacity-90"
+                        style={{
+                            background: C.gradientBtn,
+                            color: '#ffffff',
+                            borderRadius: R.xl,
+                            boxShadow: S.btn,
+                            fontSize: T.size.sm,
+                            fontWeight: T.weight.bold,
+                            fontFamily: T.fontFamily,
+                            border: 'none',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <Sparkles size={16} color="#ffffff" />
                         Create AI Exam
-                    </Button>
+                    </button>
                 </Link>
             </div>
 
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3">
-                    <Loader2 className="w-7 h-7 animate-spin text-orange-500" />
-                    <p className="text-sm text-slate-400">Loading exams...</p>
+                    <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
+                    <p style={{ color: C.textMuted, fontSize: T.size.sm, fontFamily: T.fontFamily }}>
+                        Loading exams...
+                    </p>
                 </div>
             ) : exams.length === 0 ? (
-                <div className="bg-white rounded-xl border border-slate-100 p-14 text-center">
-                    <div className="mx-auto w-16 h-16 bg-orange-50 border border-orange-100 rounded-2xl flex items-center justify-center mb-5">
-                        <FileQuestion className="h-8 w-8 text-orange-400" />
+                <div 
+                    className="p-14 flex flex-col items-center justify-center text-center"
+                    style={{
+                        backgroundColor: C.cardBg, // Outer Card
+                        border: `1px solid ${C.cardBorder}`,
+                        borderRadius: R['2xl'],
+                        boxShadow: S.card
+                    }}
+                >
+                    <div 
+                        className="w-16 h-16 flex items-center justify-center mb-5"
+                        style={{
+                            backgroundColor: '#E3DFF8', // Inner Box
+                            border: `1px solid ${C.cardBorder}`,
+                            borderRadius: R['2xl']
+                        }}
+                    >
+                        <FileQuestion size={32} color={C.btnPrimary} />
                     </div>
-                    <h2 className="text-lg font-semibold text-slate-800 mb-1">No Exams Created</h2>
-                    <p className="text-sm text-slate-400 max-w-sm mx-auto mb-7">
+                    <h2 style={{ 
+                        color: C.heading, 
+                        fontSize: T.size.lg, 
+                        fontWeight: T.weight.bold,
+                        marginBottom: '4px' 
+                    }}>
+                        No Exams Created
+                    </h2>
+                    <p 
+                        className="max-w-sm mx-auto mb-7"
+                        style={{ 
+                            color: C.textMuted, 
+                            fontSize: T.size.sm,
+                            lineHeight: T.leading.relaxed 
+                        }}
+                    >
                         You haven't created any exams yet. Start by generating one with AI!
                     </p>
                     <Link href="/tutor/quizzes/create">
-                        <Button className="bg-orange-500 hover:bg-orange-600 text-white gap-2">
-                            <Plus className="w-4 h-4" /> Create New Exam
-                        </Button>
+                        <button 
+                            className="flex items-center justify-center gap-2 px-5 py-2.5 transition-opacity hover:opacity-90"
+                            style={{
+                                background: C.gradientBtn,
+                                color: '#ffffff',
+                                borderRadius: R.xl,
+                                boxShadow: S.btn,
+                                fontSize: T.size.sm,
+                                fontWeight: T.weight.bold,
+                                fontFamily: T.fontFamily,
+                                border: 'none',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <Plus size={16} color="#ffffff" /> 
+                            Create New Exam
+                        </button>
                     </Link>
                 </div>
             ) : (
                 <div className="grid gap-3">
                     {exams.map((exam) => (
                         <div
-                            key={exam._id}
-                            className="bg-white px-5 py-4 rounded-xl border border-slate-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+                            key={exam?._id}
+                            className="px-5 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-transform hover:-translate-y-0.5"
+                            style={{
+                                backgroundColor: C.cardBg, // Outer Card Wrapper
+                                border: `1px solid ${C.cardBorder}`,
+                                borderRadius: R.xl,
+                                boxShadow: S.card
+                            }}
                         >
                             {/* Left: info */}
                             <div className="flex items-start gap-4 flex-1 min-w-0">
-                                <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <FileText className="w-5 h-5 text-orange-400" />
+                                <div 
+                                    className="w-10 h-10 flex items-center justify-center shrink-0 mt-0.5"
+                                    style={{
+                                        backgroundColor: '#E3DFF8', // Inner Box/Icon Wrapper
+                                        borderRadius: R.xl
+                                    }}
+                                >
+                                    <FileText size={20} color={C.btnPrimary} />
                                 </div>
-                                <div className="min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                                        <h3 className="font-semibold text-slate-800 text-sm">{exam.title}</h3>
-                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide
-                                            ${exam.status === 'published'
-                                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                                                : 'bg-slate-100 text-slate-500 border border-slate-200'
-                                            }`}>
-                                            {exam.status}
+                                <div className="min-w-0 flex flex-col gap-1.5">
+                                    <div className="flex items-center gap-2.5 flex-wrap">
+                                        <h3 
+                                            className="truncate"
+                                            style={{ 
+                                                color: C.heading, 
+                                                fontSize: T.size.md, 
+                                                fontWeight: T.weight.bold 
+                                            }}
+                                        >
+                                            {exam?.title ?? 'Untitled Exam'}
+                                        </h3>
+                                        <span 
+                                            className="inline-flex items-center px-2.5 py-0.5 uppercase tracking-wide"
+                                            style={{
+                                                fontSize: T.size.xs,
+                                                fontWeight: T.weight.bold,
+                                                borderRadius: R.full,
+                                                backgroundColor: exam?.status === 'published' ? C.successBg : '#D3D3F1',
+                                                color: exam?.status === 'published' ? C.success : C.btnViewAllText,
+                                                border: `1px solid ${exam?.status === 'published' ? C.successBorder : C.cardBorder}`
+                                            }}
+                                        >
+                                            {exam?.status ?? 'draft'}
                                         </span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-xs text-slate-400 flex-wrap">
-                                        <span className="font-medium text-orange-500">{exam.courseTitle || 'Unknown Course'}</span>
+                                    <div 
+                                        className="flex items-center gap-2 flex-wrap"
+                                        style={{ 
+                                            color: C.textMuted, 
+                                            fontSize: T.size.xs,
+                                            fontWeight: T.weight.medium 
+                                        }}
+                                    >
+                                        <span style={{ color: C.btnPrimary, fontWeight: T.weight.semibold }}>
+                                            {exam?.courseTitle ?? 'Unknown Course'}
+                                        </span>
                                         <span>·</span>
-                                        <span>{new Date(exam.createdAt).toLocaleDateString()}</span>
+                                        <span>{exam?.createdAt ? new Date(exam.createdAt).toLocaleDateString() : 'N/A'}</span>
                                         <span>·</span>
-                                        <span>{exam.attemptCount} Attempts</span>
+                                        <span>{exam?.attemptCount ?? 0} Attempts</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Right: actions */}
-                            <div className="flex items-center gap-1.5 w-full md:w-auto flex-shrink-0">
-                                <Link href={`/tutor/quizzes/${exam._id}/results`}>
-                                    <Button variant="outline" size="sm" className="text-xs border-slate-200 text-slate-600 hover:border-orange-300 hover:text-orange-600">
+                            <div className="flex items-center gap-2 w-full md:w-auto shrink-0 mt-2 md:mt-0">
+                                <Link href={`/tutor/quizzes/${exam?._id}/results`}>
+                                    <button 
+                                        className="px-3 py-1.5 flex items-center justify-center transition-opacity hover:opacity-70"
+                                        style={{
+                                            backgroundColor: '#E3DFF8', // Inner box style for nested button
+                                            border: `1px solid ${C.cardBorder}`,
+                                            color: C.btnViewAllText,
+                                            borderRadius: R.lg,
+                                            fontSize: T.size.xs,
+                                            fontWeight: T.weight.bold,
+                                            fontFamily: T.fontFamily,
+                                            cursor: 'pointer'
+                                        }}
+                                    >
                                         View Results
-                                    </Button>
-                                </Link>
-                                <button
-                                    onClick={() => toggleStatus(exam._id, exam.status)}
-                                    title={exam.status === 'published' ? 'Unpublish' : 'Publish'}
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-slate-100"
-                                >
-                                    {exam.status === 'published'
-                                        ? <Eye className="w-4 h-4 text-emerald-500" />
-                                        : <EyeOff className="w-4 h-4 text-slate-400" />
-                                    }
-                                </button>
-                                <Link href={`/tutor/quizzes/${exam._id}/edit`}>
-                                    <button className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-slate-100">
-                                        <Edit className="w-4 h-4 text-slate-400 hover:text-slate-600" />
                                     </button>
                                 </Link>
-                                <button
-                                    onClick={() => handleDelete(exam._id)}
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-red-50"
-                                >
-                                    <Trash2 className="w-4 h-4 text-red-400 hover:text-red-500" />
-                                </button>
+                                
+                                <div className="flex items-center gap-1 ml-2">
+                                    <button
+                                        onClick={() => toggleStatus(exam?._id, exam?.status)}
+                                        title={exam?.status === 'published' ? 'Unpublish' : 'Publish'}
+                                        className="w-8 h-8 flex items-center justify-center transition-opacity hover:opacity-70"
+                                        style={{
+                                            backgroundColor: 'transparent',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            borderRadius: R.md
+                                        }}
+                                    >
+                                        {exam?.status === 'published'
+                                            ? <Eye size={18} color={C.success} />
+                                            : <EyeOff size={18} color={C.textMuted} />
+                                        }
+                                    </button>
+                                    <Link href={`/tutor/quizzes/${exam?._id}/edit`}>
+                                        <button 
+                                            className="w-8 h-8 flex items-center justify-center transition-opacity hover:opacity-70"
+                                            style={{
+                                                backgroundColor: 'transparent',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                borderRadius: R.md
+                                            }}
+                                        >
+                                            <Edit size={16} color={C.textMuted} />
+                                        </button>
+                                    </Link>
+                                    <button
+                                        onClick={() => handleDelete(exam?._id)}
+                                        className="w-8 h-8 flex items-center justify-center transition-opacity hover:opacity-70"
+                                        style={{
+                                            backgroundColor: 'transparent',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            borderRadius: R.md
+                                        }}
+                                    >
+                                        <Trash2 size={16} color={C.danger} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}

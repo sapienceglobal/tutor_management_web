@@ -2,16 +2,35 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Loader2, Sparkles, Save, BrainCircuit, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles, Save, BrainCircuit, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
-import { C, T, FX } from '@/constants/tutorTokens';
+import { C, T, S, R } from '@/constants/tutorTokens';
+
+// Focus Handlers
+const onFocusHandler = e => {
+    e.target.style.borderColor = C.btnPrimary;
+    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)';
+};
+const onBlurHandler = e => {
+    e.target.style.borderColor = 'transparent';
+    e.target.style.boxShadow = 'none';
+};
+
+const baseInputStyle = {
+    backgroundColor: '#E3DFF8',
+    border: '1.5px solid transparent',
+    borderRadius: R.xl,
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.sm,
+    fontWeight: T.weight.medium,
+    outline: 'none',
+    width: '100%',
+    padding: '10px 16px',
+    transition: 'all 0.2s ease',
+};
 
 export default function BulkAIGeneratorPage() {
     const router = useRouter();
@@ -28,8 +47,8 @@ export default function BulkAIGeneratorPage() {
     const fetchTaxonomy = async () => {
         try {
             const [topicsRes, skillsRes] = await Promise.all([api.get('/taxonomy/topics'), api.get('/taxonomy/skills')]);
-            if (topicsRes.data.success) setTopics(topicsRes.data.topics);
-            if (skillsRes.data.success) setSkills(skillsRes.data.skills);
+            if (topicsRes?.data?.success) setTopics(topicsRes.data.topics);
+            if (skillsRes?.data?.success) setSkills(skillsRes.data.skills);
         } catch (error) { console.error('Failed to load taxonomy', error); }
     };
 
@@ -39,12 +58,12 @@ export default function BulkAIGeneratorPage() {
         setGeneratedQuestions([]);
         try {
             const res = await api.post('/ai/generate-questions', aiParams);
-            if (res.data.success && res.data.questions.length > 0) {
+            if (res?.data?.success && res.data.questions.length > 0) {
                 setGeneratedQuestions(res.data.questions.map(q => ({ ...q, type: aiParams.type })));
                 toast.success(`Generated ${res.data.questions.length} questions!`);
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to generate questions');
+            toast.error(error?.response?.data?.message || 'Failed to generate questions');
         } finally { setLoading(false); }
     };
 
@@ -85,125 +104,120 @@ export default function BulkAIGeneratorPage() {
     };
 
     const difficultyStyle = (d) => ({
-        easy: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-        medium: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-        hard: 'bg-red-50 text-red-600 border-red-200',
-    }[d] || 'bg-slate-100 text-slate-600 border-slate-200');
+        easy: { bg: C.successBg, color: C.success, border: C.successBorder },
+        medium: { bg: C.warningBg, color: C.warning, border: C.warningBorder },
+        hard: { bg: C.dangerBg, color: C.danger, border: C.dangerBorder },
+    }[d] || { bg: C.surfaceWhite, color: C.textMuted, border: C.cardBorder });
 
     return (
-        <div className="space-y-6" style={{ fontFamily: T.fontFamily }}>
-
-            {/* Page Header */}
-            <div className="flex items-center gap-3">
-                <Link href="/tutor/questions">
-                    <button className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors">
-                        <ArrowLeft className="w-4 h-4 text-slate-500" />
-                    </button>
-                </Link>
-                <div>
-                    <div className="flex items-center gap-2.5 mb-0.5">
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
-                            <BrainCircuit className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
-                        </div>
-                        <h1 className="text-lg font-bold text-slate-800">Bulk AI Question Generator</h1>
+        <div className="w-full min-h-screen p-6" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+            
+            {/* Header */}
+            <div className="flex flex-col md:flex-row sm:items-center justify-between gap-4 p-5 mb-6" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                <div className="flex items-center gap-4">
+                    <Link href="/tutor/questions" className="text-decoration-none">
+                        <button className="w-10 h-10 flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80 shrink-0"
+                            style={{ backgroundColor: '#E3DFF8', borderRadius: R.full }}>
+                            <ArrowLeft size={18} color={C.heading} />
+                        </button>
+                    </Link>
+                    <div>
+                        <h1 className="flex items-center gap-2" style={{ color: C.heading, fontSize: T.size.xl, fontWeight: T.weight.black, margin: '0 0 4px 0' }}>
+                            <BrainCircuit size={20} color={C.btnPrimary} /> Bulk AI Question Generator
+                        </h1>
+                        <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, margin: 0 }}>
+                            Rapidly build your Question Bank using AI
+                        </p>
                     </div>
-                    <p className="text-xs text-slate-400 pl-0.5">Rapidly build your Question Bank using AI</p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {/* ── Left Panel ─────────────────────────────────── */}
-                <div className="lg:col-span-1 space-y-4">
+                <div className="lg:col-span-1 space-y-6">
 
                     {/* AI Prompt Card */}
-                    <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
-                        <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2.5"
-                            style={{ backgroundColor: FX.primary06 }}>
-                            <Sparkles className="w-4 h-4" style={{ color: C.btnPrimary }} />
-                            <h2 className="text-sm font-bold text-slate-800">1. AI Prompt</h2>
+                    <div className="overflow-hidden" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <div className="px-5 py-4" style={{ backgroundColor: '#E3DFF8', borderBottom: `1px solid ${C.cardBorder}` }}>
+                            <h2 className="flex items-center gap-2" style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+                                <Sparkles size={16} color={C.btnPrimary} /> 1. AI Prompt
+                            </h2>
                         </div>
                         <div className="p-5 space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-sm font-semibold text-slate-700">Topic or Text Excerpt</Label>
-                                <Textarea
+                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Topic or Text Excerpt</label>
+                                <textarea
                                     value={aiParams.topic}
                                     onChange={(e) => setAiParams({ ...aiParams, topic: e.target.value })}
                                     placeholder="Paste a paragraph or type a topic like 'Newton's Laws'..."
-                                    className="h-28 resize-y border-slate-200 text-sm"
+                                    style={{ ...baseInputStyle, resize: 'vertical', minHeight: '120px' }}
+                                    onFocus={onFocusHandler} onBlur={onBlurHandler}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-sm font-semibold text-slate-700">Question Type</Label>
-                                <Select value={aiParams.type} onValueChange={(val) => setAiParams({ ...aiParams, type: val })}>
-                                    <SelectTrigger className="h-10 border-slate-200"><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="mcq">Multiple Choice (MCQ)</SelectItem>
-                                        <SelectItem value="subjective">Subjective / Open-Ended</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Question Type</label>
+                                <select value={aiParams.type} onChange={(e) => setAiParams({ ...aiParams, type: e.target.value })} style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+                                    <option value="mcq">Multiple Choice (MCQ)</option>
+                                    <option value="subjective">Subjective / Open-Ended</option>
+                                </select>
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-semibold text-slate-700">Count (max 20)</Label>
-                                    <Input type="number" value={aiParams.count}
+                                    <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Count (max 20)</label>
+                                    <input type="number" min="1" max="20" value={aiParams.count}
                                         onChange={(e) => setAiParams({ ...aiParams, count: parseInt(e.target.value) || 1 })}
-                                        min={1} max={20} className="h-10 border-slate-200" />
+                                        style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-semibold text-slate-700">Difficulty</Label>
-                                    <Select value={aiParams.difficulty} onValueChange={(val) => setAiParams({ ...aiParams, difficulty: val })}>
-                                        <SelectTrigger className="h-10 border-slate-200"><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="easy">Easy</SelectItem>
-                                            <SelectItem value="medium">Medium</SelectItem>
-                                            <SelectItem value="hard">Hard</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Difficulty</label>
+                                    <select value={aiParams.difficulty} onChange={(e) => setAiParams({ ...aiParams, difficulty: e.target.value })} style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+                                        <option value="easy">Easy</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="hard">Hard</option>
+                                    </select>
                                 </div>
                             </div>
-                            <Button onClick={handleGenerate} disabled={loading}
-                                className="w-full text-white gap-2"
-                                style={{ backgroundColor: C.btnPrimary }}>
-                                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BrainCircuit className="w-4 h-4" />}
-                                Generate Questions
-                            </Button>
+                            <button onClick={handleGenerate} disabled={loading}
+                                className="w-full flex items-center justify-center gap-2 h-11 mt-2 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md"
+                                style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                {loading ? <Loader2 size={16} className="animate-spin" /> : <BrainCircuit size={16} />} Generate Questions
+                            </button>
                         </div>
                     </div>
 
                     {/* Metadata Card */}
-                    <div className={`bg-white rounded-xl border border-slate-100 overflow-hidden transition-opacity ${generatedQuestions.length === 0 ? 'opacity-40 pointer-events-none' : ''}`}>
-                        <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/40">
-                            <h2 className="text-sm font-bold text-slate-800">2. Assign Metadata to Bank</h2>
-                            <p className="text-xs text-slate-400 mt-0.5">Tag these questions before saving.</p>
+                    <div className="overflow-hidden transition-opacity" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card, opacity: generatedQuestions.length === 0 ? 0.4 : 1, pointerEvents: generatedQuestions.length === 0 ? 'none' : 'auto' }}>
+                        <div className="px-5 py-4" style={{ backgroundColor: '#E3DFF8', borderBottom: `1px solid ${C.cardBorder}` }}>
+                            <h2 style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: '0 0 2px 0' }}>2. Assign Metadata to Bank</h2>
+                            <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, margin: 0 }}>Tag these questions before saving.</p>
                         </div>
                         <div className="p-5 space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-sm font-semibold text-slate-700">Topic <span className="text-red-500">*</span></Label>
-                                <Select value={metaParams.topicId} onValueChange={(val) => setMetaParams({ ...metaParams, topicId: val })}>
-                                    <SelectTrigger className="h-10 border-slate-200"><SelectValue placeholder="Select Topic" /></SelectTrigger>
-                                    <SelectContent>{topics.map(t => <SelectItem key={t._id} value={t._id}>{t.name}</SelectItem>)}</SelectContent>
-                                </Select>
+                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Topic *</label>
+                                <select value={metaParams.topicId} onChange={(e) => setMetaParams({ ...metaParams, topicId: e.target.value })} style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+                                    <option value="" disabled>Select Topic</option>
+                                    {topics.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
+                                </select>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-sm font-semibold text-slate-700">Skill <span className="text-red-500">*</span></Label>
-                                <Select value={metaParams.skillId} onValueChange={(val) => setMetaParams({ ...metaParams, skillId: val })}>
-                                    <SelectTrigger className="h-10 border-slate-200"><SelectValue placeholder="Select Skill" /></SelectTrigger>
-                                    <SelectContent>{skills.map(s => <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>)}</SelectContent>
-                                </Select>
+                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Skill *</label>
+                                <select value={metaParams.skillId} onChange={(e) => setMetaParams({ ...metaParams, skillId: e.target.value })} style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+                                    <option value="" disabled>Select Skill</option>
+                                    {skills.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                                </select>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-sm font-semibold text-slate-700">Points (per question)</Label>
-                                <Input type="number" value={metaParams.points}
+                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Points (per question)</label>
+                                <input type="number" min="1" value={metaParams.points}
                                     onChange={(e) => setMetaParams({ ...metaParams, points: parseInt(e.target.value) || 1 })}
-                                    min={1} className="h-10 border-slate-200" />
+                                    style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
                             </div>
-                            <Button onClick={handleSaveAll} disabled={saving || generatedQuestions.length === 0}
-                                className="w-full text-white gap-2 bg-emerald-500 hover:bg-emerald-600">
-                                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                Save {generatedQuestions.length} Questions to Bank
-                            </Button>
+                            <button onClick={handleSaveAll} disabled={saving || generatedQuestions.length === 0}
+                                className="w-full flex items-center justify-center gap-2 h-11 mt-2 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md"
+                                style={{ backgroundColor: C.success, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save {generatedQuestions.length} Questions
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -211,94 +225,97 @@ export default function BulkAIGeneratorPage() {
                 {/* ── Right Panel ─────────────────────────────────── */}
                 <div className="lg:col-span-2 space-y-4">
                     {loading ? (
-                        <div className="min-h-[400px] flex flex-col items-center justify-center bg-white rounded-xl border border-dashed border-slate-200">
-                            <BrainCircuit className="w-12 h-12 animate-pulse mb-4" style={{ color: FX.primary40 }} />
-                            <h3 className="text-base font-bold text-slate-700 mb-1">AI is thinking...</h3>
-                            <p className="text-sm text-slate-400 max-w-xs text-center">Analyzing topic and generating high-quality questions.</p>
+                        <div className="min-h-[400px] flex flex-col items-center justify-center p-8 text-center" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px dashed ${C.cardBorder}` }}>
+                            <BrainCircuit size={48} color={C.btnPrimary} className="animate-pulse mb-4" />
+                            <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>AI is thinking...</h3>
+                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0, maxWidth: 300 }}>Analyzing topic and generating high-quality questions.</p>
                         </div>
                     ) : generatedQuestions.length > 0 ? (
                         <>
-                            <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-100 px-4 py-3 rounded-xl">
-                                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                                <span className="text-sm font-semibold text-emerald-800">{generatedQuestions.length} questions generated.</span>
-                                <span className="text-xs text-emerald-600 ml-auto">Review and edit before saving.</span>
+                            <div className="flex items-center gap-3 p-4" style={{ backgroundColor: C.successBg, border: `1px solid ${C.successBorder}`, borderRadius: R.xl }}>
+                                <CheckCircle2 size={20} color={C.success} className="shrink-0" />
+                                <div>
+                                    <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.success, display: 'block', margin: '0 0 2px 0' }}>{generatedQuestions.length} questions generated.</span>
+                                    <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.success, opacity: 0.8 }}>Review and edit before saving.</span>
+                                </div>
                             </div>
 
-                            {generatedQuestions.map((q, idx) => (
-                                <div key={idx} className="bg-white rounded-xl border border-slate-100 overflow-hidden hover:shadow-sm transition-shadow">
-                                    <div className="px-5 py-3 bg-slate-50/60 border-b border-slate-100 flex items-center justify-between">
-                                        <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Question {idx + 1}</span>
-                                        <div className="flex gap-1.5">
-                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border uppercase ${difficultyStyle(q.difficulty)}`}>
-                                                {q.difficulty}
-                                            </span>
-                                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border bg-slate-50 text-slate-600 border-slate-200 uppercase">
-                                                {q.type === 'mcq' ? 'MCQ' : 'Subjective'}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-5 space-y-4">
-                                        <div className="space-y-1.5">
-                                            <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Question Text</Label>
-                                            <Textarea value={q.question}
-                                                onChange={(e) => updateQ(idx, 'question', e.target.value)}
-                                                className="border-slate-200 text-sm resize-none min-h-[70px]" />
-                                        </div>
-
-                                        {q.type === 'mcq' ? (
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Options (select correct)</Label>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                    {q.options.map((opt, oIdx) => (
-                                                        <div key={oIdx}
-                                                            className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-colors
-                                                                ${opt === q.correctAnswer ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
-                                                            <input type="radio" name={`correctOpt-${idx}`}
-                                                                checked={opt === q.correctAnswer}
-                                                                onChange={() => updateQ(idx, 'correctAnswer', opt)}
-                                                                className="w-4 h-4 flex-shrink-0"
-                                                                style={{ accentColor: C.btnPrimary }} />
-                                                            <input className="flex-1 text-sm bg-transparent outline-none text-slate-700"
-                                                                value={opt}
-                                                                onChange={(e) => {
-                                                                    const newOpts = [...q.options];
-                                                                    const oldVal = newOpts[oIdx];
-                                                                    newOpts[oIdx] = e.target.value;
-                                                                    updateQ(idx, 'options', newOpts);
-                                                                    if (q.correctAnswer === oldVal) updateQ(idx, 'correctAnswer', e.target.value);
-                                                                }} />
-                                                        </div>
-                                                    ))}
+                            <div className="space-y-4">
+                                {generatedQuestions.map((q, idx) => {
+                                    const diffSty = difficultyStyle(q.difficulty);
+                                    return (
+                                        <div key={idx} className="overflow-hidden" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                                            <div className="px-5 py-3 flex items-center justify-between" style={{ backgroundColor: '#E3DFF8', borderBottom: `1px solid ${C.cardBorder}` }}>
+                                                <span style={{ fontSize: T.size.xs, fontWeight: T.weight.black, color: C.heading, textTransform: 'uppercase' }}>Question {idx + 1}</span>
+                                                <div className="flex gap-2">
+                                                    <span style={{ fontSize: '10px', fontWeight: T.weight.black, backgroundColor: diffSty.bg, color: diffSty.color, border: `1px solid ${diffSty.border}`, padding: '2px 8px', borderRadius: R.md, textTransform: 'uppercase' }}>
+                                                        {q.difficulty}
+                                                    </span>
+                                                    <span style={{ fontSize: '10px', fontWeight: T.weight.black, backgroundColor: C.surfaceWhite, color: C.heading, border: `1px solid ${C.cardBorder}`, padding: '2px 8px', borderRadius: R.md, textTransform: 'uppercase' }}>
+                                                        {q.type === 'mcq' ? 'MCQ' : 'Subjective'}
+                                                    </span>
                                                 </div>
                                             </div>
-                                        ) : (
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ideal Answer / Rubric</Label>
-                                                <Textarea className="min-h-[70px] border-slate-200 text-sm resize-none"
-                                                    value={q.idealAnswer || ''}
-                                                    onChange={(e) => updateQ(idx, 'idealAnswer', e.target.value)} />
-                                            </div>
-                                        )}
 
-                                        <div className="space-y-1.5">
-                                            <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Explanation for Students</Label>
-                                            <Input value={q.explanation}
-                                                onChange={(e) => updateQ(idx, 'explanation', e.target.value)}
-                                                className="border-slate-200 h-9 text-sm" />
+                                            <div className="p-5 space-y-5">
+                                                <div className="space-y-2">
+                                                    <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Question Text</label>
+                                                    <textarea value={q.question} onChange={(e) => updateQ(idx, 'question', e.target.value)}
+                                                        style={{ ...baseInputStyle, resize: 'none', minHeight: '80px', backgroundColor: C.surfaceWhite }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                                                </div>
+
+                                                {q.type === 'mcq' ? (
+                                                    <div className="space-y-2">
+                                                        <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Options (select correct)</label>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                            {q.options.map((opt, oIdx) => (
+                                                                <div key={oIdx} className="flex items-center gap-3 p-3 transition-colors"
+                                                                    style={{ 
+                                                                        backgroundColor: opt === q.correctAnswer ? C.successBg : C.surfaceWhite, 
+                                                                        borderRadius: R.xl, border: `1px solid ${opt === q.correctAnswer ? C.successBorder : C.cardBorder}` 
+                                                                    }}>
+                                                                    <input type="radio" name={`correctOpt-${idx}`} checked={opt === q.correctAnswer}
+                                                                        onChange={() => updateQ(idx, 'correctAnswer', opt)}
+                                                                        style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: C.btnPrimary }} />
+                                                                    <input type="text" value={opt}
+                                                                        onChange={(e) => {
+                                                                            const newOpts = [...q.options];
+                                                                            const oldVal = newOpts[oIdx];
+                                                                            newOpts[oIdx] = e.target.value;
+                                                                            updateQ(idx, 'options', newOpts);
+                                                                            if (q.correctAnswer === oldVal) updateQ(idx, 'correctAnswer', e.target.value);
+                                                                        }}
+                                                                        style={{ flex: 1, backgroundColor: 'transparent', border: 'none', outline: 'none', fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, fontFamily: T.fontFamily }} />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Ideal Answer / Rubric</label>
+                                                        <textarea value={q.idealAnswer || ''} onChange={(e) => updateQ(idx, 'idealAnswer', e.target.value)}
+                                                            style={{ ...baseInputStyle, resize: 'none', minHeight: '80px', backgroundColor: C.surfaceWhite }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                                                    </div>
+                                                )}
+
+                                                <div className="space-y-2">
+                                                    <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Explanation for Students</label>
+                                                    <input type="text" value={q.explanation} onChange={(e) => updateQ(idx, 'explanation', e.target.value)}
+                                                        style={{ ...baseInputStyle, backgroundColor: C.surfaceWhite }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            ))}
+                                    );
+                                })}
+                            </div>
                         </>
                     ) : (
-                        <div className="min-h-[400px] flex flex-col items-center justify-center bg-white rounded-xl border border-dashed border-slate-200 p-8">
-                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-                                style={{ backgroundColor: FX.primary10, border: `1px solid ${FX.primary20}` }}>
-                                <AlertCircle className="w-7 h-7" style={{ color: C.btnPrimary }} />
+                        <div className="min-h-[400px] flex flex-col items-center justify-center p-8 text-center" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px dashed ${C.cardBorder}` }}>
+                            <div className="w-14 h-14 flex items-center justify-center mb-4" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+                                <AlertCircle size={28} color={C.btnPrimary} />
                             </div>
-                            <h3 className="text-base font-bold text-slate-700 mb-1">No Questions Yet</h3>
-                            <p className="text-sm text-slate-400 max-w-xs text-center">
+                            <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>No Questions Yet</h3>
+                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0, maxWidth: 300 }}>
                                 Configure your AI prompt on the left and hit generate.
                             </p>
                         </div>

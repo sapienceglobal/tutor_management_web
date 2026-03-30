@@ -1,18 +1,37 @@
 'use client';
-// ─── NewAssignmentPage.jsx ────────────────────────────────────────────────────
 
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-    ArrowLeft, Loader2, Calendar, FileText,
-    Trash2, Save, Upload, X, ClipboardList, AlertCircle, Plus
-} from 'lucide-react';
+import { ArrowLeft, Loader2, Calendar, FileText, Trash2, Save, Upload, ClipboardList, Plus } from 'lucide-react';
 import api from '@/lib/axios';
 import assignmentService from '@/services/assignmentService';
 import { toast } from 'react-hot-toast';
 import AudienceSelector from '@/components/shared/AudienceSelector';
 import useInstitute from '@/hooks/useInstitute';
-import { C, T, S, R, FX, cx, pageStyle } from '@/constants/tutorTokens';
+import { C, T, S, R } from '@/constants/tutorTokens';
+
+const onFocusHandler = e => {
+    e.target.style.borderColor = C.btnPrimary;
+    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)';
+};
+const onBlurHandler = e => {
+    e.target.style.borderColor = 'transparent';
+    e.target.style.boxShadow = 'none';
+};
+
+const baseInputStyle = {
+    backgroundColor: '#E3DFF8',
+    border: '1.5px solid transparent',
+    borderRadius: R.xl,
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.sm,
+    fontWeight: T.weight.medium,
+    outline: 'none',
+    width: '100%',
+    padding: '10px 16px',
+    transition: 'all 0.2s ease',
+};
 
 export default function NewAssignmentPage({ params }) {
     const router = useRouter();
@@ -28,7 +47,7 @@ export default function NewAssignmentPage({ params }) {
         status: 'published', attachments: [],
         audience: { scope: 'institute', instituteId: null, batchIds: [], studentIds: [] },
         rubric: [
-            { criterion: 'Originality',   description: "Student's work is original",               points: 20 },
+            { criterion: 'Originality',   description: "Student's work is original",             points: 20 },
             { criterion: 'Completeness',  description: 'All parts of the assignment are addressed', points: 80 },
         ]
     });
@@ -76,7 +95,7 @@ export default function NewAssignmentPage({ params }) {
             toast.success('Assignment created successfully');
             router.push(`/tutor/courses/${courseId}/assignments`);
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Failed to create assignment');
+            toast.error(err?.response?.data?.message || 'Failed to create assignment');
         } finally { setSubmitting(false); }
     };
 
@@ -98,236 +117,151 @@ export default function NewAssignmentPage({ params }) {
 
     const totalRubricPts = formData.rubric.reduce((a, c) => a + Number(c.points || 0), 0);
 
-    const inp = { ...cx.input(), width: '100%', padding: '10px 14px' };
-    const applyFocus  = (e) => Object.assign(e.target.style, cx.inputFocus);
-    const removeFocus = (e) => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; };
-
-    const SectionBar = ({ children }) => (
-        <h2 className="flex items-center gap-2 pb-2"
-            style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, borderBottom: `1px solid ${C.cardBorder}` }}>
-            <span className="w-1 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: C.btnPrimary }} />
-            {children}
-        </h2>
-    );
-
     return (
-        <div className="space-y-5 pb-24" style={pageStyle}>
-
-            {/* ── Header ───────────────────────────────────────────────── */}
-            <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
-                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                <button onClick={() => router.back()}
-                    className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-                    style={{ backgroundColor: C.innerBg, color: C.textMuted }}>
-                    <ArrowLeft className="w-4 h-4" />
-                </button>
-                <div>
-                    <div className="flex items-center gap-2.5 mb-0.5">
-                        <div className="w-7 h-7 rounded-xl flex items-center justify-center"
-                            style={{ backgroundColor: FX.primary15, border: `1px solid ${FX.primary25}` }}>
-                            <ClipboardList className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
-                        </div>
-                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>
-                            Create Assignment
+        <div className="w-full min-h-screen p-6 pb-24 space-y-6" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+            
+            {/* Header */}
+            <div className="flex flex-col md:flex-row sm:items-center justify-between gap-4 p-5" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                <div className="flex items-center gap-4">
+                    <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80 shrink-0"
+                        style={{ backgroundColor: '#E3DFF8', borderRadius: R.full }}>
+                        <ArrowLeft size={18} color={C.heading} />
+                    </button>
+                    <div>
+                        <h1 className="flex items-center gap-2" style={{ color: C.heading, fontSize: T.size.xl, fontWeight: T.weight.black, margin: '0 0 4px 0' }}>
+                            <ClipboardList size={20} color={C.btnPrimary} /> Create Assignment
                         </h1>
+                        <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, margin: 0 }}>Configure and publish a new assignment</p>
                     </div>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                        Configure and publish a new assignment
-                    </p>
+                </div>
+                <div className="flex gap-3 w-full md:w-auto">
+                    <button type="button" onClick={() => router.back()} className="flex-1 md:flex-none h-10 px-6 cursor-pointer border-none bg-transparent transition-opacity hover:opacity-80"
+                        style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                        Cancel
+                    </button>
+                    <button onClick={handleCreate} disabled={submitting} className="flex-1 md:flex-none flex items-center justify-center gap-2 h-10 px-8 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-60 shadow-md"
+                        style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                        {submitting ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Create Assignment
+                    </button>
                 </div>
             </div>
 
-            <form onSubmit={handleCreate} className="space-y-5">
-
-                {/* ── Basic Info ─────────────────────────────────────────── */}
-                <div className="rounded-2xl p-6 space-y-5"
-                    style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                    <SectionBar>Basic Information</SectionBar>
-
-                    {/* Title */}
-                    <div>
-                        <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text, marginBottom: 6 }}>
-                            Assignment Title <span style={{ color: C.danger }}>*</span>
-                        </label>
-                        <input type="text" required value={formData.title}
-                            onChange={e => setFormData(p => ({ ...p, title: e.target.value }))}
-                            placeholder="e.g. Final Project Submission"
-                            style={inp} onFocus={applyFocus} onBlur={removeFocus} />
-                    </div>
-
-                    {/* Description */}
-                    <div>
-                        <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text, marginBottom: 6 }}>
-                            Instructions / Description <span style={{ color: C.danger }}>*</span>
-                        </label>
-                        <textarea required rows={4} value={formData.description}
-                            onChange={e => setFormData(p => ({ ...p, description: e.target.value }))}
-                            placeholder="Describe the assignment requirements and expected deliverables..."
-                            style={{ ...inp, resize: 'none' }}
-                            onFocus={applyFocus} onBlur={removeFocus} />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Due Date */}
-                        <div>
-                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text, marginBottom: 6 }}>
-                                Due Date & Time <span style={{ color: C.danger }}>*</span>
-                            </label>
-                            <div className="relative">
-                                <input type="datetime-local" required value={formData.dueDate}
-                                    onChange={e => setFormData(p => ({ ...p, dueDate: e.target.value }))}
-                                    style={{ ...inp, paddingLeft: 40 }}
-                                    onFocus={applyFocus} onBlur={removeFocus} />
-                                <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                                    style={{ color: C.textMuted }} />
-                            </div>
+            <form onSubmit={handleCreate} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* Left Column: Main Details */}
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="p-6 space-y-5" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: '0 0 16px 0', borderBottom: `1px solid ${C.cardBorder}`, paddingBottom: '12px' }}>Assignment Details</h3>
+                        
+                        <div className="space-y-2">
+                            <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assignment Title *</label>
+                            <input type="text" required value={formData.title} onChange={e => setFormData(p => ({ ...p, title: e.target.value }))}
+                                placeholder="e.g. Business Ethics Case Study" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
                         </div>
-                        {/* Status */}
-                        <div>
-                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text, marginBottom: 6 }}>
-                                Status
-                            </label>
-                            <select value={formData.status}
-                                onChange={e => setFormData(p => ({ ...p, status: e.target.value }))}
-                                style={{ ...inp, cursor: 'pointer', appearance: 'none' }}>
-                                <option value="published">Published (Visible immediately)</option>
-                                <option value="draft">Draft (Hidden from students)</option>
-                            </select>
+
+                        <div className="space-y-2">
+                            <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Description *</label>
+                            <textarea required rows={5} value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))}
+                                placeholder="Write the assignment details here..." style={{ ...baseInputStyle, resize: 'vertical', minHeight: '120px' }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
                         </div>
-                    </div>
 
-                    <AudienceSelector value={formData.audience}
-                        onChange={(audience) => setFormData(p => ({ ...p, audience }))}
-                        availableBatches={availableBatches} availableStudents={availableStudents}
-                        allowGlobal={Boolean(!institute?._id || institute?.features?.allowGlobalPublishingByInstituteTutors)}
-                        instituteId={institute?._id || null} />
-
-                    {/* Attachments */}
-                    <div className="space-y-2">
-                        <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text, marginBottom: 6 }}>
-                            Reference Materials
-                        </label>
-                        {formData.attachments.map((file, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-3 rounded-xl"
-                                style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-xl" style={{ backgroundColor: FX.primary12 }}>
-                                        <FileText className="w-4 h-4" style={{ color: C.btnPrimary }} />
-                                    </div>
-                                    <div>
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text }}>
-                                            {file.name}
-                                        </p>
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, textTransform: 'uppercase' }}>
-                                            {file.type?.split('/')[1] || 'File'}
-                                        </p>
-                                    </div>
-                                </div>
-                                <button type="button"
-                                    onClick={() => setFormData(p => ({ ...p, attachments: p.attachments.filter((_, i) => i !== idx) }))}
-                                    className="w-7 h-7 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-                                    style={{ backgroundColor: C.dangerBg }}>
-                                    <Trash2 className="w-3.5 h-3.5" style={{ color: C.danger }} />
-                                </button>
-                            </div>
-                        ))}
-                        <input type="file" onChange={handleFileUpload} className="hidden" id="attachment-upload" />
-                        <label htmlFor="attachment-upload"
-                            className="flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed rounded-xl text-sm font-semibold cursor-pointer transition-all"
-                            style={{ borderColor: FX.primary25, color: C.btnPrimary, fontFamily: T.fontFamily }}
-                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = FX.primary06; }}
-                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                            <Upload className="w-4 h-4" /> Attach File
-                        </label>
-                    </div>
-                </div>
-
-                {/* ── Rubric Builder ──────────────────────────────────────── */}
-                <div className="rounded-2xl overflow-hidden"
-                    style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                    <div className="px-6 py-4 flex items-center justify-between"
-                        style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
-                        <div>
-                            <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
-                                Grading Rubric
-                            </h2>
-                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, marginTop: 2 }}>
-                                Define the criteria and points for grading
-                            </p>
-                        </div>
-                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.black, color: C.btnPrimary }}>
-                            {totalRubricPts} pts
-                        </span>
-                    </div>
-
-                    <div className="p-5 space-y-3">
-                        {formData.rubric.map((item, idx) => (
-                            <div key={idx} className="flex gap-3 p-4 rounded-2xl"
-                                style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
-                                <div className="flex-1 space-y-3">
-                                    <div className="flex gap-3">
-                                        <input type="text" required value={item.criterion}
-                                            onChange={e => updateRubric(idx, 'criterion', e.target.value)}
-                                            placeholder="Criterion Name (e.g. Grammar)"
-                                            style={{ ...cx.input(), flex: 1, height: 36, padding: '0 12px', fontWeight: T.weight.semibold }}
-                                            onFocus={applyFocus} onBlur={removeFocus} />
-                                        <div className="relative w-28">
-                                            <input type="number" required min="1" value={item.points}
-                                                onChange={e => updateRubric(idx, 'points', Number(e.target.value))}
-                                                style={{ ...cx.input(), width: '100%', height: 36, paddingLeft: 12, paddingRight: 32, fontWeight: T.weight.bold, color: C.btnPrimary }}
-                                                onFocus={applyFocus} onBlur={removeFocus} />
-                                            <span className="absolute right-3 top-1/2 -translate-y-1/2"
-                                                style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.textMuted }}>
-                                                pts
-                                            </span>
+                        <div className="space-y-3">
+                            <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Attachments</label>
+                            <div className="space-y-2">
+                                {formData.attachments.map((file, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-3" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2" style={{ backgroundColor: C.surfaceWhite, borderRadius: R.md }}>
+                                                <FileText size={16} color={C.btnPrimary} />
+                                            </div>
+                                            <div>
+                                                <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{file.name}</p>
+                                                <p style={{ fontSize: '10px', color: C.textMuted, textTransform: 'uppercase', margin: 0 }}>{file.type?.split('/')[1] || 'File'}</p>
+                                            </div>
                                         </div>
+                                        <button type="button" onClick={() => setFormData(p => ({ ...p, attachments: p.attachments.filter((_, i) => i !== idx) }))}
+                                            className="w-8 h-8 flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-70" style={{ backgroundColor: C.dangerBg, borderRadius: R.md }}>
+                                            <Trash2 size={14} color={C.danger} />
+                                        </button>
                                     </div>
-                                    <textarea rows={2} value={item.description}
-                                        onChange={e => updateRubric(idx, 'description', e.target.value)}
-                                        placeholder="Description of this criterion..."
-                                        style={{ ...cx.input(), width: '100%', padding: '8px 12px', resize: 'none' }}
-                                        onFocus={applyFocus} onBlur={removeFocus} />
-                                </div>
-                                <button type="button" onClick={() => removeRubric(idx)}
-                                    disabled={formData.rubric.length === 1}
-                                    className="w-8 h-8 mt-0.5 flex-shrink-0 rounded-xl flex items-center justify-center transition-all disabled:opacity-30 hover:opacity-80"
-                                    style={{ backgroundColor: C.dangerBg }}>
-                                    <Trash2 className="w-3.5 h-3.5" style={{ color: C.danger }} />
-                                </button>
+                                ))}
                             </div>
-                        ))}
-                        <button type="button" onClick={addRubric}
-                            className="w-full py-3 border-2 border-dashed rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
-                            style={{ borderColor: FX.primary25, color: C.btnPrimary, fontFamily: T.fontFamily }}
-                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = FX.primary06; }}
-                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                            <Plus className="w-4 h-4" /> Add Criterion
+                            <input type="file" onChange={handleFileUpload} className="hidden" id="attachment-upload" />
+                            <label htmlFor="attachment-upload" className="flex items-center justify-center gap-2 w-full py-3 cursor-pointer transition-opacity hover:opacity-80"
+                                style={{ backgroundColor: '#E3DFF8', border: `2px dashed ${C.cardBorder}`, borderRadius: R.xl, color: C.btnPrimary, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                <Upload size={16} /> Attach Files
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="p-6 space-y-4" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <div className="flex items-center justify-between mb-4 pb-3" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                            <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Grading Rubric</h3>
+                            <span style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.btnPrimary }}>{totalRubricPts} Points</span>
+                        </div>
+                        <div className="space-y-4">
+                            {formData.rubric.map((item, idx) => (
+                                <div key={idx} className="flex gap-3 p-4" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                                    <div className="flex-1 space-y-3">
+                                        <div className="flex gap-3">
+                                            <input type="text" required value={item.criterion} onChange={e => updateRubric(idx, 'criterion', e.target.value)}
+                                                placeholder="Criterion Name" style={{ ...baseInputStyle, flex: 1, backgroundColor: C.surfaceWhite }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                                            <div className="relative w-24">
+                                                <input type="number" required min="1" value={item.points} onChange={e => updateRubric(idx, 'points', Number(e.target.value))}
+                                                    style={{ ...baseInputStyle, paddingRight: '32px', backgroundColor: C.surfaceWhite, color: C.btnPrimary, fontWeight: T.weight.black }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2" style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>pts</span>
+                                            </div>
+                                        </div>
+                                        <textarea rows={2} value={item.description} onChange={e => updateRubric(idx, 'description', e.target.value)}
+                                            placeholder="Description..." style={{ ...baseInputStyle, resize: 'none', backgroundColor: C.surfaceWhite }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                                    </div>
+                                    <button type="button" onClick={() => removeRubric(idx)} disabled={formData.rubric.length === 1}
+                                        className="w-9 h-9 flex shrink-0 items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80 disabled:opacity-50" style={{ backgroundColor: C.dangerBg, borderRadius: R.md, marginTop: '2px' }}>
+                                        <Trash2 size={16} color={C.danger} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <button type="button" onClick={addRubric} className="flex items-center justify-center gap-2 w-full py-3 mt-2 cursor-pointer transition-opacity hover:opacity-80"
+                            style={{ backgroundColor: '#E3DFF8', border: `2px dashed ${C.cardBorder}`, borderRadius: R.xl, color: C.btnPrimary, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                            <Plus size={16} /> Add Criterion
                         </button>
                     </div>
                 </div>
 
-                {/* ── Fixed Bottom Bar ─────────────────────────────────────── */}
-                <div className="fixed bottom-0 left-0 right-0 z-20 p-4"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderTop: `1px solid ${C.cardBorder}`, boxShadow: '0 -4px 16px rgba(0,0,0,0.04)' }}>
-                    <div className="max-w-2xl mx-auto flex items-center justify-between">
-                        <div className="flex items-center gap-2"
-                            style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted }}>
-                            <AlertCircle className="w-3.5 h-3.5" />
-                            Total points auto-calculated from rubric.
+                {/* Right Column: Settings */}
+                <div className="lg:col-span-1 space-y-6">
+                    <div className="p-6 space-y-5" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: '0 0 16px 0', borderBottom: `1px solid ${C.cardBorder}`, paddingBottom: '12px' }}>Assignment Settings</h3>
+                        
+                        <div className="space-y-2">
+                            <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Due Date & Time *</label>
+                            <div className="relative">
+                                <input type="datetime-local" required value={formData.dueDate} onChange={e => setFormData(p => ({ ...p, dueDate: e.target.value }))}
+                                    style={{ ...baseInputStyle, paddingLeft: '36px' }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                                <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" color={C.textMuted} />
+                            </div>
                         </div>
-                        <div className="flex gap-3">
-                            <button type="button" onClick={() => router.back()}
-                                className="px-5 py-2 text-sm font-semibold rounded-xl transition-all hover:opacity-80"
-                                style={cx.btnSecondary()}>
-                                Cancel
-                            </button>
-                            <button type="submit" disabled={submitting}
-                                className="px-5 py-2 text-sm text-white font-bold rounded-xl flex items-center gap-2 transition-all disabled:opacity-60 hover:opacity-90"
-                                style={{ backgroundColor: C.btnPrimary, fontFamily: T.fontFamily, boxShadow: S.btn }}>
-                                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                Create Assignment
-                            </button>
+
+                        <div className="space-y-2">
+                            <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</label>
+                            <select value={formData.status} onChange={e => setFormData(p => ({ ...p, status: e.target.value }))}
+                                style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+                                <option value="published">Published</option>
+                                <option value="draft">Draft</option>
+                            </select>
                         </div>
+
+                        <div className="space-y-2">
+                            <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Audience</label>
+                            <div style={{ backgroundColor: '#E3DFF8', padding: '16px', borderRadius: R.xl }}>
+                                <AudienceSelector value={formData.audience} onChange={(audience) => setFormData(p => ({ ...p, audience }))}
+                                    availableBatches={availableBatches} availableStudents={availableStudents}
+                                    allowGlobal={Boolean(!institute?._id || institute?.features?.allowGlobalPublishingByInstituteTutors)}
+                                    instituteId={institute?._id || null} />
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </form>

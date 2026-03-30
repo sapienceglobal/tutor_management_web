@@ -2,69 +2,186 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Save, Plus, X, BookOpen } from 'lucide-react';
+import { Loader2, Plus, X, Upload, ChevronRight, ChevronLeft, BookOpen, Video, FileText, CheckCircle2, Rocket, Trash2 } from 'lucide-react';
 import api from '@/lib/axios';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import AudienceSelector from '@/components/shared/AudienceSelector';
 import useInstitute from '@/hooks/useInstitute';
-import { C, T, S, R, FX, cx, pageStyle } from '@/constants/tutorTokens';
+import { C, T, S, R } from '@/constants/tutorTokens';
 
-// ─── Shared styled select ─────────────────────────────────────────────────────
-function StyledSelect({ id, name, value, onChange, required, children }) {
+// ── Shared Colors & Styles ─────────────────────────────────────────────
+const outerCard = '#EAE8FA';   
+const innerBox  = '#E3DFF8';   
+
+const onFocusHandler = e => {
+    e.target.style.borderColor = C.btnPrimary;
+    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)';
+};
+const onBlurHandler = e => {
+    e.target.style.borderColor = 'transparent';
+    e.target.style.boxShadow = 'none';
+};
+
+const baseInputStyle = {
+    backgroundColor: innerBox,
+    border: '1.5px solid transparent',
+    borderRadius: R.xl,
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.sm,
+    fontWeight: T.weight.medium,
+    outline: 'none',
+    width: '100%',
+    padding: '10px 16px',
+    transition: 'all 0.2s ease',
+};
+
+// ─── Step Bar ─────────────────────────────────────────────────────────────────
+const STEPS = [
+    { num: 1, label: 'Course Info'  },
+    { num: 2, label: 'Curriculum'   },
+    { num: 3, label: 'Assignments'  },
+    { num: 4, label: 'Publish'      },
+];
+
+function StepBar({ current = 1 }) {
     return (
-        <select id={id} name={name} value={value} onChange={onChange} required={required}
-            style={{ ...cx.input(), width: '100%', height: 40, padding: '0 12px', cursor: 'pointer', appearance: 'none' }}
-            onFocus={e => Object.assign(e.target.style, cx.inputFocus)}
-            onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}>
-            {children}
-        </select>
+        <div className="flex items-center flex-wrap gap-y-2 p-4 mb-6"
+            style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, borderRadius: R.xl, boxShadow: S.card }}>
+            {STEPS.map((step, i) => {
+                const isActive = step.num === current;
+                const isDone   = step.num < current;
+                return (
+                    <div key={step.num} className="flex items-center">
+                        <div className="flex items-center gap-2 px-3 py-1.5" style={{
+                            backgroundColor: isActive ? C.surfaceWhite : 'transparent',
+                            borderRadius: R.lg,
+                            boxShadow: isActive ? S.card : 'none'
+                        }}>
+                            <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+                                style={{
+                                    backgroundColor: isActive ? C.btnPrimary : isDone ? C.successBg : innerBox,
+                                    color: isActive ? '#fff' : isDone ? C.success : C.textMuted,
+                                    fontSize: '11px', fontWeight: T.weight.black
+                                }}>
+                                {isDone ? <CheckCircle2 size={14} /> : step.num}
+                            </div>
+                            <span style={{ fontSize: T.size.sm, fontWeight: isActive ? T.weight.bold : T.weight.medium, color: isActive ? C.btnPrimary : C.textMuted }}>
+                                {step.label}
+                            </span>
+                        </div>
+                        {i < STEPS.length - 1 && (
+                            <ChevronRight size={16} color={C.textMuted} className="mx-2 shrink-0 opacity-50" />
+                        )}
+                    </div>
+                );
+            })}
+        </div>
     );
 }
 
-// ─── Section heading ──────────────────────────────────────────────────────────
-function SectionHeading({ children }) {
+function ThumbnailUpload({ value, onChange }) {
     return (
-        <h3 className="flex items-center gap-2 pb-2"
-            style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, borderBottom: `1px solid ${C.cardBorder}` }}>
-            <span className="w-1 h-4 rounded-full inline-block flex-shrink-0"
-                style={{ backgroundColor: C.btnPrimary }} />
-            {children}
-        </h3>
+        <div className="space-y-2">
+            <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>
+                Course Thumbnail (Recommended 800x450)
+            </label>
+            <div className="flex gap-4 items-stretch h-36">
+                <div className="flex-1 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer transition-opacity hover:opacity-80"
+                    style={{ borderColor: C.btnPrimary, backgroundColor: '#E3DFF8' }}>
+                    <input type="file" className="hidden" accept="image/*" id="thumb-upload"
+                        onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (file) onChange({ target: { name: 'thumbnail', value: URL.createObjectURL(file) } });
+                        }} />
+                    <label htmlFor="thumb-upload" className="flex flex-col items-center cursor-pointer w-full h-full justify-center">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}` }}>
+                            <Upload size={18} color={C.btnPrimary} />
+                        </div>
+                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>Browse files</p>
+                        <p style={{ fontSize: '11px', color: C.textMuted, margin: 0 }}>JPG, PNG, GIF</p>
+                    </label>
+                </div>
+                <div className="w-48 rounded-2xl flex items-center justify-center overflow-hidden shrink-0 border"
+                    style={{ backgroundColor: '#E3DFF8', borderColor: C.cardBorder }}>
+                    {value ? <img src={value} alt="thumb" className="w-full h-full object-cover" /> : <BookOpen size={24} color={C.textMuted} style={{ opacity: 0.3 }} />}
+                </div>
+            </div>
+        </div>
     );
 }
 
-// ─── Field label ──────────────────────────────────────────────────────────────
-function FieldLabel({ children, required }) {
+function ListFieldSection({ title, desc, items, onAdd, onRemove, onChange, placeholder }) {
     return (
-        <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text, marginBottom: 6 }}>
-            {children} {required && <span style={{ color: C.danger }}>*</span>}
-        </label>
+        <div className="space-y-3">
+            <div>
+                <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 2px 0' }}>{title}</p>
+                {desc && <p style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>{desc}</p>}
+            </div>
+            {items.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                    <input value={item} placeholder={`${placeholder} ${idx + 1}`} onChange={e => onChange(idx, e.target.value)} style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                    {items.length > 1 && (
+                        <button type="button" onClick={() => onRemove(idx)} className="w-10 h-10 flex items-center justify-center flex-shrink-0 cursor-pointer border-none transition-opacity hover:opacity-80" style={{ backgroundColor: C.dangerBg, borderRadius: R.md }}>
+                            <X size={16} color={C.danger} />
+                        </button>
+                    )}
+                </div>
+            ))}
+            <button type="button" onClick={onAdd} className="w-full flex items-center justify-center gap-2 h-10 border-2 border-dashed cursor-pointer transition-opacity hover:opacity-80"
+                style={{ backgroundColor: '#E3DFF8', borderColor: C.btnPrimary, color: C.btnPrimary, borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
+                <Plus size={16} /> Add Item
+            </button>
+        </div>
     );
 }
 
+const CancelBtn = ({ onClick }) => (
+    <button type="button" onClick={onClick}
+        className="flex-1 py-2.5 rounded-xl text-sm transition-opacity hover:opacity-80 cursor-pointer border-none"
+        style={{ backgroundColor: C.surfaceWhite, color: C.textMuted, fontWeight: T.weight.bold, border: `1px solid ${C.cardBorder}` }}>
+        Cancel
+    </button>
+);
+
+// ─── Main SPA Wizard ──────────────────────────────────────────────────────────
 export default function CreateCoursePage() {
     const router = useRouter();
     const { institute } = useInstitute();
-    const [loading, setLoading]     = useState(false);
+    
+    // Wizard State
+    const [step, setStep] = useState(1);
+    const [courseId, setCourseId] = useState(null); 
+    const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
 
-    const [formData, setFormData] = useState({
+    // Data States
+    const [courseData, setCourseData] = useState({
         title: '', description: '', price: '', level: 'beginner',
         category: '', thumbnail: '', language: 'English', duration: 0,
         visibility: 'institute',
         audience: { scope: 'institute', instituteId: null, batchIds: [], studentIds: [] },
-        whatYouWillLearn: [''],
-        requirements: [''],
+        whatYouWillLearn: [''], requirements: [''],
     });
+
+    const [modules, setModules] = useState([]);
+    const [lessons, setLessons] = useState([]);
+    const [assignments, setAssignments] = useState([]);
+
+    // Modals State
+    const [modals, setModals] = useState({ module: false, lesson: false, assignment: false });
+    const [activeModuleId, setActiveModuleId] = useState(null);
+
+    // Modal Forms
+    const [moduleTitle, setModuleTitle] = useState('');
+    const [lessonForm, setLessonForm] = useState({ title: '', type: 'video', videoUrl: '', duration: '', isFree: false });
+    const [assignmentForm, setAssignmentForm] = useState({ title: '', description: '', totalMarks: 100 });
 
     useEffect(() => { fetchCategories(); }, []);
 
     useEffect(() => {
-        setFormData(prev => {
+        setCourseData(prev => {
             const nextAudience = { ...prev.audience, instituteId: prev.audience?.instituteId || institute?._id || null };
             return { ...prev, audience: nextAudience, visibility: nextAudience.scope === 'global' ? 'public' : 'institute' };
         });
@@ -73,243 +190,462 @@ export default function CreateCoursePage() {
     const fetchCategories = async () => {
         try {
             const res = await api.get('/categories');
-            if (res.data.success) setCategories(res.data.categories || res.data.data || []);
+            if (res?.data?.success) setCategories(res.data.categories || res.data.data || []);
         } catch (err) { console.error('Error fetching categories:', err); }
     };
 
-    const handleChange = (e) => {
+    const handleDataChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setCourseData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = async (e) => {
+    // ─── Step 1: Save Course Info (Draft) ──────────────────────────────────
+    const handleStep1Submit = async (e) => {
         e.preventDefault();
-        if (!formData.title || !formData.description || !formData.category || !formData.price) {
-            toast.error('Please fill in all required fields'); return;
+        if (!courseData.title || !courseData.description || !courseData.category || !courseData.price) {
+            return toast.error('Please fill in all required fields');
         }
         setLoading(true);
         try {
             const payload = {
-                title: formData.title, description: formData.description,
-                price: Number(formData.price), level: formData.level,
-                categoryId: formData.category, thumbnail: formData.thumbnail,
-                language: formData.language, duration: Number(formData.duration),
-                visibility: formData.audience?.scope === 'global' ? 'public' : 'institute',
-                audience: { ...formData.audience, instituteId: formData.audience?.instituteId || institute?._id || null },
-                scope: formData.audience?.scope,
-                whatYouWillLearn: formData.whatYouWillLearn.filter(i => i.trim() !== ''),
-                requirements: formData.requirements.filter(i => i.trim() !== ''),
+                title: courseData.title, description: courseData.description,
+                price: Number(courseData.price), level: courseData.level,
+                categoryId: courseData.category, thumbnail: courseData.thumbnail,
+                language: courseData.language, duration: Number(courseData.duration),
+                visibility: courseData.audience?.scope === 'global' ? 'public' : 'institute',
+                audience: { ...courseData.audience, instituteId: courseData.audience?.instituteId || institute?._id || null },
+                scope: courseData.audience?.scope,
+                whatYouWillLearn: courseData.whatYouWillLearn.filter(i => i.trim() !== ''),
+                requirements: courseData.requirements.filter(i => i.trim() !== ''),
+                status: 'draft', 
             };
-            const res = await api.post('/courses', payload);
-            if (res.data.success) { router.push('/tutor/courses'); router.refresh(); }
+
+            if (courseId) {
+                await api.patch(`/courses/${courseId}`, payload);
+                toast.success('Course info updated!');
+                setStep(2);
+            } else {
+                const res = await api.post('/courses', payload);
+                if (res?.data?.success) {
+                    setCourseId(res.data.course._id);
+                    toast.success('Course draft created! Now add curriculum.');
+                    setStep(2);
+                }
+            }
         } catch (err) {
-            console.error('Error creating course:', err);
-            toast.error(err.response?.data?.message || 'Failed to create course');
+            toast.error(err?.response?.data?.message || 'Failed to save course info');
         } finally { setLoading(false); }
     };
 
-    const listField = (key) => ({
-        onChange: (idx, val) => setFormData(prev => { const u = [...prev[key]]; u[idx] = val; return { ...prev, [key]: u }; }),
-        add:    () => setFormData(prev => ({ ...prev, [key]: [...prev[key], ''] })),
-        remove: (idx) => setFormData(prev => ({ ...prev, [key]: prev[key].filter((_, i) => i !== idx) })),
-    });
+    // ─── Step 2: Curriculum Management ─────────────────────────────────────
+    const handleAddModule = async (e) => {
+        e.preventDefault();
+        if (!moduleTitle.trim()) return;
+        setLoading(true);
+        try {
+            const updatedModules = [...modules, { title: moduleTitle }];
+            await api.patch(`/courses/${courseId}`, { modules: updatedModules });
+            
+            const res = await api.get(`/courses/${courseId}`);
+            if (res?.data?.success) {
+                setModules(res.data.course.modules);
+            }
+            setModals({ ...modals, module: false });
+            setModuleTitle('');
+            toast.success('Module added');
+        } catch { toast.error('Failed to add module'); }
+        finally { setLoading(false); }
+    };
 
-    const learn = listField('whatYouWillLearn');
-    const req   = listField('requirements');
+    const handleAddLesson = async (e) => {
+        e.preventDefault();
+        if (!lessonForm.title || !activeModuleId) return;
+        setLoading(true);
+        try {
+            const content = {};
+            if (lessonForm.type === 'video') { content.videoUrl = lessonForm.videoUrl; content.duration = Number(lessonForm.duration) * 60; }
+            
+            const payload = {
+                courseId, moduleId: activeModuleId,
+                title: lessonForm.title, type: lessonForm.type,
+                content, isFree: lessonForm.isFree
+            };
+            
+            const res = await api.post('/lessons', payload);
+            if (res?.data?.success) {
+                setLessons(prev => [...prev, res.data.lesson]);
+                setModals({ ...modals, lesson: false });
+                setLessonForm({ title: '', type: 'video', videoUrl: '', duration: '', isFree: false });
+                toast.success('Lesson added');
+            }
+        } catch { toast.error('Failed to add lesson'); }
+        finally { setLoading(false); }
+    };
 
-    const inputSt = { ...cx.input(), width: '100%', height: 40, padding: '0 12px' };
+    // ─── Step 3: Assignments Management ────────────────────────────────────
+    const handleAddAssignment = async (e) => {
+        e.preventDefault();
+        if (!assignmentForm.title.trim()) return;
+        setLoading(true);
+        try {
+            const payload = {
+                courseId, title: assignmentForm.title, description: assignmentForm.description,
+                totalMarks: Number(assignmentForm.totalMarks), status: 'published',
+                audience: { scope: courseData.audience?.scope, instituteId: institute?._id || null }
+            };
+            const res = await api.post('/assignments', payload);
+            if (res?.data?.success) {
+                setAssignments(prev => [...prev, res.data.assignment]);
+                setModals({ ...modals, assignment: false });
+                setAssignmentForm({ title: '', description: '', totalMarks: 100 });
+                toast.success('Assignment added');
+            }
+        } catch { toast.error('Failed to add assignment'); }
+        finally { setLoading(false); }
+    };
+
+    // ─── Step 4: Final Publish ─────────────────────────────────────────────
+    const handlePublish = async () => {
+        setLoading(true);
+        try {
+            const res = await api.patch(`/courses/${courseId}`, { status: 'published' });
+            if (res?.data?.success) {
+                toast.success('Course Published Successfully! 🎉');
+                router.push('/tutor/courses');
+            }
+        } catch { toast.error('Failed to publish course'); }
+        finally { setLoading(false); }
+    };
+
+    // ─── UI Helpers ────────────────────────────────────────────────────────
+    const learnList = {
+        onChange: (idx, val) => setCourseData(prev => { const u = [...prev.whatYouWillLearn]; u[idx] = val; return { ...prev, whatYouWillLearn: u }; }),
+        add:    () => setCourseData(prev => ({ ...prev, whatYouWillLearn: [...prev.whatYouWillLearn, ''] })),
+        remove: (idx) => setCourseData(prev => ({ ...prev, whatYouWillLearn: prev.whatYouWillLearn.filter((_, i) => i !== idx) })),
+    };
+    const reqList = {
+        onChange: (idx, val) => setCourseData(prev => { const u = [...prev.requirements]; u[idx] = val; return { ...prev, requirements: u }; }),
+        add:    () => setCourseData(prev => ({ ...prev, requirements: [...prev.requirements, ''] })),
+        remove: (idx) => setCourseData(prev => ({ ...prev, requirements: prev.requirements.filter((_, i) => i !== idx) })),
+    };
 
     return (
-        <div className="max-w-2xl mx-auto space-y-5" style={pageStyle}>
-
-            {/* ── Page Header ───────────────────────────────────────────── */}
-            <div className="flex items-center gap-3">
-                <Link href="/tutor/courses">
-                    <button className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-                        style={{ backgroundColor: C.innerBg, color: C.textMuted }}>
-                        <ArrowLeft className="w-4 h-4" />
-                    </button>
-                </Link>
-                <div>
-                    <div className="flex items-center gap-2.5 mb-0.5">
-                        <div className="w-7 h-7 rounded-xl flex items-center justify-center"
-                            style={{ backgroundColor: FX.primary15, border: `1px solid ${FX.primary25}` }}>
-                            <BookOpen className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
-                        </div>
-                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>
-                            Create New Course
-                        </h1>
+        <div className="w-full min-h-screen p-6 pb-24" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+            <div className="max-w-4xl mx-auto space-y-6">
+                
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-6">
+                    <Link href="/tutor/courses" className="text-decoration-none">
+                        <button className="w-10 h-10 flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80 shrink-0"
+                            style={{ backgroundColor: outerCard, borderRadius: R.full }}>
+                            <ArrowLeft size={18} color={C.heading} />
+                        </button>
+                    </Link>
+                    <div>
+                        <h1 style={{ fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading, margin: '0 0 2px 0' }}>Course Wizard</h1>
+                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>Create and structure your entire course in one place.</p>
                     </div>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                        Fill in the details to publish your course.
-                    </p>
                 </div>
-            </div>
 
-            {/* ── Form Card ─────────────────────────────────────────────── */}
-            <div className="rounded-2xl p-6"
-                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                <form onSubmit={handleSubmit} className="space-y-7">
+                <StepBar current={step} />
 
-                    {/* Basic Info */}
-                    <div className="space-y-4">
-                        <SectionHeading>Basic Information</SectionHeading>
-
-                        <div>
-                            <FieldLabel required>Course Title</FieldLabel>
-                            <input name="title" placeholder="e.g. Complete Web Development Bootcamp"
-                                value={formData.title} onChange={handleChange} required
-                                style={inputSt}
-                                onFocus={e => Object.assign(e.target.style, cx.inputFocus)}
-                                onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
-                            />
+                {/* ═════════════════════════════════════════════════════════════════
+                    STEP 1: COURSE INFO
+                ══════════════════════════════════════════════════════════════════ */}
+                {step === 1 && (
+                    <form onSubmit={handleStep1Submit} className="p-6 space-y-6" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <div className="space-y-2">
+                            <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Course Title *</label>
+                            <input name="title" required value={courseData.title} onChange={handleDataChange} placeholder="e.g. Master React in 30 Days" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
                         </div>
-
-                        <div>
-                            <FieldLabel required>Description</FieldLabel>
-                            <textarea name="description" placeholder="Tell students what they will learn..."
-                                value={formData.description} onChange={handleChange} required rows={4}
-                                style={{ ...cx.input(), width: '100%', padding: '10px 12px', resize: 'none' }}
-                                onFocus={e => Object.assign(e.target.style, cx.inputFocus)}
-                                onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
-                            />
-                        </div>
-
+                        
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <FieldLabel required>Category</FieldLabel>
-                                <StyledSelect id="category" name="category" value={formData.category} onChange={handleChange} required>
-                                    <option value="">Select a category</option>
+                            <div className="space-y-2">
+                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Category *</label>
+                                <select name="category" required value={courseData.category} onChange={handleDataChange} style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+                                    <option value="" disabled>Select a category</option>
                                     {categories.map(cat => <option key={cat._id} value={cat._id}>{cat.name}</option>)}
-                                </StyledSelect>
+                                </select>
                             </div>
-                            <div>
-                                <FieldLabel>Difficulty Level</FieldLabel>
-                                <StyledSelect id="level" name="level" value={formData.level} onChange={handleChange}>
+                            <div className="space-y-2">
+                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Price (₹) *</label>
+                                <input name="price" type="number" min="0" required value={courseData.price} onChange={handleDataChange} placeholder="0.00" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Course Summary *</label>
+                            <textarea name="description" required rows={4} value={courseData.description} onChange={handleDataChange} placeholder="Provide a brief summary for your course..." style={{ ...baseInputStyle, resize: 'vertical', minHeight: '100px' }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                        </div>
+
+                        <ThumbnailUpload value={courseData.thumbnail} onChange={handleDataChange} />
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Difficulty Level</label>
+                                <select name="level" value={courseData.level} onChange={handleDataChange} style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler}>
                                     <option value="beginner">Beginner</option>
                                     <option value="intermediate">Intermediate</option>
                                     <option value="advanced">Advanced</option>
-                                </StyledSelect>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Language</label>
+                                <input name="language" value={courseData.language} onChange={handleDataChange} placeholder="English" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                            </div>
+                            <div className="space-y-2">
+                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Duration (mins)</label>
+                                <input name="duration" type="number" min="0" value={courseData.duration} onChange={handleDataChange} placeholder="0" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
                             </div>
                         </div>
 
-                        <AudienceSelector
-                            value={formData.audience}
-                            onChange={(audience) => setFormData(prev => ({ ...prev, audience }))}
-                            availableBatches={[]} availableStudents={[]}
-                            allowGlobal={Boolean(!institute?._id || institute?.features?.allowGlobalPublishingByInstituteTutors)}
-                            instituteId={institute?._id || null}
-                        />
-                    </div>
-
-                    {/* Pricing & Media */}
-                    <div className="space-y-4">
-                        <SectionHeading>Pricing & Media</SectionHeading>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {[
-                                { name: 'price',     label: 'Price (₹)',      required: true,  type: 'number', placeholder: '999',                             min: '0' },
-                                { name: 'thumbnail', label: 'Thumbnail URL',  required: false, type: 'text',   placeholder: 'https://example.com/image.jpg' },
-                                { name: 'duration',  label: 'Duration (mins)', required: false, type: 'number', placeholder: '120' },
-                                { name: 'language',  label: 'Language',       required: false, type: 'text',   placeholder: 'English' },
-                            ].map(field => (
-                                <div key={field.name}>
-                                    <FieldLabel required={field.required}>{field.label}</FieldLabel>
-                                    <input name={field.name} type={field.type} placeholder={field.placeholder}
-                                        min={field.min} required={field.required}
-                                        value={formData[field.name]} onChange={handleChange}
-                                        style={inputSt}
-                                        onFocus={e => Object.assign(e.target.style, cx.inputFocus)}
-                                        onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
-                                    />
-                                    {field.name === 'thumbnail' && (
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.textMuted, marginTop: 4 }}>
-                                            Paste an image URL for now.
-                                        </p>
-                                    )}
-                                </div>
-                            ))}
+                        <div className="pt-6 border-t" style={{ borderColor: C.cardBorder }}>
+                            <ListFieldSection title="What Students Will Learn" items={courseData.whatYouWillLearn} onAdd={learnList.add} onRemove={learnList.remove} onChange={learnList.onChange} placeholder="Learning outcome" />
                         </div>
-                    </div>
 
-                    {/* What students will learn */}
-                    <div className="space-y-3">
-                        <SectionHeading>What Students Will Learn</SectionHeading>
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                            Add key learning outcomes shown on the course landing page.
-                        </p>
-                        {formData.whatYouWillLearn.map((item, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                                <input value={item} placeholder={`Learning outcome ${idx + 1}`}
-                                    onChange={e => learn.onChange(idx, e.target.value)}
-                                    style={{ ...inputSt, height: 36, fontSize: T.size.sm }}
-                                    onFocus={e => Object.assign(e.target.style, cx.inputFocus)}
-                                    onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
-                                />
-                                {formData.whatYouWillLearn.length > 1 && (
-                                    <button type="button" onClick={() => learn.remove(idx)}
-                                        className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:opacity-80"
-                                        style={{ backgroundColor: C.dangerBg, color: C.danger }}>
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                )}
-                            </div>
-                        ))}
-                        <button type="button" onClick={learn.add}
-                            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm border-2 border-dashed transition-all hover:opacity-80 w-full"
-                            style={{ borderColor: FX.primary40, color: C.btnPrimary, backgroundColor: FX.primary10, fontFamily: T.fontFamily, fontWeight: T.weight.bold }}>
-                            <Plus className="w-4 h-4" /> Add Learning Outcome
-                        </button>
-                    </div>
+                        <div className="pt-6 border-t" style={{ borderColor: C.cardBorder }}>
+                            <ListFieldSection title="Prerequisites & Requirements" items={courseData.requirements} onAdd={reqList.add} onRemove={reqList.remove} onChange={reqList.onChange} placeholder="Requirement" />
+                        </div>
 
-                    {/* Requirements */}
-                    <div className="space-y-3">
-                        <SectionHeading>Prerequisites & Requirements</SectionHeading>
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                            What should students know before enrolling?
-                        </p>
-                        {formData.requirements.map((item, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                                <input value={item} placeholder={`Requirement ${idx + 1}`}
-                                    onChange={e => req.onChange(idx, e.target.value)}
-                                    style={{ ...inputSt, height: 36, fontSize: T.size.sm }}
-                                    onFocus={e => Object.assign(e.target.style, cx.inputFocus)}
-                                    onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
-                                />
-                                {formData.requirements.length > 1 && (
-                                    <button type="button" onClick={() => req.remove(idx)}
-                                        className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:opacity-80"
-                                        style={{ backgroundColor: C.dangerBg, color: C.danger }}>
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                )}
-                            </div>
-                        ))}
-                        <button type="button" onClick={req.add}
-                            className="flex items-center gap-1.5 justify-center px-3 py-2 rounded-xl text-sm border-2 border-dashed transition-all hover:opacity-80 w-full"
-                            style={{ borderColor: FX.primary40, color: C.btnPrimary, backgroundColor: FX.primary10, fontFamily: T.fontFamily, fontWeight: T.weight.bold }}>
-                            <Plus className="w-4 h-4" /> Add Requirement
-                        </button>
-                    </div>
-
-                    {/* Submit */}
-                    <div className="pt-2 flex justify-end gap-3" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
-                        <Link href="/tutor/courses">
-                            <button type="button"
-                                className="px-5 py-2.5 rounded-xl text-sm transition-all hover:opacity-80"
-                                style={cx.btnSecondary()}>
-                                Cancel
+                        <div className="flex justify-end pt-4">
+                            <button type="submit" disabled={loading} className="flex items-center justify-center gap-2 h-11 px-8 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md"
+                                style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                {loading ? <Loader2 size={16} className="animate-spin" /> : <>Save & Next <ChevronRight size={16} /></>}
                             </button>
-                        </Link>
-                        <button type="submit" disabled={loading}
-                            className="min-w-[140px] px-5 py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
-                            style={{ backgroundColor: C.btnPrimary, color: C.surfaceWhite, fontFamily: T.fontFamily, fontWeight: T.weight.bold, boxShadow: S.btn }}>
-                            {loading
-                                ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</>
-                                : <><Save className="w-4 h-4" /> Create Course</>}
-                        </button>
+                        </div>
+                    </form>
+                )}
+
+                {/* ═════════════════════════════════════════════════════════════════
+                    STEP 2: CURRICULUM
+                ══════════════════════════════════════════════════════════════════ */}
+                {step === 2 && (
+                    <div className="space-y-6">
+                        <div className="p-6 flex items-center justify-between" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                            <div>
+                                <h2 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 4px 0' }}>Build Curriculum</h2>
+                                <p style={{ fontSize: T.size.sm, color: C.textMuted, margin: 0 }}>Organize your course into modules and lessons.</p>
+                            </div>
+                            <button onClick={() => setModals({ ...modals, module: true })} className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-sm"
+                                style={{ backgroundColor: C.btnPrimary, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                <Plus size={16} /> Add Module
+                            </button>
+                        </div>
+
+                        {modules.length === 0 ? (
+                            <div className="text-center py-16" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px dashed ${C.cardBorder}` }}>
+                                <BookOpen size={32} color={C.textMuted} style={{ opacity: 0.3, marginBottom: '12px' }} />
+                                <p style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>No Modules Yet</p>
+                                <p style={{ fontSize: T.size.sm, color: C.textMuted, margin: 0 }}>Start by adding your first module.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {modules.map((mod, idx) => {
+                                    const modLessons = lessons.filter(l => l.moduleId === mod._id);
+                                    return (
+                                        <div key={mod._id} className="overflow-hidden" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                                            <div className="p-4 flex items-center justify-between" style={{ backgroundColor: innerBox, borderBottom: `1px solid ${C.cardBorder}` }}>
+                                                <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
+                                                    Module {idx + 1}: {mod.title}
+                                                </h3>
+                                                <button onClick={() => { setActiveModuleId(mod._id); setModals({ ...modals, lesson: true }); }} className="flex items-center justify-center gap-1.5 h-8 px-3 cursor-pointer border-none transition-opacity hover:opacity-80 shadow-sm"
+                                                    style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, borderRadius: R.md, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                                    <Plus size={14} /> Add Lesson
+                                                </button>
+                                            </div>
+                                            <div className="p-4 space-y-2">
+                                                {modLessons.length === 0 ? (
+                                                    <p style={{ fontSize: T.size.xs, color: C.textMuted, margin: 0, fontStyle: 'italic' }}>No lessons in this module.</p>
+                                                ) : (
+                                                    modLessons.map((les, lIdx) => (
+                                                        <div key={les._id} className="flex items-center gap-3 p-3" style={{ backgroundColor: innerBox, borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                                                            <Video size={16} color={C.btnPrimary} />
+                                                            <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>{lIdx + 1}. {les.title}</span>
+                                                            <span style={{ marginLeft: 'auto', fontSize: '10px', backgroundColor: C.surfaceWhite, padding: '2px 8px', borderRadius: R.full, color: C.textMuted, fontWeight: T.weight.bold }}>{les.type}</span>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        <div className="flex justify-between pt-4">
+                            <button onClick={() => setStep(1)} className="flex items-center justify-center gap-2 h-11 px-6 cursor-pointer border-none bg-transparent transition-opacity hover:opacity-70"
+                                style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                <ChevronLeft size={16} /> Back
+                            </button>
+                            <button onClick={() => setStep(3)} className="flex items-center justify-center gap-2 h-11 px-8 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-md"
+                                style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                Next: Assignments <ChevronRight size={16} />
+                            </button>
+                        </div>
                     </div>
-                </form>
+                )}
+
+                {/* ═════════════════════════════════════════════════════════════════
+                    STEP 3: ASSIGNMENTS
+                ══════════════════════════════════════════════════════════════════ */}
+                {step === 3 && (
+                    <div className="space-y-6">
+                        <div className="p-6 flex items-center justify-between" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                            <div>
+                                <h2 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 4px 0' }}>Course Assignments</h2>
+                                <p style={{ fontSize: T.size.sm, color: C.textMuted, margin: 0 }}>Add assignments to test student knowledge.</p>
+                            </div>
+                            <button onClick={() => setModals({ ...modals, assignment: true })} className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-sm"
+                                style={{ backgroundColor: C.btnPrimary, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                <Plus size={16} /> Add Assignment
+                            </button>
+                        </div>
+
+                        {assignments.length === 0 ? (
+                            <div className="text-center py-16" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px dashed ${C.cardBorder}` }}>
+                                <FileText size={32} color={C.textMuted} style={{ opacity: 0.3, marginBottom: '12px' }} />
+                                <p style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>No Assignments Yet</p>
+                                <p style={{ fontSize: T.size.sm, color: C.textMuted, margin: 0 }}>Optional: Add assignments or skip to publish.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {assignments.map((assign, idx) => (
+                                    <div key={assign._id} className="p-4 flex items-center gap-4" style={{ backgroundColor: outerCard, borderRadius: R.xl, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                                        <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ backgroundColor: innerBox, borderRadius: R.md }}>
+                                            <FileText size={18} color={C.btnPrimary} />
+                                        </div>
+                                        <div>
+                                            <p style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 2px 0' }}>{assign.title}</p>
+                                            <p style={{ fontSize: T.size.xs, color: C.textMuted, margin: 0 }}>{assign.totalMarks} Points</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="flex justify-between pt-4">
+                            <button onClick={() => setStep(2)} className="flex items-center justify-center gap-2 h-11 px-6 cursor-pointer border-none bg-transparent transition-opacity hover:opacity-70"
+                                style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                <ChevronLeft size={16} /> Back
+                            </button>
+                            <button onClick={() => setStep(4)} className="flex items-center justify-center gap-2 h-11 px-8 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-md"
+                                style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                Next: Publish <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ═════════════════════════════════════════════════════════════════
+                    STEP 4: PUBLISH
+                ══════════════════════════════════════════════════════════════════ */}
+                {step === 4 && (
+                    <div className="space-y-6">
+                        <div className="p-10 text-center" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                            <div className="w-20 h-20 mx-auto flex items-center justify-center mb-6" style={{ backgroundColor: C.successBg, borderRadius: R.full, border: `4px solid ${C.surfaceWhite}`, boxShadow: S.card }}>
+                                <Rocket size={32} color={C.success} />
+                            </div>
+                            <h2 style={{ fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, margin: '0 0 8px 0' }}>You're almost there!</h2>
+                            <p style={{ fontSize: T.size.sm, color: C.textMuted, margin: '0 auto 24px', maxWidth: 400, lineHeight: 1.5 }}>
+                                Your course draft is saved. Review your curriculum and publish it when you're ready to go live.
+                            </p>
+                            
+                            <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto mb-8">
+                                <div className="p-4" style={{ backgroundColor: innerBox, borderRadius: R.xl }}>
+                                    <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 4px 0' }}>Modules</p>
+                                    <p style={{ fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>{modules.length}</p>
+                                </div>
+                                <div className="p-4" style={{ backgroundColor: innerBox, borderRadius: R.xl }}>
+                                    <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 4px 0' }}>Lessons</p>
+                                    <p style={{ fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>{lessons.length}</p>
+                                </div>
+                                <div className="p-4" style={{ backgroundColor: innerBox, borderRadius: R.xl }}>
+                                    <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 4px 0' }}>Assignments</p>
+                                    <p style={{ fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>{assignments.length}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-center gap-4">
+                                <button onClick={() => setStep(3)} className="flex items-center justify-center gap-2 h-12 px-8 cursor-pointer border-none bg-transparent transition-opacity hover:opacity-70"
+                                    style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                    <ChevronLeft size={16} /> Go Back
+                                </button>
+                                <button onClick={handlePublish} disabled={loading} className="flex items-center justify-center gap-2 h-12 px-10 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-lg"
+                                    style={{ backgroundColor: C.success, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.base, fontWeight: T.weight.black, fontFamily: T.fontFamily }}>
+                                    {loading ? <Loader2 size={18} className="animate-spin" /> : <Rocket size={18} />} Publish Course
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
+
+            {/* ═════════════════════════════════════════════════════════════════
+                MODALS FOR WIZARD
+            ══════════════════════════════════════════════════════════════════ */}
+            
+            {/* Add Module Modal */}
+            {modals.module && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(21, 22, 86, 0.4)', backdropFilter: 'blur(4px)' }}>
+                    <div className="w-full max-w-md p-6" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.cardHover }}>
+                        <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 16px 0' }}>Add Module</h3>
+                        <form onSubmit={handleAddModule} className="space-y-4">
+                            <input type="text" value={moduleTitle} onChange={e => setModuleTitle(e.target.value)} required placeholder="Module Title (e.g. Basics of React)" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} autoFocus />
+                            <div className="flex justify-end gap-3 pt-2">
+                                <button type="button" onClick={() => setModals({ ...modals, module: false })} className="px-5 py-2 cursor-pointer bg-transparent border-none hover:opacity-70" style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>Cancel</button>
+                                <button type="submit" disabled={loading || !moduleTitle} className="px-6 py-2 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md" style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                    {loading ? <Loader2 size={16} className="animate-spin" /> : 'Save'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Lesson Modal */}
+            {modals.lesson && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(21, 22, 86, 0.4)', backdropFilter: 'blur(4px)' }}>
+                    <div className="w-full max-w-lg p-6" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.cardHover }}>
+                        <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 16px 0' }}>Add Lesson</h3>
+                        <form onSubmit={handleAddLesson} className="space-y-4">
+                            <input type="text" value={lessonForm.title} onChange={e => setLessonForm({ ...lessonForm, title: e.target.value })} required placeholder="Lesson Title" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} autoFocus />
+                            <select value={lessonForm.type} onChange={e => setLessonForm({ ...lessonForm, type: e.target.value })} style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+                                <option value="video">Video</option>
+                                <option value="document">Document</option>
+                            </select>
+                            {lessonForm.type === 'video' && (
+                                <input type="url" value={lessonForm.videoUrl} onChange={e => setLessonForm({ ...lessonForm, videoUrl: e.target.value })} required placeholder="Video URL (YouTube/Vimeo)" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                            )}
+                            <div className="flex justify-end gap-3 pt-2">
+                                <button type="button" onClick={() => setModals({ ...modals, lesson: false })} className="px-5 py-2 cursor-pointer bg-transparent border-none hover:opacity-70" style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>Cancel</button>
+                                <button type="submit" disabled={loading || !lessonForm.title} className="px-6 py-2 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md" style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                    {loading ? <Loader2 size={16} className="animate-spin" /> : 'Save'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Assignment Modal */}
+            {modals.assignment && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(21, 22, 86, 0.4)', backdropFilter: 'blur(4px)' }}>
+                    <div className="w-full max-w-lg p-6" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.cardHover }}>
+                        <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 16px 0' }}>Add Assignment</h3>
+                        <form onSubmit={handleAddAssignment} className="space-y-4">
+                            <input type="text" value={assignmentForm.title} onChange={e => setAssignmentForm({ ...assignmentForm, title: e.target.value })} required placeholder="Assignment Title" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} autoFocus />
+                            <textarea rows={3} value={assignmentForm.description} onChange={e => setAssignmentForm({ ...assignmentForm, description: e.target.value })} placeholder="Brief description..." style={{ ...baseInputStyle, resize: 'none' }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                            <input type="number" value={assignmentForm.totalMarks} onChange={e => setAssignmentForm({ ...assignmentForm, totalMarks: e.target.value })} required placeholder="Total Marks" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                            <div className="flex justify-end gap-3 pt-2">
+                                <button type="button" onClick={() => setModals({ ...modals, assignment: false })} className="px-5 py-2 cursor-pointer bg-transparent border-none hover:opacity-70" style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>Cancel</button>
+                                <button type="submit" disabled={loading || !assignmentForm.title} className="px-6 py-2 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md" style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                    {loading ? <Loader2 size={16} className="animate-spin" /> : 'Save'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

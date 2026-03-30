@@ -6,7 +6,8 @@ import {
     Check, BookOpen, Brain, Clock, Users, Zap,
     Lightbulb, ChevronRight, Trash2, RefreshCw,
     BarChart2, Share2, FileText, Play, ClipboardList,
-    Star, Award, Target, GraduationCap, Globe
+    Star, Award, Target, GraduationCap, Globe,
+    ExternalLink
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
@@ -14,63 +15,63 @@ import { C, T, S, R } from '@/constants/tutorTokens';
 
 // ─── Purple palette ───────────────────────────────────────────────────────────
 const P = {
-    primary:  '#7C3AED',
-    light:    '#8B5CF6',
-    soft:     'rgba(124,58,237,0.08)',
-    border:   'rgba(124,58,237,0.14)',
+    primary: '#7C3AED',
+    light: '#8B5CF6',
+    soft: 'rgba(124,58,237,0.08)',
+    border: 'rgba(124,58,237,0.14)',
     gradient: 'linear-gradient(135deg,#5B21B6 0%,#7C3AED 60%,#8B5CF6 100%)',
-    pageBg:   '#F5F3FF',
-    green:    '#10B981',
-    orange:   '#F97316',
-    yellow:   '#F59E0B',
-    red:      '#EF4444',
-    teal:     '#0891B2',
-    indigo:   '#6366F1',
+    pageBg: '#F5F3FF',
+    green: '#10B981',
+    orange: '#F97316',
+    yellow: '#F59E0B',
+    red: '#EF4444',
+    teal: '#0891B2',
+    indigo: '#6366F1',
 };
 
 const SUBJECTS = [
-    { label: 'Math',      icon: '📊', color: P.indigo  },
-    { label: 'Physics',   icon: '⚛️',  color: P.teal   },
-    { label: 'Biology',   icon: '🌿',  color: P.green  },
-    { label: 'Chemistry', icon: '🧪',  color: P.orange },
-    { label: 'History',   icon: '📚',  color: P.yellow },
-    { label: 'Geography', icon: '🌍',  color: P.primary},
-    { label: 'English',   icon: '✍️',  color: P.red    },
+    { label: 'Math', icon: '📊', color: P.indigo },
+    { label: 'Physics', icon: '⚛️', color: P.teal },
+    { label: 'Biology', icon: '🌿', color: P.green },
+    { label: 'Chemistry', icon: '🧪', color: P.orange },
+    { label: 'History', icon: '📚', color: P.yellow },
+    { label: 'Geography', icon: '🌍', color: P.primary },
+    { label: 'English', icon: '✍️', color: P.red },
 ];
 
 const GRADE_LEVELS = ['6th Grade', '7th Grade', '8th Grade', '9th Grade', '10th Grade', '11th Grade', '12th Grade', 'College'];
 
 const DIFFICULTY_OPTIONS = [
-    { value: 'easy',     label: '🌱 Easy (Beginner-friendly)'              },
-    { value: 'balanced', label: '⚖️ Balanced (Mixed Difficulty)'            },
-    { value: 'focused',  label: '🎯 Focused (Deep dive into specific topics)'},
-    { value: 'advanced', label: '🚀 Advanced (Expert level)'                },
+    { value: 'easy', label: '🌱 Easy (Beginner-friendly)' },
+    { value: 'balanced', label: '⚖️ Balanced (Mixed Difficulty)' },
+    { value: 'focused', label: '🎯 Focused (Deep dive into specific topics)' },
+    { value: 'advanced', label: '🚀 Advanced (Expert level)' },
 ];
 
 const SECTION_OPTIONS = [
-    { key: 'visualLessons',        label: 'Visual Lessons',         icon: Play         },
-    { key: 'practiceQuizzes',      label: 'Practice Quizzes',       icon: ClipboardList},
-    { key: 'flashcards',           label: 'Flashcards',             icon: Star         },
-    { key: 'assignments',          label: 'Assignments',            icon: FileText     },
-    { key: 'conceptSummaries',     label: 'Concept Summaries',      icon: BookOpen     },
-    { key: 'formativeAssessments', label: 'Formative Assessments',  icon: Award        },
-    { key: 'includeAIChatbot',     label: 'Include AI Chatbot',     icon: Brain        },
+    { key: 'visualLessons', label: 'Visual Lessons', icon: Play },
+    { key: 'practiceQuizzes', label: 'Practice Quizzes', icon: ClipboardList },
+    { key: 'flashcards', label: 'Flashcards', icon: Star },
+    { key: 'assignments', label: 'Assignments', icon: FileText },
+    { key: 'conceptSummaries', label: 'Concept Summaries', icon: BookOpen },
+    { key: 'formativeAssessments', label: 'Formative Assessments', icon: Award },
+    { key: 'includeAIChatbot', label: 'Include AI Chatbot', icon: Brain },
 ];
 
 const QUICK_TEMPLATES = [
-    { title: 'Algebra Fundamentals',     grade: 'Grade 9', subject: 'Math',         color: P.orange  },
-    { title: 'Introduction To Biology',  grade: 'Grade 7', subject: 'Science',      color: P.green   },
-    { title: 'Writing Composition',      grade: 'Grade 8', subject: 'Language Arts', color: P.indigo  },
-    { title: 'World War II History',     grade: 'Advanced', subject: 'History',      color: P.yellow  },
+    { title: 'Algebra Fundamentals', grade: 'Grade 9', subject: 'Math', color: P.orange },
+    { title: 'Introduction To Biology', grade: 'Grade 7', subject: 'Science', color: P.green },
+    { title: 'Writing Composition', grade: 'Grade 8', subject: 'Language Arts', color: P.indigo },
+    { title: 'World War II History', grade: 'Advanced', subject: 'History', color: P.yellow },
 ];
 
 const LESSON_TYPE_CFG = {
-    video:      { icon: Play,         color: P.primary },
-    reading:    { icon: BookOpen,     color: P.teal    },
-    quiz:       { icon: ClipboardList,color: P.orange  },
-    assignment: { icon: FileText,     color: P.indigo  },
-    flashcard:  { icon: Star,         color: P.yellow  },
-    summary:    { icon: Target,       color: P.green   },
+    video: { icon: Play, color: P.primary },
+    reading: { icon: BookOpen, color: P.teal },
+    quiz: { icon: ClipboardList, color: P.orange },
+    assignment: { icon: FileText, color: P.indigo },
+    flashcard: { icon: Star, color: P.yellow },
+    summary: { icon: Target, color: P.green },
 };
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -98,8 +99,8 @@ function Checkbox({ checked, onChange, label, icon: Icon, color }) {
 // ─── Recent Course Card ───────────────────────────────────────────────────────
 function RecentCourseCard({ course, onDelete }) {
     const colors = [P.orange, P.green, P.teal, P.indigo, P.yellow, P.red, P.primary];
-    const color  = colors[course.title.charCodeAt(0) % colors.length];
-    const icon   = ['📊','⚛️','🌿','🧪','📚','✍️','🌍'][course.title.charCodeAt(0) % 7];
+    const color = colors[course.title.charCodeAt(0) % colors.length];
+    const icon = ['📊', '⚛️', '🌿', '🧪', '📚', '✍️', '🌍'][course.title.charCodeAt(0) % 7];
 
     return (
         <div className="flex items-center gap-3 py-2.5 px-1 transition-all rounded-xl hover:opacity-80"
@@ -130,8 +131,8 @@ function ModuleCard({ module, index, isActive, onClick }) {
             className="p-4 rounded-2xl cursor-pointer transition-all hover:-translate-y-0.5"
             style={{
                 backgroundColor: isActive ? P.soft : '#fff',
-                border:          isActive ? `1.5px solid ${P.primary}` : `1px solid ${P.border}`,
-                boxShadow:       isActive ? `0 0 0 3px ${P.primary}15` : S.card,
+                border: isActive ? `1.5px solid ${P.primary}` : `1px solid ${P.border}`,
+                boxShadow: isActive ? `0 0 0 3px ${P.primary}15` : S.card,
             }}>
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -155,7 +156,7 @@ function ModuleCard({ module, index, isActive, onClick }) {
                     {module.lessons?.length || 0} lessons
                 </span>
                 {(module.lessons || []).slice(0, 3).map((l, i) => {
-                    const cfg  = LESSON_TYPE_CFG[l.type] || LESSON_TYPE_CFG.reading;
+                    const cfg = LESSON_TYPE_CFG[l.type] || LESSON_TYPE_CFG.reading;
                     const Icon = cfg.icon;
                     return (
                         <div key={i} className="w-5 h-5 rounded flex items-center justify-center"
@@ -172,11 +173,11 @@ function ModuleCard({ module, index, isActive, onClick }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CourseBuilderPage() {
     // Form state
-    const [topic, setTopic]           = useState('');
-    const [subject, setSubject]       = useState('');
+    const [topic, setTopic] = useState('');
+    const [subject, setSubject] = useState('');
     const [gradeLevel, setGradeLevel] = useState('8th Grade');
     const [difficulty, setDifficulty] = useState('balanced');
-    const [sections, setSections]     = useState({
+    const [sections, setSections] = useState({
         visualLessons: true, practiceQuizzes: true, flashcards: true,
         assignments: true, conceptSummaries: true, formativeAssessments: true, includeAIChatbot: false,
     });
@@ -184,13 +185,16 @@ export default function CourseBuilderPage() {
     // Data
     const [loadingRecent, setLoadingRecent] = useState(true);
     const [recentCourses, setRecentCourses] = useState([]);
-    const [stats, setStats]                 = useState(null);
+    const [stats, setStats] = useState(null);
 
     // Generation
     const [generating, setGenerating] = useState(false);
-    const [course, setCourse]         = useState(null);
+    const [course, setCourse] = useState(null);
     const [activeModule, setActiveModule] = useState(null);
-    const [activeTab, setActiveTab]   = useState('modules'); // modules | flashcards | quiz
+    const [activeTab, setActiveTab] = useState('modules'); // modules | flashcards | quiz
+
+    const [categories, setCategories] = useState([]);
+    const [selectedCategory, setSelectedCategory] = useState('');
 
     // ── Fetch recent ─────────────────────────────────────────────────
     const fetchRecent = useCallback(async () => {
@@ -205,19 +209,28 @@ export default function CourseBuilderPage() {
         finally { setLoadingRecent(false); }
     }, []);
 
-    useEffect(() => { fetchRecent(); }, [fetchRecent]);
+    useEffect(() => {
+        const init = async () => {
+            await fetchRecent();
+            try {
+                const res = await api.get('/categories');
+                if (res.data?.success) setCategories(res.data.categories || res.data.data || []);
+            } catch { /* silent */ }
+        };
+        init();
+    }, [fetchRecent]);
 
     // ── Generate ──────────────────────────────────────────────────────
     const handleGenerate = async () => {
         if (!topic.trim()) return toast.error('Please enter a course topic');
-
+        if (!selectedCategory) return toast.error('Please select a category');
         setGenerating(true);
         setCourse(null);
         setActiveModule(null);
 
         try {
             const res = await api.post('/ai/course-builder/generate', {
-                topic, subject, gradeLevel, difficulty, sections,
+                topic, subject, gradeLevel, difficulty, sections, categoryId: selectedCategory, price: 0
             });
 
             if (res.data?.success) {
@@ -318,11 +331,11 @@ export default function CourseBuilderPage() {
                                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all hover:opacity-80"
                                             style={{
                                                 backgroundColor: subject === s.label ? s.color : s.color + '15',
-                                                border:          `1px solid ${s.color}30`,
-                                                fontFamily:      T.fontFamily,
-                                                fontSize:        T.size.xs,
-                                                fontWeight:      T.weight.semibold,
-                                                color:           subject === s.label ? '#fff' : s.color,
+                                                border: `1px solid ${s.color}30`,
+                                                fontFamily: T.fontFamily,
+                                                fontSize: T.size.xs,
+                                                fontWeight: T.weight.semibold,
+                                                color: subject === s.label ? '#fff' : s.color,
                                             }}>
                                             <span style={{ fontSize: 12 }}>{s.icon}</span>
                                             {s.label}
@@ -341,12 +354,12 @@ export default function CourseBuilderPage() {
                                         <button key={g} onClick={() => setGradeLevel(g)}
                                             className="px-3 py-1.5 rounded-xl transition-all"
                                             style={{
-                                                fontFamily:      T.fontFamily,
-                                                fontSize:        T.size.xs,
-                                                fontWeight:      T.weight.semibold,
-                                                color:           gradeLevel === g ? '#fff' : '#64748B',
+                                                fontFamily: T.fontFamily,
+                                                fontSize: T.size.xs,
+                                                fontWeight: T.weight.semibold,
+                                                color: gradeLevel === g ? '#fff' : '#64748B',
                                                 backgroundColor: gradeLevel === g ? P.primary : P.soft,
-                                                border:          `1px solid ${gradeLevel === g ? P.primary : P.border}`,
+                                                border: `1px solid ${gradeLevel === g ? P.primary : P.border}`,
                                             }}>
                                             {g}
                                         </button>
@@ -369,6 +382,26 @@ export default function CourseBuilderPage() {
                                     </select>
                                     <ChevronDown className="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#94A3B8' }} />
                                 </div>
+                            </div>
+                            {/* Category — required for DB save */}
+                            <div>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: '#1E293B', marginBottom: 8 }}>
+                                    Course Category <span style={{ color: '#EF4444' }}>*</span>
+                                </p>
+                                <div className="relative">
+                                    <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}
+                                        className="w-full appearance-none px-4 py-2.5 rounded-xl pr-8 outline-none"
+                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#334155', border: `1px solid ${P.border}`, backgroundColor: P.soft }}>
+                                        <option value="">Select a category…</option>
+                                        {categories.map(c => (
+                                            <option key={c._id} value={c._id}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#94A3B8' }} />
+                                </div>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: '#94A3B8', marginTop: 4 }}>
+                                    Required to publish the course
+                                </p>
                             </div>
 
                             {/* Learning Objectives */}
@@ -485,9 +518,9 @@ export default function CourseBuilderPage() {
                         </p>
                         <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#94A3B8' }}>Powered by Groq · usually 8–15s</p>
                         <div className="flex gap-1.5 mt-3">
-                            {[0,1,2].map(i => (
+                            {[0, 1, 2].map(i => (
                                 <span key={i} className="w-2 h-2 rounded-full"
-                                    style={{ backgroundColor: P.primary, animation: `cb-b 1.2s ease-in-out ${i*0.2}s infinite` }} />
+                                    style={{ backgroundColor: P.primary, animation: `cb-b 1.2s ease-in-out ${i * 0.2}s infinite` }} />
                             ))}
                             <style>{`@keyframes cb-b{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-5px);opacity:1}}`}</style>
                         </div>
@@ -513,9 +546,9 @@ export default function CourseBuilderPage() {
                                 </div>
                                 <div className="flex flex-col gap-2 flex-shrink-0 ml-4">
                                     {[
-                                        { icon: Clock,   value: course.estimatedDuration || '—', label: 'Duration' },
-                                        { icon: Users,   value: course.targetAudience    || '—', label: 'Audience' },
-                                        { icon: BookOpen,value: `${course.modules?.length || 0} Modules`, label: 'Modules' },
+                                        { icon: Clock, value: course.estimatedDuration || '—', label: 'Duration' },
+                                        { icon: Users, value: course.targetAudience || '—', label: 'Audience' },
+                                        { icon: BookOpen, value: `${course.modules?.length || 0} Modules`, label: 'Modules' },
                                     ].map(item => {
                                         const Icon = item.icon;
                                         return (
@@ -530,6 +563,12 @@ export default function CourseBuilderPage() {
                                     })}
                                 </div>
                             </div>
+                            <a href="/tutor/courses"
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold"
+                                style={{ backgroundColor: 'rgba(255,255,255,0.20)', color: '#fff' }}>
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                View in My Courses
+                            </a>
                         </div>
 
                         {/* Tabs */}
@@ -539,16 +578,16 @@ export default function CourseBuilderPage() {
                                 <button key={tab} onClick={() => setActiveTab(tab)}
                                     className="px-4 py-2 rounded-t-xl transition-all capitalize"
                                     style={{
-                                        fontFamily:      T.fontFamily,
-                                        fontSize:        T.size.xs,
-                                        fontWeight:      activeTab === tab ? T.weight.bold : T.weight.medium,
-                                        color:           activeTab === tab ? P.primary : '#64748B',
+                                        fontFamily: T.fontFamily,
+                                        fontSize: T.size.xs,
+                                        fontWeight: activeTab === tab ? T.weight.bold : T.weight.medium,
+                                        color: activeTab === tab ? P.primary : '#64748B',
                                         backgroundColor: activeTab === tab ? P.soft : 'transparent',
-                                        borderBottom:    activeTab === tab ? `2px solid ${P.primary}` : '2px solid transparent',
+                                        borderBottom: activeTab === tab ? `2px solid ${P.primary}` : '2px solid transparent',
                                     }}>
                                     {tab === 'modules' ? `📚 ${course.modules?.length || 0} Modules`
                                         : tab === 'flashcards' ? `⭐ ${course.flashcards?.length || 0} Flashcards`
-                                        : `📝 ${course.sampleQuiz?.length || 0} Quiz Questions`}
+                                            : `📝 ${course.sampleQuiz?.length || 0} Quiz Questions`}
                                 </button>
                             ))}
                         </div>
@@ -571,7 +610,7 @@ export default function CourseBuilderPage() {
                                             </p>
                                             <div className="space-y-2.5">
                                                 {(activeModule.lessons || []).map((lesson, i) => {
-                                                    const cfg  = LESSON_TYPE_CFG[lesson.type] || LESSON_TYPE_CFG.reading;
+                                                    const cfg = LESSON_TYPE_CFG[lesson.type] || LESSON_TYPE_CFG.reading;
                                                     const Icon = cfg.icon;
                                                     return (
                                                         <div key={i} className="flex items-start gap-3 p-3 rounded-xl"
@@ -658,7 +697,7 @@ export default function CourseBuilderPage() {
                                                         <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
                                                             style={{ backgroundColor: opt === q.correctAnswer ? P.green : '#E2E8F0' }}>
                                                             <span style={{ fontFamily: T.fontFamily, fontSize: '9px', fontWeight: T.weight.black, color: opt === q.correctAnswer ? '#fff' : '#94A3B8' }}>
-                                                                {['A','B','C','D'][j]}
+                                                                {['A', 'B', 'C', 'D'][j]}
                                                             </span>
                                                         </div>
                                                         <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: opt === q.correctAnswer ? P.green : '#475569', fontWeight: opt === q.correctAnswer ? T.weight.bold : T.weight.regular }}>

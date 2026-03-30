@@ -2,49 +2,46 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Loader2,
-  RefreshCw,
-  Search,
-  ClipboardCheck,
-  CircleAlert,
-  CheckCircle2,
-  XCircle,
-  Clock3,
-  UserRound,
-  FileText,
+  Loader2, RefreshCw, Search, ClipboardCheck, CircleAlert, CheckCircle2, XCircle, Clock3, UserRound, FileText, Check
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '@/lib/axios';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
-import { C, T, FX, S, pageStyle } from '@/constants/tutorTokens';
+import { C, T, S, R } from '@/constants/tutorTokens';
+
+// Focus Handlers
+const onFocusHandler = e => {
+    e.target.style.borderColor = C.btnPrimary;
+    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)';
+};
+const onBlurHandler = e => {
+    e.target.style.borderColor = 'transparent';
+    e.target.style.boxShadow = 'none';
+};
+
+const baseInputStyle = {
+    backgroundColor: '#E3DFF8',
+    border: `1.5px solid transparent`,
+    borderRadius: R.xl,
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.sm,
+    fontWeight: T.weight.medium,
+    outline: 'none',
+    width: '100%',
+    padding: '10px 16px',
+    transition: 'all 0.2s ease',
+};
 
 const statusMeta = {
-  pending: {
-    label: 'Pending',
-    bg: C.warningBg,
-    border: C.warningBorder,
-    color: C.warning,
-    icon: Clock3,
-  },
-  approved: {
-    label: 'Approved',
-    bg: C.successBg,
-    border: C.successBorder,
-    color: C.success,
-    icon: CheckCircle2,
-  },
-  rejected: {
-    label: 'Rejected',
-    bg: C.dangerBg,
-    border: C.dangerBorder,
-    color: C.danger,
-    icon: XCircle,
-  },
+  pending: { label: 'Pending', bg: C.warningBg, border: C.warningBorder, color: C.warning, icon: Clock3 },
+  approved: { label: 'Approved', bg: C.successBg, border: C.successBorder, color: C.success, icon: CheckCircle2 },
+  rejected: { label: 'Rejected', bg: C.dangerBg, border: C.dangerBorder, color: C.danger, icon: XCircle },
 };
 
 function StatCard({ title, value, icon: Icon, tone = 'default' }) {
   const toneMap = {
-    default: { bg: FX.primary08, color: C.btnPrimary, border: C.cardBorder },
+    default: { bg: '#E3DFF8', color: C.btnPrimary, border: C.cardBorder },
     pending: { bg: C.warningBg, color: C.warning, border: C.warningBorder },
     approved: { bg: C.successBg, color: C.success, border: C.successBorder },
     rejected: { bg: C.dangerBg, color: C.danger, border: C.dangerBorder },
@@ -52,14 +49,14 @@ function StatCard({ title, value, icon: Icon, tone = 'default' }) {
   const picked = toneMap[tone] || toneMap.default;
 
   return (
-    <div className="rounded-2xl border p-4" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}>
-      <div className="flex items-center justify-between">
-        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, fontWeight: T.weight.bold }}>{title}</p>
-        <span className="w-8 h-8 rounded-xl flex items-center justify-center border" style={{ backgroundColor: picked.bg, borderColor: picked.border }}>
-          <Icon className="w-4 h-4" style={{ color: picked.color }} />
-        </span>
+    <div className="p-5 flex flex-col justify-between h-full transition-transform hover:-translate-y-0.5" style={{ backgroundColor: '#EAE8FA', border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], boxShadow: S.card, minHeight: '130px' }}>
+      <div className="flex items-center justify-between mb-4">
+        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{title}</p>
+        <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ backgroundColor: picked.bg, borderRadius: R.md }}>
+          <Icon size={20} color={picked.color} />
+        </div>
       </div>
-      <p style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, marginTop: 6 }}>
+      <p style={{ fontFamily: T.fontFamily, fontSize: T.size['3xl'], fontWeight: T.weight.black, color: C.heading, margin: 0, lineHeight: 1 }}>
         {value}
       </p>
     </div>
@@ -126,7 +123,7 @@ export default function TutorReevaluationRequestsPage() {
       setPagination(res.data.pagination || { total: 0, page: 1, pages: 1, limit: 20 });
     } catch (error) {
       console.error('Load re-evaluation requests error:', error);
-      toast.error(error.response?.data?.message || 'Failed to load requests');
+      toast.error(error?.response?.data?.message || 'Failed to load requests');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -175,7 +172,7 @@ export default function TutorReevaluationRequestsPage() {
       fetchRequests(false);
     } catch (error) {
       console.error('Review request error:', error);
-      toast.error(error.response?.data?.message || `Failed to ${actionLabel} request`);
+      toast.error(error?.response?.data?.message || `Failed to ${actionLabel} request`);
     } finally {
       setProcessingId(null);
     }
@@ -183,42 +180,38 @@ export default function TutorReevaluationRequestsPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
-        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted }}>
-          Loading re-evaluation queue...
-        </p>
+      <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
+        <Loader2 className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
+        <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading re-evaluation queue...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-5" style={pageStyle}>
-      <div className="rounded-2xl px-4 py-3.5 flex items-center justify-between gap-3" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: FX.primary08, border: `1px solid ${FX.primary25}` }}>
-            <ClipboardCheck className="w-4 h-4" style={{ color: C.btnPrimary }} />
+    <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 flex items-center justify-center shrink-0" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+            <ClipboardCheck size={24} color={C.btnPrimary} />
           </div>
           <div>
-            <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading }}>
-              Re-evaluation Requests
-            </h1>
-            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-              Review student score appeals and publish final decision
-            </p>
+            <h1 style={{ color: C.heading, fontSize: T.size.xl, fontWeight: T.weight.black, margin: '0 0 4px 0' }}>Re-evaluation Requests</h1>
+            <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.medium, margin: 0 }}>Review student score appeals and publish final decision</p>
           </div>
         </div>
         <button
           onClick={() => fetchRequests(false)}
           disabled={refreshing}
-          className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 border text-xs font-semibold disabled:opacity-60"
-          style={{ borderColor: C.cardBorder, color: C.btnPrimary, backgroundColor: FX.primary08 }}
+          className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-md w-full sm:w-auto"
+          style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}
         >
-          {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-          Refresh
+          {refreshing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} Refresh
         </button>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard title="Pending" value={summary.pending || 0} icon={Clock3} tone="pending" />
         <StatCard title="Approved" value={summary.approved || 0} icon={CheckCircle2} tone="approved" />
@@ -226,33 +219,36 @@ export default function TutorReevaluationRequestsPage() {
         <StatCard title="Total Requests" value={summary.total || 0} icon={FileText} />
       </div>
 
-      <div className="rounded-2xl border p-3 grid grid-cols-1 lg:grid-cols-4 gap-3" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}>
-        <label className="relative lg:col-span-3">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.textMuted }} />
+      {/* Filters */}
+      <div className="p-4 flex flex-col md:flex-row gap-4 items-center justify-between" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+        <div className="relative w-full md:flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2" size={16} color={C.textMuted} />
           <input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search by student name, email, or exam title..."
-            className="w-full h-10 rounded-xl border pl-9 pr-3 text-sm"
-            style={{ borderColor: C.cardBorder, fontFamily: T.fontFamily, color: C.heading, backgroundColor: C.surfaceWhite }}
+            style={{ ...baseInputStyle, paddingLeft: '36px', backgroundColor: C.surfaceWhite }}
+            onFocus={onFocusHandler} onBlur={onBlurHandler}
           />
-        </label>
-
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-10 rounded-xl border px-3 text-sm"
-          style={{ borderColor: C.cardBorder, fontFamily: T.fontFamily, color: C.heading, backgroundColor: C.surfaceWhite }}
-        >
-          <option value="all">All Status</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-        </select>
+        </div>
+        <div className="w-full md:w-auto shrink-0">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{ ...baseInputStyle, backgroundColor: C.surfaceWhite, width: '100%', minWidth: '180px' }}
+              onFocus={onFocusHandler} onBlur={onBlurHandler}
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+        </div>
       </div>
 
+      {/* List */}
       {requests.length > 0 ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {requests.map((item) => {
             const status = statusMeta[item.status] || statusMeta.pending;
             const StatusIcon = status.icon;
@@ -265,125 +261,73 @@ export default function TutorReevaluationRequestsPage() {
             const draft = drafts[item._id] || {};
 
             return (
-              <div key={item._id} className="rounded-2xl border p-4" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}>
-                <div className="flex flex-wrap items-start justify-between gap-3">
+              <div key={item._id} className="p-6 transition-all" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
                   <div>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
-                      {examTitle}
-                    </p>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="inline-flex items-center gap-1" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                        <UserRound className="w-3.5 h-3.5" />
-                        {studentName}
-                      </span>
-                      <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                        {studentEmail}
-                      </span>
+                    <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 6px 0' }}>{examTitle}</h3>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted }}>
+                        <UserRound size={16} /> {studentName}
+                      </div>
+                      <span style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted }}>{studentEmail}</span>
                     </div>
                   </div>
-
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-wide" style={{ backgroundColor: status.bg, borderColor: status.border, color: status.color }}>
-                    <StatusIcon className="w-3.5 h-3.5" />
-                    {status.label}
+                  <span className="inline-flex items-center gap-1.5 shrink-0" style={{ fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', padding: '4px 10px', borderRadius: R.md, backgroundColor: status.bg, color: status.color, border: `1px solid ${status.border}` }}>
+                    <StatusIcon size={14} /> {status.label}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-3">
-                  <div className="rounded-xl border p-2.5" style={{ borderColor: C.cardBorder, backgroundColor: FX.primary04 }}>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wide }}>
-                      Original Score
-                    </p>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.bold }}>
-                      {currentScore} / {totalMarks}
-                    </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="p-4" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                    <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 4px 0' }}>Original Score</p>
+                    <p style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>{currentScore} <span style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted }}>/ {totalMarks}</span></p>
                   </div>
-                  <div className="rounded-xl border p-2.5" style={{ borderColor: C.cardBorder, backgroundColor: FX.primary04 }}>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wide }}>
-                      Final Score
-                    </p>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.bold }}>
-                      {revisedScore} / {totalMarks}
-                    </p>
+                  <div className="p-4" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                    <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 4px 0' }}>Final Score</p>
+                    <p style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>{revisedScore} <span style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted }}>/ {totalMarks}</span></p>
                   </div>
-                  <div className="rounded-xl border p-2.5" style={{ borderColor: C.cardBorder, backgroundColor: FX.primary04 }}>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wide }}>
-                      Requested On
-                    </p>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.bold }}>
-                      {new Date(item.createdAt).toLocaleString()}
-                    </p>
+                  <div className="p-4" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                    <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 4px 0' }}>Requested On</p>
+                    <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{new Date(item.createdAt).toLocaleString()}</p>
                   </div>
                 </div>
 
-                <div className="rounded-xl border p-3 mt-3" style={{ borderColor: C.cardBorder, backgroundColor: FX.primary04 }}>
-                  <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wide, marginBottom: 4 }}>
-                    Student Reason
-                  </p>
-                  <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, lineHeight: T.leading.relaxed }}>
-                    {item.reason}
-                  </p>
+                <div className="p-4 mb-6" style={{ backgroundColor: C.surfaceWhite, borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                  <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 6px 0' }}>Student Reason</p>
+                  <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, margin: 0, lineHeight: 1.5 }}>{item.reason}</p>
                 </div>
 
                 {item.status === 'pending' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                    <label className="space-y-1">
-                      <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                        Revised Score (optional)
-                      </span>
-                      <input
-                        type="number"
-                        min={0}
-                        max={totalMarks}
-                        step="0.01"
-                        value={draft.revisedScore ?? ''}
-                        onChange={(e) => updateDraft(item._id, { revisedScore: e.target.value })}
-                        className="w-full h-10 rounded-xl border px-3 text-sm"
-                        style={{ borderColor: C.cardBorder, fontFamily: T.fontFamily, color: C.heading, backgroundColor: C.surfaceWhite }}
-                        placeholder={`0 - ${totalMarks}`}
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                        Tutor Remarks
-                      </span>
-                      <textarea
-                        rows={2}
-                        value={draft.tutorRemarks ?? ''}
-                        onChange={(e) => updateDraft(item._id, { tutorRemarks: e.target.value })}
-                        className="w-full rounded-xl border px-3 py-2 text-sm resize-y"
-                        style={{ borderColor: C.cardBorder, fontFamily: T.fontFamily, color: C.heading, backgroundColor: C.surfaceWhite }}
-                        placeholder="Add feedback for student..."
-                      />
-                    </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+                    <div className="space-y-2">
+                      <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Revised Score (optional)</label>
+                      <input type="number" min={0} max={totalMarks} step="0.01" value={draft.revisedScore ?? ''} onChange={(e) => updateDraft(item._id, { revisedScore: e.target.value })}
+                        style={{ ...baseInputStyle, backgroundColor: C.surfaceWhite }} placeholder={`0 - ${totalMarks}`} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                    </div>
+                    <div className="space-y-2">
+                      <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Tutor Remarks</label>
+                      <textarea rows={2} value={draft.tutorRemarks ?? ''} onChange={(e) => updateDraft(item._id, { tutorRemarks: e.target.value })}
+                        style={{ ...baseInputStyle, resize: 'vertical', minHeight: '60px', backgroundColor: C.surfaceWhite }} placeholder="Add feedback for student..." onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                    </div>
 
-                    <div className="md:col-span-2 flex items-center gap-2">
-                      <button
-                        onClick={() => handleReview(item, 'approved')}
-                        disabled={processingId === item._id}
-                        className="h-9 px-4 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 disabled:opacity-60"
-                        style={{ borderColor: C.successBorder, color: C.success, backgroundColor: C.successBg }}
-                      >
-                        {processingId === item._id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                        Approve
+                    <div className="md:col-span-2 flex items-center justify-end gap-3 mt-2">
+                      <button onClick={() => handleReview(item, 'rejected')} disabled={processingId === item._id}
+                        className="flex items-center justify-center gap-2 h-11 px-6 cursor-pointer border-none transition-opacity hover:opacity-80 disabled:opacity-50 shadow-sm"
+                        style={{ backgroundColor: C.dangerBg, color: C.danger, borderRadius: R.xl, border: `1px solid ${C.dangerBorder}`, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                        {processingId === item._id ? <Loader2 size={16} className="animate-spin" /> : <XCircle size={16} />} Reject
                       </button>
-                      <button
-                        onClick={() => handleReview(item, 'rejected')}
-                        disabled={processingId === item._id}
-                        className="h-9 px-4 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 disabled:opacity-60"
-                        style={{ borderColor: C.dangerBorder, color: C.danger, backgroundColor: C.dangerBg }}
-                      >
-                        {processingId === item._id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
-                        Reject
+                      <button onClick={() => handleReview(item, 'approved')} disabled={processingId === item._id}
+                        className="flex items-center justify-center gap-2 h-11 px-8 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md"
+                        style={{ backgroundColor: C.success, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                        {processingId === item._id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Approve Request
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl border p-3 mt-3" style={{ borderColor: C.cardBorder, backgroundColor: C.innerBg }}>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wide, marginBottom: 4 }}>
-                      Tutor Decision Note
-                    </p>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text }}>
-                      {item.tutorRemarks?.trim() || 'No remarks shared.'}
+                  <div className="p-4 mt-2" style={{ backgroundColor: C.surfaceWhite, borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                    <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 6px 0' }}>Tutor Decision Note</p>
+                    <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, margin: 0, lineHeight: 1.5 }}>
+                      {item.tutorRemarks?.trim() || <span style={{ fontStyle: 'italic', opacity: 0.6 }}>No remarks shared.</span>}
                     </p>
                   </div>
                 )}
@@ -392,33 +336,27 @@ export default function TutorReevaluationRequestsPage() {
           })}
         </div>
       ) : (
-        <div className="rounded-2xl border p-10 text-center" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}>
-          <CircleAlert className="w-7 h-7 mx-auto mb-2" style={{ color: C.textMuted }} />
-          <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted }}>
-            No re-evaluation requests matched current filters.
-          </p>
+        <div className="text-center py-20 flex flex-col items-center" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px dashed ${C.cardBorder}` }}>
+          <CircleAlert size={48} color={C.textMuted} style={{ opacity: 0.3, marginBottom: '16px' }} />
+          <p style={{ fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 8px 0' }}>No requests found</p>
+          <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>No re-evaluation requests matched current filters.</p>
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-2">
-        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+      {/* Pagination */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 mt-4" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted, margin: 0 }}>
           Showing page {pagination.page} of {pagination.pages} • {pagination.total} total
         </p>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-            disabled={pagination.page <= 1}
-            className="h-8 px-3 rounded-xl border text-xs font-semibold disabled:opacity-60"
-            style={{ borderColor: C.cardBorder, color: C.btnPrimary, backgroundColor: FX.primary08 }}
-          >
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button onClick={() => setPage((prev) => Math.max(1, prev - 1))} disabled={pagination.page <= 1}
+            className="flex-1 sm:flex-none flex items-center justify-center h-10 px-5 cursor-pointer border-none disabled:opacity-50 transition-opacity hover:opacity-80 shadow-sm"
+            style={{ backgroundColor: '#EAE8FA', color: C.heading, borderRadius: R.md, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
             Previous
           </button>
-          <button
-            onClick={() => setPage((prev) => Math.min(pagination.pages || 1, prev + 1))}
-            disabled={pagination.page >= (pagination.pages || 1)}
-            className="h-8 px-3 rounded-xl border text-xs font-semibold disabled:opacity-60"
-            style={{ borderColor: C.cardBorder, color: C.btnPrimary, backgroundColor: FX.primary08 }}
-          >
+          <button onClick={() => setPage((prev) => Math.min(pagination.pages || 1, prev + 1))} disabled={pagination.page >= (pagination.pages || 1)}
+            className="flex-1 sm:flex-none flex items-center justify-center h-10 px-5 cursor-pointer border-none disabled:opacity-50 transition-opacity hover:opacity-80 shadow-sm"
+            style={{ backgroundColor: '#EAE8FA', color: C.heading, borderRadius: R.md, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
             Next
           </button>
         </div>

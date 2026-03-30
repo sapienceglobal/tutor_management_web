@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
     Plus, Search, Database, Edit, Trash2, FolderInput,
     ChevronDown, ChevronRight, FolderOpen, Folder, Loader2
@@ -12,7 +10,31 @@ import api from '@/lib/axios';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { toast } from 'react-hot-toast';
-import { C, T, FX } from '@/constants/tutorTokens';
+import { C, T, S, R } from '@/constants/tutorTokens';
+
+// Focus Handlers
+const onFocusHandler = e => {
+    e.target.style.borderColor = C.btnPrimary;
+    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)';
+};
+const onBlurHandler = e => {
+    e.target.style.borderColor = 'transparent';
+    e.target.style.boxShadow = 'none';
+};
+
+const baseInputStyle = {
+    backgroundColor: '#E3DFF8', // STRICTLY INNER COLOR
+    border: '1.5px solid transparent',
+    borderRadius: R.xl,
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.sm,
+    fontWeight: T.weight.medium,
+    outline: 'none',
+    width: '100%',
+    padding: '10px 16px',
+    transition: 'all 0.2s ease',
+};
 
 export default function QuestionBankPage() {
     const [questions, setQuestions] = useState([]);
@@ -26,7 +48,7 @@ export default function QuestionBankPage() {
     const fetchQuestions = async () => {
         try {
             const res = await api.get('/question-bank/questions');
-            if (res.data.success) setQuestions(res.data.questions);
+            if (res?.data?.success) setQuestions(res.data.questions);
         } catch (error) {
             console.error('Failed to load questions', error);
         } finally {
@@ -71,98 +93,101 @@ export default function QuestionBankPage() {
     };
 
     const difficultyStyle = (d) => ({
-        easy: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-        medium: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-        hard: 'bg-red-50 text-red-600 border-red-200',
-    }[d] || 'bg-slate-100 text-slate-600 border-slate-200');
+        easy: { bg: C.successBg, color: C.success, border: C.successBorder },
+        medium: { bg: C.warningBg, color: C.warning, border: C.warningBorder },
+        hard: { bg: C.dangerBg, color: C.danger, border: C.dangerBorder },
+    }[d] || { bg: '#EAE8FA', color: C.textMuted, border: C.cardBorder }); // Replaced white with #EAE8FA
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
+                <Loader2 className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
+                <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading questions...</p>
+            </div>
+        );
+    }
 
     return (
-        <div className="space-y-6" style={{ fontFamily: T.fontFamily }}>
+        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
 
-            {/* Page Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <div className="flex items-center gap-2.5 mb-1">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
-                            <Database className="w-4 h-4" style={{ color: C.btnPrimary }} />
-                        </div>
-                        <h1 className="text-xl font-bold text-slate-800">Question Bank</h1>
+            {/* Page Header (OUTER BOX) */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-5" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+                        <Database size={24} color={C.btnPrimary} />
                     </div>
-                    <p className="text-xs text-slate-400 pl-0.5">
-                        {questions.length} questions across {topicKeys.length} {topicKeys.length === 1 ? 'category' : 'categories'}
-                    </p>
+                    <div>
+                        <h1 style={{ fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading, margin: '0 0 2px 0' }}>Question Bank</h1>
+                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>
+                            {questions.length} questions across {topicKeys.length} {topicKeys.length === 1 ? 'category' : 'categories'}
+                        </p>
+                    </div>
                 </div>
-                <div className="flex gap-2">
-                    <Link href="/tutor/questions/import">
-                        <Button variant="outline" size="sm" className="border-slate-200 text-slate-600 gap-2 text-sm">
-                            <FolderInput className="w-4 h-4" /> Import
-                        </Button>
+                <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+                    <Link href="/tutor/questions/import" className="flex-1 sm:flex-none text-decoration-none">
+                        <button className="w-full flex items-center justify-center gap-2 h-11 px-5 cursor-pointer border-none transition-opacity hover:opacity-80 shadow-md"
+                            style={{ backgroundColor: '#E3DFF8', color: C.heading, borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                            <FolderInput size={16} /> Import
+                        </button>
                     </Link>
-                    <Link href="/tutor/questions/create">
-                        <Button size="sm" className="gap-2 text-sm text-white shadow-sm"
-                            style={{ backgroundColor: C.btnPrimary }}
-                            onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-                            onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-                            <Plus className="w-4 h-4" /> Add Question
-                        </Button>
+                    <Link href="/tutor/questions/create" className="flex-1 sm:flex-none text-decoration-none">
+                        <button className="w-full flex items-center justify-center gap-2 h-11 px-6 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-md"
+                            style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                            <Plus size={16} /> Add Question
+                        </button>
                     </Link>
                 </div>
             </div>
 
-            {/* Search + Controls */}
-            <div className="flex gap-3 items-center bg-white p-3 rounded-xl border border-slate-100">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
+            {/* Search + Controls (OUTER BOX) */}
+            <div className="p-4 flex flex-col md:flex-row gap-4 items-center justify-between" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                <div className="relative w-full md:flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2" size={16} color={C.textMuted} />
+                    <input
                         placeholder="Search questions by text, topic, or skill..."
-                        className="pl-9 h-9 text-sm border-slate-200"
-                        style={{ '--tw-ring-color': C.btnPrimary }}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{ ...baseInputStyle, paddingLeft: '36px', backgroundColor: '#E3DFF8' }} // Inner box color
+                        onFocus={onFocusHandler} onBlur={onBlurHandler}
                     />
                 </div>
-                <div className="flex gap-1 flex-shrink-0">
+                <div className="flex gap-2 shrink-0 w-full md:w-auto">
                     <button onClick={() => setExpandedTopics(new Set(topicKeys))}
-                        className="text-xs text-slate-500 hover:text-slate-700 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors font-medium">
+                        className="flex-1 md:flex-none px-4 py-2 h-10 cursor-pointer border-none transition-opacity hover:opacity-80"
+                        style={{ backgroundColor: '#E3DFF8', color: C.btnPrimary, borderRadius: R.md, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
                         Expand All
                     </button>
                     <button onClick={() => setExpandedTopics(new Set())}
-                        className="text-xs text-slate-500 hover:text-slate-700 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors font-medium">
+                        className="flex-1 md:flex-none px-4 py-2 h-10 cursor-pointer border-none transition-opacity hover:opacity-80"
+                        style={{ backgroundColor: '#E3DFF8', color: C.textMuted, borderRadius: R.md, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
                         Collapse All
                     </button>
                 </div>
             </div>
 
-            {/* States */}
-            {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-3">
-                    <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
-                    <p className="text-sm text-slate-400">Loading questions...</p>
-                </div>
-            ) : filteredQuestions.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-xl border border-dashed border-slate-200">
-                    <div className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-                        style={{ backgroundColor: FX.primary10, border: `1px solid ${FX.primary20}` }}>
-                        <Database className="h-7 w-7" style={{ color: C.btnPrimary }} />
+            {/* Lists */}
+            {filteredQuestions.length === 0 ? (
+                <div className="text-center py-16 flex flex-col items-center" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px dashed ${C.cardBorder}` }}>
+                    <div className="w-14 h-14 flex items-center justify-center mb-4" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+                        <Database size={28} color={C.btnPrimary} />
                     </div>
-                    <h3 className="text-base font-semibold text-slate-800 mb-1">
+                    <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>
                         {searchTerm ? 'No questions match your search' : 'No questions found'}
                     </h3>
-                    <p className="text-sm text-slate-400 mb-6">
+                    <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: '0 0 20px 0' }}>
                         {searchTerm ? 'Try a different search term.' : 'Get started by creating your first question.'}
                     </p>
                     {!searchTerm && (
-                        <Link href="/tutor/questions/create">
-                            <Button size="sm" className="gap-2 text-white"
-                                style={{ backgroundColor: C.btnPrimary }}>
-                                <Plus className="w-4 h-4" /> Create Question
-                            </Button>
+                        <Link href="/tutor/questions/create" className="text-decoration-none">
+                            <button className="flex items-center justify-center gap-2 h-10 px-6 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-md"
+                                style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                <Plus size={16} /> Create Question
+                            </button>
                         </Link>
                     )}
                 </div>
             ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-4">
                     {topicKeys.map((topicId) => {
                         const group = groupedQuestions[topicId];
                         const isExpanded = expandedTopics.has(topicId);
@@ -170,75 +195,81 @@ export default function QuestionBankPage() {
                         const subjectiveCount = group.questions.length - mcqCount;
 
                         return (
-                            <div key={topicId} className="bg-white rounded-xl border border-slate-100 overflow-hidden hover:shadow-sm transition-shadow">
-                                {/* Topic Header */}
+                            <div key={topicId} className="overflow-hidden transition-shadow" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                                
+                                {/* Topic Header (OUTER COLOR to blend seamlessly) */}
                                 <button onClick={() => toggleTopic(topicId)}
-                                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50/60 transition-colors">
+                                    className="w-full flex items-center justify-between px-5 py-4 cursor-pointer border-none transition-colors hover:opacity-80"
+                                    style={{ backgroundColor: '#EAE8FA', borderBottom: isExpanded ? `1px solid ${C.cardBorder}` : 'none' }}>
                                     <div className="flex items-center gap-3 flex-wrap">
-                                        {isExpanded
-                                            ? <FolderOpen className="w-4 h-4 flex-shrink-0" style={{ color: C.btnPrimary }} />
-                                            : <Folder className="w-4 h-4 text-slate-400 flex-shrink-0" />}
-                                        <span className="font-semibold text-slate-800 text-sm">{group.name}</span>
-                                        <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">
+                                        {isExpanded ? <FolderOpen size={18} color={C.btnPrimary} className="shrink-0" /> : <Folder size={18} color={C.textMuted} className="shrink-0" />}
+                                        <span style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading }}>{group.name}</span>
+                                        <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, backgroundColor: '#E3DFF8', color: C.textMuted, padding: '2px 8px', borderRadius: R.md }}>
                                             {group.questions.length} {group.questions.length === 1 ? 'question' : 'questions'}
                                         </span>
                                         {mcqCount > 0 && (
-                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-bold border border-blue-100">
+                                            <span style={{ fontSize: '10px', fontWeight: T.weight.black, backgroundColor: 'rgba(59,130,246,0.15)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.2)', padding: '2px 8px', borderRadius: R.full, textTransform: 'uppercase' }}>
                                                 {mcqCount} MCQ
                                             </span>
                                         )}
                                         {subjectiveCount > 0 && (
-                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-bold border border-amber-100">
+                                            <span style={{ fontSize: '10px', fontWeight: T.weight.black, backgroundColor: C.warningBg, color: C.warning, border: `1px solid ${C.warningBorder}`, padding: '2px 8px', borderRadius: R.full, textTransform: 'uppercase' }}>
                                                 {subjectiveCount} Subjective
                                             </span>
                                         )}
                                     </div>
-                                    {isExpanded
-                                        ? <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                                        : <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />}
+                                    {isExpanded ? <ChevronDown size={18} color={C.textMuted} className="shrink-0" /> : <ChevronRight size={18} color={C.textMuted} className="shrink-0" />}
                                 </button>
 
-                                {/* Questions List */}
+                                {/* Questions List (INNER COLOR for contrast) */}
                                 {isExpanded && (
-                                    <div className="border-t border-slate-100 divide-y divide-slate-50">
-                                        {group.questions.map((q) => (
-                                            <div key={q._id} className="px-5 py-3.5 hover:bg-slate-50/50 transition-colors">
-                                                <div className="flex justify-between items-start gap-4">
-                                                    <div className="flex-1 min-w-0 space-y-1.5">
-                                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border bg-slate-50 text-slate-600 border-slate-200">
-                                                                {q.type || (q.options?.length > 0 ? 'mcq' : 'subjective')}
-                                                            </span>
-                                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border ${difficultyStyle(q.difficulty)}`}>
-                                                                {q.difficulty}
-                                                            </span>
-                                                            {q.skillId && (
-                                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 font-medium">
-                                                                    {q.skillId.name}
+                                    <div className="flex flex-col">
+                                        {group.questions.map((q, qIdx) => {
+                                            const diffSty = difficultyStyle(q.difficulty);
+                                            return (
+                                                <div key={q._id} className="px-5 py-4 transition-colors hover:opacity-80" 
+                                                    style={{ backgroundColor: '#E3DFF8', borderBottom: qIdx !== group.questions.length - 1 ? `1px solid ${C.cardBorder}` : 'none' }}>
+                                                    <div className="flex justify-between items-start gap-4">
+                                                        <div className="flex-1 min-w-0 space-y-3">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                {/* Badges - using #EAE8FA instead of white */}
+                                                                <span style={{ fontSize: '10px', fontWeight: T.weight.black, backgroundColor: '#EAE8FA', color: C.heading, border: `1px solid ${C.cardBorder}`, padding: '2px 8px', borderRadius: R.md, textTransform: 'uppercase' }}>
+                                                                    {q.type || (q.options?.length > 0 ? 'mcq' : 'subjective')}
                                                                 </span>
+                                                                <span style={{ fontSize: '10px', fontWeight: T.weight.black, backgroundColor: diffSty.bg, color: diffSty.color, border: `1px solid ${diffSty.border}`, padding: '2px 8px', borderRadius: R.md, textTransform: 'uppercase' }}>
+                                                                    {q.difficulty}
+                                                                </span>
+                                                                {q.skillId && (
+                                                                    <span style={{ fontSize: '10px', fontWeight: T.weight.bold, backgroundColor: '#EAE8FA', color: C.textMuted, border: `1px solid ${C.cardBorder}`, padding: '2px 8px', borderRadius: R.md }}>
+                                                                        {q.skillId.name}
+                                                                    </span>
+                                                                )}
+                                                                <span style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted }}>{q.points} pts</span>
+                                                            </div>
+                                                            <div style={{ fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading, lineHeight: 1.5 }}
+                                                                dangerouslySetInnerHTML={{ __html: sanitizeHtml(q.question) }} />
+                                                            {q.options && q.options.length > 0 && (
+                                                                <p style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>{q.options.length} options</p>
                                                             )}
-                                                            <span className="text-[10px] text-slate-400 font-medium">{q.points} pts</span>
                                                         </div>
-                                                        <div className="text-sm font-medium text-slate-700 line-clamp-2"
-                                                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(q.question) }} />
-                                                        {q.options && q.options.length > 0 && (
-                                                            <p className="text-xs text-slate-400">{q.options.length} options</p>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex gap-1 flex-shrink-0">
-                                                        <Link href={`/tutor/questions/${q._id}/edit`}>
-                                                            <button className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#7573E8]/10 transition-colors">
-                                                                <Edit className="w-3.5 h-3.5 text-slate-400" />
+                                                        <div className="flex gap-2 flex-shrink-0">
+                                                            <Link href={`/tutor/questions/${q._id}/edit`} className="text-decoration-none">
+                                                                {/* Buttons using #EAE8FA instead of white */}
+                                                                <button className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80"
+                                                                    style={{ backgroundColor: '#EAE8FA', border: `1px solid ${C.cardBorder}` }}>
+                                                                    <Edit size={14} color={C.btnPrimary} />
+                                                                </button>
+                                                            </Link>
+                                                            <button onClick={() => handleDelete(q._id)}
+                                                                className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80"
+                                                                style={{ backgroundColor: C.dangerBg, border: `1px solid ${C.dangerBorder}` }}>
+                                                                <Trash2 size={14} color={C.danger} />
                                                             </button>
-                                                        </Link>
-                                                        <button onClick={() => handleDelete(q._id)}
-                                                            className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors">
-                                                            <Trash2 className="w-3.5 h-3.5 text-slate-400 hover:text-red-500" />
-                                                        </button>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>
