@@ -5,7 +5,7 @@ import { Loader2, Mail, Calendar, BookOpen, CreditCard, ChevronLeft, User } from
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import { C, T, FX } from '@/constants/tutorTokens';
+import { C, T, S, R, FX } from '@/constants/tutorTokens';
 
 export default function TutorStudentDetailPage({ params }) {
     const { id }      = use(params);
@@ -32,149 +32,182 @@ export default function TutorStudentDetailPage({ params }) {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
-                <p className="text-sm text-slate-400">Loading student details...</p>
+            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
+                <Loader2 className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
+                <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading student details...</p>
             </div>
         );
     }
 
     if (!student) {
         return (
-            <div className="p-6 text-center text-slate-500 text-sm">Student not found.</div>
+            <div className="flex flex-col items-center justify-center min-h-screen w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
+                <p style={{ color: C.danger, fontSize: T.size.md, fontWeight: T.weight.bold, margin: '0 0 12px 0' }}>Student not found.</p>
+                <button onClick={() => router.back()} className="px-5 py-2 cursor-pointer border-none transition-opacity hover:opacity-80 shadow-md"
+                    style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.md, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                    Go Back
+                </button>
+            </div>
         );
     }
 
     return (
-        <div className="space-y-5" style={{ fontFamily: T.fontFamily }}>
+        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
 
-            {/* ── Profile card ──────────────────────────────────────────────── */}
-            <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
-                {/* Banner */}
-                <div className="h-28 relative" style={{ backgroundColor: C.darkCard }}>
-                    {/* Glow blob */}
-                    <div className="absolute -top-6 -right-6 w-48 h-48 rounded-full blur-3xl opacity-30"
-                        style={{ backgroundColor: FX.primary60Transparent }} />
+            {/* ── Profile Card ──────────────────────────────────────────────── */}
+            <div className="relative overflow-hidden" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                
+                {/* Banner Area */}
+                <div className="h-32 w-full relative overflow-hidden" style={{ backgroundColor: '#E3DFF8' }}>
+                    {/* Subtle decorative elements for the banner */}
+                    <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full" style={{ backgroundColor: C.btnPrimary, opacity: 0.05 }} />
+                    <div className="absolute -bottom-10 right-20 w-32 h-32 rounded-full" style={{ backgroundColor: C.btnPrimary, opacity: 0.05 }} />
+                    
                     {/* Back button */}
                     <button onClick={() => router.back()}
-                        className="absolute top-4 left-5 flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors">
-                        <ChevronLeft className="w-3.5 h-3.5" /> Back
+                        className="absolute top-4 left-5 flex items-center gap-1.5 px-3 py-1.5 cursor-pointer border-none transition-opacity hover:opacity-80 shadow-sm"
+                        style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, borderRadius: R.xl, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}>
+                        <ChevronLeft size={14} /> Back
                     </button>
                 </div>
 
-                <div className="px-6 pb-6">
-                    {/* Avatar row */}
-                    <div className="flex items-end justify-between -mt-10 mb-4">
-                        <div className="w-20 h-20 rounded-2xl border-4 border-white shadow-md overflow-hidden flex-shrink-0"
-                            style={{ background: C.gradientBtn }}>
-                            {student.profileImage
-                                ? <img src={student.profileImage} alt="" className="w-full h-full object-cover" />
-                                : <div className="w-full h-full flex items-center justify-center text-3xl font-black text-white">
-                                    {student.name?.charAt(0)?.toUpperCase()}
-                                  </div>}
-                        </div>
+                <div className="px-6 pb-6 relative">
+                    {/* Avatar - Absolute positioning ensures it never clips or messes up flex layouts */}
+                    <div className="absolute -top-12 left-6 w-24 h-24 rounded-full border-4 shadow-sm overflow-hidden flex items-center justify-center text-white font-black text-3xl"
+                        style={{ background: C.gradientBtn, borderColor: '#EAE8FA' }}>
+                        {student.profileImage
+                            ? <img src={student.profileImage} alt={student.name} className="w-full h-full object-cover" />
+                            : student.name?.charAt(0)?.toUpperCase()
+                        }
                     </div>
 
-                    {/* Name + meta */}
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <h1 className="text-xl font-bold text-slate-900">{student.name}</h1>
-                                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold border"
-                                    style={{ backgroundColor: FX.primary08, color: C.btnPrimary, borderColor: FX.primary20 }}>
-                                    <User className="w-2.5 h-2.5 inline mr-0.5" />Student
-                                </span>
-                            </div>
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
-                                <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" />{student.email}</span>
-                                <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />Joined {new Date(student.createdAt).toLocaleDateString()}</span>
-                            </div>
+                    {/* Spacer to push content below the absolute avatar */}
+                    <div className="w-full h-14" />
+
+                    {/* Name + Info */}
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-3">
+                            <h1 style={{ fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+                                {student.name}
+                            </h1>
+                            <span style={{ 
+                                backgroundColor: '#E3DFF8', color: C.btnPrimary, border: `1px solid ${C.cardBorder}`,
+                                padding: '2px 10px', borderRadius: R.full, fontSize: '10px', fontWeight: T.weight.bold, textTransform: 'uppercase',
+                                display: 'flex', alignItems: 'center', gap: '4px'
+                            }}>
+                                <User size={12} /> Student
+                            </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-4" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted }}>
+                            <span className="flex items-center gap-1.5"><Mail size={14} /> {student.email}</span>
+                            <span className="flex items-center gap-1.5"><Calendar size={14} /> Joined {new Date(student.createdAt).toLocaleDateString()}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* ── Stats ─────────────────────────────────────────────────────── */}
+            {/* ── Stats Row ─────────────────────────────────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-white rounded-xl border border-slate-100 p-5 flex items-center gap-4 hover:shadow-sm transition-shadow">
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center"
-                        style={{ backgroundColor: FX.primary12 }}>
-                        <BookOpen className="w-5 h-5" style={{ color: C.btnPrimary }} />
+                {/* Enrolled Courses Stat */}
+                <div className="p-5 flex items-center gap-4 transition-transform hover:-translate-y-0.5" 
+                    style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+                        <BookOpen size={24} color={C.btnPrimary} />
                     </div>
                     <div>
-                        <p className="text-xs text-slate-500 font-semibold">Courses Enrolled</p>
-                        <p className="text-2xl font-black text-slate-800">{stats?.totalEnrolled || 0}</p>
-                        <p className="text-[11px] text-slate-400">In your courses</p>
+                        <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 2px 0' }}>Courses Enrolled</p>
+                        <p style={{ fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, margin: 0, lineHeight: 1 }}>{stats?.totalEnrolled || 0}</p>
+                        <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, margin: '4px 0 0 0' }}>In your courses</p>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-slate-100 p-5 flex items-center gap-4 hover:shadow-sm transition-shadow">
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-emerald-50">
-                        <CreditCard className="w-5 h-5 text-emerald-600" />
+                {/* Total Spent Stat */}
+                <div className="p-5 flex items-center gap-4 transition-transform hover:-translate-y-0.5" 
+                    style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0" style={{ backgroundColor: C.successBg, borderRadius: R.xl }}>
+                        <CreditCard size={24} color={C.success} />
                     </div>
                     <div>
-                        <p className="text-xs text-slate-500 font-semibold">Total Spent</p>
-                        <p className="text-2xl font-black text-slate-800">${stats?.totalSpent || 0}</p>
-                        <p className="text-[11px] text-slate-400">On your courses</p>
+                        <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 2px 0' }}>Total Spent</p>
+                        <p style={{ fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, margin: 0, lineHeight: 1 }}>₹{stats?.totalSpent || 0}</p>
+                        <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, margin: '4px 0 0 0' }}>On your courses</p>
                     </div>
                 </div>
             </div>
 
-            {/* ── Enrollments table ─────────────────────────────────────────── */}
-            <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
-                <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: FX.primary12 }}>
-                        <BookOpen className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
-                    </div>
-                    <h3 className="text-sm font-bold text-slate-800">Enrolled Courses</h3>
+            {/* ── Enrollments List ──────────────────────────────────────────── */}
+            <div className="overflow-hidden" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                <div className="px-6 py-4 flex items-center gap-2" style={{ backgroundColor: '#E3DFF8', borderBottom: `1px solid ${C.cardBorder}` }}>
+                    <BookOpen size={18} color={C.btnPrimary} />
+                    <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Enrolled Courses</h3>
                 </div>
 
-                {/* Head */}
-                <div className="grid grid-cols-[2fr_1fr_80px_140px] gap-4 px-5 py-3 border-b border-slate-50 bg-slate-50/60">
-                    {['Course', 'Level', 'Price', 'Progress'].map(h => (
-                        <span key={h} className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{h}</span>
-                    ))}
-                </div>
-
-                {enrollments.length > 0 ? (
-                    <div className="divide-y divide-slate-50">
-                        {enrollments.map(enrollment => (
-                            <div key={enrollment._id}
-                                className="grid grid-cols-[2fr_1fr_80px_140px] gap-4 px-5 py-4 items-center hover:bg-slate-50/40 transition-colors">
-                                {/* Course */}
-                                <div className="flex items-center gap-3 min-w-0">
-                                    {enrollment.courseId?.thumbnail && (
-                                        <img src={enrollment.courseId.thumbnail} alt=""
-                                            className="w-9 h-9 rounded-lg object-cover flex-shrink-0 border border-slate-100" />
-                                    )}
-                                    <span className="text-sm font-semibold text-slate-800 truncate">
-                                        {enrollment.courseId?.title}
-                                    </span>
-                                </div>
-                                {/* Level */}
-                                <span className="text-xs text-slate-500 capitalize">{enrollment.courseId?.level || '—'}</span>
-                                {/* Price */}
-                                <span className="text-sm font-bold text-slate-700">${enrollment.courseId?.price || 0}</span>
-                                {/* Progress */}
-                                <div className="flex items-center gap-2">
-                                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                        <div className="h-full rounded-full bg-emerald-500 transition-all"
-                                            style={{ width: `${enrollment.progress?.percentage || 0}%` }} />
-                                    </div>
-                                    <span className="text-xs font-bold text-slate-500 w-8 text-right">
-                                        {enrollment.progress?.percentage || 0}%
-                                    </span>
-                                </div>
+                <div className="overflow-x-auto custom-scrollbar">
+                    {enrollments.length > 0 ? (
+                        <div className="min-w-[800px]">
+                            {/* Table Header */}
+                            <div className="grid grid-cols-[2fr_1fr_100px_200px] gap-4 px-6 py-3" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                                {['Course', 'Level', 'Price', 'Progress'].map(h => (
+                                    <span key={h} style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>{h}</span>
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-12">
-                        <BookOpen className="w-8 h-8 text-slate-200 mx-auto mb-2" />
-                        <p className="text-sm text-slate-400">No active enrollments.</p>
-                    </div>
-                )}
+                            
+                            {/* Table Rows */}
+                            <div className="flex flex-col gap-2 p-3">
+                                {enrollments.map((enrollment, idx) => (
+                                    <div key={enrollment._id} className="grid grid-cols-[2fr_1fr_100px_200px] gap-4 px-3 py-3 items-center transition-colors hover:bg-white/50"
+                                        style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+                                        
+                                        {/* Course Title & Thumb */}
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            {enrollment.courseId?.thumbnail ? (
+                                                <img src={enrollment.courseId.thumbnail} alt={enrollment.courseId?.title} className="w-10 h-10 rounded-lg object-cover shrink-0" style={{ border: `1px solid ${C.cardBorder}` }} />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}` }}>
+                                                    <BookOpen size={16} color={C.btnPrimary} />
+                                                </div>
+                                            )}
+                                            <span className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                                                {enrollment.courseId?.title || 'Unknown Course'}
+                                            </span>
+                                        </div>
+
+                                        {/* Level */}
+                                        <div>
+                                            <span style={{ fontSize: '10px', fontWeight: T.weight.black, backgroundColor: C.surfaceWhite, color: C.textMuted, border: `1px solid ${C.cardBorder}`, padding: '4px 10px', borderRadius: R.md, textTransform: 'uppercase' }}>
+                                                {enrollment.courseId?.level || 'N/A'}
+                                            </span>
+                                        </div>
+
+                                        {/* Price */}
+                                        <div>
+                                            <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>
+                                                {enrollment.courseId?.price ? `₹${enrollment.courseId.price}` : 'Free'}
+                                            </span>
+                                        </div>
+
+                                        {/* Progress */}
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}` }}>
+                                                <div className="h-full rounded-full transition-all duration-500"
+                                                    style={{ width: `${enrollment.progress?.percentage || 0}%`, background: C.gradientBtn }} />
+                                            </div>
+                                            <span className="shrink-0" style={{ fontSize: T.size.xs, fontWeight: T.weight.black, color: C.btnPrimary, width: '36px', textAlign: 'right' }}>
+                                                {enrollment.progress?.percentage || 0}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-center py-16 flex flex-col items-center">
+                            <BookOpen size={40} color={C.textMuted} style={{ opacity: 0.3, marginBottom: '12px' }} />
+                            <p style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>No active enrollments.</p>
+                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>This student has not enrolled in any of your courses yet.</p>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

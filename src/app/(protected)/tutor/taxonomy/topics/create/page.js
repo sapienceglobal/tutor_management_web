@@ -4,12 +4,33 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Save, BookOpen } from 'lucide-react';
 import Link from 'next/link';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
-import { C, T, FX } from '@/constants/tutorTokens';
+import { C, T, S, R } from '@/constants/tutorTokens';
 
-const inp = "w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[#7573E8] focus:ring-2 focus:ring-[#7573E8]/10 transition-colors bg-white";
+// Focus Handlers
+const onFocusHandler = e => {
+    e.target.style.borderColor = C.btnPrimary;
+    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)';
+};
+const onBlurHandler = e => {
+    e.target.style.borderColor = 'transparent';
+    e.target.style.boxShadow = 'none';
+};
+
+const baseInputStyle = {
+    backgroundColor: C.surfaceWhite,
+    border: '1.5px solid transparent',
+    borderRadius: R.xl,
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.sm,
+    fontWeight: T.weight.medium,
+    outline: 'none',
+    width: '100%',
+    padding: '10px 16px',
+    transition: 'all 0.2s ease',
+};
 
 export default function CreateTopicPage() {
     const router = useRouter();
@@ -21,7 +42,7 @@ export default function CreateTopicPage() {
         (async () => {
             try {
                 const res = await api.get('/courses/my-courses');
-                if (res.data.success) setCourses(res.data.courses);
+                if (res?.data?.success) setCourses(res.data.courses);
             } catch { /* silent */ }
         })();
     }, []);
@@ -32,97 +53,103 @@ export default function CreateTopicPage() {
         setLoading(true);
         try {
             const res = await api.post('/taxonomy/topics', formData);
-            if (res.data.success) {
+            if (res?.data?.success) {
                 toast.success('Topic created successfully!');
                 router.push('/tutor/taxonomy/topics');
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to create topic');
+            toast.error(error?.response?.data?.message || 'Failed to create topic');
         } finally { setLoading(false); }
     };
 
     return (
-        <div className="space-y-5 max-w-2xl" style={{ fontFamily: T.fontFamily }}>
-
-            {/* Header */}
-            <div className="bg-white rounded-xl border border-slate-100 px-5 py-4 flex items-center gap-3">
-                <Link href="/tutor/taxonomy/topics">
-                    <button className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors">
-                        <ArrowLeft className="w-4 h-4 text-slate-500" />
-                    </button>
-                </Link>
-                <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}>
-                        <BookOpen className="w-4 h-4" style={{ color: C.btnPrimary }} />
-                    </div>
-                    <div>
-                        <h1 className="text-lg font-bold text-slate-800">Create New Topic</h1>
-                        <p className="text-xs text-slate-400">Categorize subject matter for questions and content</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Form */}
-            <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                    <h2 className="text-sm font-bold text-slate-800">Topic Details</h2>
-                </div>
-                <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                    <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500">
-                            Topic Name <span className="text-red-500">*</span>
-                        </label>
-                        <input className={inp}
-                            placeholder="e.g. Quadratic Equations, Photosynthesis"
-                            value={formData.name}
-                            onChange={e => setFormData({ ...formData, name: e.target.value })} />
-                    </div>
-
-                    <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500">
-                            Associated Course <span className="text-slate-400 font-normal">(Optional)</span>
-                        </label>
-                        <Select
-                            value={formData.courseId}
-                            onValueChange={val => setFormData({ ...formData, courseId: val })}>
-                            <SelectTrigger className="border-slate-200 focus:border-[#7573E8] rounded-xl h-auto py-2.5">
-                                <SelectValue placeholder="Select a course to link (optional)" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {courses.map(c => (
-                                    <SelectItem key={c._id} value={c._id}>{c.title}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <p className="text-[11px] text-slate-400">Linking to a course helps organize topics and recommendations.</p>
-                    </div>
-
-                    <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500">
-                            Description <span className="text-slate-400 font-normal">(Optional)</span>
-                        </label>
-                        <textarea rows={4} className={`${inp} resize-none`}
-                            placeholder="Briefly describe this topic..."
-                            value={formData.description}
-                            onChange={e => setFormData({ ...formData, description: e.target.value })} />
-                    </div>
-
-                    <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
-                        <Link href="/tutor/taxonomy/topics">
-                            <button type="button"
-                                className="px-4 py-2 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
-                                Cancel
+        <div className="w-full min-h-screen p-6 flex flex-col items-center" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+            
+            <div className="w-full max-w-2xl space-y-6">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="flex items-center gap-4">
+                        <Link href="/tutor/taxonomy/topics" className="text-decoration-none">
+                            <button className="w-10 h-10 flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80 shrink-0"
+                                style={{ backgroundColor: '#E3DFF8', borderRadius: R.full }}>
+                                <ArrowLeft size={18} color={C.heading} />
                             </button>
                         </Link>
-                        <button type="submit" disabled={loading}
-                            className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl transition-opacity disabled:opacity-60"
-                            style={{ backgroundColor: C.btnPrimary }}>
-                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            {loading ? 'Creating...' : 'Create Topic'}
-                        </button>
+                        <div>
+                            <h1 className="flex items-center gap-2" style={{ color: C.heading, fontSize: T.size.xl, fontWeight: T.weight.black, margin: '0 0 4px 0' }}>
+                                <BookOpen size={20} color={C.btnPrimary} /> Create New Topic
+                            </h1>
+                            <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, margin: 0 }}>
+                                Categorize subject matter for questions and content
+                            </p>
+                        </div>
                     </div>
-                </form>
+                </div>
+
+                {/* Form */}
+                <div className="overflow-hidden" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="px-6 py-4 border-b" style={{ borderColor: C.cardBorder, backgroundColor: '#E3DFF8' }}>
+                        <h2 style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Topic Details</h2>
+                    </div>
+                    <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                        
+                        <div className="space-y-2">
+                            <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>
+                                Topic Name *
+                            </label>
+                            <input 
+                                placeholder="e.g. Quadratic Equations, Photosynthesis"
+                                value={formData.name}
+                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler}
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>
+                                Associated Course <span style={{ fontWeight: T.weight.medium, color: C.textMuted, textTransform: 'none' }}>(Optional)</span>
+                            </label>
+                            <select 
+                                value={formData.courseId}
+                                onChange={e => setFormData({ ...formData, courseId: e.target.value })}
+                                style={{ ...baseInputStyle, cursor: 'pointer' }} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+                                <option value="">-- Select a course to link --</option>
+                                {courses.map(c => (
+                                    <option key={c._id} value={c._id}>{c.title}</option>
+                                ))}
+                            </select>
+                            <p style={{ fontSize: '11px', color: C.textMuted, fontWeight: T.weight.medium, margin: 0 }}>Linking to a course helps organize topics and recommendations.</p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>
+                                Description <span style={{ fontWeight: T.weight.medium, color: C.textMuted, textTransform: 'none' }}>(Optional)</span>
+                            </label>
+                            <textarea rows={4}
+                                placeholder="Briefly describe this topic..."
+                                value={formData.description}
+                                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                style={{ ...baseInputStyle, resize: 'none' }} onFocus={onFocusHandler} onBlur={onBlurHandler}
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-end gap-3 pt-6 mt-2" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+                            <Link href="/tutor/taxonomy/topics" className="text-decoration-none">
+                                <button type="button" className="px-6 py-2.5 cursor-pointer bg-transparent border-none transition-opacity hover:opacity-70"
+                                    style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                    Cancel
+                                </button>
+                            </Link>
+                            <button type="submit" disabled={loading}
+                                className="flex items-center justify-center gap-2 h-11 px-8 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md"
+                                style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                                {loading ? 'Creating...' : 'Create Topic'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     );

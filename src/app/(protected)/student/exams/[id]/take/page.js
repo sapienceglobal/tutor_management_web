@@ -1190,9 +1190,9 @@ export default function TakeExamPage({ params }) {
                         'w-[340px] flex flex-col transition-all duration-300 z-40 shrink-0 m-4 ml-0',
                         !isSidebarOpen && 'hidden lg:flex'
                     )}>
-
+                        {/* ── Proctoring Section ────────────────────────────────────────── */}
                         {exam?.isProctoringEnabled && (
-                            <div className="mb-4 rounded-2xl border border-slate-200 bg-white shadow-sm p-3">
+                            <div className="mb-4 rounded-2xl border border-slate-200 bg-white shadow-sm p-3 flex-shrink-0">
                                 <div className="flex items-center justify-between px-2 mb-2">
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
@@ -1200,6 +1200,8 @@ export default function TakeExamPage({ params }) {
                                     </div>
                                     {cameraPermission === 'denied' && <AlertCircle className="w-4 h-4 text-red-500" />}
                                 </div>
+
+                                {/* Camera Feed */}
                                 <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-900 aspect-video w-full shadow-inner">
                                     <ProctoringBadge />
                                     {!isCameraActive && cameraPermission !== 'denied' && (
@@ -1216,62 +1218,69 @@ export default function TakeExamPage({ params }) {
                                     <video ref={videoRef} autoPlay playsInline muted
                                         className="w-full h-full object-cover transform -scale-x-100" />
                                 </div>
+
+                                {/* Audio Bar */}
+                                {/* {exam?.isAudioProctoringEnabled && isCameraActive && (
+                                    <div className="mt-3 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-2">
+                                        <div className={cn(
+                                            "w-7 h-7 rounded-full flex items-center justify-center transition-all flex-shrink-0",
+                                            micVolume > 10 ? "bg-red-100 shadow-[0_0_8px_rgba(239,68,68,0.4)]" : "bg-white border border-slate-200"
+                                        )}>
+                                            <Mic className="w-3.5 h-3.5" style={{ color: micVolume > 10 ? '#EF4444' : '#94A3B8' }} />
+                                        </div>
+                                        <div className="flex items-end gap-1 h-6 flex-1 px-1">
+                                            {[1, 2, 3, 4, 5, 6].map(bar => (
+                                                <div key={bar}
+                                                    className="flex-1 rounded-full transition-all duration-75"
+                                                    style={{
+                                                        height: micVolume > bar * 10 ? `${Math.min(100, 30 + micVolume)}%` : '20%',
+                                                        backgroundColor: micVolume > 40 ? '#EF4444' : micVolume > 10 ? '#F59E0B' : '#E2E8F0',
+                                                    }} />
+                                            ))}
+                                        </div>
+                                        <span className="flex-shrink-0 w-10 text-right" style={{ fontSize: '9px', fontWeight: 800, color: micVolume > 10 ? '#EF4444' : '#94A3B8', textTransform: 'uppercase' }}>
+                                            {micVolume > 40 ? 'VOICE!' : micVolume > 10 ? 'Noise' : 'Silent'}
+                                        </span>
+                                    </div>
+                                )} */}
                             </div>
                         )}
-                        {/* audio bar */}
-                        {/* {exam?.isAudioProctoringEnabled && isCameraActive && (
-                            <div className="mt-2 px-3 py-2 bg-white rounded-xl border border-slate-200 flex items-center gap-2">
-                                <div className={cn(
-                                    "w-6 h-6 rounded-full flex items-center justify-center transition-all",
-                                    micVolume > 10 ? "bg-red-100 shadow-[0_0_8px_rgba(239,68,68,0.4)]" : "bg-slate-100"
-                                )}>
-                                    <Mic className="w-3 h-3" style={{ color: micVolume > 10 ? '#EF4444' : '#94A3B8' }} />
-                                </div>
-                                <div className="flex items-end gap-0.5 h-5 flex-1">
-                                    {[1, 2, 3, 4, 5].map(bar => (
-                                        <div key={bar}
-                                            className="flex-1 rounded-full transition-all duration-75"
-                                            style={{
-                                                height: micVolume > bar * 12 ? `${Math.min(100, 30 + micVolume)}%` : '20%',
-                                                backgroundColor: micVolume > 40 ? '#EF4444' : micVolume > 10 ? '#F59E0B' : '#CBD5E1',
-                                            }} />
-                                    ))}
-                                </div>
-                                <span style={{ fontSize: 9, fontWeight: 700, color: micVolume > 10 ? '#EF4444' : '#94A3B8' }}>
-                                    {micVolume > 40 ? 'VOICE!' : micVolume > 10 ? 'Noise' : 'Silent'}
-                                </span>
-                            </div>
-                        )} */}
 
-                        <div className="flex-1 flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                            <div className="h-14 border-b border-slate-200 flex items-center justify-between px-5 shrink-0 bg-slate-50/50">
+                        {/* ── Questions Navigator ───────────────────────────────────────── */}
+                        <div className="flex-1 flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-0">
+
+                            {/* Header */}
+                            <div className="h-14 border-b border-slate-200 flex items-center justify-between px-5 shrink-0 bg-slate-50/80">
                                 <div className="flex items-center gap-2.5">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                                    <span className="font-bold text-slate-800 text-sm">{answeredCount}/{exam.questions.length} Answered</span>
+                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                    <span className="font-bold text-slate-800 text-sm">
+                                        {counts?.answered || 0}/{exam?.questions?.length || 0} Answered
+                                    </span>
                                 </div>
-                                <Menu className="w-5 h-5 text-slate-400 cursor-pointer lg:hidden" onClick={() => setIsSidebarOpen(false)} />
+                                <Menu className="w-5 h-5 text-slate-400 cursor-pointer lg:hidden hover:text-slate-700 transition-colors" onClick={() => setIsSidebarOpen(false)} />
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
+                            {/* Scrollable Questions Grid (Scrollbar Hidden) */}
+                            <div className="flex-1 overflow-y-auto p-5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                                 <div className="grid grid-cols-5 gap-3">
-                                    {exam.questions.map((_, idx) => {
+                                    {exam?.questions?.map((_, idx) => {
                                         const status = getQuestionStatus(idx);
                                         const isCurrent = currentQuestionIndex === idx;
 
                                         let baseClass = 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 border-b-4';
 
-                                        if (status === 'answered') { baseClass = 'bg-emerald-50 border-emerald-400 text-emerald-700 border-b-4 border-b-emerald-500'; }
-                                        else if (status === 'not_answered') { baseClass = 'bg-red-50 border-red-400 text-red-700 border-b-4 border-b-red-500'; }
-                                        else if (status === 'marked') { baseClass = 'bg-purple-50 border-purple-400 text-purple-700 border-b-4 border-b-purple-500'; }
-                                        else if (status === 'marked_answered') { baseClass = 'bg-yellow-50 border-yellow-400 text-yellow-700 border-b-4 border-b-yellow-500'; }
+                                        if (status === 'answered') { baseClass = 'bg-emerald-50 border-emerald-400 text-emerald-700 border-b-emerald-500'; }
+                                        else if (status === 'not_answered') { baseClass = 'bg-red-50 border-red-400 text-red-700 border-b-red-500'; }
+                                        else if (status === 'marked') { baseClass = 'bg-purple-50 border-purple-400 text-purple-700 border-b-purple-500'; }
+                                        else if (status === 'marked_answered') { baseClass = 'bg-yellow-50 border-yellow-400 text-yellow-700 border-b-yellow-500'; }
 
                                         if (isCurrent) {
-                                            baseClass += ' ring-2 ring-offset-2 ring-slate-800 scale-[1.05] z-10 font-black';
+                                            baseClass += ' ring-2 ring-offset-2 ring-slate-800 z-10 font-black';
                                         }
 
                                         return (
                                             <button key={idx} onClick={() => setCurrentQuestionIndex(idx)}
-                                                className={cn('relative aspect-square rounded-lg border flex items-center justify-center text-sm font-bold transition-all', baseClass)}>
+                                                className={cn('relative aspect-square rounded-lg border flex items-center justify-center text-sm font-bold transition-colors shadow-sm', baseClass)}>
                                                 {idx + 1}
                                             </button>
                                         );
@@ -1279,28 +1288,31 @@ export default function TakeExamPage({ params }) {
                                 </div>
                             </div>
 
+                            {/* Footer: Legend & Submit */}
                             <div className="p-5 border-t border-slate-200 bg-slate-50 shrink-0">
-                                <div className="grid grid-cols-2 gap-y-4 gap-x-2 mb-6">
+                                <div className="grid grid-cols-2 gap-y-3 gap-x-2 mb-5">
                                     {[
-                                        { key: 'answered', count: counts.answered, color: 'emerald', label: 'Answered', bg: 'border-emerald-500' },
-                                        { key: 'not_answered', count: counts.not_answered, color: 'red', label: 'Not Answered', bg: 'border-red-500' },
-                                        { key: 'marked', count: counts.marked, color: 'purple', label: 'Marked for Review', bg: 'border-purple-500' },
-                                        { key: 'marked_answered', count: counts.marked_answered, color: 'yellow', label: 'Ans & Marked', bg: 'border-yellow-500' },
-                                        { key: 'not_visited', count: counts.not_visited, color: 'slate', label: 'Not Visited', bg: 'border-slate-400' },
+                                        { key: 'answered', count: counts?.answered || 0, color: 'emerald', label: 'Answered', bg: 'border-emerald-500' },
+                                        { key: 'not_answered', count: counts?.not_answered || 0, color: 'red', label: 'Not Answered', bg: 'border-red-500' },
+                                        { key: 'marked', count: counts?.marked || 0, color: 'purple', label: 'Marked (Review)', bg: 'border-purple-500' },
+                                        { key: 'marked_answered', count: counts?.marked_answered || 0, color: 'yellow', label: 'Ans & Marked', bg: 'border-yellow-500' },
+                                        { key: 'not_visited', count: counts?.not_visited || 0, color: 'slate', label: 'Not Visited', bg: 'border-slate-400' },
                                     ].map(({ count, label, bg }) => (
-                                        <div key={label} className="flex items-start gap-2.5">
-                                            <div className="relative flex items-center justify-center mt-0.5">
-                                                <div className={cn("w-6 h-6 rounded border-2 flex items-center justify-center text-[10px] font-bold text-slate-700 bg-white", bg)}>
+                                        <div key={label} className="flex items-start gap-2">
+                                            <div className="relative flex items-center justify-center mt-0.5 shrink-0">
+                                                <div className={cn("w-6 h-6 rounded border-2 flex items-center justify-center text-[10px] font-black text-slate-700 bg-white shadow-sm", bg)}>
                                                     {count}
                                                 </div>
                                             </div>
-                                            <span className="text-[10px] text-slate-700 font-bold leading-tight pt-1">{label}</span>
+                                            <span className="text-[10px] text-slate-600 font-bold leading-tight pt-1">{label}</span>
                                         </div>
                                     ))}
                                 </div>
+
                                 <button onClick={() => handleSubmit(false)} disabled={submitting}
-                                    className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#EF4444] hover:bg-[#DC2626] text-white text-sm font-bold rounded-lg transition-all shadow-sm disabled:opacity-60 border-b-4 border-[#B91C1C] active:border-b-0 active:translate-y-[4px]">
-                                    <CheckCircle className="w-5 h-5" /> Finish Test
+                                    className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#EF4444] hover:bg-[#DC2626] text-white text-sm font-bold rounded-xl transition-all shadow-sm disabled:opacity-60 border-b-4 border-[#B91C1C] active:border-b-0 active:translate-y-[4px]">
+                                    {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
+                                    {submitting ? 'Submitting...' : 'Finish Test'}
                                 </button>
                             </div>
                         </div>

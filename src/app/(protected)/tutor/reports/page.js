@@ -5,21 +5,38 @@ import Link from 'next/link';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import {
-    AlertTriangle,
-    BarChart3,
-    BookOpen,
-    CalendarClock,
-    ClipboardCheck,
-    Download,
-    FileText,
-    Loader2,
-    Users,
+    AlertTriangle, BarChart3, BookOpen, CalendarClock,
+    ClipboardCheck, Download, FileText, Loader2, Users, Search
 } from 'lucide-react';
-import { C, T, FX, S, pageStyle } from '@/constants/tutorTokens';
+import { C, T, S, R } from '@/constants/tutorTokens';
+
+// Focus Handlers
+const onFocusHandler = e => {
+    e.target.style.borderColor = C.btnPrimary;
+    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)';
+};
+const onBlurHandler = e => {
+    e.target.style.borderColor = 'transparent';
+    e.target.style.boxShadow = 'none';
+};
+
+const baseInputStyle = {
+    backgroundColor: '#E3DFF8', // Inner Box Color
+    border: '1.5px solid transparent',
+    borderRadius: R.xl,
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.sm,
+    fontWeight: T.weight.medium,
+    outline: 'none',
+    width: '100%',
+    padding: '10px 16px',
+    transition: 'all 0.2s ease',
+};
 
 function MetricCard({ icon: Icon, title, value, subtitle, tone = 'default' }) {
     const toneStyles = {
-        default: { bg: FX.primary08, color: C.btnPrimary },
+        default: { bg: '#E3DFF8', color: C.btnPrimary },
         success: { bg: C.successBg, color: C.success },
         warning: { bg: C.warningBg, color: C.warning },
         danger: { bg: C.dangerBg, color: C.danger },
@@ -27,31 +44,24 @@ function MetricCard({ icon: Icon, title, value, subtitle, tone = 'default' }) {
     const style = toneStyles[tone] || toneStyles.default;
 
     return (
-        <div
-            className="rounded-2xl border p-4"
-            style={{
-                backgroundColor: C.surfaceWhite,
-                borderColor: C.cardBorder,
-                boxShadow: S.card,
-            }}
-        >
-            <div className="flex items-center justify-between gap-2 mb-3">
-                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, fontWeight: T.weight.bold }}>
+        <div className="p-5 flex flex-col justify-between transition-transform hover:-translate-y-0.5" 
+            style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card, minHeight: '120px' }}>
+            <div className="flex items-center justify-between gap-2 mb-2">
+                <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, textTransform: 'uppercase', margin: 0 }}>
                     {title}
                 </p>
-                <span
-                    className="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: style.bg }}
-                >
-                    <Icon className="w-4 h-4" style={{ color: style.color }} />
-                </span>
+                <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ backgroundColor: style.bg, borderRadius: R.md }}>
+                    <Icon size={16} color={style.color} />
+                </div>
             </div>
-            <p style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], color: C.heading, fontWeight: T.weight.black, lineHeight: T.leading.tight }}>
-                {value}
-            </p>
-            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, marginTop: 2 }}>
-                {subtitle}
-            </p>
+            <div className="mt-auto">
+                <p style={{ fontSize: T.size['3xl'], fontWeight: T.weight.black, color: style.color === C.btnPrimary ? C.heading : style.color, margin: 0, lineHeight: 1 }}>
+                    {value}
+                </p>
+                <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, margin: '4px 0 0 0' }}>
+                    {subtitle}
+                </p>
+            </div>
         </div>
     );
 }
@@ -62,6 +72,7 @@ export default function TutorReportsPage() {
     const [report, setReport] = useState(null);
     const [courseReports, setCourseReports] = useState([]);
     const [atRiskStudents, setAtRiskStudents] = useState([]);
+    const [searchTerm, setSearchTerm] = useState(''); // Added Search state for UI completeness
 
     useEffect(() => {
         fetchReports();
@@ -117,276 +128,181 @@ export default function TutorReportsPage() {
         return new Date(report.generatedAt).toLocaleString();
     }, [report?.generatedAt]);
 
-    if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
-                <p style={{ fontFamily: T.fontFamily, color: C.textMuted, fontSize: T.size.sm }}>Loading reports...</p>
-            </div>
-        );
-    }
-
     const riskBadge = (level) => {
         if (level === 'high') return { label: 'High', bg: C.dangerBg, border: C.dangerBorder, color: C.danger };
         return { label: 'Medium', bg: C.warningBg, border: C.warningBorder, color: C.warning };
     };
 
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
+                <Loader2 className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
+                <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading reports...</p>
+            </div>
+        );
+    }
+
     return (
-        <div className="space-y-5" style={pageStyle}>
-            <div
-                className="rounded-2xl p-4 flex items-center justify-between gap-3"
-                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}
-            >
-                <div className="flex items-center gap-3">
-                    <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center"
-                        style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary20}` }}
-                    >
-                        <FileText className="w-4 h-4" style={{ color: C.btnPrimary }} />
+        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+            
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+                        <FileText size={24} color={C.btnPrimary} />
                     </div>
                     <div>
-                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>
+                        <h1 style={{ color: C.heading, fontSize: T.size.xl, fontWeight: T.weight.black, margin: '0 0 4px 0' }}>
                             Reports Hub
                         </h1>
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+                        <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, margin: 0 }}>
                             Generated: {formattedGeneratedAt}
                         </p>
                     </div>
                 </div>
-
                 <button
                     onClick={handleExport}
                     disabled={exporting}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-white disabled:opacity-60"
-                    style={{ backgroundColor: C.btnPrimary, boxShadow: S.btn }}
+                    className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-md w-full sm:w-auto"
+                    style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}
                 >
-                    {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                    Export CSV
+                    {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />} Export CSV
                 </button>
             </div>
 
+            {/* Overview Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                <MetricCard
-                    icon={BookOpen}
-                    title="Total Courses"
-                    value={report?.overview?.totalCourses ?? 0}
-                    subtitle={`${report?.overview?.publishedCourses ?? 0} published`}
-                />
-                <MetricCard
-                    icon={Users}
-                    title="Total Students"
-                    value={report?.overview?.totalStudents ?? 0}
-                    subtitle={`${report?.overview?.activeEnrollments ?? 0} active enrollments`}
-                />
-                <MetricCard
-                    icon={CalendarClock}
-                    title="Upcoming Items"
-                    value={(report?.overview?.upcomingClasses ?? 0) + (report?.overview?.upcomingExams ?? 0)}
-                    subtitle={`${report?.overview?.upcomingClasses ?? 0} classes, ${report?.overview?.upcomingExams ?? 0} exams`}
-                    tone="warning"
-                />
-                <MetricCard
-                    icon={AlertTriangle}
-                    title="At-Risk Students"
-                    value={report?.students?.atRiskCount ?? 0}
-                    subtitle={`${report?.students?.highRiskCount ?? 0} high risk`}
-                    tone={report?.students?.highRiskCount > 0 ? 'danger' : 'success'}
-                />
+                <MetricCard icon={BookOpen} title="Total Courses" value={report?.overview?.totalCourses ?? 0} subtitle={`${report?.overview?.publishedCourses ?? 0} published`} />
+                <MetricCard icon={Users} title="Total Students" value={report?.overview?.totalStudents ?? 0} subtitle={`${report?.overview?.activeEnrollments ?? 0} active enrollments`} />
+                <MetricCard icon={CalendarClock} title="Upcoming Items" value={(report?.overview?.upcomingClasses ?? 0) + (report?.overview?.upcomingExams ?? 0)} subtitle={`${report?.overview?.upcomingClasses ?? 0} classes, ${report?.overview?.upcomingExams ?? 0} exams`} tone="warning" />
+                <MetricCard icon={AlertTriangle} title="At-Risk Students" value={report?.students?.atRiskCount ?? 0} subtitle={`${report?.students?.highRiskCount ?? 0} high risk`} tone={report?.students?.highRiskCount > 0 ? 'danger' : 'success'} />
             </div>
 
+            {/* Performance Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                <MetricCard
-                    icon={BarChart3}
-                    title="Course Health"
-                    value={`${report?.courses?.averageProgress ?? 0}%`}
-                    subtitle={`Completion rate ${report?.courses?.completionRate ?? 0}%`}
-                />
-                <MetricCard
-                    icon={ClipboardCheck}
-                    title="Exam Performance"
-                    value={`${report?.exams?.averageScore ?? 0}%`}
-                    subtitle={`Pass rate ${report?.exams?.passRate ?? 0}%`}
-                />
-                <MetricCard
-                    icon={FileText}
-                    title="Assignments"
-                    value={`${report?.assignments?.submissionRate ?? 0}%`}
-                    subtitle={`${report?.assignments?.pendingReview ?? 0} pending review`}
-                />
-                <MetricCard
-                    icon={Users}
-                    title="Attendance"
-                    value={`${report?.attendance?.attendanceRate ?? 0}%`}
-                    subtitle={`${report?.attendance?.totalSessions ?? 0} sessions tracked`}
-                />
+                <MetricCard icon={BarChart3} title="Course Health" value={`${report?.courses?.averageProgress ?? 0}%`} subtitle={`Completion rate ${report?.courses?.completionRate ?? 0}%`} />
+                <MetricCard icon={ClipboardCheck} title="Exam Performance" value={`${report?.exams?.averageScore ?? 0}%`} subtitle={`Pass rate ${report?.exams?.passRate ?? 0}%`} />
+                <MetricCard icon={FileText} title="Assignments" value={`${report?.assignments?.submissionRate ?? 0}%`} subtitle={`${report?.assignments?.pendingReview ?? 0} pending review`} />
+                <MetricCard icon={Users} title="Attendance" value={`${report?.attendance?.attendanceRate ?? 0}%`} subtitle={`${report?.attendance?.totalSessions ?? 0} sessions tracked`} />
             </div>
 
-            <div
-                className="rounded-2xl border overflow-hidden"
-                style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}
-            >
-                <div className="px-4 py-3 border-b" style={{ borderColor: C.cardBorder }}>
-                    <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.bold }}>
-                        Course Reports
-                    </h2>
-                </div>
-                {courseReports.length > 0 ? (
-                    <div className="overflow-x-auto">
-                        <table className="w-full min-w-[900px]">
-                            <thead style={{ backgroundColor: FX.primary05 }}>
-                                <tr>
-                                    {['Course', 'Status', 'Students', 'Progress', 'Assignment Rate', 'Exam Score', 'Attendance'].map((label) => (
-                                        <th
-                                            key={label}
-                                            className="text-left px-4 py-2.5"
-                                            style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, fontWeight: T.weight.bold, letterSpacing: T.tracking.wider, textTransform: 'uppercase' }}
-                                        >
-                                            {label}
-                                        </th>
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                
+                {/* Course Reports Table */}
+                <div className="xl:col-span-2 overflow-hidden flex flex-col h-[500px]" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="px-5 py-4 shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" style={{ backgroundColor: '#E3DFF8', borderBottom: `1px solid ${C.cardBorder}` }}>
+                        <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Course Reports</h2>
+                        <div className="relative w-full sm:w-64">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2" size={16} color={C.textMuted} />
+                            <input 
+                                placeholder="Search courses..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{ ...baseInputStyle, paddingLeft: '36px', backgroundColor: C.surfaceWhite }}
+                                onFocus={onFocusHandler} onBlur={onBlurHandler}
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="flex-1 overflow-auto custom-scrollbar">
+                        {courseReports.length > 0 ? (
+                            <div className="min-w-[800px]">
+                                <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] px-5 py-3" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                                    {['Course', 'Status', 'Students', 'Progress', 'Exam Score', 'Attendance'].map((label) => (
+                                        <span key={label} style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>{label}</span>
                                     ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {courseReports.map((course) => (
-                                    <tr key={course.courseId} className="border-t" style={{ borderColor: C.cardBorder }}>
-                                        <td className="px-4 py-3">
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.semibold }}>
-                                                {course.title}
-                                            </p>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span
-                                                className="inline-flex px-2 py-1 rounded-full border"
-                                                style={{
-                                                    fontFamily: T.fontFamily,
-                                                    fontSize: '10px',
-                                                    fontWeight: T.weight.bold,
-                                                    color: course.status === 'published' ? C.success : C.warning,
-                                                    borderColor: course.status === 'published' ? C.successBorder : C.warningBorder,
-                                                    backgroundColor: course.status === 'published' ? C.successBg : C.warningBg,
-                                                }}
-                                            >
-                                                {course.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text }}>
-                                            {course.students}
-                                        </td>
-                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text }}>
-                                            {course.averageProgress}%
-                                        </td>
-                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text }}>
-                                            {course.assignmentSubmissionRate}%
-                                        </td>
-                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text }}>
-                                            {course.averageExamScore}%
-                                        </td>
-                                        <td className="px-4 py-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text }}>
-                                            {course.attendanceRate}%
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </div>
+                                <div className="flex flex-col gap-2 p-3">
+                                    {courseReports.filter(c => c.title.toLowerCase().includes(searchTerm.toLowerCase())).map((course) => {
+                                        const isPublished = course.status === 'published';
+                                        return (
+                                            <div key={course.courseId} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr] px-3 py-3 items-center" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+                                                <p className="truncate pr-2" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{course.title}</p>
+                                                <div>
+                                                    <span style={{ fontSize: '10px', fontWeight: T.weight.black, padding: '4px 8px', borderRadius: R.md, textTransform: 'uppercase', backgroundColor: isPublished ? C.successBg : C.warningBg, color: isPublished ? C.success : C.warning, border: `1px solid ${isPublished ? C.successBorder : C.warningBorder}` }}>
+                                                        {course.status}
+                                                    </span>
+                                                </div>
+                                                <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.text }}>{course.students}</span>
+                                                <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.btnPrimary }}>{course.averageProgress}%</span>
+                                                <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>{course.averageExamScore}%</span>
+                                                <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.text }}>{course.attendanceRate}%</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full py-10">
+                                <BookOpen size={32} color={C.textMuted} style={{ opacity: 0.3, marginBottom: '12px' }} />
+                                <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>No course report data yet.</p>
+                            </div>
+                        )}
                     </div>
-                ) : (
-                    <div className="px-4 py-10 text-center">
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted }}>
-                            No course report data yet.
-                        </p>
-                    </div>
-                )}
-            </div>
-
-            <div
-                className="rounded-2xl border overflow-hidden"
-                style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}
-            >
-                <div className="px-4 py-3 border-b flex items-center justify-between gap-2" style={{ borderColor: C.cardBorder }}>
-                    <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.bold }}>
-                        At-Risk Students
-                    </h2>
-                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                        {atRiskStudents.length} flagged
-                    </span>
                 </div>
 
-                {atRiskStudents.length > 0 ? (
-                    <div className="divide-y" style={{ borderColor: C.cardBorder }}>
-                        {atRiskStudents.slice(0, 25).map((student) => {
-                            const badge = riskBadge(student.riskLevel);
-                            return (
-                                <div key={student.studentId} className="px-4 py-3 flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4">
-                                    <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.semibold }}>
-                                                {student.name}
-                                            </p>
-                                            <span
-                                                className="inline-flex items-center px-2 py-0.5 rounded-full border"
-                                                style={{
-                                                    backgroundColor: badge.bg,
-                                                    borderColor: badge.border,
-                                                    color: badge.color,
-                                                    fontFamily: T.fontFamily,
-                                                    fontSize: '10px',
-                                                    fontWeight: T.weight.bold,
-                                                    textTransform: 'uppercase',
-                                                    letterSpacing: T.tracking.wide,
-                                                }}
-                                            >
+                {/* At-Risk Students List */}
+                <div className="xl:col-span-1 overflow-hidden flex flex-col h-[500px]" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="px-5 py-4 shrink-0 flex items-center justify-between gap-2" style={{ backgroundColor: '#E3DFF8', borderBottom: `1px solid ${C.cardBorder}` }}>
+                        <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>At-Risk Students</h2>
+                        <span style={{ backgroundColor: C.dangerBg, color: C.danger, padding: '4px 10px', borderRadius: R.full, fontSize: '10px', fontWeight: T.weight.black, border: `1px solid ${C.dangerBorder}` }}>
+                            {atRiskStudents.length} flagged
+                        </span>
+                    </div>
+
+                    <div className="flex-1 overflow-auto custom-scrollbar p-3 space-y-3">
+                        {atRiskStudents.length > 0 ? (
+                            atRiskStudents.slice(0, 25).map((student) => {
+                                const badge = riskBadge(student.riskLevel);
+                                return (
+                                    <div key={student.studentId} className="p-4" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                                        <div className="flex items-start justify-between gap-2 mb-3">
+                                            <div className="min-w-0">
+                                                <p className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 2px 0' }}>{student.name}</p>
+                                                <p className="truncate" style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>{student.email}</p>
+                                            </div>
+                                            <span className="shrink-0 uppercase" style={{ fontSize: '10px', fontWeight: T.weight.black, backgroundColor: badge.bg, color: badge.color, border: `1px solid ${badge.border}`, padding: '2px 6px', borderRadius: R.md }}>
                                                 {badge.label} • {student.riskScore}
                                             </span>
                                         </div>
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, marginTop: 1 }}>
-                                            {student.email}
-                                        </p>
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, marginTop: 4 }}>
-                                            {(student.courses || []).join(', ')}
-                                        </p>
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, marginTop: 4 }}>
+                                        
+                                        <div className="grid grid-cols-2 gap-2 mb-3">
+                                            {[
+                                                { label: 'Progress', value: `${student.indicators?.progress ?? 0}%` },
+                                                { label: 'Exam', value: student.indicators?.examAverage === null ? 'N/A' : `${student.indicators.examAverage}%` },
+                                                { label: 'Assign', value: `${student.indicators?.assignmentRate ?? 0}%` },
+                                                { label: 'Attendance', value: `${student.indicators?.attendanceRate ?? 0}%` },
+                                            ].map((item, idx) => (
+                                                <div key={idx} className="p-2" style={{ backgroundColor: C.surfaceWhite, borderRadius: R.md, border: `1px solid ${C.cardBorder}` }}>
+                                                    <p style={{ fontSize: '9px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 2px 0' }}>{item.label}</p>
+                                                    <p style={{ fontSize: T.size.xs, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>{item.value}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <p className="line-clamp-2 mb-3" style={{ fontSize: '11px', color: C.danger, fontWeight: T.weight.bold }}>
                                             {(student.reasons || []).join(' • ')}
                                         </p>
-                                    </div>
 
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:w-[360px]">
-                                        {[
-                                            { label: 'Progress', value: `${student.indicators?.progress ?? 0}%` },
-                                            { label: 'Exam', value: student.indicators?.examAverage === null ? 'N/A' : `${student.indicators.examAverage}%` },
-                                            { label: 'Assign', value: `${student.indicators?.assignmentRate ?? 0}%` },
-                                            { label: 'Attendance', value: `${student.indicators?.attendanceRate ?? 0}%` },
-                                        ].map((item) => (
-                                            <div key={item.label} className="rounded-lg px-2.5 py-2" style={{ backgroundColor: FX.primary05 }}>
-                                                <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: T.tracking.wide }}>
-                                                    {item.label}
-                                                </p>
-                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.bold, marginTop: 2 }}>
-                                                    {item.value}
-                                                </p>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <div className="lg:w-[110px]">
-                                        <Link
-                                            href={`/tutor/students/${student.studentId}`}
-                                            className="inline-flex items-center justify-center w-full px-3 py-2 rounded-xl text-xs font-semibold border"
-                                            style={{ borderColor: C.cardBorder, color: C.btnPrimary, backgroundColor: FX.primary08 }}
-                                        >
-                                            View Profile
+                                        <Link href={`/tutor/students/${student.studentId}`} className="text-decoration-none">
+                                            <button className="w-full h-8 flex items-center justify-center cursor-pointer transition-opacity hover:opacity-80 border-none"
+                                                style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, borderRadius: R.md, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}>
+                                                View Profile
+                                            </button>
                                         </Link>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full py-10 text-center">
+                                <AlertTriangle size={32} color={C.textMuted} style={{ opacity: 0.3, marginBottom: '12px' }} />
+                                <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>No at-risk students</p>
+                                <p style={{ fontSize: T.size.xs, color: C.textMuted, margin: 0 }}>Everyone is performing well.</p>
+                            </div>
+                        )}
                     </div>
-                ) : (
-                    <div className="px-4 py-10 text-center">
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted }}>
-                            No at-risk students detected right now.
-                        </p>
-                    </div>
-                )}
+                </div>
+
             </div>
         </div>
     );

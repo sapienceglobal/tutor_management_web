@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Plus, X, Upload, ChevronRight, ChevronLeft, BookOpen, Video, FileText, CheckCircle2, Rocket, Trash2 } from 'lucide-react';
+import { Loader2, Plus, X, Upload, ChevronRight, ChevronLeft, BookOpen, Video, FileText, CheckCircle2, Rocket, Trash2, ArrowLeft } from 'lucide-react';
 import api from '@/lib/axios';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
