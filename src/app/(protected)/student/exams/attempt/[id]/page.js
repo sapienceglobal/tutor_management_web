@@ -4,11 +4,11 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     CheckCircle, XCircle, AlertCircle, Clock,
-    ArrowLeft, Download, TrendingUp, ClipboardCheck, Send
+    ArrowLeft, Download, TrendingUp, ClipboardCheck, Send, Check
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
-import { C, T, S } from '@/constants/studentTokens';
+import { C, T, S, R, FX } from '@/constants/studentTokens';
 
 const getOptionText = (option) => {
     if (!option) return '';
@@ -20,6 +20,30 @@ const getStatus = (item) => {
     if (item?.status) return item.status;
     if (item?.userSelectedOption === -1 || item?.userSelectedOption === undefined) return 'unanswered';
     return item?.isCorrect ? 'correct' : 'incorrect';
+};
+
+// Focus Handlers
+const onFocusHandler = e => {
+    e.target.style.borderColor = C.btnPrimary;
+    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)';
+};
+const onBlurHandler = e => {
+    e.target.style.borderColor = 'transparent';
+    e.target.style.boxShadow = 'none';
+};
+
+const baseInputStyle = {
+    backgroundColor: C.surfaceWhite,
+    border: '1.5px solid transparent',
+    borderRadius: R.xl,
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.sm,
+    fontWeight: T.weight.medium,
+    outline: 'none',
+    width: '100%',
+    padding: '10px 16px',
+    transition: 'all 0.2s ease',
 };
 
 export default function ExamResultPage({ params }) {
@@ -57,9 +81,7 @@ export default function ExamResultPage({ params }) {
                 if (res.data?.success && Array.isArray(res.data.requests) && res.data.requests.length > 0) {
                     setReevaluationRequest(res.data.requests[0]);
                 }
-            } catch {
-                // optional widget; ignore network errors here
-            }
+            } catch {}
         };
         fetchReevaluationRequest();
     }, [id]);
@@ -95,9 +117,9 @@ export default function ExamResultPage({ params }) {
     };
 
     if (loading) return (
-        <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="w-11 h-11 rounded-full border-[3px] animate-spin"
-                style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+        <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
+            <div className="w-12 h-12 rounded-full border-[3px] animate-spin" style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+            <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Analyzing your performance...</p>
         </div>
     );
 
@@ -105,184 +127,131 @@ export default function ExamResultPage({ params }) {
 
     const hiddenAnswers = (result.analysis || []).some(item => item.canViewCorrectAnswer === false);
     const hiddenSolutions = (result.analysis || []).some(item => item.canViewSolution === false);
+    
+    const themeColor = result.isPassed ? C.success : C.danger;
+    const themeBg = result.isPassed ? C.successBg : C.dangerBg;
+    const themeBorder = result.isPassed ? C.successBorder : C.dangerBorder;
 
     return (
-        <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8"
-            style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}>
-            <div className="max-w-4xl mx-auto space-y-8">
+        <div className="w-full min-h-screen p-6 pb-24 space-y-6" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+            
+            {/* Nav Row */}
+            <div className="flex items-center justify-between max-w-4xl mx-auto">
+                <button onClick={() => router.push('/student/dashboard')}
+                    className="flex items-center gap-2 h-10 px-4 cursor-pointer border-none transition-opacity hover:opacity-80 shadow-sm"
+                    style={{ backgroundColor: '#EAE8FA', color: C.heading, borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}>
+                    <ArrowLeft size={16} /> Back to Dashboard
+                </button>
+                <button className="hidden sm:flex items-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-80 shadow-sm"
+                    style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}>
+                    <Download size={16} /> Download Report
+                </button>
+            </div>
 
-                {/* ── Nav ──────────────────────────────────────────────── */}
-                <div className="flex justify-between items-center">
-                    <button onClick={() => router.push('/student/dashboard')}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all"
-                        style={{ color: C.text, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold }}
-                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}
-                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
-                    </button>
-                    <button className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl transition-all"
-                        style={{ border: `1px solid ${C.cardBorder}`, color: C.text, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold }}
-                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}
-                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                        <Download className="w-4 h-4" /> Download Report
-                    </button>
-                </div>
+            <div className="max-w-4xl mx-auto space-y-6">
+                
+                {/* ── Main Score Card (Bento Hero) ───────────────────────────────────────── */}
+                <div className="rounded-[32px] overflow-hidden relative" style={{ backgroundColor: '#EAE8FA', border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="h-3" style={{ backgroundColor: themeColor }} />
+                    <div className="absolute top-0 right-0 w-64 h-64 rounded-full mix-blend-multiply filter blur-3xl opacity-20 pointer-events-none" style={{ backgroundColor: themeColor }} />
+                    <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full mix-blend-multiply filter blur-3xl opacity-10 pointer-events-none" style={{ backgroundColor: C.btnPrimary }} />
 
-                {/* ── Score card ───────────────────────────────────────── */}
-                <div className="rounded-2xl overflow-hidden"
-                    style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                    <div className="h-2" style={{ backgroundColor: result.isPassed ? C.success : C.danger }} />
-
-                    <div className="p-8 md:p-12 text-center">
-                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.bold, color: C.heading, marginBottom: 8 }}>
+                    <div className="p-8 md:p-12 flex flex-col items-center text-center relative z-10">
+                        <h1 style={{ fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, marginBottom: 4, lineHeight: 1.2 }}>
                             {result.examTitle}
                         </h1>
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, opacity: 0.50, marginBottom: 32 }}>
-                            completed on {new Date(result.submittedAt).toLocaleDateString()}
+                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted, marginBottom: 32 }}>
+                            Completed on {new Date(result.submittedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                         </p>
 
-                        {/* Score circle */}
-                        <div className="flex flex-col items-center justify-center mb-8">
-                            <div className="w-40 h-40 rounded-full flex flex-col items-center justify-center border-8 mb-4"
-                                style={result.isPassed
-                                    ? { borderColor: C.successBg, backgroundColor: C.successBg, color: '#059669', boxShadow: `0 8px 32px ${C.success}30` }
-                                    : { borderColor: C.dangerBg, backgroundColor: C.dangerBg, color: C.danger, boxShadow: `0 8px 32px ${C.danger}30` }}>
-                                <span style={{ fontFamily: T.fontFamily, fontSize: '48px', fontWeight: T.weight.black, lineHeight: 1 }}>
-                                    {Math.round(result.percentage)}%
-                                </span>
-                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginTop: 4 }}>
-                                    {result.isPassed ? 'Passed' : 'Failed'}
-                                </span>
-                            </div>
-                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.medium, color: C.text }}>
-                                Score: <span style={{ fontWeight: T.weight.bold, color: C.heading }}>{result.score}</span> / {result.totalMarks}
-                            </p>
+                        <div className="w-48 h-48 rounded-full flex flex-col items-center justify-center border-[8px] mb-6 shadow-xl"
+                            style={{ borderColor: themeBg, backgroundColor: C.surfaceWhite, color: themeColor, boxShadow: `0 0 40px ${themeColor}40` }}>
+                            <span style={{ fontSize: '56px', fontWeight: T.weight.black, lineHeight: 1 }}>
+                                {Math.round(result.percentage)}<span style={{ fontSize: '28px' }}>%</span>
+                            </span>
+                            <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: '1px', marginTop: 4 }}>
+                                {result.isPassed ? 'Passed' : 'Failed'}
+                            </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-white shadow-sm border border-slate-100">
+                            <span style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.textMuted }}>Total Score:</span>
+                            <span style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading }}>{result.score} <span style={{ fontSize: T.size.sm, color: C.textMuted }}>/ {result.totalMarks}</span></span>
                         </div>
 
-                        {/* Stats grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-8"
-                            style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+                        {/* Stats Grid inside Hero */}
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 w-full mt-10">
                             {[
-                                { label: 'Time Taken', value: formatTime(result.timeSpent), icon: Clock, bg: C.innerBg, color: C.text },
-                                { label: 'Correct', value: result.correctCount, icon: CheckCircle, bg: C.successBg, color: '#059669' },
+                                { label: 'Time Taken', value: formatTime(result.timeSpent), icon: Clock, bg: '#E3DFF8', color: C.heading },
+                                { label: 'Correct', value: result.correctCount, icon: CheckCircle, bg: C.successBg, color: C.success },
                                 { label: 'Incorrect', value: result.incorrectCount, icon: XCircle, bg: C.dangerBg, color: C.danger },
-                                { label: 'Unattempted', value: result.unansweredCount, icon: AlertCircle, bg: C.innerBg, color: C.text },
-                                { label: 'Percentile', value: result.percentile != null ? `Top ${100 - result.percentile}%` : 'N/A', icon: TrendingUp, bg: C.btnViewAllBg, color: C.btnViewAllText },
+                                { label: 'Skipped', value: result.unansweredCount, icon: AlertCircle, bg: C.surfaceWhite, color: C.textMuted },
+                                { label: 'Percentile', value: result.percentile != null ? `Top ${100 - result.percentile}%` : 'N/A', icon: TrendingUp, bg: '#EAE8FA', color: C.btnPrimary },
                             ].map((stat, i) => (
-                                <div key={i} className="p-4 rounded-xl text-center"
+                                <div key={i} className="p-4 rounded-2xl flex flex-col items-center justify-center border border-slate-100/50 transition-transform hover:-translate-y-1"
                                     style={{ backgroundColor: stat.bg }}>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: stat.color, opacity: 0.70, marginBottom: 4 }}>
-                                        {stat.label}
-                                    </p>
-                                    <p className="flex items-center justify-center gap-2"
-                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: stat.color }}>
-                                        <stat.icon className="w-4 h-4" />
-                                        {stat.value}
-                                    </p>
+                                    <stat.icon className="w-5 h-5 mb-2" style={{ color: stat.color }} />
+                                    <p style={{ fontSize: T.size['xl'], fontWeight: T.weight.black, color: stat.color, lineHeight: 1, marginBottom: 4 }}>{stat.value}</p>
+                                    <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.text, opacity: 0.6, textTransform: 'uppercase' }}>{stat.label}</p>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
 
-                {/* ── Detailed Analysis ─────────────────────────────────── */}
-                <div className="rounded-2xl p-5"
-                    style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex items-start gap-3">
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                                style={{ backgroundColor: C.btnViewAllBg, color: C.btnPrimary }}>
-                                <ClipboardCheck className="w-4 h-4" />
-                            </div>
-                            <div>
-                                <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading }}>
-                                    Re-evaluation Request
-                                </h3>
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, marginTop: 2 }}>
-                                    If you think scoring needs review, submit your reason for tutor verification.
-                                </p>
-                            </div>
+                {/* ── Re-evaluation Box ─────────────────────────────────── */}
+                <div className="rounded-3xl p-6" style={{ backgroundColor: '#EAE8FA', border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: '#E3DFF8' }}>
+                            <ClipboardCheck size={20} color={C.btnPrimary} />
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: '0 0 2px 0' }}>Re-evaluation Request</h3>
+                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>Think scoring needs a review? Submit a request.</p>
                         </div>
                     </div>
 
                     {reevaluationRequest ? (
-                        <div className="rounded-xl px-3 py-2.5 border inline-flex items-center gap-2"
-                            style={{
-                                backgroundColor:
-                                    reevaluationRequest.status === 'approved' ? C.successBg :
-                                        reevaluationRequest.status === 'rejected' ? C.dangerBg : C.warningBg,
-                                borderColor:
-                                    reevaluationRequest.status === 'approved' ? C.successBorder :
-                                        reevaluationRequest.status === 'rejected' ? C.dangerBorder : C.warningBorder,
-                                color:
-                                    reevaluationRequest.status === 'approved' ? C.success :
-                                        reevaluationRequest.status === 'rejected' ? C.danger : C.warning,
+                        <div className="p-4 rounded-xl flex items-center gap-3 w-fit"
+                            style={{ 
+                                backgroundColor: reevaluationRequest.status === 'approved' ? C.successBg : reevaluationRequest.status === 'rejected' ? C.dangerBg : C.warningBg,
+                                border: `1px solid ${reevaluationRequest.status === 'approved' ? C.successBorder : reevaluationRequest.status === 'rejected' ? C.dangerBorder : C.warningBorder}`,
+                                color: reevaluationRequest.status === 'approved' ? C.success : reevaluationRequest.status === 'rejected' ? C.danger : C.warning
                             }}>
-                            {reevaluationRequest.status === 'approved' && <CheckCircle className="w-4 h-4" />}
-                            {reevaluationRequest.status === 'rejected' && <XCircle className="w-4 h-4" />}
-                            {reevaluationRequest.status === 'pending' && <Clock className="w-4 h-4" />}
-                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, textTransform: 'capitalize' }}>
-                                {reevaluationRequest.status} request {reevaluationRequest.status === 'pending' ? 'in review' : ''}
+                            {reevaluationRequest.status === 'approved' && <CheckCircle size={18} />}
+                            {reevaluationRequest.status === 'rejected' && <XCircle size={18} />}
+                            {reevaluationRequest.status === 'pending' && <Clock size={18} />}
+                            <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, textTransform: 'capitalize' }}>
+                                Status: {reevaluationRequest.status} {reevaluationRequest.status === 'pending' ? '(In Review)' : ''}
                             </span>
                         </div>
                     ) : (
                         <div className="space-y-3">
                             {!showRequestBox ? (
-                                <button
-                                    onClick={() => setShowRequestBox(true)}
-                                    className="px-4 h-9 rounded-xl"
-                                    style={{
-                                        backgroundColor: C.btnViewAllBg,
-                                        color: C.btnPrimary,
-                                        border: `1px solid ${C.cardBorder}`,
-                                        fontFamily: T.fontFamily,
-                                        fontSize: T.size.sm,
-                                        fontWeight: T.weight.bold,
-                                    }}>
+                                <button onClick={() => setShowRequestBox(true)}
+                                    className="h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-sm rounded-xl"
+                                    style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}>
                                     Request Re-evaluation
                                 </button>
                             ) : (
-                                <div className="space-y-2.5">
+                                <div className="space-y-3" style={{ backgroundColor: '#E3DFF8', padding: '16px', borderRadius: R.xl }}>
                                     <textarea
                                         value={requestReason}
                                         onChange={(e) => setRequestReason(e.target.value)}
-                                        placeholder="Explain what should be re-evaluated (minimum 15 characters)..."
+                                        placeholder="Explain your reasoning (min 15 chars)..."
                                         rows={3}
-                                        className="w-full rounded-xl border px-3 py-2 resize-y"
-                                        style={{
-                                            borderColor: C.cardBorder,
-                                            backgroundColor: C.surfaceWhite,
-                                            color: C.heading,
-                                            fontFamily: T.fontFamily,
-                                            fontSize: T.size.sm,
-                                        }}
+                                        style={{ ...baseInputStyle, resize: 'vertical', minHeight: '80px' }}
+                                        onFocus={onFocusHandler} onBlur={onBlurHandler}
                                     />
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={handleSubmitReevaluation}
-                                            disabled={requestLoading}
-                                            className="px-4 h-9 rounded-xl inline-flex items-center gap-1.5 disabled:opacity-60"
-                                            style={{
-                                                backgroundColor: C.btnPrimary,
-                                                color: C.btnPrimaryText,
-                                                fontFamily: T.fontFamily,
-                                                fontSize: T.size.sm,
-                                                fontWeight: T.weight.bold,
-                                            }}>
-                                            {requestLoading ? <Clock className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                                            Submit Request
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={handleSubmitReevaluation} disabled={requestLoading}
+                                            className="h-10 px-6 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md rounded-xl flex items-center gap-2"
+                                            style={{ background: C.gradientBtn, color: '#fff', fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                            {requestLoading ? <Clock size={16} className="animate-spin" /> : <Send size={16} />} Submit Request
                                         </button>
-                                        <button
-                                            onClick={() => { setShowRequestBox(false); setRequestReason(''); }}
-                                            className="px-4 h-9 rounded-xl border"
-                                            style={{
-                                                borderColor: C.cardBorder,
-                                                backgroundColor: C.surfaceWhite,
-                                                color: C.text,
-                                                fontFamily: T.fontFamily,
-                                                fontSize: T.size.sm,
-                                                fontWeight: T.weight.semibold,
-                                            }}>
+                                        <button onClick={() => { setShowRequestBox(false); setRequestReason(''); }}
+                                            className="h-10 px-4 cursor-pointer bg-transparent border-none transition-opacity hover:opacity-70"
+                                            style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
                                             Cancel
                                         </button>
                                     </div>
@@ -292,136 +261,136 @@ export default function ExamResultPage({ params }) {
                     )}
                 </div>
 
+                {/* ── Detailed Analysis (Questions List) ─────────────────────────────────── */}
                 <div className="space-y-6">
-                    <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.bold, color: C.heading }}>
-                        Detailed Analysis
-                    </h2>
-                    {hiddenAnswers && (
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.warning }}>
-                            Answer key hidden by tutor for some/all questions.
-                        </p>
-                    )}
-                    {hiddenSolutions && (
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.warning }}>
-                            Solution hidden by tutor for some/all questions.
-                        </p>
+                    <div className="flex items-center justify-between px-2">
+                        <h2 style={{ fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Detailed Analysis</h2>
+                    </div>
+
+                    {(hiddenAnswers || hiddenSolutions) && (
+                        <div className="p-4 rounded-xl flex items-start gap-3 bg-amber-50 border border-amber-200">
+                            <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.warning, margin: 0, lineHeight: 1.4 }}>
+                                Note: The tutor has hidden the correct answers or solutions for some questions.
+                            </p>
+                        </div>
                     )}
 
                     {result.analysis?.map((item, index) => {
                         const status = getStatus(item);
                         const selectedAnswer = item.selectedAnswerText || getOptionText(item.options?.[item.userSelectedOption]) || '-';
-                        const correctAnswer = item.canViewCorrectAnswer
-                            ? (item.correctAnswerText || getOptionText(item.options?.[item.correctOption]) || '-')
-                            : 'Hidden';
+                        const correctAnswer = item.canViewCorrectAnswer ? (item.correctAnswerText || getOptionText(item.options?.[item.correctOption]) || '-') : 'Hidden by Tutor';
 
                         const statusCfg = {
-                            correct: { bg: C.successBg, color: '#059669', border: C.successBorder },
+                            correct: { bg: C.successBg, color: C.success, border: C.successBorder },
                             incorrect: { bg: C.dangerBg, color: C.danger, border: C.dangerBorder },
-                            unanswered: { bg: C.innerBg, color: C.text, border: C.cardBorder },
-                        }[status] || { bg: C.innerBg, color: C.text, border: C.cardBorder };
+                            unanswered: { bg: C.surfaceWhite, color: C.textMuted, border: C.cardBorder },
+                        }[status] || { bg: C.surfaceWhite, color: C.textMuted, border: C.cardBorder };
 
                         return (
-                            <div key={item._id || index} className="rounded-2xl p-6"
-                                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                            <div key={item._id || index} className="rounded-3xl p-6 md:p-8"
+                                style={{ backgroundColor: '#EAE8FA', border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
 
-                                {/* Question row */}
-                                <div className="flex justify-between items-start gap-4 mb-3">
-                                    <div className="flex gap-3">
-                                        <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full"
-                                            style={{ backgroundColor: C.innerBg, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.text }}>
-                                            {item.questionNumber || index + 1}
-                                        </span>
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.medium, color: C.heading, paddingTop: 2 }}>
+                                {/* Question Header */}
+                                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-10 h-10 flex items-center justify-center shrink-0 rounded-xl"
+                                            style={{ backgroundColor: '#E3DFF8', color: C.btnPrimary, fontSize: T.size.md, fontWeight: T.weight.black }}>
+                                            Q{item.questionNumber || index + 1}
+                                        </div>
+                                        <p style={{ fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: 0, lineHeight: 1.5, paddingTop: '2px' }}>
                                             {item.question}
                                         </p>
                                     </div>
-                                    <span className="flex-shrink-0 px-3 py-1 rounded-full"
-                                        style={{ backgroundColor: statusCfg.bg, color: statusCfg.color, border: `1px solid ${statusCfg.border}`, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wide }}>
-                                        {status}
-                                    </span>
+                                    <div className="shrink-0 flex flex-col items-end gap-2">
+                                        <span className="px-3 py-1 rounded-lg" style={{ backgroundColor: statusCfg.bg, color: statusCfg.color, border: `1px solid ${statusCfg.border}`, fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                            {status}
+                                        </span>
+                                        <span style={{ fontSize: '11px', fontWeight: T.weight.bold, color: C.textMuted }}>
+                                            {item.pointsEarned ?? 0} / {item.pointsPossible ?? item.points ?? 1} Marks
+                                        </span>
+                                    </div>
                                 </div>
 
-                                {/* Answer info */}
-                                <div className="ml-11 space-y-2">
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text }}>
-                                        <span style={{ fontWeight: T.weight.semibold }}>Your Answer:</span> {selectedAnswer}
-                                    </p>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: item.canViewCorrectAnswer ? '#059669' : C.textMuted }}>
-                                        <span style={{ fontWeight: T.weight.semibold }}>Correct Answer:</span> {correctAnswer}
-                                    </p>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                                        Marks: {item.pointsEarned ?? 0} / {item.pointsPossible ?? item.points ?? 1}
-                                    </p>
-                                </div>
-
-                                {/* Options */}
-                                <div className="grid gap-2 ml-11 mt-4">
+                                {/* Options List */}
+                                <div className="space-y-3 sm:ml-14">
                                     {(item.options || []).map((opt, optIdx) => {
                                         const text = getOptionText(opt);
                                         const isSelected = item.userSelectedOption === optIdx;
                                         const isCorrectOpt = item.canViewCorrectAnswer && item.correctOption === optIdx;
 
-                                        let bg = C.surfaceWhite, border = C.cardBorder, textColor = C.text;
-                                        let badgeBg = C.innerBg, badgeColor = C.text;
+                                        let optBg = C.surfaceWhite, optBorder = C.cardBorder, optText = C.heading;
+                                        let badgeBg = '#EAE8FA', badgeText = C.textMuted, badgeBorder = C.cardBorder;
 
                                         if (isCorrectOpt) {
-                                            bg = C.successBg; border = C.success; textColor = '#065F46';
-                                            badgeBg = C.success; badgeColor = '#ffffff';
+                                            optBg = C.successBg; optBorder = C.successBorder; optText = '#065F46';
+                                            badgeBg = C.success; badgeText = '#fff'; badgeBorder = C.success;
                                         } else if (isSelected && status === 'incorrect') {
-                                            bg = C.dangerBg; border = C.danger; textColor = '#7F1D1D';
-                                            badgeBg = C.danger; badgeColor = '#ffffff';
+                                            optBg = C.dangerBg; optBorder = C.dangerBorder; optText = '#7F1D1D';
+                                            badgeBg = C.danger; badgeText = '#fff'; badgeBorder = C.danger;
                                         } else if (isSelected) {
-                                            bg = C.btnViewAllBg; border = C.btnPrimary; textColor = C.heading;
-                                            badgeBg = C.btnPrimary; badgeColor = '#ffffff';
+                                            optBg = '#E3DFF8'; optBorder = C.btnPrimary; optText = C.btnPrimary;
+                                            badgeBg = C.btnPrimary; badgeText = '#fff'; badgeBorder = C.btnPrimary;
                                         }
 
                                         return (
-                                            <div key={optIdx} className="flex items-center p-3 rounded-xl border"
-                                                style={{ backgroundColor: bg, borderColor: border }}>
-                                                <span className="w-6 h-6 flex items-center justify-center rounded-full border mr-3 flex-shrink-0"
-                                                    style={{ backgroundColor: badgeBg, color: badgeColor, borderColor: badgeBg, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
+                                            <div key={optIdx} className="flex items-center p-4 rounded-2xl transition-all"
+                                                style={{ backgroundColor: optBg, border: `2px solid ${optBorder}` }}>
+                                                <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mr-4"
+                                                    style={{ backgroundColor: badgeBg, color: badgeText, border: `1px solid ${badgeBorder}`, fontSize: T.size.sm, fontWeight: T.weight.black }}>
                                                     {String.fromCharCode(65 + optIdx)}
-                                                </span>
-                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: textColor }}>
+                                                </div>
+                                                <span style={{ fontSize: T.size.sm, fontWeight: isSelected || isCorrectOpt ? T.weight.bold : T.weight.medium, color: optText }}>
                                                     {text}
                                                 </span>
+                                                {isCorrectOpt && <Check size={18} className="ml-auto" color="#059669" />}
+                                                {isSelected && status === 'incorrect' && <XCircle size={18} className="ml-auto" color={C.danger} />}
                                             </div>
                                         );
                                     })}
                                 </div>
 
-                                {/* Solution toggle */}
-                                <div className="ml-11 mt-4">
-                                    {item.canViewSolution && item.solutionText ? (
-                                        <button onClick={() => setViewingSolution(viewingSolution === index ? null : index)}
-                                            className="px-3 py-1.5 rounded-lg transition-all"
-                                            style={{ backgroundColor: C.innerBg, color: C.text, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold }}
-                                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
-                                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}>
-                                            {viewingSolution === index ? 'Hide Solution' : 'View Solution'}
-                                        </button>
-                                    ) : (
-                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                                            Solution hidden
-                                        </span>
+                                {/* Correct Answer Summary & Solution */}
+                                <div className="sm:ml-14 mt-6 space-y-4">
+                                    <div className="flex flex-wrap items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100">
+                                        <div className="flex items-center gap-2">
+                                            <span style={{ fontSize: '11px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Your Answer:</span>
+                                            <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: status === 'correct' ? C.success : status === 'incorrect' ? C.danger : C.heading }}>{selectedAnswer}</span>
+                                        </div>
+                                        <div className="w-px h-4 bg-slate-200 hidden sm:block" />
+                                        <div className="flex items-center gap-2">
+                                            <span style={{ fontSize: '11px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Correct Answer:</span>
+                                            <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: item.canViewCorrectAnswer ? C.success : C.warning }}>{correctAnswer}</span>
+                                        </div>
+                                    </div>
+
+                                    {item.canViewSolution && item.solutionText && (
+                                        <div className="space-y-3">
+                                            <button onClick={() => setViewingSolution(viewingSolution === index ? null : index)}
+                                                className="flex items-center gap-2 px-4 h-10 rounded-xl cursor-pointer border-none transition-colors"
+                                                style={{ backgroundColor: viewingSolution === index ? C.btnPrimary : '#E3DFF8', color: viewingSolution === index ? '#fff' : C.btnPrimary, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
+                                                <ClipboardCheck size={14} /> {viewingSolution === index ? 'Hide Solution' : 'View Full Solution'}
+                                            </button>
+
+                                            {viewingSolution === index && (
+                                                <div className="p-5 rounded-2xl" style={{ backgroundColor: '#E3DFF8', border: `1px solid ${C.cardBorder}` }}>
+                                                    <p style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.btnPrimary, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>
+                                                        Explanation
+                                                    </p>
+                                                    <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.heading, lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0 }}>
+                                                        {item.solutionText}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
 
-                                {viewingSolution === index && item.canViewSolution && item.solutionText && (
-                                    <div className="ml-11 mt-3 p-4 rounded-xl"
-                                        style={{ backgroundColor: C.btnViewAllBg, border: `1px solid ${C.cardBorder}` }}>
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: C.btnPrimary, marginBottom: 6 }}>
-                                            Solution Explanation
-                                        </p>
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, lineHeight: T.leading.relaxed }}>
-                                            {item.solutionText}
-                                        </p>
-                                    </div>
-                                )}
                             </div>
                         );
                     })}
                 </div>
+
             </div>
         </div>
     );

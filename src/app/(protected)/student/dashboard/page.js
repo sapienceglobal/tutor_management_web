@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react';
 import {
     BookOpen, TrendingUp, ArrowRight, PlayCircle, FileText,
-    Sparkles, BarChart3, Users, Brain, ChevronDown, ChevronUp,
-    Award, Video, CheckCircle2, Folder, ClipboardList, User
+    Sparkles, BarChart3, Users, Brain, ChevronRight,
+    Award, Video, CheckCircle2, Folder, ClipboardList, User, Zap, Flame,
+    Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/axios';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { toast } from 'react-hot-toast';
-import useInstitute from '@/hooks/useInstitute';
 import { useRouter } from 'next/navigation';
 import { C, T, S, cx, pageStyle } from '@/constants/studentTokens';
 
@@ -24,6 +24,7 @@ function timeAgo(date) {
     if (hrs < 24) return `${hrs}h ago`;
     return `${Math.floor(hrs / 24)}d ago`;
 }
+
 // ─── FallbackImage ────────────────────────────────────────────────────────────
 function FallbackImage({ src, alt, className }) {
     const defaultImg = 'https://images.unsplash.com/photo-1546374823-74e2d36d4bd2?auto=format&fit=crop&q=80&w=600';
@@ -45,137 +46,12 @@ function FallbackImage({ src, alt, className }) {
 
     return (
         <img 
-            src={imgSrc} 
-            alt={alt} 
-            className={className}
+            src={imgSrc} alt={alt} className={className}
             onError={() => {
-                if (imgSrc !== defaultImg) {
-                    setImgSrc(defaultImg);
-                } else {
-                    setHasError(true);
-                }
+                if (imgSrc !== defaultImg) setImgSrc(defaultImg);
+                else setHasError(true);
             }}
         />
-    );
-}
-
-// ─── Icon Pill ────────────────────────────────────────────────────────────────
-function IconPill({ icon: Icon, size = 20, bg }) {
-    return (
-        <div className="flex items-center justify-center rounded-xl flex-shrink-0"
-            style={{ width: 40, height: 40, backgroundColor: bg || C.iconBg }}>
-            <Icon style={{ width: size, height: size, color: C.iconColor }} />
-        </div>
-    );
-}
-
-// ─── StatCard ─────────────────────────────────────────────────────────────────
-function StatCard({ icon: Icon, value, label, href, isAI }) {
-    const cardContent = (
-        <div className="relative rounded-2xl p-4 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
-            style={{
-                backgroundColor: isAI ? '#3D3B8E' : C.cardBg,
-                border: `1px solid ${C.cardBorder}`,
-                minHeight: 120,
-                boxShadow: S.card,
-            }}>
-
-            {/* Decorative curve */}
-            {!isAI && (
-                <div className="absolute right-0 bottom-0 w-36 h-20 pointer-events-none overflow-hidden rounded-b-2xl">
-                    <svg viewBox="0 0 144 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                        <path d="M0 55 C30 55 50 30 80 28 C100 26 120 35 144 30 L144 80 L0 80 Z"
-                            fill="#CDD5F0" opacity="0.55" />
-                        <path d="M0 55 C30 55 50 30 80 28 C100 26 120 35 144 30"
-                            stroke="#8095E4" strokeWidth="2" fill="none" opacity="0.85" />
-                    </svg>
-                </div>
-            )}
-
-            <div className="relative flex flex-col h-full gap-2">
-                <div className="flex items-start gap-3">
-                    <IconPill icon={Icon} bg={isAI ? 'rgba(245,158,11,0.25)' : C.iconBg} />
-                    <div className="flex-1 min-w-0">
-                        {isAI ? (
-                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: '#ffffff', lineHeight: T.leading.tight }}>
-                                {label}
-                            </p>
-                        ) : (
-                            <>
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.statLabel, lineHeight: T.leading.tight }}>
-                                    {label}
-                                </p>
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size['3xl'], fontWeight: T.weight.black, color: C.statValue, lineHeight: T.leading.tight, marginTop: 2 }}>
-                                    {value}
-                                </p>
-                            </>
-                        )}
-                    </div>
-                </div>
-
-                {isAI ? (
-                    <div className="mt-auto">
-                        <span className="block w-full py-2 px-3 text-white text-center rounded-xl"
-                            style={{ backgroundColor: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
-                            Start AI Study Plan
-                        </span>
-                    </div>
-                ) : href && (
-                    <div className="mt-auto">
-                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg"
-                            style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
-                            View All <ArrowRight className="w-3 h-3" />
-                        </span>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-    return href ? <Link href={href}>{cardContent}</Link> : cardContent;
-}
-
-// ─── SectionHeader ────────────────────────────────────────────────────────────
-function SectionHeader({ icon: Icon, title, linkHref, linkLabel = 'View All' }) {
-    return (
-        <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2.5">
-                <IconPill icon={Icon} size={16} />
-                <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading }}>
-                    {title}
-                </h2>
-            </div>
-            {linkHref && (
-                <Link href={linkHref}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg"
-                    style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
-                    {linkLabel} <ArrowRight className="w-3 h-3" />
-                </Link>
-            )}
-        </div>
-    );
-}
-
-// ─── SidePanel ────────────────────────────────────────────────────────────────
-function SidePanel({ icon: Icon, title, open, onToggle, children }) {
-    return (
-        <div className="rounded-2xl overflow-hidden"
-            style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-            <button onClick={onToggle}
-                className="w-full flex items-center justify-between px-4 py-3.5 transition-colors"
-                onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                <div className="flex items-center gap-2.5">
-                    <IconPill icon={Icon} size={15} />
-                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
-                        {title}
-                    </span>
-                </div>
-                {open
-                    ? <ChevronUp className="w-4 h-4" style={{ color: C.text, opacity: 0.5 }} />
-                    : <ChevronDown className="w-4 h-4" style={{ color: C.text, opacity: 0.5 }} />}
-            </button>
-            {open && <div className="px-4 pb-4">{children}</div>}
-        </div>
     );
 }
 
@@ -184,8 +60,8 @@ const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload?.length) {
         return (
             <div className="rounded-xl px-3 py-2 shadow-xl"
-                style={{ backgroundColor: '#3D3B8E', fontFamily: T.fontFamily }}>
-                <p style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: 'rgba(255,255,255,0.55)', marginBottom: 2 }}>{label}</p>
+                style={{ backgroundColor: '#1E1B4B', fontFamily: T.fontFamily, border: '1px solid rgba(255,255,255,0.1)' }}>
+                <p style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: 'rgba(255,255,255,0.7)', marginBottom: 2 }}>{label}</p>
                 <p style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: '#ffffff' }}>{payload[0].value}%</p>
             </div>
         );
@@ -207,9 +83,6 @@ export default function StudentDashboard() {
     const [myInstitutes, setMyInstitutes]         = useState([]);
     const [currentInstitute, setCurrentInstitute] = useState(null);
     const [activeTab, setActiveTab]               = useState('institute');
-    const [aiOpen, setAiOpen]                     = useState(true);
-    const [announcementsOpen, setAnnouncementsOpen] = useState(true);
-    const [batchPanelOpen, setBatchPanelOpen]     = useState(true);
     const router = useRouter();
 
     useEffect(() => {
@@ -284,20 +157,14 @@ export default function StudentDashboard() {
         ? Math.round(history.reduce((acc, h) => acc + (h.totalMarks > 0 ? (h.score / h.totalMarks) * 100 : 0), 0) / history.length)
         : 0;
 
-    const progressColors = ['#5E9D9D', '#7573E8', '#6267E9', '#4748AA'];
+    const progressColors = ['#4F46E5', '#059669', '#EA580C', '#DB2777'];
 
     if (loading) return (
-        <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
             <div className="flex flex-col items-center gap-3">
-                <div className="relative w-12 h-12">
-                    <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
-                        style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <Sparkles className="w-4 h-4 animate-pulse" style={{ color: C.btnPrimary }} />
-                    </div>
-                </div>
-                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, opacity: 0.55 }}>
-                    Loading your dashboard…
+                <Loader2 className="w-8 h-8 animate-spin" style={{ color: C.btnPrimary }} />
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.text, opacity: 0.7 }}>
+                    Loading your workspace...
                 </p>
             </div>
         </div>
@@ -306,437 +173,286 @@ export default function StudentDashboard() {
     const inProgressCourses = enrollments
         .filter(e => e.progress?.percentage > 0 && e.progress?.percentage < 100)
         .sort((a, b) => new Date(b.lastAccessedAt || b.updatedAt) - new Date(a.lastAccessedAt || a.updatedAt))
-        .slice(0, 3);
+        .slice(0, 4);
 
     return (
-        <div className="space-y-5 pb-8 min-h-screen" style={{ fontFamily: T.fontFamily, backgroundColor: C.pageBg }}>
+        <div className="space-y-6 p-6 min-h-screen" style={{ fontFamily: T.fontFamily, backgroundColor: C.pageBg }}>
 
-            {/* ── Welcome Header ──────────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex items-center gap-4">
+            {/* ── Gamified Hero Header ──────────────────────────────────────────── */}
+            <div className="relative rounded-3xl p-6 md:p-8 overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6"
+                style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                {/* Decorative Background Blob */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 pointer-events-none" />
+                
+                <div className="relative flex items-center gap-5 z-10">
                     <div className="relative shrink-0">
-                        <div className="w-14 h-14 rounded-2xl overflow-hidden"
-                            style={{ border: `2px solid ${C.btnPrimary}`, boxShadow: `0 0 0 3px ${C.btnViewAllBg}` }}>
-                            <img src={user?.profileImage || '/default-avatar.png'} alt={user?.name}
-                                className="w-full h-full object-cover" />
+                        <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg" style={{ border: `2px solid ${C.cardBg}`, boxShadow: `0 0 0 3px ${C.btnPrimary}` }}>
+                            <img src={user?.profileImage || '/default-avatar.png'} alt={user?.name} className="w-full h-full object-cover" />
                         </div>
-                        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full" />
+                        <div className="absolute -bottom-2 -right-2 bg-emerald-500 border-2 border-white rounded-full w-5 h-5" />
                     </div>
                     <div>
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.text, opacity: 0.55, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 2 }}>
-                            {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '2px' }}>
+                            {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' })}
                         </p>
-                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, lineHeight: T.leading.tight }}>
-                            Hello, <span style={{ color: C.btnPrimary }}>{user?.name?.split(' ')[0] || 'Student'}</span> 👋
+                        <h1 style={{ fontSize: T.size['3xl'], fontWeight: T.weight.black, color: C.heading, lineHeight: 1.1 }}>
+                            Welcome back, <span style={{ color: C.btnPrimary }}>{user?.name?.split(' ')[0] || 'Learner'}</span> 👋
                         </h1>
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, opacity: 0.65, marginTop: 2 }}>
-                            {currentInstitute ? `Student at ${currentInstitute.name}` : 'Independent Learner · Global'}
+                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, opacity: 0.7, marginTop: '4px' }}>
+                            {currentInstitute ? `Studying at ${currentInstitute.name}` : 'Independent Global Learner'}
                         </p>
                     </div>
                 </div>
 
-                {/* Switcher */}
-                {myInstitutes.length > 0 && (
-                    <div className="flex items-center gap-1 rounded-xl p-1 self-start sm:self-auto"
-                        style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}` }}>
-                        {['institute', 'global'].map(tab => (
-                            <button key={tab} onClick={() => setActiveTab(tab)}
-                                className="px-4 py-2 rounded-lg capitalize transition-all duration-150"
-                                style={activeTab === tab
-                                    ? { backgroundColor: C.btnPrimary, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold }
-                                    : { color: C.text, opacity: 0.7, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>
-                                {tab === 'institute' ? 'My Institute' : 'Global'}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* ── Stat Cards ───────────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard icon={Folder}        value={stats.enrolledCourses} label="Enrolled Courses"   href="/student/courses" />
-                <StatCard icon={ClipboardList}  value={upcomingExams.length}  label="Upcoming Exams"     href="/student/exams" />
-                <StatCard icon={Video}          value={liveClassCount}         label="Live Classes"       href="/student/live-classes" />
-                <StatCard icon={Brain}          value={`${avgScore}%`}         label="AI Recommendations" href="/student/ai-analytics" isAI />
-            </div>
-
-            {/* ── Continue Learning ─────────────────────────────────────────── */}
-            {inProgressCourses.length > 0 && (
-                <div>
-                    <SectionHeader icon={PlayCircle} title="Continue Learning" linkHref="/student/courses" />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {inProgressCourses.map((enrollment, i) => {
-                            const course = enrollment.courseId;
-                            const pct = enrollment.progress?.percentage || 0;
-                            const barColor = progressColors[i % progressColors.length];
-                            return (
-                                <Link key={enrollment._id} href={`/student/courses/${course?._id}`}
-                                    className="group rounded-2xl p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
-                                    style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}` }}>
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
-                                            style={{ backgroundColor: C.innerBg }}>
-                                            <FallbackImage 
-                                                src={course?.thumbnail} 
-                                                alt="" 
-                                                className="w-full h-full object-cover" 
-                                            />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <h3 className="truncate"
-                                                style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
-                                                {course?.title}
-                                            </h3>
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.text, opacity: 0.55, marginTop: 2 }}>
-                                                {timeAgo(enrollment.lastAccessedAt || enrollment.updatedAt)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div className="flex justify-between mb-1.5">
-                                            <span style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.semibold, color: C.text, opacity: 0.6 }}>
-                                                {pct}% complete
-                                            </span>
-                                            <span style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.semibold, color: barColor }}>
-                                                Resume →
-                                            </span>
-                                        </div>
-                                        <div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: C.innerBg }}>
-                                            <div className="h-full rounded-full transition-all duration-700"
-                                                style={{ width: `${pct}%`, backgroundColor: barColor }} />
-                                        </div>
-                                    </div>
-                                </Link>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-
-            {/* ── Main Grid ─────────────────────────────────────────────────── */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-
-                {/* Left 2/3 */}
-                <div className="xl:col-span-2 space-y-5">
-
-                    {/* Performance Overview */}
-                    <div className="rounded-2xl p-5"
-                        style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                        <SectionHeader icon={TrendingUp} title="Performance Overview" />
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="md:col-span-2 h-52">
-                                {activityData.length > 0 ? (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={activityData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                                            <defs>
-                                                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="0%" stopColor={C.chartLine} stopOpacity={0.30} />
-                                                    <stop offset="100%" stopColor={C.chartLine} stopOpacity={0.02} />
-                                                </linearGradient>
-                                            </defs>
-                                            <XAxis dataKey="month"
-                                                tick={{ fontSize: 11, fill: C.text, opacity: 0.5, fontFamily: T.fontFamily }}
-                                                tickLine={false} axisLine={false} />
-                                            <YAxis
-                                                tick={{ fontSize: 11, fill: C.text, opacity: 0.5, fontFamily: T.fontFamily }}
-                                                tickLine={false} axisLine={false} domain={[0, 100]} />
-                                            <Tooltip content={<CustomTooltip />} />
-                                            <Area type="monotone" dataKey="score"
-                                                stroke={C.chartLine} strokeWidth={2.5}
-                                                fill="url(#chartGrad)"
-                                                dot={{ r: 3, fill: C.chartLine, strokeWidth: 0 }}
-                                                activeDot={{ r: 5, fill: C.chartLine }} />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center h-full gap-2">
-                                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: C.innerBg }}>
-                                            <TrendingUp className="w-6 h-6" style={{ color: C.chartLine, opacity: 0.5 }} />
-                                        </div>
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text, opacity: 0.5 }}>
-                                            No activity yet
-                                        </p>
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, opacity: 0.35, textAlign: 'center' }}>
-                                            Complete exams to see your trend
-                                        </p>
-                                    </div>
-                                )}
+                <div className="relative z-10 flex items-center gap-3">
+                    {/* Gamification Stats */}
+                    <div className="flex items-center gap-4 bg-slate-50/80 px-4 py-2.5 rounded-2xl border border-slate-100">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                                <Flame className="w-4 h-4 text-orange-500" />
                             </div>
-                            {/* Score circle */}
-                            <div className="flex flex-col items-center justify-center rounded-2xl p-4 gap-2"
-                                style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
-                                <div className="w-12 h-12 rounded-full border-[3px] flex items-center justify-center mb-1"
-                                    style={{ borderColor: C.chartLine }}>
-                                    <CheckCircle2 className="w-6 h-6" style={{ color: C.chartLine }} />
-                                </div>
-                                <div className="text-center">
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text, opacity: 0.6 }}>
-                                        Score
-                                    </p>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size['3xl'], fontWeight: T.weight.black, color: C.statValue }}>
-                                        {avgScore}%
-                                    </p>
-                                    <p className="flex items-center gap-1 justify-center mt-1"
-                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.chartLine }}>
-                                        <TrendingUp className="w-3 h-3" /> This Month
-                                    </p>
-                                </div>
+                            <div>
+                                <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.text, opacity: 0.6, textTransform: 'uppercase', lineHeight: 1 }}>Streak</p>
+                                <p style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, lineHeight: 1.2 }}>3 Days</p>
+                            </div>
+                        </div>
+                        <div className="w-px h-8 bg-slate-200" />
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                                <Zap className="w-4 h-4 text-indigo-500" />
+                            </div>
+                            <div>
+                                <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.text, opacity: 0.6, textTransform: 'uppercase', lineHeight: 1 }}>XP Earned</p>
+                                <p style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, lineHeight: 1.2 }}>1,250</p>
                             </div>
                         </div>
                     </div>
-
-                    {/* Batch Details */}
-                    <div className="rounded-2xl p-5"
-                        style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                        <SectionHeader icon={Users} title="Batch Details" linkHref="/student/batches" />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:divide-x" style={{ borderColor: C.cardBorder }}>
-
-                            {/* Left: course progress */}
-                            <div className="pr-0 md:pr-6">
-                                <p className="mb-3 uppercase"
-                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.btnPrimary, letterSpacing: T.tracking.wider }}>
-                                    {batches[0]?.name || 'Batch A, Advanced Science'}
-                                </p>
-                                {batches[0] && (
-                                    <div className="flex items-center gap-3 mb-4 p-2.5 rounded-xl"
-                                        style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
-                                        <div className="w-9 h-9 rounded-full overflow-hidden shrink-0" style={{ backgroundColor: C.btnViewAllBg }}>
-                                            <User className="w-5 h-5 m-auto mt-2" style={{ color: C.btnPrimary }} />
-                                        </div>
-                                        <div>
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
-                                                {batches[0]?.name || 'Batch A'}
-                                            </p>
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, opacity: 0.55 }}>
-                                                {batches[0]?.instructorName || ''}
-                                            </p>
-                                        </div>
-                                        <span className="ml-auto text-white px-2.5 py-1 rounded-lg shrink-0"
-                                            style={{ backgroundColor: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
-                                            {enrollments[0]?.progress?.percentage || 0}%
-                                        </span>
-                                    </div>
-                                )}
-                                <div className="space-y-3.5">
-                                    {enrollments.slice(0, 4).length > 0 ? enrollments.slice(0, 4).map((enrollment, i) => {
-                                        const pct = enrollment.progress?.percentage || 0;
-                                        const barColor = progressColors[i % progressColors.length];
-                                        return (
-                                            <Link key={enrollment._id} href={`/student/courses/${enrollment.courseId?._id}`} className="block group">
-                                                <div className="flex items-center justify-between mb-1.5">
-                                                    <span className="truncate max-w-[68%]"
-                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text }}>
-                                                        {enrollment.courseId?.title || 'Course'}
-                                                    </span>
-                                                    <span className="text-white px-2 py-0.5 rounded-lg shrink-0 ml-2"
-                                                        style={{ backgroundColor: barColor, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
-                                                        {pct}%
-                                                    </span>
-                                                </div>
-                                                <div className="h-2 w-full rounded-full overflow-hidden" style={{ backgroundColor: C.innerBg }}>
-                                                    <div className="h-full rounded-full transition-all duration-700"
-                                                        style={{ width: `${pct}%`, backgroundColor: barColor }} />
-                                                </div>
-                                            </Link>
-                                        );
-                                    }) : (
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontStyle: 'italic', color: C.text, opacity: 0.45 }}>
-                                            No enrolled courses yet.
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Right: upcoming exams */}
-                            <div className="pl-0 md:pl-6 mt-4 md:mt-0">
-                                <p className="mb-3 uppercase"
-                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.btnPrimary, letterSpacing: T.tracking.wider }}>
-                                    {batches[0]?.name || 'Batch A, Advanced Science'}
-                                </p>
-                                <div className="space-y-2.5">
-                                    {upcomingExams.slice(0, 4).length > 0 ? upcomingExams.slice(0, 4).map(exam => (
-                                        <div key={exam._id}
-                                            className="flex items-center justify-between p-3 rounded-xl transition-colors"
-                                            style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}
-                                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
-                                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}>
-                                            <div className="flex items-center gap-2.5 min-w-0">
-                                                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                                                    style={{ backgroundColor: C.iconBg }}>
-                                                    <FileText className="w-4 h-4 text-white" />
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className="truncate"
-                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading }}>
-                                                        {exam.title}
-                                                    </p>
-                                                    <p style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.text, opacity: 0.5, marginTop: 2 }}>
-                                                        Batch in {Math.ceil((new Date(exam.startDate) - new Date()) / (1000 * 60 * 60 * 24))} days
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <Link href={`/student/exams/${exam._id}`}
-                                                className="px-3 py-1.5 text-white rounded-lg shrink-0 ml-2 transition-colors"
-                                                style={{ backgroundColor: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
-                                                Attempt
-                                            </Link>
-                                        </div>
-                                    )) : (
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontStyle: 'italic', color: C.text, opacity: 0.45 }}>
-                                            No upcoming exams.
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Pagination */}
-                        <div className="flex items-center justify-center gap-2 mt-5 pt-4"
-                            style={{ borderTop: `1px solid ${C.cardBorder}` }}>
-                            {['‹ Previous', '1', '2', '3', 'Next ›'].map((item) => (
-                                <button key={item}
-                                    className="rounded-lg transition-colors"
-                                    style={item === '1'
-                                        ? { backgroundColor: C.btnPrimary, color: '#ffffff', padding: '6px 12px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }
-                                        : { backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, padding: '6px 12px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
-                                    {item}
+                    
+                    {/* Institute Switcher */}
+                    {myInstitutes.length > 0 && (
+                        <div className="flex items-center bg-slate-100 p-1 rounded-xl shrink-0 border border-slate-200">
+                            {['institute', 'global'].map(tab => (
+                                <button key={tab} onClick={() => setActiveTab(tab)}
+                                    className="px-4 py-2 rounded-lg capitalize transition-all duration-200"
+                                    style={activeTab === tab
+                                        ? { backgroundColor: C.btnPrimary, color: '#fff', fontSize: T.size.sm, fontWeight: T.weight.bold, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }
+                                        : { color: C.text, opacity: 0.7, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>
+                                    {tab === 'institute' ? 'My Institute' : 'Global'}
                                 </button>
                             ))}
                         </div>
+                    )}
+                </div>
+            </div>
+
+            {/* ── BENTO GRID LAYOUT ─────────────────────────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                {/* LEFT COLUMN (Span 8) */}
+                <div className="lg:col-span-8 space-y-6">
+                    
+                    {/* 1. Quick Stats Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {[
+                            { icon: Folder, value: stats.enrolledCourses, label: "Enrolled Courses", link: "/student/courses" },
+                            { icon: ClipboardList, value: upcomingExams.length, label: "Upcoming Exams", link: "/student/exams" },
+                            { icon: Video, value: liveClassCount, label: "Live Classes", link: "/student/live-classes" }
+                        ].map((stat, i) => (
+                            <Link key={i} href={stat.link} className="group p-5 rounded-3xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between"
+                                style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card, minHeight: '130px' }}>
+                                <div className="flex items-start justify-between mb-2">
+                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110" style={{ backgroundColor: C.iconBg }}>
+                                        <stat.icon className="w-5 h-5" style={{ color: C.btnPrimary }} />
+                                    </div>
+                                    <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <ArrowRight className="w-4 h-4 text-slate-400" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text, opacity: 0.6, textTransform: 'uppercase' }}>{stat.label}</p>
+                                    <p style={{ fontSize: T.size['3xl'], fontWeight: T.weight.black, color: C.heading, lineHeight: 1 }}>{stat.value}</p>
+                                </div>
+                            </Link>
+                        ))}
                     </div>
 
-                    {/* Recent Results */}
-                    <div className="rounded-2xl p-5"
-                        style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                        <SectionHeader icon={Award} title="Recent Results" linkHref="/student/history" />
-                        <div className="space-y-3">
-                            {history.length > 0 ? history.slice(0, 4).map(attempt => {
-                                const scorePct = attempt.totalMarks > 0 ? Math.round((attempt.score / attempt.totalMarks) * 100) : 0;
-                                const passed = attempt.isPassed;
-                                return (
-                                    <div key={attempt._id}
-                                        className="flex items-center justify-between p-3.5 rounded-xl transition-colors"
-                                        style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}
-                                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
-                                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}>
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0"
-                                                style={{ backgroundColor: passed ? C.success : C.danger, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
-                                                {scorePct}%
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="truncate"
-                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading }}>
-                                                    {attempt.examId?.title || 'Exam'}
-                                                </p>
-                                                <p style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.text, opacity: 0.5, marginTop: 2 }}>
-                                                    {new Date(attempt.submittedAt).toLocaleDateString('en-IN')}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <span className="shrink-0 ml-2 px-2.5 py-1 rounded-full"
-                                            style={passed
-                                                ? { backgroundColor: C.successBg, color: C.success, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold }
-                                                : { backgroundColor: C.dangerBg, color: C.danger, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold }}>
-                                            {passed ? 'PASSED' : 'FAILED'}
-                                        </span>
+                    {/* 2. Continue Learning Bento */}
+                    {inProgressCourses.length > 0 && (
+                        <div className="p-6 rounded-3xl" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                            <div className="flex items-center justify-between mb-5">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center">
+                                        <PlayCircle className="w-4 h-4 text-indigo-600" />
                                     </div>
-                                );
-                            }) : (
-                                <div className="flex flex-col items-center gap-2 py-8">
-                                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: C.innerBg }}>
-                                        <FileText className="w-5 h-5" style={{ color: C.btnPrimary, opacity: 0.4 }} />
-                                    </div>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, opacity: 0.4 }}>
-                                        No exam results yet
-                                    </p>
+                                    <h2 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading }}>Continue Learning</h2>
                                 </div>
-                            )}
+                                <Link href="/student/courses" className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                    View All <ChevronRight className="w-3 h-3" />
+                                </Link>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {inProgressCourses.map((enrollment, i) => {
+                                    const course = enrollment.courseId;
+                                    const pct = enrollment.progress?.percentage || 0;
+                                    const barColor = progressColors[i % progressColors.length];
+                                    
+                                    return (
+                                        <Link key={enrollment._id} href={`/student/courses/${course?._id}`} className="group p-4 rounded-2xl transition-all hover:bg-slate-50"
+                                            style={{ border: `1px solid ${C.cardBorder}` }}>
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-slate-200 shadow-sm">
+                                                    <FallbackImage src={course?.thumbnail} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <h3 className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>{course?.title}</h3>
+                                                    <p style={{ fontSize: '11px', color: C.textMuted, fontWeight: T.weight.medium, marginTop: '2px' }}>
+                                                        Last active: {timeAgo(enrollment.lastAccessedAt || enrollment.updatedAt)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span style={{ fontSize: '11px', fontWeight: T.weight.bold, color: C.textMuted }}>{pct}% Completed</span>
+                                                    <span style={{ fontSize: '11px', fontWeight: T.weight.black, color: barColor }} className="group-hover:translate-x-1 transition-transform">Resume →</span>
+                                                </div>
+                                                <div className="w-full h-2.5 rounded-full overflow-hidden bg-slate-100">
+                                                    <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${pct}%`, backgroundColor: barColor }} />
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 3. Performance Chart Bento */}
+                    <div className="p-6 rounded-3xl flex flex-col md:flex-row gap-6" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-6">
+                                <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center">
+                                    <BarChart3 className="w-4 h-4 text-blue-600" />
+                                </div>
+                                <h2 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading }}>Performance Activity</h2>
+                            </div>
+                            <div className="h-48 w-full">
+                                {activityData.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={activityData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                                            <defs>
+                                                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor={C.btnPrimary} stopOpacity={0.4} />
+                                                    <stop offset="100%" stopColor={C.btnPrimary} stopOpacity={0.0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <XAxis dataKey="month" tick={{ fontSize: 10, fill: C.textMuted, fontWeight: 700 }} tickLine={false} axisLine={false} />
+                                            <YAxis tick={{ fontSize: 10, fill: C.textMuted, fontWeight: 700 }} tickLine={false} axisLine={false} domain={[0, 100]} />
+                                            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(0,0,0,0.05)', strokeWidth: 2 }} />
+                                            <Area type="monotone" dataKey="score" stroke={C.btnPrimary} strokeWidth={3} fill="url(#chartGrad)" activeDot={{ r: 6, fill: C.btnPrimary, strokeWidth: 0 }} />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-2xl">
+                                        <TrendingUp size={24} color={C.textMuted} className="opacity-30 mb-2" />
+                                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted }}>No activity data yet</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Combined Score Circular Card */}
+                        <div className="shrink-0 w-full md:w-48 bg-slate-50 rounded-2xl p-5 flex flex-col items-center justify-center border border-slate-100">
+                            <h3 style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px' }}>Average Score</h3>
+                            <div className="relative w-28 h-28 flex items-center justify-center rounded-full bg-white shadow-sm" style={{ border: `6px solid ${avgScore >= 70 ? '#10B981' : avgScore >= 40 ? '#F59E0B' : '#EF4444'}` }}>
+                                <div className="absolute inset-2 rounded-full border border-slate-100 flex flex-col items-center justify-center">
+                                    <span style={{ fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, lineHeight: 1 }}>{avgScore}%</span>
+                                </div>
+                            </div>
+                            <p className="mt-4 flex items-center gap-1.5" style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.btnPrimary }}>
+                                <Award size={14} /> View History
+                            </p>
                         </div>
                     </div>
                 </div>
 
-                {/* Right Sidebar */}
-                <div className="space-y-4">
-
-                    {/* AI Recommendations */}
-                    <SidePanel icon={Brain} title="AI Recommendations" open={aiOpen} onToggle={() => setAiOpen(v => !v)}>
-                        <div className="space-y-2.5">
-                            {[
-                                { icon: BookOpen, text: 'Continue your enrolled courses' },
-                                { icon: FileText, text: 'Practice upcoming exam topics' },
-                            ].map((rec, i) => (
-                                <div key={i} className="flex items-center gap-2.5 p-3 rounded-xl"
-                                    style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
-                                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                                        style={{ backgroundColor: C.iconBg }}>
-                                        <rec.icon className="w-3.5 h-3.5 text-white" />
-                                    </div>
-                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.text }}>
-                                        {rec.text}
-                                    </span>
-                                </div>
-                            ))}
-                            <Link href="/student/ai-analytics"
-                                className="flex items-center justify-center gap-2 w-full py-3 text-white rounded-xl mt-1 transition-all"
-                                style={{ backgroundColor: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, boxShadow: `0 4px 14px ${C.btnPrimary}50` }}>
-                                <Sparkles className="w-4 h-4" />
-                                Start AI Study Plan
+                {/* RIGHT COLUMN (Span 4) - Side Panels & AI */}
+                <div className="lg:col-span-4 space-y-6">
+                    
+                    {/* 4. AI Magic Study Plan Card */}
+                    <div className="relative rounded-3xl p-6 overflow-hidden transition-transform hover:-translate-y-1 shadow-lg"
+                        style={{ background: 'linear-gradient(135deg, #1E1B4B 0%, #4338CA 100%)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full mix-blend-overlay filter blur-3xl opacity-20 pointer-events-none" />
+                        
+                        <div className="relative z-10">
+                            <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center mb-4 border border-white/20 shadow-inner">
+                                <Sparkles className="w-6 h-6 text-amber-300" />
+                            </div>
+                            <h2 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: '#fff', marginBottom: '8px' }}>AI Study Buddy</h2>
+                            <p style={{ fontSize: T.size.sm, color: 'rgba(255,255,255,0.7)', fontWeight: T.weight.medium, marginBottom: '24px', lineHeight: 1.5 }}>
+                                Generate personalized quizzes, analyze your weak topics, and build a custom learning path.
+                            </p>
+                            
+                            <Link href="/student/ai-analytics" className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-white text-indigo-900 transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-[1.02]"
+                                style={{ fontSize: T.size.sm, fontWeight: T.weight.black }}>
+                                <Brain className="w-4 h-4" /> Start AI Plan Now
                             </Link>
                         </div>
-                    </SidePanel>
+                    </div>
 
-                    {/* Instructor Announcements */}
-                    <SidePanel icon={Users} title="Instructor Announcements" open={announcementsOpen} onToggle={() => setAnnouncementsOpen(v => !v)}>
-                        <div className="space-y-2.5">
+                    {/* 5. Instructor Announcements */}
+                    <div className="p-5 rounded-3xl" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center">
+                                <Users className="w-4 h-4 text-amber-600" />
+                            </div>
+                            <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading }}>Announcements</h2>
+                        </div>
+                        
+                        <div className="space-y-3">
                             {upcomingExams.length > 0 ? upcomingExams.slice(0, 3).map(exam => (
-                                <div key={exam._id} className="flex items-start gap-2.5 p-3 rounded-xl"
-                                    style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
-                                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                                        style={{ backgroundColor: C.iconBg }}>
-                                        <FileText className="w-3.5 h-3.5 text-white" />
+                                <div key={exam._id} className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center shrink-0 mt-0.5">
+                                        <FileText size={14} className="text-slate-400" />
                                     </div>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, lineHeight: T.leading.relaxed, color: C.text }}>
-                                        <span style={{ fontWeight: T.weight.bold, color: C.heading }}>{exam.title}</span>{' '}
-                                        on{' '}
-                                        <span style={{ fontWeight: T.weight.semibold, color: C.btnPrimary }}>
-                                            {new Date(exam.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                        </span>
-                                    </p>
+                                    <div>
+                                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, lineHeight: 1.3, marginBottom: '4px' }}>
+                                            {exam.title}
+                                        </p>
+                                        <p style={{ fontSize: '11px', fontWeight: T.weight.semibold, color: C.btnPrimary }}>
+                                            Scheduled: {new Date(exam.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                        </p>
+                                    </div>
                                 </div>
                             )) : (
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontStyle: 'italic', color: C.text, opacity: 0.45 }}>
-                                    No announcements at this time.
-                                </p>
+                                <div className="py-6 text-center">
+                                    <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted }}>No new announcements.</p>
+                                </div>
                             )}
                         </div>
-                    </SidePanel>
+                    </div>
 
-                    {/* Batch Details quick links */}
-                    <SidePanel icon={BarChart3} title="Batch Details" open={batchPanelOpen} onToggle={() => setBatchPanelOpen(v => !v)}>
-                        <div className="space-y-0.5">
+                    {/* 6. Quick Links Bento */}
+                    <div className="p-5 rounded-3xl" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <h2 style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Quick Actions</h2>
+                        <div className="grid grid-cols-2 gap-3">
                             {[
-                                { label: 'My Batches',        href: '/student/batches', icon: Users    },
-                                { label: 'Batch Reportrties', href: '/student/history', icon: BarChart3 },
-                                { label: 'Profile',           href: '/student/profile', icon: User     },
+                                { label: 'My Batches', href: '/student/batches', icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                                { label: 'Reports',    href: '/student/history', icon: BarChart3, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                                { label: 'Profile',    href: '/student/profile', icon: User, color: 'text-orange-600', bg: 'bg-orange-50' },
+                                { label: 'Support',    href: '/student/support', icon: BookOpen, color: 'text-blue-600', bg: 'bg-blue-50' }
                             ].map(link => (
-                                <Link key={link.label} href={link.href}
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors"
-                                    style={{ color: C.text }}
-                                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}
-                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                                        style={{ backgroundColor: C.iconBg }}>
-                                        <link.icon className="w-3.5 h-3.5 text-white" />
+                                <Link key={link.label} href={link.href} className="p-3 rounded-2xl border border-slate-100 hover:bg-slate-50 transition-colors flex flex-col items-center justify-center text-center gap-2">
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${link.bg}`}>
+                                        <link.icon size={16} className={link.color} />
                                     </div>
-                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium }}>
-                                        {link.label}
-                                    </span>
-                                    <ArrowRight className="w-3 h-3 ml-auto" style={{ color: C.text, opacity: 0.3 }} />
+                                    <span style={{ fontSize: '11px', fontWeight: T.weight.bold, color: C.heading }}>{link.label}</span>
                                 </Link>
                             ))}
                         </div>
-                    </SidePanel>
+                    </div>
+
                 </div>
             </div>
         </div>

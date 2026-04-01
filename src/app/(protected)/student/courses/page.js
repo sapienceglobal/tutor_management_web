@@ -5,13 +5,16 @@ import Link from 'next/link';
 import {
     Search, FolderOpen, FileCheck, Video, ChevronDown,
     FileText, Sparkles, Megaphone, Pencil,
-    Trash2, Star, GraduationCap, BookOpen
+    Trash2, Star, GraduationCap, BookOpen, Brain, PlayCircle, ChevronLeft, ChevronRight, ArrowRight,
+    Loader2
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { getAudienceDisplay } from '@/lib/audienceDisplay';
 import { C, T, S, R } from '@/constants/studentTokens';
 
 const COURSES_PER_PAGE = 8;
+const progressColors = ['#4F46E5', '#059669', '#EA580C', '#DB2777'];
+
 // ─── FallbackImage ────────────────────────────────────────────────────────────
 function FallbackImage({ src, alt, className }) {
     const defaultImg = 'https://images.unsplash.com/photo-1546374823-74e2d36d4bd2?auto=format&fit=crop&q=80&w=600';
@@ -33,77 +36,39 @@ function FallbackImage({ src, alt, className }) {
 
     return (
         <img 
-            src={imgSrc} 
-            alt={alt} 
-            className={className}
+            src={imgSrc} alt={alt} className={className}
             onError={() => {
-                if (imgSrc !== defaultImg) {
-                    setImgSrc(defaultImg);
-                } else {
-                    setHasError(true);
-                }
+                if (imgSrc !== defaultImg) setImgSrc(defaultImg);
+                else setHasError(true);
             }}
         />
     );
 }
 
-// ─── Icon Pill ────────────────────────────────────────────────────────────────
-function IconPill({ icon: Icon, size = 18, bg }) {
-    return (
-        <div className="flex items-center justify-center rounded-xl flex-shrink-0"
-            style={{ width: 36, height: 36, backgroundColor: bg || C.iconBg }}>
-            <Icon style={{ width: size, height: size, color: '#ffffff' }} />
-        </div>
-    );
-}
-
 // ─── Stat card ────────────────────────────────────────────────────────────────
-function StatCard({ icon: Icon, label, value, href, iconBg }) {
+function StatCard({ icon: Icon, label, value, href, iconBg, iconColor }) {
     const inner = (
-        <div className="flex items-center gap-3 rounded-2xl px-4 py-3.5 min-w-[148px] transition-all hover:-translate-y-0.5 hover:shadow-md"
+        <div className="flex items-center gap-3 rounded-3xl p-4 transition-all hover:-translate-y-1 hover:shadow-lg"
             style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
                 style={{ backgroundColor: iconBg || C.iconBg }}>
-                <Icon className="w-5 h-5 text-white" />
+                <Icon className="w-6 h-6" style={{ color: iconColor || C.btnPrimary }} />
             </div>
             <div>
-                <p style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.text, opacity: 0.55, textTransform: 'uppercase', letterSpacing: T.tracking.wide }}>
+                <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.text, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     {label}
                 </p>
-                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading }}>
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, lineHeight: 1 }}>
                     {value}
                 </p>
             </div>
         </div>
     );
-    return href ? <Link href={href}>{inner}</Link> : inner;
-}
-
-// ─── Collapsible side card ────────────────────────────────────────────────────
-function SideCard({ title, icon: Icon, iconBg, open, onToggle, children }) {
-    return (
-        <div className="rounded-2xl overflow-hidden"
-            style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-            <button type="button" onClick={onToggle}
-                className="w-full flex items-center justify-between px-4 py-3.5 text-left transition-colors"
-                onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                <div className="flex items-center gap-2.5">
-                    <IconPill icon={Icon} size={15} bg={iconBg || C.iconBg} />
-                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
-                        {title}
-                    </span>
-                </div>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-                    style={{ color: C.text, opacity: 0.35 }} />
-            </button>
-            {open && <div className="px-4 pb-4">{children}</div>}
-        </div>
-    );
+    return href ? <Link href={href} className="block">{inner}</Link> : inner;
 }
 
 // ─── Enrolled course card ─────────────────────────────────────────────────────
-function EnrolledCourseCard({ enrollment }) {
+function EnrolledCourseCard({ enrollment, index }) {
     const course = enrollment.courseId;
     if (!course) return null;
     const progress = enrollment.progress?.percentage ?? 0;
@@ -111,69 +76,59 @@ function EnrolledCourseCard({ enrollment }) {
     const audienceInfo = getAudienceDisplay(course);
     const isNew = enrollment.enrolledAt && (Date.now() - new Date(enrollment.enrolledAt).getTime()) < 14 * 24 * 60 * 60 * 1000;
     const isCertified = progress >= 100;
+    const barColor = progressColors[index % progressColors.length];
 
     return (
-        <div className="rounded-2xl overflow-hidden flex flex-col transition-all hover:shadow-md hover:-translate-y-0.5"
+        <div className="group rounded-3xl overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
             style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-            <div className="relative aspect-video"
-                style={{ background: C.gradientBtn }}>
-                <FallbackImage src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
+            
+            <div className="relative aspect-video overflow-hidden" style={{ background: C.gradientBtn }}>
+                <FallbackImage src={course.thumbnail} alt={course.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <PlayCircle className="w-12 h-12 text-white opacity-90 shadow-2xl rounded-full" />
+                </div>
+
                 {(isNew || isCertified) && (
-                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider text-white shadow-sm"
-                        style={{ backgroundColor: isCertified ? C.success : C.btnPrimary }}>
+                    <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider text-white shadow-md backdrop-blur-sm"
+                        style={{ backgroundColor: isCertified ? 'rgba(16, 185, 129, 0.9)' : 'rgba(79, 70, 229, 0.9)' }}>
                         {isCertified ? 'Certified' : 'New'}
                     </span>
                 )}
-                <div className="absolute bottom-0 left-0 right-0 h-1" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
-                    <div className="h-full transition-all" style={{ width: `${progress}%`, backgroundColor: C.btnPrimary }} />
-                </div>
             </div>
 
-            <div className="p-4 flex-1 flex flex-col">
-                <div className="flex items-start justify-between gap-2 mb-0.5">
-                    <p className="line-clamp-1 flex-1"
-                        style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+            <div className="p-5 flex-1 flex flex-col">
+                <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className="line-clamp-2 flex-1" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, lineHeight: 1.3 }}>
                         {course.title}
                     </p>
-                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${audienceInfo.badgeClass}`}>
+                </div>
+                
+                <div className="flex items-center justify-between mb-4">
+                    <p style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: C.text, opacity: 0.6 }}>
+                        By {instructorName}
+                    </p>
+                    <span className={`shrink-0 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${audienceInfo.badgeClass}`}>
                         {audienceInfo.label}
                     </span>
                 </div>
-                <p className="mb-3"
-                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.text, opacity: 0.50 }}>
-                    {instructorName}
-                </p>
 
-                <div className="flex items-center gap-2 mb-4">
-                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: C.innerBg }}>
-                        <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, backgroundColor: C.btnPrimary }} />
+                <div className="mt-auto space-y-2">
+                    <div className="flex justify-between items-center">
+                        <span style={{ fontSize: '11px', fontWeight: T.weight.bold, color: C.text, opacity: 0.6 }}>{progress}% Complete</span>
                     </div>
-                    <span style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.text, opacity: 0.55, whiteSpace: 'nowrap' }}>
-                        {progress}%
-                    </span>
+                    <div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: C.innerBg }}>
+                        <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${progress}%`, backgroundColor: barColor }} />
+                    </div>
                 </div>
 
-                <div className="flex items-center justify-between mt-auto">
-                    <Link href={`/student/courses/${course._id}`}>
-                        <button className="px-4 py-2 text-white rounded-xl transition-all hover:opacity-90"
+                <div className="flex items-center justify-between mt-4 pt-4" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+                    <Link href={`/student/courses/${course._id}`} className="flex-1">
+                        <button className="w-full py-2 text-white rounded-xl transition-all hover:opacity-90 flex items-center justify-center gap-1.5"
                             style={{ background: C.gradientBtn, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
-                            {progress > 0 ? 'Resume' : 'Start'}
+                            {progress > 0 ? 'Resume Course' : 'Start Course'} <ArrowRight size={14} />
                         </button>
                     </Link>
-                    <div className="flex items-center gap-1">
-                        <button className="p-2 rounded-xl transition-colors"
-                            style={{ color: C.text, opacity: 0.30 }}
-                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.btnPrimary; e.currentTarget.style.opacity = '1'; }}
-                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.text; e.currentTarget.style.opacity = '0.30'; }}>
-                            <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button className="p-2 rounded-xl transition-colors"
-                            style={{ color: C.text, opacity: 0.30 }}
-                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.dangerBg; e.currentTarget.style.color = C.danger; e.currentTarget.style.opacity = '1'; }}
-                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.text; e.currentTarget.style.opacity = '0.30'; }}>
-                            <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -185,56 +140,47 @@ function DiscoverCourseCard({ course }) {
     const instructorName = course.tutorId?.userId?.name || 'Instructor';
     const audienceInfo = getAudienceDisplay(course);
     const isFree = !course.price || course.price === 0;
+    
     return (
-        <div className="rounded-2xl overflow-hidden flex flex-col transition-all hover:shadow-md hover:-translate-y-0.5"
+        <Link href={`/student/courses/${course._id}`} className="group rounded-3xl overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 block"
             style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-            <div className="relative aspect-video" style={{ background: C.gradientBtn }}>
-                <FallbackImage src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
-                <div className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-xl text-[10px] font-black shadow-sm ${isFree ? 'text-white' : 'bg-white/95 text-slate-800'}`}
-                    style={isFree ? { backgroundColor: C.success } : {}}>
+            <div className="relative aspect-video overflow-hidden" style={{ background: C.innerBg }}>
+                <FallbackImage src={course.thumbnail} alt={course.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                <div className={`absolute top-3 right-3 px-3 py-1 rounded-xl text-[11px] font-black shadow-md backdrop-blur-md ${isFree ? 'text-white' : 'bg-white/95 text-slate-900'}`}
+                    style={isFree ? { backgroundColor: 'rgba(16, 185, 129, 0.9)' } : {}}>
                     {isFree ? 'FREE' : `₹${course.price}`}
                 </div>
             </div>
-            <div className="p-4 flex-1 flex flex-col">
-                <div className="flex items-start justify-between gap-2 mb-0.5">
-                    <p className="line-clamp-2 flex-1"
-                        style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+            <div className="p-5 flex-1 flex flex-col">
+                <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className="line-clamp-2 flex-1" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, lineHeight: 1.3 }}>
                         {course.title}
                     </p>
-                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${audienceInfo.badgeClass}`}>
-                        {audienceInfo.label}
-                    </span>
                 </div>
-                <div className="flex items-center gap-2 mb-1">
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.text, opacity: 0.50 }}>
-                        {instructorName}
+                
+                <div className="flex items-center justify-between mb-3 mt-1">
+                    <p style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: C.text, opacity: 0.6 }}>
+                        By {instructorName}
                     </p>
                     {course.rating > 0 && (
-                        <span className="flex items-center gap-0.5"
-                            style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.text }}>
-                            <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                        <span className="flex items-center gap-1" style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black, color: '#F59E0B' }}>
+                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
                             {course.rating?.toFixed(1)}
                         </span>
                     )}
                 </div>
-                <div className="flex flex-wrap gap-1.5 mt-2 mb-4">
-                    <span className="px-2 py-0.5 rounded-full"
-                        style={{ backgroundColor: C.innerBg, color: C.text, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
+
+                <div className="flex flex-wrap gap-2 mt-auto pt-4" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+                    <span className="px-2.5 py-1 rounded-lg" style={{ backgroundColor: C.innerBg, color: C.text, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold }}>
+                        <BookOpen className="w-3 h-3 inline mr-1 opacity-50" />
                         {course.lessons?.length || 0} Lessons
                     </span>
-                </div>
-                <div className="mt-auto pt-3" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
-                    <Link href={`/student/courses/${course._id}`} className="block w-full">
-                        <button className="w-full py-2.5 rounded-xl transition-colors"
-                            style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}
-                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnPrimary; e.currentTarget.style.color = '#ffffff'; }}
-                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; e.currentTarget.style.color = C.btnViewAllText; }}>
-                            View Details
-                        </button>
-                    </Link>
+                    <span className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold ${audienceInfo.badgeClass}`}>
+                        {audienceInfo.label}
+                    </span>
                 </div>
             </div>
-        </div>
+        </Link>
     );
 }
 
@@ -249,15 +195,14 @@ export default function MyCoursesPage() {
     const [loading, setLoading]                     = useState(true);
     const [searchQuery, setSearchQuery]             = useState('');
     const [currentPage, setCurrentPage]             = useState(1);
-    const [aiOpen, setAiOpen]                       = useState(true);
-    const [annOpen, setAnnOpen]                     = useState(true);
-    const [batchOpen, setBatchOpen]                 = useState(true);
+    
+    // Tabs state
     const [mainTab, setMainTab]                     = useState('enrollments');
     const [scopeTab, setScopeTab]                   = useState('institute');
+    
     const [discoverCourses, setDiscoverCourses]     = useState([]);
     const [loadingDiscover, setLoadingDiscover]     = useState(false);
     const [myInstitutes, setMyInstitutes]           = useState([]);
-    const [currentInstitute, setCurrentInstitute]  = useState(null);
 
     useEffect(() => { fetchData(); fetchMembership(); }, []);
 
@@ -272,7 +217,6 @@ export default function MyCoursesPage() {
             const res = await api.get('/membership/my-institutes');
             if (res.data?.success) {
                 setMyInstitutes(res.data.institutes || []);
-                setCurrentInstitute(res.data.currentInstitute);
                 if (!res.data.currentInstitute) setScopeTab('global');
             }
         } catch { setScopeTab('global'); }
@@ -320,127 +264,123 @@ export default function MyCoursesPage() {
     const paginatedEnrollments = filteredEnrollments.slice((currentPage - 1) * COURSES_PER_PAGE, currentPage * COURSES_PER_PAGE);
 
     if (loading) return (
-        <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
             <div className="flex flex-col items-center gap-3">
-                <div className="relative w-11 h-11">
-                    <div className="w-11 h-11 rounded-full border-[3px] animate-spin"
-                        style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <Sparkles className="w-4 h-4 animate-pulse" style={{ color: C.btnPrimary }} />
-                    </div>
-                </div>
-                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, opacity: 0.55 }}>
-                    Loading your courses…
+                <Loader2 className="w-8 h-8 animate-spin" style={{ color: C.btnPrimary }} />
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.text, opacity: 0.7 }}>
+                    Loading your courses...
                 </p>
             </div>
         </div>
     );
 
     return (
-        <div className="space-y-5 pb-10" style={{ fontFamily: T.fontFamily }}>
+        <div className="space-y-6 p-6 min-h-screen" style={{ fontFamily: T.fontFamily, backgroundColor: C.pageBg }}>
 
-            {/* ── Header ─────────────────────────────────────────────────── */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* ── Header & Tabs ─────────────────────────────────────────────────── */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <div>
-                    <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading }}>Courses</h1>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.text, opacity: 0.50, marginTop: 2 }}>
-                        Manage your learning journey
+                    <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading }}>My Learning Hub</h1>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, opacity: 0.6, marginTop: 2 }}>
+                        Manage your enrollments and discover new courses.
                     </p>
                 </div>
-                <div className="flex p-1 gap-1 rounded-2xl" style={{ backgroundColor: C.innerBg }}>
+                
+                {/* Modern Segmented Tab Switcher */}
+                <div className="flex p-1 gap-1 rounded-xl shrink-0" style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
                     {[
                         { id: 'enrollments', label: 'My Enrollments', icon: BookOpen },
-                        { id: 'discover',    label: 'Discover',       icon: Sparkles },
+                        { id: 'discover',    label: 'Discover Courses', icon: Sparkles },
                     ].map(tab => (
                         <button key={tab.id} onClick={() => setMainTab(tab.id)}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all"
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all duration-200"
                             style={mainTab === tab.id
-                                ? { background: C.gradientBtn, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }
-                                : { color: C.text, opacity: 0.65, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
-                            <tab.icon className="w-3.5 h-3.5" />
+                                ? { backgroundColor: C.btnPrimary, color: '#ffffff', fontSize: T.size.sm, fontWeight: T.weight.bold, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }
+                                : { color: C.text, opacity: 0.7, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>
+                            <tab.icon className="w-4 h-4" />
                             {tab.label}
                         </button>
                     ))}
                 </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-                {/* ── LEFT: Main content ────────────────────────────────── */}
-                <div className="flex-1 min-w-0 space-y-5">
+                {/* ── LEFT: Main content (8 cols) ────────────────────────────────── */}
+                <div className="lg:col-span-8 space-y-6">
 
                     {/* ENROLLMENTS tab */}
                     {mainTab === 'enrollments' && (
                         <>
-                            <div className="flex flex-wrap gap-3">
-                                <StatCard icon={FolderOpen} label="Enrolled Courses" value={enrollments.length} />
-                                <StatCard icon={FileCheck}  label="Upcoming Exams"   value={upcomingExamsCount} href="/student/upcoming-exams" iconBg="#F59E0B" />
-                                <StatCard icon={Video}      label="Live Classes"      value={liveClassesCount}   href="/student/live-classes"   iconBg="#10B981" />
+                            {/* Quick Stats Row */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <StatCard icon={FolderOpen} label="Enrolled Courses" value={enrollments.length} iconBg="rgba(79, 70, 229, 0.1)" iconColor="#4F46E5" />
+                                <StatCard icon={FileCheck}  label="Upcoming Exams"   value={upcomingExamsCount} href="/student/exams" iconBg="rgba(245, 158, 11, 0.1)" iconColor="#F59E0B" />
+                                <StatCard icon={Video}      label="Live Classes"     value={liveClassesCount}   href="/student/live-classes" iconBg="rgba(16, 185, 129, 0.1)" iconColor="#10B981" />
                             </div>
 
-                            <div className="relative">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: C.text, opacity: 0.35 }} />
-                                <input type="text" placeholder="Search my courses…"
-                                    value={searchQuery}
-                                    onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                                    className="w-full pl-11 pr-4 py-2.5 rounded-2xl focus:outline-none transition-all"
-                                    style={{ backgroundColor: C.cardBg, border: `1.5px solid ${C.cardBorder}`, color: C.heading, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium }}
-                                    onFocus={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
-                                    onBlur={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.boxShadow = 'none'; }}
-                                />
+                            {/* Search & List Header */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 mb-4">
+                                <h2 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading }}>
+                                    Active Courses <span style={{ color: C.btnPrimary, fontSize: T.size.sm }}>({filteredEnrollments.length})</span>
+                                </h2>
+                                <div className="relative w-full sm:w-72">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: C.text, opacity: 0.4 }} />
+                                    <input type="text" placeholder="Search my courses…"
+                                        value={searchQuery}
+                                        onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                                        className="w-full pl-11 pr-4 py-2.5 rounded-xl focus:outline-none transition-all"
+                                        style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, color: C.heading, fontSize: T.size.sm }}
+                                        onFocus={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
+                                        onBlur={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.boxShadow = 'none'; }}
+                                    />
+                                </div>
                             </div>
-
-                            <p style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.text, opacity: 0.45, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
-                                My Enrollments <span style={{ color: C.btnPrimary, marginLeft: 6 }}>{filteredEnrollments.length} courses</span>
-                            </p>
 
                             {filteredEnrollments.length > 0 ? (
                                 <>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                        {paginatedEnrollments.map(enrollment => (
-                                            <EnrolledCourseCard key={enrollment._id} enrollment={enrollment} />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        {paginatedEnrollments.map((enrollment, i) => (
+                                            <EnrolledCourseCard key={enrollment._id} enrollment={enrollment} index={i} />
                                         ))}
                                     </div>
+                                    
+                                    {/* Pagination */}
                                     {totalPages > 1 && (
-                                        <div className="flex items-center justify-center gap-2 pt-2">
+                                        <div className="flex items-center justify-center gap-2 pt-6">
                                             <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}
-                                                className="px-4 py-2 rounded-xl disabled:opacity-40 transition-colors"
-                                                style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
-                                                Previous
+                                                className="w-10 h-10 flex items-center justify-center rounded-xl disabled:opacity-40 transition-colors bg-white border border-slate-200 text-slate-600 hover:bg-slate-50">
+                                                <ChevronLeft className="w-5 h-5" />
                                             </button>
                                             {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                                                 <button key={p} onClick={() => setCurrentPage(p)}
-                                                    className="w-9 h-9 rounded-xl transition-all"
+                                                    className="w-10 h-10 flex items-center justify-center rounded-xl transition-all font-bold text-sm"
                                                     style={currentPage === p
-                                                        ? { background: C.gradientBtn, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }
-                                                        : { backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
+                                                        ? { background: C.gradientBtn, color: '#ffffff', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }
+                                                        : { backgroundColor: C.surfaceWhite, color: C.textMuted, border: `1px solid ${C.cardBorder}` }}>
                                                     {p}
                                                 </button>
                                             ))}
                                             <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}
-                                                className="px-4 py-2 rounded-xl disabled:opacity-40 transition-colors"
-                                                style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
-                                                Next
+                                                className="w-10 h-10 flex items-center justify-center rounded-xl disabled:opacity-40 transition-colors bg-white border border-slate-200 text-slate-600 hover:bg-slate-50">
+                                                <ChevronRight className="w-5 h-5" />
                                             </button>
                                         </div>
                                     )}
                                 </>
                             ) : (
-                                <div className="rounded-2xl p-12 text-center"
-                                    style={{ backgroundColor: C.cardBg, border: `2px dashed ${C.cardBorder}` }}>
-                                    <FolderOpen className="w-12 h-12 mx-auto mb-3" style={{ color: C.btnViewAllBg }} />
-                                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, marginBottom: 4 }}>
-                                        No enrolled courses
-                                    </h3>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, opacity: 0.45, marginBottom: 16 }}>
-                                        Enroll in courses to see them here.
+                                <div className="rounded-3xl p-12 text-center mt-6" style={{ backgroundColor: C.cardBg, border: `1px dashed ${C.cardBorder}` }}>
+                                    <FolderOpen className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                                    <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, marginBottom: 8 }}>No courses found</h3>
+                                    <p style={{ fontSize: T.size.sm, color: C.text, opacity: 0.6, marginBottom: 20 }}>
+                                        {searchQuery ? "We couldn't find any courses matching your search." : "You haven't enrolled in any courses yet."}
                                     </p>
-                                    <Link href="/student/dashboard">
-                                        <button className="px-5 py-2.5 text-white rounded-xl"
-                                            style={{ background: C.gradientBtn, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
-                                            Go to Dashboard
+                                    {!searchQuery && (
+                                        <button onClick={() => setMainTab('discover')} className="px-6 py-3 text-white rounded-xl transition-all hover:scale-105"
+                                            style={{ background: C.gradientBtn, fontWeight: T.weight.bold }}>
+                                            Discover Courses
                                         </button>
-                                    </Link>
+                                    )}
                                 </div>
                             )}
                         </>
@@ -448,121 +388,140 @@ export default function MyCoursesPage() {
 
                     {/* DISCOVER tab */}
                     {mainTab === 'discover' && (
-                        <div className="space-y-5">
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                                <p style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.text, opacity: 0.45, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
-                                    Explore Courses
-                                </p>
+                        <div className="space-y-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl" style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
+                                <div>
+                                    <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading }}>Course Catalog</h2>
+                                    <p style={{ fontSize: T.size.xs, color: C.textMuted, marginTop: '2px' }}>Find the perfect course for your goals.</p>
+                                </div>
                                 {myInstitutes.length > 0 && (
-                                    <div className="flex p-1 gap-1 rounded-xl" style={{ backgroundColor: C.innerBg }}>
+                                    <div className="flex p-1 gap-1 rounded-xl bg-white border border-slate-200 shadow-sm shrink-0">
                                         {['institute', 'global'].map(s => (
                                             <button key={s} onClick={() => setScopeTab(s)}
-                                                className="px-3 py-1.5 rounded-lg capitalize transition-all"
+                                                className="px-4 py-1.5 rounded-lg capitalize transition-all"
                                                 style={scopeTab === s
-                                                    ? { background: C.gradientBtn, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }
-                                                    : { color: C.text, opacity: 0.65, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
+                                                    ? { backgroundColor: C.btnPrimary, color: '#ffffff', fontSize: T.size.xs, fontWeight: T.weight.bold }
+                                                    : { color: C.textMuted, fontSize: T.size.xs, fontWeight: T.weight.semibold }}>
                                                 {s === 'institute' ? 'My Institute' : 'Global'}
                                             </button>
                                         ))}
                                     </div>
                                 )}
                             </div>
+
                             {loadingDiscover ? (
-                                <div className="flex justify-center py-16">
-                                    <div className="relative w-10 h-10">
-                                        <div className="w-10 h-10 rounded-full border-[3px] animate-spin"
-                                            style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
-                                    </div>
+                                <div className="flex justify-center py-20">
+                                    <Loader2 className="w-8 h-8 animate-spin" style={{ color: C.btnPrimary }} />
                                 </div>
                             ) : discoverCourses.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                     {discoverCourses.map(course => <DiscoverCourseCard key={course._id} course={course} />)}
                                 </div>
                             ) : (
-                                <div className="rounded-2xl p-12 text-center"
-                                    style={{ backgroundColor: C.cardBg, border: `2px dashed ${C.cardBorder}` }}>
-                                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, marginBottom: 4 }}>
-                                        No courses found
-                                    </h3>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, opacity: 0.45 }}>
-                                        Check back later for new {scopeTab === 'institute' ? 'institute' : 'global'} courses.
-                                    </p>
+                                <div className="rounded-3xl p-12 text-center" style={{ backgroundColor: C.cardBg, border: `1px dashed ${C.cardBorder}` }}>
+                                    <Sparkles className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                                    <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, marginBottom: 8 }}>No courses available</h3>
+                                    <p style={{ fontSize: T.size.sm, color: C.textMuted }}>Check back later for new {scopeTab === 'institute' ? 'institute' : 'global'} courses.</p>
                                 </div>
                             )}
                         </div>
                     )}
                 </div>
 
-                {/* ── RIGHT: Sidebar ───────────────────────────────────── */}
-                <div className="w-full lg:w-72 shrink-0 space-y-4">
+                {/* ── RIGHT: Sidebar (4 cols) ────────────────────────────────── */}
+                <div className="lg:col-span-4 space-y-6">
 
-                    <SideCard title="AI Recommendations" icon={Sparkles} open={aiOpen} onToggle={() => setAiOpen(!aiOpen)}>
-                        <div className="space-y-2">
-                            {aiRecommendations.length > 0 ? aiRecommendations.map((rec, i) => (
-                                <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl"
-                                    style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
-                                    <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: C.btnPrimary }} />
-                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.text, lineHeight: T.leading.relaxed }}>{rec}</span>
-                                </div>
-                            )) : (
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, opacity: 0.40, textAlign: 'center', padding: '12px 0' }}>No recommendations yet.</p>
-                            )}
-                            <Link href="/student/ai-analytics" className="block mt-1">
-                                <button className="w-full py-2.5 text-white rounded-xl flex items-center justify-center gap-1.5"
-                                    style={{ background: C.gradientBtn, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
-                                    <Sparkles className="w-3.5 h-3.5" /> Start AI Study Plan
-                                </button>
+                    {/* AI Magic Study Plan Card */}
+                    <div className="relative rounded-3xl p-6 overflow-hidden transition-transform hover:-translate-y-1 shadow-lg"
+                        style={{ background: 'linear-gradient(135deg, #1E1B4B 0%, #4338CA 100%)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full mix-blend-overlay filter blur-3xl opacity-20 pointer-events-none" />
+                        
+                        <div className="relative z-10">
+                            <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center mb-4 border border-white/20 shadow-inner">
+                                <Brain className="w-6 h-6 text-amber-300" />
+                            </div>
+                            <h2 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: '#fff', marginBottom: '8px' }}>AI Study Buddy</h2>
+                            <p style={{ fontSize: T.size.sm, color: 'rgba(255,255,255,0.7)', fontWeight: T.weight.medium, marginBottom: '20px', lineHeight: 1.5 }}>
+                                Get smart recommendations based on your current progress and weak topics.
+                            </p>
+                            
+                            <div className="space-y-2 mb-5">
+                                {aiRecommendations.slice(0,2).map((rec, i) => (
+                                    <div key={i} className="flex items-start gap-2 text-white/80 text-xs font-medium">
+                                        <Sparkles className="w-3.5 h-3.5 mt-0.5 text-amber-300 shrink-0" />
+                                        <span className="line-clamp-2">{rec}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <Link href="/student/ai-analytics" className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-white text-indigo-900 transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-[1.02]"
+                                style={{ fontSize: T.size.sm, fontWeight: T.weight.black }}>
+                                Open AI Dashboard
                             </Link>
                         </div>
-                    </SideCard>
+                    </div>
 
-                    <SideCard title="Announcements" icon={Megaphone} iconBg="#F59E0B" open={annOpen} onToggle={() => setAnnOpen(!annOpen)}>
-                        <div className="space-y-2">
-                            {announcements.length > 0 ? announcements.map(a => (
-                                <div key={a.id} className="p-3 rounded-xl"
-                                    style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.15)' }}>
-                                    <div className="flex items-start gap-2 mb-1">
-                                        <Megaphone className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: '#F59E0B' }} />
-                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, lineHeight: T.leading.snug }}>
-                                            {a.courseTitle}: {a.title}
+                    {/* Announcements */}
+                    <div className="p-6 rounded-3xl" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center">
+                                <Megaphone className="w-4 h-4 text-amber-600" />
+                            </div>
+                            <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading }}>Recent Updates</h2>
+                        </div>
+                        
+                        <div className="space-y-3">
+                            {announcements.length > 0 ? announcements.slice(0, 3).map(a => (
+                                <div key={a.id} className="p-3.5 rounded-2xl border transition-colors hover:bg-slate-50"
+                                    style={{ backgroundColor: C.innerBg, borderColor: C.cardBorder }}>
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                        <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-slate-200 text-slate-600">
+                                            {a.courseTitle || 'General'}
                                         </span>
                                     </div>
-                                    <p className="pl-5 line-clamp-2" style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.text, opacity: 0.55 }}>{a.message}</p>
+                                    <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, lineHeight: 1.3, marginBottom: '4px' }}>
+                                        {a.title}
+                                    </p>
+                                    <p className="line-clamp-2" style={{ fontSize: '11px', color: C.text, opacity: 0.6 }}>
+                                        {a.message}
+                                    </p>
                                 </div>
                             )) : (
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, opacity: 0.40, textAlign: 'center', padding: '12px 0' }}>No recent announcements.</p>
+                                <div className="py-6 text-center border border-dashed rounded-2xl" style={{ borderColor: C.cardBorder }}>
+                                    <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted }}>No new updates.</p>
+                                </div>
                             )}
                         </div>
-                    </SideCard>
+                    </div>
 
-                    <SideCard title="Batch Details" icon={GraduationCap} iconBg={C.chartLine} open={batchOpen} onToggle={() => setBatchOpen(!batchOpen)}>
-                        <div className="space-y-1">
-                            {batches.length > 0 ? batches.slice(0, 5).map(batch => {
-                                const courseId = batch.courseId?._id || batch.courseId;
+                    {/* Quick Links / Batches */}
+                    <div className="p-6 rounded-3xl" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center">
+                                <GraduationCap className="w-4 h-4 text-emerald-600" />
+                            </div>
+                            <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading }}>My Batches</h2>
+                        </div>
+                        
+                        <div className="space-y-2">
+                            {batches.length > 0 ? batches.slice(0, 4).map(batch => {
                                 const courseName = batch.courseId?.title || batch.name || 'Course';
-                                const instructorName = batch.tutorId?.userId?.name || 'Instructor';
-                                const enrollment = enrollments.find(e => (e.courseId?._id ?? e.courseId)?.toString() === courseId?.toString());
-                                const pct = enrollment?.progress?.percentage ?? 0;
                                 return (
-                                    <Link key={batch._id} href={courseId ? `/student/courses/${courseId}` : '#'}
-                                        className="flex items-center gap-3 px-2 py-2.5 rounded-xl transition-colors"
-                                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}
-                                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                                        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                                            style={{ backgroundColor: C.btnViewAllBg, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: C.btnPrimary }}>
-                                            {instructorName[0]?.toUpperCase()}
+                                    <Link key={batch._id} href="/student/batches" className="flex items-center justify-between p-3 rounded-2xl border transition-colors hover:bg-slate-50"
+                                        style={{ backgroundColor: C.innerBg, borderColor: C.cardBorder }}>
+                                        <div className="min-w-0 pr-2">
+                                            <p className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>{batch.name}</p>
+                                            <p className="truncate" style={{ fontSize: '10px', color: C.textMuted }}>{courseName}</p>
                                         </div>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>{courseName}</p>
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.text, opacity: 0.50 }}>{pct}% · {instructorName}</p>
-                                        </div>
+                                        <ArrowRight className="w-4 h-4 text-slate-300 shrink-0" />
                                     </Link>
                                 );
                             }) : (
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, opacity: 0.40, textAlign: 'center', padding: '12px 0' }}>No batches yet.</p>
+                                <p style={{ fontSize: T.size.sm, color: C.textMuted, textAlign: 'center', padding: '12px 0' }}>You are not assigned to any batches.</p>
                             )}
                         </div>
-                    </SideCard>
+                    </div>
+
                 </div>
             </div>
         </div>

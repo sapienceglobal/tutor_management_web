@@ -10,19 +10,14 @@ import useInstitute from '@/hooks/useInstitute';
 import { C, T, R } from '@/constants/studentTokens';
 
 // ─── Sidebar-specific color constants ────────────────────────────────────────
-// These are intentionally separate from C because the sidebar has its own
-// dark background with specific active/inactive/hover states.
 const SB = {
     bg:           '#C5BFEA',          // darker lavender — creates contrast vs page #DCD7F6
     activeBg:     '#5A72D4',          // active item background
     activeText:   '#ffffff',          // active item text + icon
     inactiveText: '#242661',          // inactive item text
-    iconPillBg:   '#4748AA',          // icon pill background (always)
-    iconColor:    '#ffffff',          // icon always white
-    hoverBg:      'rgba(90,114,212,0.14)',
-    sectionLabel: 'rgba(36,38,97,0.38)',
+    hoverBg:      'rgba(90,114,212,0.12)', // Subtle hover for inactive
+    sectionLabel: 'rgba(36,38,97,0.45)',
     divider:      'rgba(71,72,170,0.15)',
-    activeIconPillBg: 'rgba(255,255,255,0.22)', // icon pill when item is active
 };
 
 function truncateName(name, maxLen = 18) {
@@ -31,21 +26,6 @@ function truncateName(name, maxLen = 18) {
     if (words.length >= 3) return words.slice(0, 2).join(' ') + ' ' + words[2].slice(0, 3) + '.';
     if (words.length === 2) return words[0] + ' ' + words[1].slice(0, maxLen - words[0].length - 1) + '.';
     return name.slice(0, maxLen - 1) + '…';
-}
-
-// ─── Icon Pill ────────────────────────────────────────────────────────────────
-function IconPill({ icon: Icon, isActive, size = 18 }) {
-    return (
-        <div className="flex items-center justify-center rounded-lg flex-shrink-0"
-            style={{
-                width: 32,
-                height: 32,
-                backgroundColor: isActive ? SB.activeIconPillBg : SB.iconPillBg,
-                transition: 'background-color 0.15s',
-            }}>
-            <Icon style={{ width: size, height: size, color: SB.iconColor }} />
-        </div>
-    );
 }
 
 export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
@@ -87,8 +67,9 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
         boxShadow: '0 4px 12px rgba(90,114,212,0.35)',
         fontFamily: T.fontFamily,
         fontSize: T.size.sm,
-        fontWeight: T.weight.semibold,
+        fontWeight: T.weight.bold,
     };
+    
     const inactiveLinkStyle = {
         backgroundColor: 'transparent',
         color: SB.inactiveText,
@@ -96,23 +77,25 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
         fontFamily: T.fontFamily,
         fontSize: T.size.sm,
         fontWeight: T.weight.semibold,
+        opacity: 0.85,
     };
+    
     const expandedBtnStyle = {
         backgroundColor: SB.hoverBg,
         color: SB.inactiveText,
         borderRadius: R.xl,
         fontFamily: T.fontFamily,
         fontSize: T.size.sm,
-        fontWeight: T.weight.semibold,
+        fontWeight: T.weight.bold,
     };
 
     const onEnterInactive = (e) => {
         e.currentTarget.style.backgroundColor = SB.hoverBg;
-        e.currentTarget.style.color = SB.inactiveText;
+        e.currentTarget.style.opacity = '1';
     };
     const onLeaveInactive = (e) => {
         e.currentTarget.style.backgroundColor = 'transparent';
-        e.currentTarget.style.color = SB.inactiveText;
+        e.currentTarget.style.opacity = '0.85';
     };
     const onEnterExpanded = (e) => { e.currentTarget.style.backgroundColor = 'rgba(90,114,212,0.20)'; };
     const onLeaveExpanded = (e) => { e.currentTarget.style.backgroundColor = SB.hoverBg; };
@@ -141,16 +124,16 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                 }}
             >
                 {/* ── Logo ─────────────────────────────────────────────── */}
-                <div className="h-[64px] flex items-center px-4 flex-shrink-0 overflow-hidden"
+                <div className="h-[72px] flex items-center px-4 flex-shrink-0 overflow-hidden"
                     style={{ borderBottom: `1px solid ${SB.divider}` }}>
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <div className="w-9 h-9 flex-shrink-0">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-10 h-10 flex-shrink-0">
                             {instituteLogo ? (
-                                <img src={instituteLogo} alt="Logo" className="w-9 h-9 object-contain rounded-xl" />
+                                <img src={instituteLogo} alt="Logo" className="w-10 h-10 object-contain rounded-xl shadow-sm bg-white" />
                             ) : (
-                                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                                    style={{ backgroundColor: SB.iconPillBg }}>
-                                    <GraduationCap className="w-5 h-5" style={{ color: SB.iconColor }} />
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
+                                    style={{ backgroundColor: SB.activeBg }}>
+                                    <GraduationCap className="w-5 h-5" style={{ color: '#ffffff' }} />
                                 </div>
                             )}
                         </div>
@@ -171,7 +154,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                 fontSize: '10px',
                                 fontWeight: T.weight.bold,
                                 letterSpacing: T.tracking.widest,
-                                color: 'rgba(36,38,97,0.45)',
+                                color: 'rgba(36,38,97,0.5)',
                                 textTransform: 'uppercase',
                             }} className="truncate mt-0.5">
                                 Learning Portal
@@ -182,20 +165,20 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                     {showFull && (
                         <button onClick={() => setIsOpen(false)}
                             className="ml-2 lg:hidden p-1.5 rounded-lg transition-all flex-shrink-0"
-                            style={{ color: 'rgba(36,38,97,0.45)' }}
+                            style={{ color: 'rgba(36,38,97,0.5)' }}
                             onMouseEnter={e => { e.currentTarget.style.backgroundColor = SB.hoverBg; e.currentTarget.style.color = SB.inactiveText; }}
-                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'rgba(36,38,97,0.45)'; }}>
-                            <X size={16} />
+                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'rgba(36,38,97,0.5)'; }}>
+                            <X size={18} />
                         </button>
                     )}
                 </div>
 
                 {/* ── Navigation ────────────────────────────────────────── */}
-                <div className="flex-1 overflow-y-auto py-3 px-2.5 custom-scrollbar">
-                    <nav className="space-y-5">
+                <div className="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar">
+                    <nav className="space-y-6">
 
                         {/* Direct links */}
-                        <div className="space-y-0.5">
+                        <div className="space-y-1">
                             {studentNavItems.filter(item => item.type !== 'section').map((item) => {
                                 const isActive = activePath === item.href || activePath.startsWith(item.href + '/');
                                 const Icon = item.icon;
@@ -203,11 +186,11 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                     <Link key={item.href} href={item.href}
                                         onClick={() => setIsOpen(false)}
                                         title={!showFull ? item.title : ''}
-                                        className={`group flex items-center gap-3 px-2 py-1.5 transition-all duration-150 ${!showFull ? 'justify-center' : ''}`}
+                                        className={`group flex items-center gap-3.5 px-3 py-2.5 transition-all duration-150 ${!showFull ? 'justify-center' : ''}`}
                                         style={isActive ? activeLinkStyle : inactiveLinkStyle}
                                         onMouseEnter={e => { if (!isActive) onEnterInactive(e); }}
                                         onMouseLeave={e => { if (!isActive) onLeaveInactive(e); }}>
-                                        <IconPill icon={Icon} isActive={isActive} />
+                                        <Icon className="w-5 h-5 shrink-0" style={{ color: isActive ? '#fff' : SB.inactiveText, opacity: isActive ? 1 : 0.8 }} />
                                         {showFull && <span className="truncate">{item.title}</span>}
                                     </Link>
                                 );
@@ -217,23 +200,23 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                         {/* Section groups */}
                         {studentNavItems.filter(item => item.type === 'section').map((section, idx) => (
                             <div key={idx}>
-                                <div className="mx-1" style={{ borderTop: `1px solid ${SB.divider}` }} />
-
-                                {showFull && (
-                                    <h3 className="px-2 pt-3 pb-1.5 truncate"
+                                {showFull ? (
+                                    <h3 className="px-3 pt-4 pb-2 truncate"
                                         style={{
                                             fontFamily: T.fontFamily,
-                                            fontSize: '10px',
+                                            fontSize: '11px',
                                             fontWeight: T.weight.black,
-                                            letterSpacing: T.tracking.widest,
+                                            letterSpacing: '1px',
                                             textTransform: 'uppercase',
                                             color: SB.sectionLabel,
                                         }}>
                                         {section.title}
                                     </h3>
+                                ) : (
+                                    <div className="mx-2 my-4" style={{ borderTop: `1px solid ${SB.divider}` }} />
                                 )}
 
-                                <div className="space-y-0.5">
+                                <div className="space-y-1">
                                     {section.children.map((child) => {
                                         const Icon = child.icon;
                                         const hasSubmenu      = child.submenu?.length > 0;
@@ -248,17 +231,17 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                     <button
                                                         onClick={() => showFull && toggleSubmenu(child.title)}
                                                         title={!showFull ? child.title : ''}
-                                                        className={`group flex items-center gap-3 w-full px-2 py-1.5 transition-all duration-150 ${!showFull ? 'justify-center' : ''}`}
+                                                        className={`group flex items-center gap-3.5 w-full px-3 py-2.5 transition-all duration-150 ${!showFull ? 'justify-center' : ''}`}
                                                         style={isActive ? activeLinkStyle : isExpanded ? expandedBtnStyle : inactiveLinkStyle}
                                                         onMouseEnter={e => { if (isActive) return; isExpanded ? onEnterExpanded(e) : onEnterInactive(e); }}
                                                         onMouseLeave={e => { if (isActive) return; isExpanded ? onLeaveExpanded(e) : onLeaveInactive(e); }}>
-                                                        <IconPill icon={Icon} isActive={isActive} />
+                                                        <Icon className="w-5 h-5 shrink-0" style={{ color: isActive ? '#fff' : SB.inactiveText, opacity: isActive ? 1 : 0.8 }} />
                                                         {showFull && (
                                                             <>
                                                                 <span className="flex-1 text-left truncate">{child.title}</span>
                                                                 <ChevronRight
-                                                                    className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
-                                                                    style={{ color: isActive ? 'rgba(255,255,255,0.60)' : 'rgba(36,38,97,0.30)' }} />
+                                                                    className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+                                                                    style={{ color: isActive ? 'rgba(255,255,255,0.70)' : 'rgba(36,38,97,0.40)' }} />
                                                             </>
                                                         )}
                                                     </button>
@@ -266,34 +249,38 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                     <Link href={child.href}
                                                         onClick={() => setIsOpen(false)}
                                                         title={!showFull ? child.title : ''}
-                                                        className={`group flex items-center gap-3 px-2 py-1.5 transition-all duration-150 ${!showFull ? 'justify-center' : ''}`}
+                                                        className={`group flex items-center gap-3.5 px-3 py-2.5 transition-all duration-150 ${!showFull ? 'justify-center' : ''}`}
                                                         style={isActive ? activeLinkStyle : inactiveLinkStyle}
                                                         onMouseEnter={e => { if (!isActive) onEnterInactive(e); }}
                                                         onMouseLeave={e => { if (!isActive) onLeaveInactive(e); }}>
-                                                        <IconPill icon={Icon} isActive={isActive} />
+                                                        <Icon className="w-5 h-5 shrink-0" style={{ color: isActive ? '#fff' : SB.inactiveText, opacity: isActive ? 1 : 0.8 }} />
                                                         {showFull && <span className="truncate">{child.title}</span>}
                                                     </Link>
                                                 )}
 
                                                 {/* Submenu */}
-                                                <div className={`overflow-hidden transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]
-                                                    ${hasSubmenu && isExpanded && showFull ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                                                    <div className="ml-[44px] mt-1 mb-1 space-y-0.5 pl-3"
-                                                        style={{ borderLeft: `2px solid rgba(71,72,170,0.20)` }}>
+                                                <div className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+                                                    ${hasSubmenu && isExpanded && showFull ? 'max-h-96 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
+                                                    <div className="ml-[22px] space-y-1 pl-4"
+                                                        style={{ borderLeft: `1.5px solid ${SB.divider}` }}>
                                                         {child.submenu?.map((sub) => {
                                                             const subActive = activePath === sub.href || activePath.startsWith(sub.href + '/');
                                                             return (
                                                                 <Link key={sub.title} href={sub.href}
                                                                     onClick={() => setIsOpen(false)}
-                                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-150"
+                                                                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 relative"
                                                                     style={subActive
-                                                                        ? { backgroundColor: SB.activeBg, color: SB.activeText, fontWeight: T.weight.semibold, fontFamily: T.fontFamily, fontSize: T.size.sm, boxShadow: '0 2px 8px rgba(90,114,212,0.30)' }
-                                                                        : { color: SB.inactiveText, opacity: 0.75, fontFamily: T.fontFamily, fontSize: T.size.sm }
+                                                                        ? { backgroundColor: SB.activeBg, color: SB.activeText, fontWeight: T.weight.bold, fontFamily: T.fontFamily, fontSize: T.size.sm, boxShadow: '0 2px 8px rgba(90,114,212,0.30)' }
+                                                                        : { color: SB.inactiveText, opacity: 0.75, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium }
                                                                     }
                                                                     onMouseEnter={e => { if (!subActive) { e.currentTarget.style.backgroundColor = SB.hoverBg; e.currentTarget.style.opacity = '1'; } }}
                                                                     onMouseLeave={e => { if (!subActive) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.opacity = '0.75'; } }}>
-                                                                    {subActive && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: SB.activeText }} />}
-                                                                    {sub.title}
+                                                                    
+                                                                    {/* Simple Dot Indicator instead of heavy icon */}
+                                                                    <div className="w-1.5 h-1.5 rounded-full shrink-0" 
+                                                                         style={{ backgroundColor: subActive ? '#fff' : 'rgba(36,38,97,0.3)', transition: 'background-color 0.2s' }} />
+                                                                    
+                                                                    <span className="truncate">{sub.title}</span>
                                                                 </Link>
                                                             );
                                                         })}

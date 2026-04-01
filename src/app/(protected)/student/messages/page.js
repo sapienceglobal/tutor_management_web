@@ -3,14 +3,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
-import { Loader2, MessageSquare, Send, Search, GraduationCap } from 'lucide-react';
-import { C, T, S, pageStyle } from '@/constants/studentTokens';
+import { Loader2, MessageSquare, Send, Search, GraduationCap, CheckCheck, PlayCircle } from 'lucide-react';
+import { C, T, S, R } from '@/constants/studentTokens';
 
+// ─── Theme Colors ─────────────────────────────────────────────────────────────
+const themeBg = '#dfdaf3';
+const outerCard = '#EAE8FA';
+const innerBox = '#E3DFF8';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 const timeLabel = (value) => {
     try {
-        return new Date(value).toLocaleString();
+        return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch {
         return '-';
+    }
+};
+
+const dateLabel = (value) => {
+    try {
+        return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch {
+        return '';
     }
 };
 
@@ -35,6 +49,31 @@ const normalizeTutorFromEnrollment = (enrollment) => {
     };
 };
 
+// Focus Handlers
+const onFocusHandler = e => {
+    e.target.style.borderColor = C.btnPrimary;
+    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)';
+};
+const onBlurHandler = e => {
+    e.target.style.borderColor = 'transparent';
+    e.target.style.boxShadow = 'none';
+};
+
+const baseInputStyle = {
+    backgroundColor: C.surfaceWhite,
+    border: '1.5px solid transparent',
+    borderRadius: R.xl,
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.sm,
+    fontWeight: T.weight.medium,
+    outline: 'none',
+    width: '100%',
+    padding: '10px 16px',
+    transition: 'all 0.2s ease',
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function StudentMessagesPage() {
     const [loading, setLoading] = useState(true);
     const [loadingMessages, setLoadingMessages] = useState(false);
@@ -200,100 +239,94 @@ export default function StudentMessagesPage() {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
-                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted }}>
-                    Loading messages...
-                </p>
+            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily }}>
+                <Loader2 className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
+                <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading messages...</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-5" style={pageStyle}>
-            <div
-                className="rounded-2xl px-5 py-4"
-                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}
-            >
-                <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, #7573E8 12%, white)', border: '1px solid color-mix(in srgb, #7573E8 20%, white)' }}>
-                        <MessageSquare className="w-4 h-4" style={{ color: C.btnPrimary }} />
+        <div className="w-full h-screen lg:h-[calc(100vh-100px)] p-6 flex flex-col gap-6" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily, color: C.text }}>
+            
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 shrink-0" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0" style={{ backgroundColor: innerBox, borderRadius: R.xl }}>
+                        <MessageSquare size={24} color={C.btnPrimary} />
                     </div>
                     <div>
-                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>
+                        <h1 style={{ color: C.heading, fontSize: T.size.xl, fontWeight: T.weight.black, margin: '0 0 4px 0' }}>
                             Tutor Messages
                         </h1>
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                            Direct chat with your enrolled tutors
+                        <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.medium, margin: 0 }}>
+                            Direct chat with your enrolled tutors.
                         </p>
                     </div>
                 </div>
             </div>
 
             {tutors.length === 0 ? (
-                <div className="rounded-2xl border p-10 text-center" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}>
-                    <GraduationCap className="w-10 h-10 mx-auto mb-3" style={{ color: C.textMuted }} />
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.bold }}>
-                        No tutor conversations yet
-                    </p>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, marginTop: 6 }}>
-                        Enroll in a course to start direct messaging with tutors.
-                    </p>
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-10 rounded-3xl" style={{ backgroundColor: outerCard, border: `1px dashed ${C.cardBorder}` }}>
+                    <GraduationCap size={48} color={C.textMuted} style={{ opacity: 0.3, marginBottom: '16px' }} />
+                    <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 8px 0' }}>No tutor conversations yet</h3>
+                    <p style={{ fontSize: T.size.sm, color: C.textMuted, margin: 0, maxWidth: '280px' }}>Enroll in a course to start direct messaging with your tutors.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-4">
-                    <aside
-                        className="rounded-2xl border overflow-hidden"
-                        style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}
-                    >
-                        <div className="p-3 border-b" style={{ borderColor: C.cardBorder }}>
+                <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 min-h-0 gap-6">
+
+                    {/* ── Inbox Sidebar (OUTER CARD) ────────────────────────────────── */}
+                    <aside className="lg:col-span-4 flex flex-col overflow-hidden" 
+                        style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        
+                        <div className="p-4 shrink-0" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: innerBox }}>
                             <div className="relative">
-                                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.textMuted }} />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2" size={16} color={C.textMuted} />
                                 <input
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     placeholder="Search conversations..."
-                                    className="w-full h-9 rounded-xl border pl-9 pr-3 text-sm"
-                                    style={{ borderColor: C.cardBorder, fontFamily: T.fontFamily, color: C.heading }}
+                                    style={{ ...baseInputStyle, paddingLeft: '36px', height: '40px', backgroundColor: C.surfaceWhite }}
+                                    onFocus={onFocusHandler} onBlur={onBlurHandler}
                                 />
                             </div>
                         </div>
 
-                        <div className="max-h-[560px] overflow-auto">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
                             {filteredConversations.length > 0 ? (
-                                filteredConversations.map((conversation) => {
-                                    const active = String(selectedTutorId) === String(conversation.counterpartId);
+                                filteredConversations.map((convo) => {
+                                    const active = String(selectedTutorId) === String(convo.counterpartId);
                                     return (
-                                        <button
-                                            key={conversation.counterpartId}
+                                        <button key={convo.counterpartId} 
                                             onClick={() => {
-                                                setSelectedTutorId(String(conversation.counterpartId));
+                                                setSelectedTutorId(String(convo.counterpartId));
                                                 setSelectedCourseId('');
                                             }}
-                                            className="w-full text-left px-3 py-2.5 border-b transition-colors"
-                                            style={{
-                                                borderColor: C.cardBorder,
-                                                backgroundColor: active ? 'color-mix(in srgb, #7573E8 6%, white)' : C.surfaceWhite,
-                                            }}
-                                        >
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="min-w-0">
-                                                    <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.semibold }}>
-                                                        {conversation.counterpart?.name || 'Tutor'}
-                                                    </p>
-                                                    <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                                                        {conversation.lastMessage?.body || 'No message yet'}
-                                                    </p>
+                                            className="w-full text-left px-5 py-4 border-none cursor-pointer transition-all"
+                                            style={{ 
+                                                backgroundColor: active ? innerBox : 'transparent',
+                                                borderBottom: `1px solid ${C.cardBorder}`
+                                            }}>
+                                            <div className="flex gap-3 items-center">
+                                                <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white font-bold" 
+                                                    style={{ background: C.gradientBtn, border: `2px solid ${active ? C.surfaceWhite : 'transparent'}` }}>
+                                                    {convo.counterpart?.name?.[0]?.toUpperCase() || 'T'}
                                                 </div>
-                                                {conversation.unreadCount > 0 && (
-                                                    <span className="min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center text-white" style={{ backgroundColor: C.btnPrimary }}>
-                                                        {conversation.unreadCount}
-                                                    </span>
-                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <p className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{convo.counterpart?.name || 'Tutor'}</p>
+                                                        <span style={{ fontSize: '10px', color: C.textMuted }}>{timeLabel(convo.lastMessage?.sentAt)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                        <p className="truncate" style={{ fontSize: T.size.xs, color: active ? C.heading : C.textMuted, margin: 0 }}>{convo.lastMessage?.body || 'No messages'}</p>
+                                                        {convo.unreadCount > 0 && (
+                                                            <span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center text-[9px] font-black text-white" style={{ backgroundColor: C.btnPrimary }}>
+                                                                {convo.unreadCount}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, marginTop: 4 }}>
-                                                {timeLabel(conversation.lastMessage?.sentAt)}
-                                            </p>
                                         </button>
                                     );
                                 })
@@ -301,24 +334,26 @@ export default function StudentMessagesPage() {
                                 tutors.map((tutor) => {
                                     const active = String(selectedTutorId) === String(tutor._id);
                                     return (
-                                        <button
-                                            key={tutor._id}
+                                        <button key={tutor._id} 
                                             onClick={() => {
                                                 setSelectedTutorId(String(tutor._id));
                                                 setSelectedCourseId('');
                                             }}
-                                            className="w-full text-left px-3 py-2.5 border-b transition-colors"
-                                            style={{
-                                                borderColor: C.cardBorder,
-                                                backgroundColor: active ? 'color-mix(in srgb, #7573E8 6%, white)' : C.surfaceWhite,
-                                            }}
-                                        >
-                                            <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.semibold }}>
-                                                {tutor.name}
-                                            </p>
-                                            <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                                                {tutor.email || 'No conversation yet'}
-                                            </p>
+                                            className="w-full text-left px-5 py-4 border-none cursor-pointer transition-all"
+                                            style={{ 
+                                                backgroundColor: active ? innerBox : 'transparent',
+                                                borderBottom: `1px solid ${C.cardBorder}`
+                                            }}>
+                                            <div className="flex gap-3 items-center">
+                                                <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white font-bold" 
+                                                    style={{ background: C.gradientBtn, border: `2px solid ${active ? C.surfaceWhite : 'transparent'}` }}>
+                                                    {tutor.name?.[0]?.toUpperCase() || 'T'}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{tutor.name}</p>
+                                                    <p className="truncate" style={{ fontSize: T.size.xs, color: C.textMuted, margin: 0 }}>No conversation yet</p>
+                                                </div>
+                                            </div>
                                         </button>
                                     );
                                 })
@@ -326,110 +361,118 @@ export default function StudentMessagesPage() {
                         </div>
                     </aside>
 
-                    <section
-                        className="rounded-2xl border overflow-hidden"
-                        style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, boxShadow: S.card }}
-                    >
-                        <div className="px-4 py-3 border-b flex flex-col gap-2" style={{ borderColor: C.cardBorder }}>
-                            <div>
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.bold }}>
-                                    {currentTutor?.name || 'Select a tutor'}
-                                </p>
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                                    {currentTutor?.email || 'Choose a tutor to start messaging'}
-                                </p>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                <select
-                                    value={selectedTutorId}
-                                    onChange={(e) => {
-                                        setSelectedTutorId(e.target.value);
-                                        setSelectedCourseId('');
-                                    }}
-                                    className="h-9 rounded-xl border px-3 text-sm"
-                                    style={{ borderColor: C.cardBorder, fontFamily: T.fontFamily, color: C.heading }}
-                                >
-                                    {tutors.map((tutor) => (
-                                        <option key={tutor._id} value={tutor._id}>
-                                            {tutor.name} {tutor.email ? `(${tutor.email})` : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                                <select
-                                    value={selectedCourseId}
-                                    onChange={(e) => setSelectedCourseId(e.target.value)}
-                                    className="h-9 rounded-xl border px-3 text-sm"
-                                    style={{ borderColor: C.cardBorder, fontFamily: T.fontFamily, color: C.heading }}
-                                >
-                                    <option value="">Any Enrolled Course</option>
-                                    {(currentTutor?.courses || []).map((course, idx) => (
-                                        <option key={`${course.courseId}-${idx}`} value={course.courseId}>
-                                            {course.title}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="h-[420px] overflow-auto px-4 py-3 space-y-2.5" style={{ backgroundColor: 'color-mix(in srgb, #7573E8 4%, white)' }}>
-                            {loadingMessages ? (
-                                <div className="h-full flex items-center justify-center">
-                                    <Loader2 className="w-5 h-5 animate-spin" style={{ color: C.btnPrimary }} />
-                                </div>
-                            ) : messages.length > 0 ? (
-                                messages.map((message) => (
-                                    <div
-                                        key={message._id}
-                                        className={`max-w-[78%] px-3 py-2 rounded-xl border ${message.isOwn ? 'ml-auto' : ''}`}
-                                        style={{
-                                            backgroundColor: message.isOwn ? 'color-mix(in srgb, #7573E8 12%, white)' : C.surfaceWhite,
-                                            borderColor: message.isOwn ? 'color-mix(in srgb, #7573E8 20%, white)' : C.cardBorder,
-                                        }}
-                                    >
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, whiteSpace: 'pre-wrap' }}>
-                                            {message.body}
-                                        </p>
-                                        <div className="flex items-center justify-between gap-2 mt-1.5">
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted }}>
-                                                {timeLabel(message.sentAt)}
-                                            </p>
-                                            {message.course?.title ? (
-                                                <span style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted }}>
-                                                    {message.course.title}
-                                                </span>
-                                            ) : null}
+                    {/* ── Chat Window (OUTER CARD) ──────────────────────────────────── */}
+                    <main className="lg:col-span-8 flex flex-col overflow-hidden" 
+                        style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        
+                        {selectedTutorId && currentTutor ? (
+                            <>
+                                {/* Chat Header */}
+                                <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: innerBox }}>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white font-bold shadow-sm" style={{ background: C.gradientBtn }}>
+                                            {currentTutor.name?.[0]?.toUpperCase()}
+                                        </div>
+                                        <div>
+                                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>{currentTutor.name}</p>
+                                            <p style={{ fontSize: '11px', color: C.textMuted, margin: 0 }}>{currentTutor.email}</p>
                                         </div>
                                     </div>
-                                ))
-                            ) : (
-                                <div className="h-full flex items-center justify-center text-center">
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted }}>
-                                        Start this conversation by sending the first message.
-                                    </p>
-                                </div>
-                            )}
-                        </div>
 
-                        <div className="p-3 border-t flex gap-2" style={{ borderColor: C.cardBorder }}>
-                            <textarea
-                                value={draft}
-                                onChange={(e) => setDraft(e.target.value)}
-                                rows={2}
-                                placeholder="Type your message..."
-                                className="flex-1 rounded-xl border px-3 py-2 text-sm resize-none"
-                                style={{ borderColor: C.cardBorder, fontFamily: T.fontFamily, color: C.heading }}
-                            />
-                            <button
-                                onClick={handleSend}
-                                disabled={sending || !selectedTutorId}
-                                className="px-4 py-2 rounded-xl text-xs font-semibold text-white disabled:opacity-60 inline-flex items-center gap-1.5"
-                                style={{ backgroundColor: C.btnPrimary }}
-                            >
-                                {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                                Send
-                            </button>
-                        </div>
-                    </section>
+                                    {/* Course Selector */}
+                                    <select
+                                        value={selectedCourseId}
+                                        onChange={(e) => setSelectedCourseId(e.target.value)}
+                                        className="w-full sm:w-auto shrink-0"
+                                        style={{ ...baseInputStyle, height: '40px', backgroundColor: C.surfaceWhite, width: '180px' }}
+                                        onFocus={onFocusHandler} onBlur={onBlurHandler}
+                                    >
+                                        <option value="">General Discussion</option>
+                                        {(currentTutor.courses || []).map((course, idx) => (
+                                            <option key={`${course.courseId}-${idx}`} value={course.courseId}>
+                                                {course.title}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Messages List (INNER BOX FEEL) */}
+                                <div className="flex-1 overflow-y-auto p-5 custom-scrollbar space-y-4" style={{ backgroundColor: innerBox }}>
+                                    {loadingMessages ? (
+                                        <div className="h-full flex items-center justify-center"><Loader2 className="animate-spin" color={C.btnPrimary} /></div>
+                                    ) : messages.length > 0 ? (
+                                        messages.map((msg, i) => {
+                                            const showDate = i === 0 || dateLabel(messages[i - 1].sentAt) !== dateLabel(msg.sentAt);
+                                            return (
+                                                <div key={msg._id}>
+                                                    {showDate && (
+                                                        <div className="flex justify-center my-6">
+                                                            <span style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, backgroundColor: outerCard, padding: '4px 12px', borderRadius: R.md, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                                {dateLabel(msg.sentAt)}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    <div className={`flex ${msg.isOwn ? 'justify-end' : 'justify-start'}`}>
+                                                        <div className={`max-w-[70%] p-3.5 rounded-2xl ${msg.isOwn ? 'rounded-tr-none' : 'rounded-tl-none'}`} 
+                                                            style={{ 
+                                                                backgroundColor: msg.isOwn ? C.btnPrimary : C.surfaceWhite, 
+                                                                color: msg.isOwn ? '#fff' : C.heading,
+                                                                boxShadow: S.card
+                                                            }}>
+                                                            {msg.course?.title && (
+                                                                <span style={{ display: 'block', fontSize: '9px', fontWeight: T.weight.black, opacity: 0.7, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                                    Regarding: {msg.course.title}
+                                                                </span>
+                                                            )}
+                                                            <p style={{ fontSize: T.size.sm, margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{msg.body}</p>
+                                                            <p style={{ fontSize: '9px', textAlign: 'right', marginTop: '6px', opacity: 0.7, fontWeight: T.weight.bold }}>
+                                                                {timeLabel(msg.sentAt)}
+                                                                {msg.isOwn && (
+                                                                    <span className="ml-1">{msg.isRead ? '✓✓' : '✓'}</span>
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="h-full flex flex-col items-center justify-center opacity-40">
+                                            <MessageSquare size={48} />
+                                            <p style={{ fontWeight: T.weight.bold, marginTop: '8px' }}>Start the conversation!</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Reply Input Area */}
+                                <div className="p-4 shrink-0" style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: innerBox }}>
+                                    <div className="flex items-center gap-3">
+                                        <textarea
+                                            value={draft}
+                                            onChange={(e) => setDraft(e.target.value)}
+                                            placeholder="Write your message..."
+                                            style={{ ...baseInputStyle, backgroundColor: C.surfaceWhite, resize: 'none', height: '44px', paddingTop: '12px' }}
+                                            onFocus={onFocusHandler} onBlur={onBlurHandler}
+                                            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }}}
+                                        />
+                                        <button onClick={handleSend} disabled={sending || !draft.trim()}
+                                            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-40 shadow-md"
+                                            style={{ background: C.gradientBtn, color: '#fff' }}>
+                                            {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="flex-1 flex flex-col items-center justify-center text-center p-10">
+                                <div className="w-16 h-16 rounded-3xl flex items-center justify-center mb-4 shadow-sm" style={{ backgroundColor: innerBox }}>
+                                    <MessageSquare size={32} color={C.btnPrimary} />
+                                </div>
+                                <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 8px 0' }}>Select a Conversation</h3>
+                                <p style={{ fontSize: T.size.sm, color: C.textMuted, margin: 0, maxWidth: '280px' }}>Choose a tutor from the left to start or continue a discussion.</p>
+                            </div>
+                        )}
+                    </main>
                 </div>
             )}
         </div>
