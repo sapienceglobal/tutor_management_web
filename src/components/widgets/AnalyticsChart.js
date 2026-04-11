@@ -1,94 +1,117 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { C, T, S } from '@/constants/tutorTokens';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-export default function AnalyticsChart({ data, title = "Last Year Overview", isTutor }) {
-    // Default data if none provided
+export default function AnalyticsChart({ data, title = "Course Performance" }) {
+    // Exact colors from your image
+    const colors = { 
+        enrollments: '#6854F3', // Purple
+        completions: '#4ABCA8', // Green
+        revenue: '#FC8730'      // Orange
+    };
+
     const chartData = data || [
-        { name: 'P1-6', students: 24000, enrollments: 31000 },
-        { name: 'p1-8', students: 65000, enrollments: 68000 },
-        { name: 'p2-6', students: 38000, enrollments: 26000 },
-        { name: 'p2-8', students: 42000, enrollments: 41000 },
-        { name: 'p3-6', students: 65000, enrollments: 68000 },
-        { name: 'p3-8', students: 74000, enrollments: 76000 },
-        { name: 'p4-6', students: 66000, enrollments: 38000 },
-        { name: 'p4-8', students: 58000, enrollments: 42000 },
-        { name: 'p5-6', students: 68000, enrollments: 62000 },
-        { name: 'p5-8', students: 76000, enrollments: 72000 },
-        { name: 'p6-6', students: 58000, enrollments: 58000 },
-        { name: 'p6-8', students: 78000, enrollments: 95000 },
+        { name: 'Week 1', enrollments: 10, completions: 10, revenue: 15 },
+        { name: 'Week 2', enrollments: 80, completions: 80, revenue: 140 },
+        { name: 'Week 3', enrollments: 180, completions: 120, revenue: 120 },
+        { name: 'Week 4', enrollments: 280, completions: 200, revenue: 280 },
     ];
 
-    const wrapperClass = isTutor ? "p-6 rounded-2xl" : "bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-6";
-    const wrapperStyle = isTutor ? { backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card } : {};
-    const titleStyle = isTutor ? { color: C.heading, fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.bold } : {};
-    const titleClass = isTutor ? "mb-6 pb-4 border-b border-slate-200/50" : "text-lg font-semibold text-[#2C3E50] mb-6 pb-4 border-b border-slate-200";
+    const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.15)';
 
     return (
-        <div className={wrapperClass} style={wrapperStyle}>
-            <h3 className={titleClass} style={titleStyle}>{title}</h3>
+        <div className="bg-white rounded-2xl p-6" style={{ boxShadow: softShadow }}>
+            
+            {/* Top Row: Title + Toggle */}
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-[18px] font-black text-[#27225B] m-0">{title}</h3>
+                
+                {/* Weekly / Monthly Toggle */}
+                <div className="flex items-center bg-[#F4F0FD] rounded-xl p-1">
+                    <button className="px-4 py-1.5 text-[13px] font-bold text-[#6854F3] bg-white rounded-lg shadow-sm border-none cursor-pointer transition-all">
+                        Weekly
+                    </button>
+                    <button className="px-4 py-1.5 text-[13px] font-bold text-[#7D8DA6] bg-transparent border-none cursor-pointer transition-all hover:text-[#6854F3]">
+                        Monthly
+                    </button>
+                </div>
+            </div>
 
-            <div className="h-80" style={isTutor ? { fontFamily: T.fontFamily } : {}}>
+            {/* Second Row: Legend (Aligned Left) */}
+            <div className="flex items-center gap-6 mb-6 pl-2">
+                <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.enrollments }}></span>
+                    <span className="text-[13px] font-bold text-[#27225B]">Enrollments</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.completions }}></span>
+                    <span className="text-[13px] font-bold text-[#27225B]">Completions</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.revenue }}></span>
+                    <span className="text-[13px] font-bold text-[#27225B]">Revenue</span>
+                </div>
+            </div>
+
+            {/* Chart Area */}
+            <div className="h-[260px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                        data={chartData}
-                        margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
-                    >
-                        <CartesianGrid
-                            strokeDasharray="3 3"
-                            vertical={false}
-                            stroke="#F1F5F9"
+                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <defs>
+                            <linearGradient id="colorEnrollments" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor={colors.enrollments} stopOpacity={0.25}/>
+                                <stop offset="95%" stopColor={colors.enrollments} stopOpacity={0}/>
+                            </linearGradient>
+                            <linearGradient id="colorCompletions" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor={colors.completions} stopOpacity={0.25}/>
+                                <stop offset="95%" stopColor={colors.completions} stopOpacity={0}/>
+                            </linearGradient>
+                            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor={colors.revenue} stopOpacity={0.15}/>
+                                <stop offset="95%" stopColor={colors.revenue} stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
+                        
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                        
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12, fontWeight: 600 }} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12, fontWeight: 600 }} dx={-10} />
+                        
+                        <Tooltip 
+                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: softShadow, fontWeight: 'bold', color: '#27225B' }}
+                            cursor={{ stroke: '#E5E7EB', strokeWidth: 2, strokeDasharray: '3 3' }} 
                         />
-                        <XAxis
-                            dataKey="name"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                            dy={10}
+                        
+                        {/* Lines with White-centered Dots like the image */}
+                        <Area 
+                            type="monotone" 
+                            dataKey="revenue" 
+                            stroke={colors.revenue} 
+                            strokeWidth={3} 
+                            fillOpacity={1} 
+                            fill="url(#colorRevenue)" 
+                            dot={{ r: 5, stroke: colors.revenue, strokeWidth: 2, fill: '#fff' }}
+                            activeDot={{ r: 7, stroke: colors.revenue, strokeWidth: 2, fill: '#fff' }}
                         />
-                        <YAxis
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                            dx={-10}
+                        <Area 
+                            type="monotone" 
+                            dataKey="completions" 
+                            stroke={colors.completions} 
+                            strokeWidth={3} 
+                            fillOpacity={1} 
+                            fill="url(#colorCompletions)" 
+                            dot={{ r: 5, stroke: colors.completions, strokeWidth: 2, fill: '#fff' }}
+                            activeDot={{ r: 7, stroke: colors.completions, strokeWidth: 2, fill: '#fff' }}
                         />
-                        <Tooltip
-                            contentStyle={{
-                                backgroundColor: isTutor ? C.innerBg : 'white',
-                                border: 'none',
-                                borderRadius: isTutor ? '12px' : '8px',
-                                boxShadow: isTutor ? S.card : '0 4px 12px rgba(0,0,0,0.1)',
-                                color: isTutor ? C.text : '#333'
-                            }}
-                            cursor={{ fill: 'rgba(0,0,0,0.05)' }}
+                        <Area 
+                            type="monotone" 
+                            dataKey="enrollments" 
+                            stroke={colors.enrollments} 
+                            strokeWidth={3} 
+                            fillOpacity={1} 
+                            fill="url(#colorEnrollments)" 
+                            dot={{ r: 5, stroke: colors.enrollments, strokeWidth: 2, fill: '#fff' }}
+                            activeDot={{ r: 7, stroke: colors.enrollments, strokeWidth: 2, fill: '#fff' }}
                         />
-                        <Legend
-                            wrapperStyle={{
-                                paddingTop: '20px',
-                                fontSize: '14px'
-                            }}
-                            iconType="rect"
-                            iconSize={12}
-                            formatter={(value) => (
-                                <span style={{ color: '#7D8DA6', fontWeight: 500 }}>
-                                    {value}
-                                </span>
-                            )}
-                        />
-                        <Bar
-                            dataKey="students"
-                            fill={isTutor ? '#3D3B8E' : '#1E3A8A'}
-                            name="Website Views"
-                            radius={[4, 4, 0, 0]}
-                            barSize={20}
-                        />
-                        <Bar
-                            dataKey="enrollments"
-                            fill={isTutor ? '#7573E8' : '#FF9F43'}
-                            name="New Users"
-                            radius={[4, 4, 0, 0]}
-                            barSize={20}
-                        />
-                    </BarChart>
+                    </AreaChart>
                 </ResponsiveContainer>
             </div>
         </div>

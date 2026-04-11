@@ -6,12 +6,12 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 export function Header({ onMenuClick, onSidebarCollapse, isSidebarCollapsed, institute }) {
     const router = useRouter();
-    const [user, setUser]                   = useState(null);
-    const [userRole, setUserRole]           = useState('');
+    const [user, setUser] = useState(null);
+    const [userRole, setUserRole] = useState('');
     const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const [mounted, setMounted]             = useState(false);
+    const [mounted, setMounted] = useState(false);
     const { toggleMode, isDarkMode, isDarkModeAllowed } = useTheme();
-    const [searchTerm, setSearchTerm]       = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -45,14 +45,14 @@ export function Header({ onMenuClick, onSidebarCollapse, isSidebarCollapsed, ins
 
     const roleLabel = {
         superadmin: 'Super Admin',
-        admin:      'Admin',
-        tutor:      'Tutor',
-        student:    'Student',
+        admin: 'Admin',
+        tutor: 'Tutor',
+        student: 'Student',
     }[userRole] || userRole;
 
     // Role-aware dropdown destinations
-    const profilePath   = userRole === 'tutor' ? '/tutor/settings'   : '/admin/profile';
-    const settingsPath  = userRole === 'tutor' ? '/tutor/settings'   : '/admin/settings';
+    const profilePath = userRole === 'tutor' ? '/tutor/settings' : '/admin/profile';
+    const settingsPath = userRole === 'tutor' ? '/tutor/settings' : '/admin/settings';
     const dashboardPath = userRole === 'tutor'
         ? '/tutor/dashboard'
         : userRole === 'superadmin'
@@ -60,7 +60,7 @@ export function Header({ onMenuClick, onSidebarCollapse, isSidebarCollapsed, ins
             : '/admin/dashboard';
 
     return (
-        <header className="h-[60px] bg-white/95 backdrop-blur-sm border-b border-slate-200/70 flex items-center px-4 lg:px-5 sticky top-0 z-40 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] gap-3">
+        <header className="h-[60px] bg-[#FAFAFD] backdrop-blur-sm border-b border-slate-200/70 flex items-center px-4 lg:px-5 sticky top-0 z-40 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] gap-3">
 
             {/* Left */}
             <div className="flex items-center gap-1 flex-shrink-0">
@@ -72,7 +72,7 @@ export function Header({ onMenuClick, onSidebarCollapse, isSidebarCollapsed, ins
                     title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                     className="hidden lg:flex p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 rounded-lg transition-colors">
                     {isSidebarCollapsed
-                        ? <PanelLeftOpen  className="w-[18px] h-[18px]" />
+                        ? <PanelLeftOpen className="w-[18px] h-[18px]" />
                         : <PanelLeftClose className="w-[18px] h-[18px]" />}
                 </button>
             </div>

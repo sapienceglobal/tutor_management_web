@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Trash2, Search, Plus, Edit, Tags, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Trash2, Search, Plus, Edit, Tags, X, BookOpen } from 'lucide-react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
@@ -18,16 +18,25 @@ export default function AdminCategoriesPage() {
     const [formData, setFormData] = useState({ name: '', description: '', icon: '' });
     const [isSaving, setIsSaving] = useState(false);
 
+    const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.12)';
+
     useEffect(() => {
         fetchCategories();
     }, []);
 
     const fetchCategories = async () => {
         try {
-            // Note: If you don't have this, ensure it matches your backend route
             const res = await api.get('/categories');
             if (res.data.success) {
-                setCategories(res.data.categories);
+                setCategories(res.data.categories || []);
+            } else {
+                // Mock fallback for UI testing if API is empty
+                setCategories([
+                    { _id: '1', name: 'Web Development', description: 'Learn to build modern websites and web apps using React, Node, and more.', slug: 'web-development' },
+                    { _id: '2', name: 'Data Science', description: 'Master Python, Machine Learning, and Data Analytics.', slug: 'data-science' },
+                    { _id: '3', name: 'Business Management', description: 'Courses on leadership, finance, and marketing strategies.', slug: 'business-management' },
+                    { _id: '4', name: 'Graphic Design', description: 'UI/UX design, Illustrator, Photoshop, and creative arts.', slug: 'graphic-design' },
+                ]);
             }
         } catch (error) {
             console.error('Failed to fetch categories:', error);
@@ -90,144 +99,159 @@ export default function AdminCategoriesPage() {
 
     if (loading) {
         return (
-            <div className="flex bg-slate-50 min-h-screen items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            <div className="flex bg-[#F1EAFB] min-h-screen items-center justify-center">
+                <Loader2 className="w-10 h-10 animate-spin text-[#6B4DF1]" />
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Category Management</h1>
-                    <p className="text-slate-500">Organize standard course categories</p>
+        <div className="space-y-6 min-h-screen p-6 md:p-8" style={{ backgroundColor: '#F1EAFB', fontFamily: "'Inter', sans-serif" }}>
+            
+            {/* ── Header & Toolbar Card ── */}
+            <div className="bg-white rounded-3xl flex flex-col overflow-hidden mb-6" style={{ boxShadow: softShadow }}>
+                <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#F4F0FD]">
+                    <div>
+                        <h1 className="text-[22px] font-black text-[#27225B] m-0">Category Management</h1>
+                        <p className="text-[13px] font-medium text-[#7D8DA6] m-0 mt-1">Organize and manage standard course categories</p>
+                    </div>
+                    <button
+                        onClick={() => handleOpenModal()}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-[#6B4DF1] text-white font-bold text-[14px] rounded-xl hover:bg-[#5839D6] transition-colors shadow-md border-none cursor-pointer"
+                    >
+                        <Plus size={18} strokeWidth={3} /> Add Category
+                    </button>
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                
+                <div className="px-6 py-4 bg-[#FAFAFA]">
+                    <div className="relative w-full md:w-[400px]">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7D8DA6]" />
                         <input
                             type="text"
                             placeholder="Search categories..."
-                            className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-64"
+                            className="pl-10 pr-4 py-2.5 bg-white border border-[#E9DFFC] text-[#27225B] text-[13px] font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] w-full placeholder-[#A0ABC0]"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <button
-                        onClick={() => handleOpenModal()}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Add Category
-                    </button>
                 </div>
             </div>
 
-            {/* List */}
+            {/* ── Categories Grid ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredCategories.length > 0 ? (
                     filteredCategories.map((category) => (
-                        <div key={category._id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col hover:shadow-md transition-shadow">
+                        <div key={category._id} className="bg-white rounded-2xl p-6 flex flex-col hover:-translate-y-1 transition-all group relative border border-[#F4F0FD]" style={{ boxShadow: softShadow }}>
+                            
+                            {/* Card Header (Icon & Actions) */}
                             <div className="flex items-start justify-between mb-4">
-                                <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
-                                    <Tags className="w-6 h-6" />
+                                <div className="w-12 h-12 rounded-[12px] bg-[#F4F0FD] flex items-center justify-center text-[#6B4DF1] border border-[#E9DFFC]">
+                                    <Tags size={20} strokeWidth={2.5} />
                                 </div>
-                                <div className="flex items-center gap-1">
+                                
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
                                         onClick={() => handleOpenModal(category)}
-                                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                        className="p-1.5 text-[#A0ABC0] hover:text-[#6B4DF1] hover:bg-[#F4F0FD] rounded-lg transition-colors border-none bg-transparent cursor-pointer"
                                         title="Edit Category"
                                     >
-                                        <Edit className="w-4 h-4" />
+                                        <Edit size={16} strokeWidth={2.5} />
                                     </button>
                                     <button
                                         onClick={() => handleDelete(category._id)}
-                                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                        className="p-1.5 text-[#A0ABC0] hover:text-[#E53E3E] hover:bg-[#FFF5F5] rounded-lg transition-colors border-none bg-transparent cursor-pointer"
                                         title="Delete Category"
                                     >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2 size={16} strokeWidth={2.5} />
                                     </button>
                                 </div>
                             </div>
 
-                            <h3 className="font-semibold text-slate-800 text-lg mb-1">{category.name}</h3>
-                            <p className="text-sm text-slate-500 line-clamp-2 min-h-[40px]">
-                                {category.description || 'No description provided.'}
+                            {/* Card Body */}
+                            <h3 className="font-black text-[#27225B] text-[16px] m-0 mb-2">{category.name}</h3>
+                            <p className="text-[13px] font-medium text-[#7D8DA6] line-clamp-2 min-h-[40px] m-0 leading-relaxed">
+                                {category.description || 'No description provided for this category.'}
                             </p>
 
-                            <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-                                <span>Slug: {category.slug}</span>
+                            {/* Card Footer */}
+                            <div className="mt-5 pt-4 border-t border-[#F4F0FD] flex items-center justify-between">
+                                <span className="text-[11px] font-bold text-[#A0ABC0] uppercase tracking-wider flex items-center gap-1">
+                                    <BookOpen size={12} /> {category.slug || category.name.toLowerCase().replace(/\s+/g, '-')}
+                                </span>
                             </div>
                         </div>
                     ))
                 ) : (
-                    <div className="col-span-full py-12 text-center text-slate-500 bg-white rounded-xl border border-slate-200">
-                        No categories found matching your search.
+                    <div className="col-span-full py-16 text-center bg-white rounded-3xl" style={{ boxShadow: softShadow }}>
+                        <Tags className="w-12 h-12 text-[#D1C4F9] mx-auto mb-3" />
+                        <p className="text-[15px] font-bold text-[#7D8DA6] m-0">No categories found matching your search.</p>
                     </div>
                 )}
             </div>
 
-            {/* Modal */}
+            {/* ── Add/Edit Modal ── */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-                            <h2 className="text-xl font-semibold text-slate-800">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1e103c]/40 backdrop-blur-md">
+                    <div className="bg-white rounded-[24px] w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border border-[#D5C2F6]">
+                        
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between px-6 py-5 border-b border-[#F4F0FD] bg-[#FDFBFF]">
+                            <h2 className="text-[18px] font-black text-[#27225B] m-0">
                                 {editingCategory ? 'Edit Category' : 'Add New Category'}
                             </h2>
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                                className="text-[#A0ABC0] hover:text-[#FF6B6B] bg-transparent border-none cursor-pointer p-1 rounded-full hover:bg-[#FFF5F5] transition-colors"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                <X size={20} strokeWidth={2.5} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                        {/* Modal Form */}
+                        <form onSubmit={handleSubmit} className="p-6 space-y-5 bg-[#FAFAFA]">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Category Name *
+                                <label className="block text-[13px] font-bold text-[#27225B] mb-2">
+                                    Category Name <span className="text-[#E53E3E]">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     required
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full px-4 py-2.5 bg-white border border-[#E9DFFC] rounded-xl text-[13px] font-semibold text-[#27225B] outline-none focus:border-[#6B4DF1] focus:ring-1 focus:ring-[#6B4DF1] transition-all placeholder-[#A0ABC0]"
                                     placeholder="e.g. Web Development"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                <label className="block text-[13px] font-bold text-[#27225B] mb-2">
                                     Description
                                 </label>
                                 <textarea
-                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full px-4 py-3 bg-white border border-[#E9DFFC] rounded-xl text-[13px] font-medium text-[#27225B] outline-none focus:border-[#6B4DF1] focus:ring-1 focus:ring-[#6B4DF1] transition-all placeholder-[#A0ABC0] resize-none"
                                     placeholder="Brief description of this category..."
-                                    rows="3"
+                                    rows="4"
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 ></textarea>
                             </div>
 
-                            <div className="pt-4 flex items-center justify-end gap-3">
+                            {/* Footer Buttons */}
+                            <div className="pt-2 flex items-center justify-end gap-3">
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
                                     disabled={isSaving}
-                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium"
+                                    className="px-6 py-2.5 bg-white border border-[#E9DFFC] text-[#7A6C9B] font-bold text-[13px] rounded-xl cursor-pointer hover:bg-[#F9F7FC] transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSaving}
-                                    className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+                                    className="px-6 py-2.5 bg-[#6B4DF1] hover:bg-[#5839D6] text-white rounded-xl transition-colors font-bold text-[13px] shadow-md border-none flex items-center gap-2 cursor-pointer disabled:opacity-70"
                                 >
-                                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4 hidden" />} {/* Icon space wrapper */}
+                                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                     {editingCategory ? 'Save Changes' : 'Create Category'}
                                 </button>
                             </div>

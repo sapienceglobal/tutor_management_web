@@ -1,17 +1,25 @@
 import {
     LayoutDashboard,
     Building2,
-    Settings,
     Users,
-    Activity,
-    Users2,
+    GraduationCap,
+    BookOpen,
+    Layers,
+    MonitorPlay,
+    ClipboardCheck,
     FileText,
-    LayoutTemplate,
+    Wallet,
+    MessageSquare,
+    Cpu,
+    BarChart3,
+    Network,
+    Activity,
+    ShieldCheck
 } from 'lucide-react';
 
 export const superadminNavItems = [
     {
-        title: 'Overview',
+        title: 'Dashboard',
         href: '/superadmin',
         icon: LayoutDashboard,
         type: 'link'
@@ -23,36 +31,105 @@ export const superadminNavItems = [
         type: 'link'
     },
     {
-        title: 'All Users',
-        href: '/superadmin/users',
+        title: 'Instructors',
+        href: '/superadmin/instructors', // Replace with your actual route
         icon: Users,
         type: 'link'
     },
     {
-        title: 'Platform Activity',
-        href: '/superadmin/activity',
+        title: 'Students',
+        href: '/superadmin/students', // Replace with your actual route
+        icon: GraduationCap,
+        type: 'link'
+    },
+    {
+        title: 'Courses',
+        href: '/superadmin/courses', // Replace with your actual route
+        icon: BookOpen,
+        type: 'link'
+    },
+    {
+        title: 'Batches',
+        href: '/superadmin/batches', // Replace with your actual route
+        icon: Layers,
+        type: 'link'
+    },
+    {
+        title: 'Live Classes',
+        href: '/superadmin/live-classes', // Replace with your actual route
+        icon: MonitorPlay,
+        type: 'link'
+    },
+    {
+        title: 'Attendance',
+        href: '/superadmin/attendance', // Replace with your actual route
+        icon: ClipboardCheck,
+        type: 'link'
+    },
+    {
+        title: 'Exams & Assessments',
+        href: '/superadmin/exams', // Replace with your actual route
+        icon: FileText,
+        type: 'link'
+    },
+    {
+        title: 'Assignments',
+        href: '/superadmin/assignments', // Replace with your actual route
+        icon: FileText, // You can choose a different icon if preferred
+        type: 'link'
+    },
+    {
+        title: 'Finance',
+        type: 'section', // Has submenu arrow in image
+        icon: Wallet,
+        children: [
+             { title: 'Overview', href: '/superadmin/finance', icon: Wallet },
+             // Add other finance sub-links here
+        ]
+    },
+    {
+        title: 'Communication',
+        type: 'section', // Has submenu arrow in image
+        icon: MessageSquare,
+        children: [
+             { title: 'Messages', href: '/superadmin/communication', icon: MessageSquare },
+             // Add other comm sub-links here
+        ]
+    },
+    {
+        title: 'AI Coordinator',
+        type: 'section', // Has submenu arrow in image
+        icon: Cpu,
+        children: [
+             { title: 'Settings', href: '/superadmin/ai', icon: Cpu },
+        ]
+    },
+    {
+        title: 'Reports & Analytics',
+        href: '/superadmin/activity', // Replaced Platform Activity with this
+        icon: BarChart3,
+        type: 'link'
+    },
+    {
+        title: 'Integrations',
+        type: 'section', // Has submenu arrow in image
+        icon: Network,
+        children: [
+             { title: 'All Integrations', href: '/superadmin/integrations', icon: Network },
+        ]
+    },
+    {
+        title: 'System Monitoring',
+        href: '/superadmin/monitoring', // Replace with your actual route
         icon: Activity,
         type: 'link'
     },
     {
-        title: 'CRM & MARKETING',
-        type: 'section',
+        title: 'Audit & Security',
+        type: 'section', // Has submenu arrow in image
+        icon: ShieldCheck,
         children: [
-            { title: 'CRM & Leads', icon: Users2, href: '/superadmin/crm' },
+             { title: 'Logs', href: '/superadmin/security', icon: ShieldCheck },
         ]
-    },
-    {
-        title: 'CMS',
-        type: 'section',
-        children: [
-            { title: 'Dynamic Pages', href: '/superadmin/cms/pages', icon: FileText },
-            { title: 'Blog Manager', href: '/superadmin/cms/blogs', icon: FileText },
-        ]
-    },
-    {
-        title: 'Global Settings',
-        href: '/superadmin/settings',
-        icon: Settings,
-        type: 'link'
     }
 ];

@@ -91,6 +91,18 @@ export const adminNavItems = [
                 icon: Tags,
                 href: "/admin/categories",
                 type: "link"
+            },
+            {
+                title: "Branches",
+                icon: Building2,
+                href: "/admin/branches",
+                type: "link"
+            },
+            {
+                title: "Fee Collection",
+                icon: DollarSign,
+                href: "/admin/fees",
+                type: "link"
             }
         ]
     },

@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
-    FileText, Timer, CheckCircle, ArrowRight, Clock, Search, Filter, Sparkles, Calendar, BookOpen, PlayCircle
+    FileText, Timer, CheckCircle, ArrowRight, Clock, Search, Filter, Sparkles, Calendar, BookOpen, PlayCircle,
+    ChevronLeft, ChevronRight, Zap
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { getAudienceDisplay } from '@/lib/audienceDisplay';
@@ -59,6 +60,7 @@ export default function StudentExamsPage() {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
+    const [todayCarouselIdx, setTodayCarouselIdx] = useState(0);
 
     useEffect(() => {
         const fetchExams = async () => {
@@ -101,6 +103,18 @@ export default function StudentExamsPage() {
         upcoming: exams.filter(e => getStatus(e) === 'upcoming').length,
         completed: exams.filter(e => getStatus(e) === 'completed').length,
     }), [exams]);
+
+    // Today's exams: available now AND whose startDate is today (or no startDate = always available today)
+    const todayExams = useMemo(() => {
+        const now = new Date();
+        const todayStr = now.toDateString();
+        return exams.filter(exam => {
+            const status = getStatus(exam);
+            if (status !== 'available') return false;
+            if (!exam.startDate) return true; // unscheduled = always available
+            return new Date(exam.startDate).toDateString() === todayStr;
+        });
+    }, [exams]);
 
     const statusConfig = {
         available: { label: 'Available', bg: C.successBg, text: C.success, border: C.successBorder },
@@ -152,6 +166,128 @@ export default function StudentExamsPage() {
                 <StatCard label="Upcoming" value={stats.upcoming} icon={Calendar} iconBg={C.warningBg} iconColor={C.warning} />
                 <StatCard label="Completed" value={stats.completed} icon={CheckCircle} iconBg="rgba(79, 70, 229, 0.1)" iconColor="#4F46E5" />
             </div>
+
+            {/* ── Today's Exams Carousel ─────────────────────────────── */}
+            {todayExams.length > 0 && (
+                <div className="rounded-3xl p-6 relative overflow-hidden"
+                    style={{ background: 'linear-gradient(135deg, #1E1B4B 0%, #4338CA 100%)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: S.card }}>
+
+                    {/* dot grid bg */}
+                    <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
+                        style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+
+                    <div className="relative z-10">
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-5">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                                    style={{ backgroundColor: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                                    <Zap size={18} className="text-amber-300" />
+                                </div>
+                                <div>
+                                    <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: '#ffffff', margin: 0 }}>
+                                        Today's Exams
+                                    </h2>
+                                    <p style={{ fontSize: T.size.xs, color: 'rgba(255,255,255,0.6)', margin: 0, marginTop: 2 }}>
+                                        {todayExams.length} exam{todayExams.length > 1 ? 's' : ''} available right now
+                                    </p>
+                                </div>
+                            </div>
+                            {/* Arrow nav */}
+                            {todayExams.length > 1 && (
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setTodayCarouselIdx(i => (i - 1 + todayExams.length) % todayExams.length)}
+                                        className="w-9 h-9 rounded-xl flex items-center justify-center border-none cursor-pointer transition-colors"
+                                        style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff' }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.25)'}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}>
+                                        <ChevronLeft size={18} />
+                                    </button>
+                                    <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.7)' }}>
+                                        {todayCarouselIdx + 1} / {todayExams.length}
+                                    </span>
+                                    <button
+                                        onClick={() => setTodayCarouselIdx(i => (i + 1) % todayExams.length)}
+                                        className="w-9 h-9 rounded-xl flex items-center justify-center border-none cursor-pointer transition-colors"
+                                        style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff' }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.25)'}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}>
+                                        <ChevronRight size={18} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Exam Card */}
+                        {(() => {
+                            const exam = todayExams[todayCarouselIdx];
+                            if (!exam) return null;
+                            return (
+                                <div className="rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-5"
+                                    style={{ backgroundColor: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
+
+                                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                                        <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                                            style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                                            <FileText size={22} className="text-white" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h3 className="truncate" style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: '#ffffff', margin: '0 0 4px 0' }}>
+                                                {exam.title}
+                                            </h3>
+                                            {exam.courseTitle && (
+                                                <p style={{ fontSize: T.size.xs, color: 'rgba(255,255,255,0.6)', margin: '0 0 10px 0' }}>
+                                                    {exam.courseTitle}
+                                                </p>
+                                            )}
+                                            <div className="flex flex-wrap gap-4">
+                                                <span className="flex items-center gap-1.5" style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.8)' }}>
+                                                    <Timer size={13} className="text-amber-300" />
+                                                    {exam.duration} mins
+                                                </span>
+                                                <span className="flex items-center gap-1.5" style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.8)' }}>
+                                                    <BookOpen size={13} className="text-sky-300" />
+                                                    {exam.totalQuestions || exam.questions?.length || '—'} Questions
+                                                </span>
+                                                {exam.endDate && (
+                                                    <span className="flex items-center gap-1.5" style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.8)' }}>
+                                                        <Clock size={13} className="text-red-300" />
+                                                        Ends {new Date(exam.endDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <Link href={`/student/exams/${exam._id}/take`} className="shrink-0">
+                                        <button
+                                            className="flex items-center gap-2 px-7 py-3.5 rounded-xl border-none cursor-pointer font-black text-sm transition-transform hover:scale-105 shadow-lg"
+                                            style={{ background: 'linear-gradient(135deg,#F59E0B,#EF4444)', color: '#fff', fontFamily: T.fontFamily }}>
+                                            <PlayCircle size={16} className="fill-white" /> Take Exam
+                                        </button>
+                                    </Link>
+                                </div>
+                            );
+                        })()}
+
+                        {/* Dot indicators */}
+                        {todayExams.length > 1 && (
+                            <div className="flex justify-center gap-1.5 mt-4">
+                                {todayExams.map((_, i) => (
+                                    <button key={i} onClick={() => setTodayCarouselIdx(i)}
+                                        className="rounded-full border-none cursor-pointer transition-all"
+                                        style={{
+                                            width: i === todayCarouselIdx ? '20px' : '6px',
+                                            height: '6px',
+                                            backgroundColor: i === todayCarouselIdx ? '#fff' : 'rgba(255,255,255,0.35)',
+                                        }} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Main Area */}
             <div className="overflow-hidden flex flex-col" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>

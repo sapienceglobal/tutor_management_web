@@ -37,6 +37,7 @@ function formatPaymentId(payment) {
 }
 
 function getDescription(payment) {
+    if (payment.type === 'institute_fee') return payment.title || 'Institute Fee';
     if (payment.courseId?.title) return payment.courseId.title;
     if (payment.type === 'subscription_renewal') return 'Subscription Renewal';
     return 'Course Payment';
@@ -334,15 +335,15 @@ export default function PaymentsPage() {
                                                             >
                                                                 <Download className="w-4 h-4" />
                                                             </button>
-                                                        ) : isDue(payment) && (payment.retryCount || 0) < 3 ? (
+                                                        ) : isDue(payment) ? (
                                                             <Button
                                                                 size="sm"
-                                                                variant="outline"
-                                                                className="border-amber-200 text-amber-700 hover:bg-amber-50"
+                                                                className="bg-[#6B4DF1] hover:bg-[#5839D6] text-white px-4 font-bold shadow-sm"
                                                                 disabled={retrying === payment._id}
                                                                 onClick={() => handleRetryPayment(payment._id)}
                                                             >
-                                                                {retrying === payment._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                                                                {retrying === payment._id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Wallet className="w-4 h-4 mr-1.5" />}
+                                                                Pay
                                                             </Button>
                                                         ) : (
                                                             <span className="text-slate-300">—</span>

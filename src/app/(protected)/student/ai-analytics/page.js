@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import {
     BarChart3, CheckCircle, Clock, TrendingUp, Sparkles, Brain,
-    Calendar, Target, BookOpen, Award, Zap, AlertCircle, ChevronRight, XCircle,
-    Loader2
+    Target, Award, XCircle, FileText, Download, Printer, LayoutList
 } from 'lucide-react';
 import api from '@/lib/axios';
 import {
@@ -68,48 +67,33 @@ function StatCard({ label, value, icon: Icon, iconBg, iconColor }) {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function ResultsAnalyticsPage() {
+export default function ReportsAnalyticsPage() {
     const [attempts, setAttempts]             = useState([]);
     const [allExams, setAllExams]             = useState([]);
-    const [courses, setCourses]               = useState([]);
     const [loading, setLoading]               = useState(true);
     const [activeTab, setActiveTab]           = useState('analytics');
-    const [studyPlan, setStudyPlan]           = useState(null);
-    const [generatingPlan, setGeneratingPlan] = useState(false);
+    
+    // Naya State: Report data store karne ke liye
+    const [reportData, setReportData]         = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [historyRes, examsRes, coursesRes] = await Promise.all([
+                const [historyRes, examsRes, summaryRes] = await Promise.all([
                     api.get('/exams/student/history-all'),
                     api.get('/exams/student/all'),
-                    api.get('/enrollments/my-enrollments'),
+                    api.get('/reports/student/summary'), // NAYA BACKEND ROUTE
                 ]);
+                
                 if (historyRes.data?.success) setAttempts(historyRes.data.attempts || []);
                 if (examsRes.data?.success) setAllExams(examsRes.data.exams || []);
-                if (coursesRes.data?.success) setCourses((coursesRes.data.enrollments || []).map(e => e.courseId));
+                if (summaryRes.data?.success) setReportData(summaryRes.data);
+                
             } catch (err) { console.error('Error fetching analytics:', err); }
             finally { setLoading(false); }
         };
         fetchData();
     }, []);
-
-    const generateStudyPlan = async () => {
-        setGeneratingPlan(true);
-        try {
-            const response = await api.post('/ai/generate-study-plan', {
-                performanceData: attempts,
-                courses,
-                goals: ['improve_scores', 'complete_courses', 'master_weak_areas'],
-            });
-            if (response.data?.success) {
-                setStudyPlan(response.data.studyPlan);
-                setActiveTab('study-plan');
-                toast.success('AI Study Plan Generated! 🎯');
-            }
-        } catch { toast.error('Failed to generate AI study plan'); }
-        finally { setGeneratingPlan(false); }
-    };
 
     const insights = useMemo(() => {
         if (!attempts.length) return { avgScore: 0, completed: 0, pending: 0 };
@@ -152,16 +136,45 @@ export default function ResultsAnalyticsPage() {
         [...attempts].sort((a, b) => new Date(b.date || b.submittedAt) - new Date(a.date || a.submittedAt)).slice(0, 5),
     [attempts]);
 
+    // ─── Export Functions ──────────────────────────────────────────────────
+    const handlePrintPDF = () => {
+        window.print();
+    };
+
+    const handleDownloadCSV = () => {
+        if (!reportData?.examAttempts) {
+            toast.error("No exam data available to download.");
+            return;
+        }
+
+        const headers = "Exam Title,Score,Total Marks,Percentage,Status,Date\n";
+        const rows = reportData.examAttempts.map(a => {
+            const status = a.isPassed ? 'Passed' : 'Failed';
+            const dateStr = new Date(a.date).toLocaleDateString();
+            return `"${a.examTitle}",${a.score},${a.totalMarks},${a.pct}%,"${status}","${dateStr}"`;
+        }).join("\n");
+
+        const blob = new Blob([headers + rows], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Student_Report_${new Date().getTime()}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        toast.success("CSV Downloaded Successfully");
+    };
+
     if (loading) return (
         <div className="flex flex-col items-center justify-center min-h-screen gap-3" style={{ backgroundColor: themeBg }}>
             <div className="relative w-12 h-12">
                 <div className="w-12 h-12 rounded-full border-[3px] border-[#4F46E5]/30 border-t-[#4F46E5] animate-spin" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-[#4F46E5] animate-pulse" />
+                    <BarChart3 className="w-4 h-4 text-[#4F46E5] animate-pulse" />
                 </div>
             </div>
             <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted }}>
-                Loading AI Analytics…
+                Loading Reports & Analytics...
             </p>
         </div>
     );
@@ -169,16 +182,26 @@ export default function ResultsAnalyticsPage() {
     return (
         <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily, color: C.text }}>
 
+            {/* Print Stylesheet (Hides everything except the report card when printing) */}
+            <style jsx global>{`
+                @media print {
+                    body * { visibility: hidden; }
+                    #printable-report, #printable-report * { visibility: visible; }
+                    #printable-report { position: absolute; left: 0; top: 0; width: 100%; background: white !important; box-shadow: none !important; }
+                    .no-print { display: none !important; }
+                }
+            `}</style>
+
             {/* ── Header ─────────────────────────────────────────────────── */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-3xl" style={{ backgroundColor: outerCard, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-3xl no-print" style={{ backgroundColor: outerCard, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: innerBox, borderRadius: R.xl }}>
-                        <Brain size={24} color={C.btnPrimary} />
+                        <LayoutList size={24} color={C.btnPrimary} />
                     </div>
                     <div>
-                        <h1 style={{ fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading, margin: '0 0 2px 0' }}>AI Learning Hub</h1>
+                        <h1 style={{ fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading, margin: '0 0 2px 0' }}>Reports & Analytics</h1>
                         <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>
-                            Track your performance & get AI-powered recommendations.
+                            Analyze your performance and download official reports.
                         </p>
                     </div>
                 </div>
@@ -186,7 +209,7 @@ export default function ResultsAnalyticsPage() {
                 <div className="flex p-1 rounded-xl shrink-0" style={{ backgroundColor: innerBox, border: `1px solid ${C.cardBorder}` }}>
                     {[
                         { id: 'analytics',  label: 'Analytics', icon: BarChart3 },
-                        { id: 'study-plan', label: 'AI Study Plan', icon: Sparkles },
+                        { id: 'reports',    label: 'Reports & Downloads', icon: FileText },
                     ].map(tab => (
                         <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                             className="flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all duration-200 cursor-pointer border-none"
@@ -202,7 +225,7 @@ export default function ResultsAnalyticsPage() {
 
             {/* ══ ANALYTICS TAB ═══════════════════════════════════════════ */}
             {activeTab === 'analytics' && (
-                <div className="space-y-6">
+                <div className="space-y-6 no-print">
 
                     {/* Stat cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -320,7 +343,7 @@ export default function ResultsAnalyticsPage() {
                                 <Link href="/student/history" className="text-decoration-none">
                                     <button className="flex items-center gap-1 h-8 px-3 rounded-lg border-none cursor-pointer transition-colors hover:bg-slate-200"
                                         style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, fontSize: '11px', fontWeight: T.weight.bold }}>
-                                        View all <ChevronRight size={14} />
+                                        View all
                                     </button>
                                 </Link>
                             </div>
@@ -359,7 +382,7 @@ export default function ResultsAnalyticsPage() {
                                                 <Link href={`/student/exams/attempt/${attempt._id}`} className="text-decoration-none">
                                                     <button className="h-9 px-4 rounded-xl border-none cursor-pointer transition-opacity hover:opacity-80 shadow-sm"
                                                         style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, fontSize: '11px', fontWeight: T.weight.bold, border: `1px solid ${C.cardBorder}` }}>
-                                                        Report
+                                                        View Details
                                                     </button>
                                                 </Link>
                                             </div>
@@ -372,149 +395,91 @@ export default function ResultsAnalyticsPage() {
                 </div>
             )}
 
-            {/* ══ STUDY PLAN TAB ══════════════════════════════════════════ */}
-            {activeTab === 'study-plan' && (
+            {/* ══ REPORTS & DOWNLOADS TAB ═════════════════════════════════════ */}
+            {activeTab === 'reports' && (
                 <div className="space-y-6">
-                    {studyPlan ? (
-                        <>
-                            {/* Premium AI Plan Hero */}
-                            <div className="rounded-3xl overflow-hidden relative shadow-lg"
-                                style={{ background: 'linear-gradient(135deg, #1E1B4B 0%, #4338CA 100%)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-                                <div className="absolute -top-12 -right-12 w-48 h-48 bg-white rounded-full mix-blend-overlay filter blur-3xl opacity-20 pointer-events-none" />
-                                
-                                <div className="relative p-8 md:p-10">
-                                    <div className="flex items-center gap-4 mb-8">
-                                        <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner">
-                                            <Brain className="w-6 h-6 text-amber-300" />
-                                        </div>
-                                        <div>
-                                            <h2 style={{ fontSize: T.size.xl, fontWeight: T.weight.black, color: '#ffffff', margin: '0 0 2px 0' }}>
-                                                Your Personalized AI Study Plan
-                                            </h2>
-                                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: 'rgba(255,255,255,0.6)', margin: 0 }}>
-                                                Crafted exclusively based on your past performance data.
-                                            </p>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        {[
-                                            { label: 'Duration',    value: studyPlan.duration || '4 weeks',   icon: Calendar },
-                                            { label: 'Daily Goal',  value: studyPlan.dailyGoal || '2 hours',  icon: Target },
-                                            { label: 'Focus Areas', value: `${studyPlan.focusAreas?.length || 3} Topics`, icon: BookOpen },
-                                            { label: 'Expected',    value: studyPlan.expectedImprovement || '+15%', icon: TrendingUp },
-                                        ].map((s, i) => (
-                                            <div key={i} className="rounded-2xl p-4 text-center border border-white/5 bg-white/5 backdrop-blur-sm">
-                                                <s.icon className="w-5 h-5 mx-auto mb-2 text-amber-300 opacity-80" />
-                                                <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 4px 0' }}>
-                                                    {s.label}
-                                                </p>
-                                                <p style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: '#ffffff', margin: 0 }}>{s.value}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap items-center gap-4 no-print">
+                        <button onClick={handlePrintPDF} className="flex items-center gap-2 h-11 px-6 rounded-xl border-none cursor-pointer transition-transform hover:-translate-y-0.5 shadow-md"
+                            style={{ backgroundColor: C.btnPrimary, color: 'white', fontSize: T.size.sm, fontWeight: T.weight.bold }}>
+                            <Printer size={18} /> Print / Save as PDF
+                        </button>
+                        <button onClick={handleDownloadCSV} className="flex items-center gap-2 h-11 px-6 rounded-xl cursor-pointer transition-transform hover:-translate-y-0.5 shadow-sm"
+                            style={{ backgroundColor: outerCard, color: C.heading, border: `1px solid ${C.cardBorder}`, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
+                            <Download size={18} color={C.btnPrimary} /> Download CSV
+                        </button>
+                    </div>
+
+                    {/* Official Report Card (This section is printable) */}
+                    <div id="printable-report" className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-gray-200" style={{ maxWidth: '900px', margin: '0 auto' }}>
+                        
+                        {/* Report Header */}
+                        <div className="flex items-center justify-between border-b pb-8 mb-8">
+                            <div>
+                                <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#1E1B4B', margin: 0 }}>Official Student Report</h1>
+                                <p style={{ color: '#6B7280', fontSize: '14px', marginTop: '4px' }}>Generated on {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                             </div>
-
-                            {/* Plan Content Grid */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                
-                                {/* Focus Areas */}
-                                <div className="rounded-3xl p-6 shadow-sm border" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: C.warningBg }}>
-                                            <Target className="w-4 h-4" style={{ color: C.warning }} />
-                                        </div>
-                                        <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading }}>Priority Focus Areas</h3>
-                                    </div>
-                                    
-                                    <div className="space-y-3">
-                                        {(studyPlan.focusAreas || [
-                                            { area: 'Mathematics',       priority: 'High',   reason: 'Improve problem-solving speed' },
-                                            { area: 'Science Concepts',  priority: 'Medium', reason: 'Strengthen fundamentals' },
-                                            { area: 'Logic & Reasoning', priority: 'High',   reason: 'Boost analytical skills' },
-                                        ]).map((focus, i) => {
-                                            const pCfg = {
-                                                High:   { bg: C.dangerBg,  color: C.danger,  border: C.dangerBorder },
-                                                Medium: { bg: C.warningBg, color: C.warning, border: C.warningBorder },
-                                                Low:    { bg: C.successBg, color: C.success, border: C.successBorder },
-                                            }[focus.priority] || { bg: innerBox, color: C.textMuted, border: C.cardBorder };
-                                            
-                                            return (
-                                                <div key={i} className="rounded-2xl p-4 transition-transform hover:-translate-y-0.5 border"
-                                                    style={{ borderColor: C.cardBorder, backgroundColor: innerBox, boxShadow: S.card }}>
-                                                    <div className="flex items-center justify-between mb-2 gap-4">
-                                                        <h4 className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>{focus.area}</h4>
-                                                        <span className="px-2.5 py-1 rounded-md shrink-0"
-                                                            style={{ backgroundColor: pCfg.bg, color: pCfg.color, border: `1px solid ${pCfg.border}`, fontSize: '9px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                            {focus.priority}
-                                                        </span>
-                                                    </div>
-                                                    <p style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: 0, lineHeight: 1.4 }}>
-                                                        {focus.reason}
-                                                    </p>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                {/* Recommendations */}
-                                <div className="rounded-3xl p-6 shadow-sm border" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: C.successBg }}>
-                                            <Award className="w-4 h-4" style={{ color: C.success }} />
-                                        </div>
-                                        <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading }}>Actionable Steps</h3>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        {(studyPlan.recommendations || [
-                                            'Complete 2 practice tests daily',
-                                            'Review weak areas for 30 minutes',
-                                            'Focus on time management during tests',
-                                            'Take short breaks between study sessions',
-                                        ]).map((action, i) => (
-                                            <div key={i} className="flex items-start gap-3 p-4 rounded-2xl border"
-                                                style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
-                                                <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: C.successBg }}>
-                                                    <CheckCircle className="w-3.5 h-3.5" style={{ color: C.success }} />
-                                                </div>
-                                                <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, lineHeight: 1.5 }}>{action}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                            </div>
-                        </>
-                    ) : (
-                        /* Empty State */
-                        <div className="rounded-[32px] overflow-hidden relative shadow-lg" style={{ backgroundColor: '#1E1B4B' }}>
-                            <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-                            <div className="relative text-center py-24 px-6 flex flex-col items-center">
-                                <div className="w-20 h-20 rounded-[2rem] flex items-center justify-center mb-6 shadow-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}>
-                                    <Brain className="w-10 h-10 text-amber-300" />
-                                </div>
-                                <h3 style={{ fontSize: T.size['2xl'], fontWeight: T.weight.black, color: '#fff', marginBottom: 12 }}>
-                                    Generate Your AI Study Plan
-                                </h3>
-                                <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: 'rgba(255,255,255,0.6)', marginBottom: 32, maxWidth: 400, lineHeight: 1.6 }}>
-                                    Our AI analyzes your test history to create a personalized, high-impact learning path specifically for your weak areas.
-                                </p>
-                                <button onClick={generateStudyPlan} disabled={generatingPlan}
-                                    className="flex items-center gap-2 px-8 h-12 text-white rounded-xl transition-all disabled:opacity-60 shadow-xl cursor-pointer border-none"
-                                    style={{ background: C.gradientBtn, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
-                                    {generatingPlan ? (
-                                        <><Loader2 className="w-5 h-5 animate-spin" /> Generating Your Plan...</>
-                                    ) : (
-                                        <><Sparkles className="w-5 h-5" /> Generate Magic Plan</>
-                                    )}
-                                </button>
+                            <div className="text-right">
+                                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1E1B4B', margin: 0 }}>{reportData?.student?.name || 'Student Name'}</h3>
+                                <p style={{ color: '#6B7280', fontSize: '14px' }}>{reportData?.student?.email || 'Student Email'}</p>
                             </div>
                         </div>
-                    )}
+
+                        {/* Summary Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+                            {[
+                                { label: 'Total Exams', val: reportData?.summary?.totalExams || 0 },
+                                { label: 'Passed Exams', val: reportData?.summary?.passedExams || 0 },
+                                { label: 'Average Score', val: `${reportData?.summary?.avgScore || 0}%` },
+                                { label: 'Active Courses', val: reportData?.summary?.totalCourses || 0 },
+                            ].map((stat, i) => (
+                                <div key={i} className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                                    <p style={{ fontSize: '11px', color: '#6B7280', textTransform: 'uppercase', fontWeight: 700, margin: '0 0 4px 0' }}>{stat.label}</p>
+                                    <p style={{ fontSize: '24px', fontWeight: 900, color: '#1E1B4B', margin: 0 }}>{stat.val}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Detailed Exam History */}
+                        <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1E1B4B', marginBottom: '16px' }}>Exam Performance History</h3>
+                        
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b-2 border-gray-200">
+                                        <th className="py-3 px-4 font-bold text-gray-600 text-sm uppercase tracking-wider">Exam Title</th>
+                                        <th className="py-3 px-4 font-bold text-gray-600 text-sm uppercase tracking-wider">Date</th>
+                                        <th className="py-3 px-4 font-bold text-gray-600 text-sm uppercase tracking-wider text-center">Score</th>
+                                        <th className="py-3 px-4 font-bold text-gray-600 text-sm uppercase tracking-wider text-center">Percentage</th>
+                                        <th className="py-3 px-4 font-bold text-gray-600 text-sm uppercase tracking-wider text-right">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {reportData?.examAttempts?.length > 0 ? (
+                                        reportData.examAttempts.map((exam, idx) => (
+                                            <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
+                                                <td className="py-4 px-4 font-semibold text-gray-900">{exam.examTitle}</td>
+                                                <td className="py-4 px-4 text-gray-500 text-sm">{new Date(exam.date).toLocaleDateString()}</td>
+                                                <td className="py-4 px-4 text-center text-gray-700">{exam.score} / {exam.totalMarks}</td>
+                                                <td className="py-4 px-4 text-center font-bold text-gray-900">{exam.pct}%</td>
+                                                <td className="py-4 px-4 text-right">
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${exam.isPassed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                        {exam.isPassed ? 'Passed' : 'Failed'}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="5" className="py-8 text-center text-gray-500">No exam history available.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
                 </div>
             )}
         </div>

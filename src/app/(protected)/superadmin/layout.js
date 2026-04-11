@@ -10,7 +10,7 @@ export default function SuperadminLayout({ children }) {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
     return (
-        <div className="min-h-screen bg-slate-50 relative">
+        <div className="min-h-screen bg-[#F1EAFB] relative">
             {/* Sidebar */}
             <Sidebar
                 isOpen={sidebarOpen}

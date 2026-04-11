@@ -203,6 +203,9 @@ export default function MyCoursesPage() {
     const [discoverCourses, setDiscoverCourses]     = useState([]);
     const [loadingDiscover, setLoadingDiscover]     = useState(false);
     const [myInstitutes, setMyInstitutes]           = useState([]);
+    const [discoverSearch, setDiscoverSearch]       = useState('');
+    const [discoverCategory, setDiscoverCategory]   = useState('');
+
 
     useEffect(() => { fetchData(); fetchMembership(); }, []);
 
@@ -389,43 +392,89 @@ export default function MyCoursesPage() {
                     {/* DISCOVER tab */}
                     {mainTab === 'discover' && (
                         <div className="space-y-6">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl" style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
-                                <div>
-                                    <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading }}>Course Catalog</h2>
-                                    <p style={{ fontSize: T.size.xs, color: C.textMuted, marginTop: '2px' }}>Find the perfect course for your goals.</p>
-                                </div>
-                                {myInstitutes.length > 0 && (
-                                    <div className="flex p-1 gap-1 rounded-xl bg-white border border-slate-200 shadow-sm shrink-0">
-                                        {['institute', 'global'].map(s => (
-                                            <button key={s} onClick={() => setScopeTab(s)}
-                                                className="px-4 py-1.5 rounded-lg capitalize transition-all"
-                                                style={scopeTab === s
-                                                    ? { backgroundColor: C.btnPrimary, color: '#ffffff', fontSize: T.size.xs, fontWeight: T.weight.bold }
-                                                    : { color: C.textMuted, fontSize: T.size.xs, fontWeight: T.weight.semibold }}>
-                                                {s === 'institute' ? 'My Institute' : 'Global'}
-                                            </button>
-                                        ))}
+                            <div className="flex flex-col gap-4 p-5 rounded-2xl" style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
+                                {/* Title + scope row */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div>
+                                        <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading }}>Course Catalog</h2>
+                                        <p style={{ fontSize: T.size.xs, color: C.textMuted, marginTop: '2px' }}>Find the perfect course for your goals.</p>
                                     </div>
-                                )}
+                                    {myInstitutes.length > 0 && (
+                                        <div className="flex p-1 gap-1 rounded-xl bg-white border border-slate-200 shadow-sm shrink-0">
+                                            {['institute', 'global'].map(s => (
+                                                <button key={s} onClick={() => setScopeTab(s)}
+                                                    className="px-4 py-1.5 rounded-lg capitalize transition-all"
+                                                    style={scopeTab === s
+                                                        ? { backgroundColor: C.btnPrimary, color: '#ffffff', fontSize: T.size.xs, fontWeight: T.weight.bold }
+                                                        : { color: C.textMuted, fontSize: T.size.xs, fontWeight: T.weight.semibold }}>
+                                                    {s === 'institute' ? 'My Institute' : 'Global'}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Search + Filter row */}
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                    <div className="relative flex-1">
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: C.text, opacity: 0.4 }} />
+                                        <input
+                                            type="text"
+                                            placeholder="Search courses by name or instructor…"
+                                            value={discoverSearch}
+                                            onChange={e => setDiscoverSearch(e.target.value)}
+                                            className="w-full pl-11 pr-4 py-2.5 rounded-xl focus:outline-none transition-all"
+                                            style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, color: C.heading, fontSize: T.size.sm }}
+                                            onFocus={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
+                                            onBlur={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.boxShadow = 'none'; }}
+                                        />
+                                    </div>
+                                    <div className="relative shrink-0">
+                                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: C.text, opacity: 0.4 }} />
+                                        <select
+                                            value={discoverCategory}
+                                            onChange={e => setDiscoverCategory(e.target.value)}
+                                            className="w-full sm:w-auto pl-4 pr-10 py-2.5 rounded-xl focus:outline-none transition-all appearance-none cursor-pointer"
+                                            style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, color: C.heading, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>
+                                            <option value="">All Categories</option>
+                                            {[...new Set(discoverCourses.flatMap(c => c.category ? [c.category] : []))].map(cat => (
+                                                <option key={cat} value={cat}>{cat}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
 
                             {loadingDiscover ? (
                                 <div className="flex justify-center py-20">
                                     <Loader2 className="w-8 h-8 animate-spin" style={{ color: C.btnPrimary }} />
                                 </div>
-                            ) : discoverCourses.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                    {discoverCourses.map(course => <DiscoverCourseCard key={course._id} course={course} />)}
-                                </div>
-                            ) : (
-                                <div className="rounded-3xl p-12 text-center" style={{ backgroundColor: C.cardBg, border: `1px dashed ${C.cardBorder}` }}>
-                                    <Sparkles className="w-12 h-12 mx-auto mb-4 text-slate-300" />
-                                    <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, marginBottom: 8 }}>No courses available</h3>
-                                    <p style={{ fontSize: T.size.sm, color: C.textMuted }}>Check back later for new {scopeTab === 'institute' ? 'institute' : 'global'} courses.</p>
-                                </div>
-                            )}
+                            ) : (() => {
+                                const filtered = discoverCourses.filter(course => {
+                                    const q = discoverSearch.toLowerCase();
+                                    const matchSearch = !q ||
+                                        course.title?.toLowerCase().includes(q) ||
+                                        course.tutorId?.userId?.name?.toLowerCase().includes(q);
+                                    const matchCat = !discoverCategory || course.category === discoverCategory;
+                                    return matchSearch && matchCat;
+                                });
+                                return filtered.length > 0 ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                        {filtered.map(course => <DiscoverCourseCard key={course._id} course={course} />)}
+                                    </div>
+                                ) : (
+                                    <div className="rounded-3xl p-12 text-center" style={{ backgroundColor: C.cardBg, border: `1px dashed ${C.cardBorder}` }}>
+                                        <Sparkles className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                                        <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, marginBottom: 8 }}>No courses found</h3>
+                                        <p style={{ fontSize: T.size.sm, color: C.textMuted }}>
+                                            {discoverSearch || discoverCategory ? 'Try adjusting your search or filter.' : `No ${scopeTab === 'institute' ? 'institute' : 'global'} courses yet.`}
+                                        </p>
+                                    </div>
+                                );
+                            })()}
                         </div>
                     )}
+
                 </div>
 
                 {/* ── RIGHT: Sidebar (4 cols) ────────────────────────────────── */}

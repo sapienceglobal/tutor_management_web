@@ -12,7 +12,7 @@ export default function AdminLayout({ children }) {
     const { institute } = useInstitute();
 
     return (
-        <div className="min-h-screen" style={{ backgroundColor: 'var(--theme-background)' }}>
+        <div className="min-h-screen" style={{ backgroundColor: '#F1EAFB' }}>
             <Sidebar
                 isOpen={sidebarOpen}
                 setIsOpen={setSidebarOpen}

@@ -8,7 +8,8 @@ import {
     Zap, Target, Calendar, X, Sparkles, Trophy, Globe,
     ShieldAlert, Eye, ClipboardList, Brain, FileText, Loader2,
     ChevronLeft, ChevronRight, BarChart2,
-    AlertCircle, Play, SkipForward, Bot
+    AlertCircle, Play, SkipForward, Bot,
+    BookOpen
 } from 'lucide-react';
 import api from '@/lib/axios';
 import assignmentService from '@/services/assignmentService';
@@ -19,7 +20,13 @@ import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 import Link from 'next/link';
 import AiTutorWidget from '@/components/AiTutorWidget';
-import { C, T, S } from '@/constants/studentTokens';
+import { motion, AnimatePresence } from 'framer-motion';
+import { C, T, S, R } from '@/constants/studentTokens';
+
+// ─── Theme Colors ─────────────────────────────────────────────────────────────
+const themeBg = '#dfdaf3';
+const outerCard = '#EAE8FA';
+const innerBox = '#E3DFF8';
 
 // gradient shorthand
 const GS = { background: C.gradientBtn };
@@ -28,14 +35,14 @@ const GS = { background: C.gradientBtn };
 function StatusBadge({ status }) {
     const cfg = {
         completed:     { label: 'Completed',   bg: C.successBg,              color: C.success,    border: C.successBorder },
-        'in-progress': { label: 'In Progress', bg: C.innerBg,                color: C.btnPrimary, border: C.cardBorder },
+        'in-progress': { label: 'In Progress', bg: innerBox,                 color: C.btnPrimary, border: C.btnPrimary },
         locked:        { label: 'Locked',      bg: 'rgba(100,116,139,0.08)', color: '#64748B',    border: 'rgba(100,116,139,0.15)' },
         pending:       { label: 'Pending',     bg: C.warningBg,              color: C.warning,    border: C.warningBorder },
     };
     const c = cfg[status] || cfg.pending;
     return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full"
-            style={{ backgroundColor: c.bg, color: c.color, border: `1px solid ${c.border}`, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wide }}>
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg"
+            style={{ backgroundColor: c.bg, color: c.color, border: `1px solid ${c.border}`, fontFamily: T.fontFamily, fontSize: '9px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             {status === 'completed'   && <CheckCircle className="w-3 h-3" />}
             {status === 'in-progress' && <span className="w-1.5 h-1.5 rounded-full animate-pulse inline-block" style={{ backgroundColor: C.btnPrimary }} />}
             {status === 'locked'      && <Lock className="w-3 h-3" />}
@@ -50,26 +57,21 @@ function CircularProgress({ pct, completed, total, size = 120 }) {
     return (
         <div className="flex flex-col items-center gap-3">
             <div className="relative" style={{ width: size, height: size }}>
-                <svg width={size} height={size} viewBox="0 0 120 120">
-                    <circle cx="60" cy="60" r={r} fill="none" stroke={C.innerBg} strokeWidth="8" />
+                <svg width={size} height={size} viewBox="0 0 120 120" className="drop-shadow-sm">
+                    <circle cx="60" cy="60" r={r} fill="none" stroke={innerBox} strokeWidth="8" />
                     <circle cx="60" cy="60" r={r} fill="none" stroke="url(#pg)" strokeWidth="8"
                         strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-                        transform="rotate(-90 60 60)" style={{ transition: 'stroke-dasharray 0.6s ease' }} />
+                        transform="rotate(-90 60 60)" style={{ transition: 'stroke-dasharray 0.8s ease-out' }} />
                     <defs>
                         <linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor={C.btnPrimary} />
-                            <stop offset="100%" stopColor={C.chartLine} />
+                            <stop offset="0%" stopColor="#4F46E5" />
+                            <stop offset="100%" stopColor="#10B981" />
                         </linearGradient>
                     </defs>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading }}>{pct}%</span>
-                    <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: C.text, opacity: 0.45 }}>Done</span>
+                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, lineHeight: 1 }}>{pct}%</span>
                 </div>
-            </div>
-            <div className="text-center">
-                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.text }}>{completed}/{total}</p>
-                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, opacity: 0.45 }}>Lessons Completed</p>
             </div>
         </div>
     );
@@ -79,17 +81,17 @@ function CircularProgress({ pct, completed, total, size = 120 }) {
 function QuizScoreRow({ title, score }) {
     const color = score >= 80 ? C.success : score >= 60 ? C.warning : C.danger;
     return (
-        <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: C.innerBg }}>
-                <FileQuestion className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
+        <div className="flex items-center gap-3 p-3 rounded-xl border transition-colors hover:bg-white/40" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm bg-white">
+                <FileQuestion className="w-4 h-4" style={{ color: C.btnPrimary }} />
             </div>
             <div className="flex-1 min-w-0">
-                <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text }}>{title}</p>
-                <div className="mt-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: C.innerBg }}>
-                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, backgroundColor: color }} />
+                <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>{title}</p>
+                <div className="mt-1.5 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: outerCard }}>
+                    <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${score}%`, backgroundColor: color }} />
                 </div>
             </div>
-            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: C.heading, flexShrink: 0 }}>{score}%</span>
+            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color, flexShrink: 0 }}>{score}%</span>
         </div>
     );
 }
@@ -98,7 +100,7 @@ function QuizScoreRow({ title, score }) {
 function DBtn({ children, onClick, disabled, className = '', type = 'button', style: extra = {} }) {
     return (
         <button type={type} onClick={onClick} disabled={disabled}
-            className={`text-white rounded-2xl transition-all hover:opacity-90 disabled:opacity-50 ${className}`}
+            className={`text-white rounded-xl transition-all hover:opacity-90 disabled:opacity-50 cursor-pointer border-none shadow-md ${className}`}
             style={{ ...GS, fontFamily: T.fontFamily, fontWeight: T.weight.black, ...extra }}>
             {children}
         </button>
@@ -135,7 +137,6 @@ export default function CourseDetailPage({ params }) {
     const [hasMoreReviews, setHasMoreReviews]     = useState(true);
     const [loadingReviews, setLoadingReviews]     = useState(false);
     const [isWishlisted, setIsWishlisted]         = useState(false);
-    const [wishlistLoading, setWishlistLoading]   = useState(false);
     const [showExamHistoryModal, setShowExamHistoryModal] = useState(false);
     const [showLessonPlayerModal, setShowLessonPlayerModal] = useState(false);
     const [selectedExam, setSelectedExam]         = useState(null);
@@ -158,7 +159,7 @@ export default function CourseDetailPage({ params }) {
         try {
             if (!background) setLoading(true);
             const response = await api.get(`/courses/${id}`);
-            if (response.data.success) {
+            if (response.data?.success) {
                 const courseData = response.data.course;
                 let lessonsData = response.data.lessons || [];
                 if (courseData.modules?.length > 0) {
@@ -173,24 +174,27 @@ export default function CourseDetailPage({ params }) {
                     Object.keys(byModule).forEach(k => { sorted = [...sorted, ...byModule[k].sort((a, b) => (a.order || 0) - (b.order || 0))]; });
                     lessonsData = sorted;
                 } else { lessonsData.sort((a, b) => (a.order || 0) - (b.order || 0)); }
-                setCourse(courseData); setLessons(lessonsData);
+                
+                setCourse(courseData); 
+                setLessons(lessonsData);
                 setIsEnrolled(response.data.isEnrolled || false);
                 setEnrollment(response.data.enrollment || null);
                 setIsInstructor(response.data.isInstructor || false);
                 const moduleIds = courseData.modules?.map(m => m._id) || [];
                 setExpandedModules(prev => prev.length ? prev : moduleIds);
             }
-            if ((response.data.isEnrolled || response.data.isInstructor) && !background) {
+            if ((response.data?.isEnrolled || response.data?.isInstructor) && !background) {
                 const [examRes, liveClassRes, assignmentRes, progressRes] = await Promise.all([
                     api.get(`/exams/course/${id}`),
                     api.get(`/live-classes?courseId=${id}`),
                     assignmentService.getCourseAssignments(id).catch(() => ({ success: false })),
                     api.get(`/progress/course/${id}`).catch(() => ({ data: {} })),
                 ]);
-                if (examRes.data.success) setExams(examRes.data.exams || []);
-                if (liveClassRes.data.success) setLiveClasses(liveClassRes.data.liveClasses || []);
+                if (examRes.data?.success) setExams(examRes.data.exams || []);
+                if (liveClassRes.data?.success) setLiveClasses(liveClassRes.data.liveClasses || []);
                 if (assignmentRes.success) setAssignments(assignmentRes.assignments || []);
                 if (progressRes.data?.progress) setCourseProgress(progressRes.data);
+                
                 const quizPromises = (response.data.lessons || []).slice(0, 10).map(l =>
                     api.get(`/quiz/attempts/${l._id}`)
                         .then(r => ({ lessonId: l._id, lessonTitle: l.title, attempts: r.data?.attempts || [] }))
@@ -215,11 +219,11 @@ export default function CourseDetailPage({ params }) {
         try {
             setLoadingReviews(true);
             if (!myReview && isEnrolled) {
-                try { const r = await api.get(`/reviews/my-review/${id}`); if (r.data.success && r.data.review) setMyReview(r.data.review); } catch (_) { }
+                try { const r = await api.get(`/reviews/my-review/${id}`); if (r.data?.success && r.data?.review) setMyReview(r.data.review); } catch (_) { }
             }
             const page = loadMore ? currentPage + 1 : 1;
             const response = await api.get(`/reviews/course/${id}`, { params: { page, limit: 10, sortBy } });
-            if (response.data.success) {
+            if (response.data?.success) {
                 if (loadMore) setReviews(prev => [...prev, ...response.data.reviews]);
                 else { setReviews(response.data.reviews); setRatingDistribution(response.data.ratingDistribution || []); }
                 setHasMoreReviews(response.data.pagination?.hasMore || false);
@@ -236,17 +240,19 @@ export default function CourseDetailPage({ params }) {
             else { await api.post('/wishlist', { courseId: id }); setIsWishlisted(true); }
         } catch (_) { } finally { setWishlistLoading(false); }
     };
+    
     const handleEnroll = async () => {
         if (Boolean(course && !course.isFree && Number(course.price || 0) > 0)) { router.push(`/student/checkout/${id}`); return; }
         try {
             setEnrolling(true);
             const response = await api.post('/enrollments', { courseId: id });
-            if (response.data.success) { setIsEnrolled(true); loadCourseData(); }
+            if (response.data?.success) { setIsEnrolled(true); loadCourseData(); }
         } catch (e) {
             if (e.response?.status === 402 || e.response?.data?.requiresPayment) { toast('Redirecting to checkout…', { icon: '💳' }); router.push(`/student/checkout/${id}`); return; }
             toast.error(e.response?.data?.message || 'Failed to enroll');
         } finally { setEnrolling(false); }
     };
+
     const handleSubmitReview = async (e) => {
         e.preventDefault();
         if (reviewForm.rating === 0) { toast.error('Please select a rating'); return; }
@@ -259,6 +265,7 @@ export default function CourseDetailPage({ params }) {
         } catch (e) { toast.error(e.response?.data?.message || 'Failed to submit review'); }
         finally { setSubmittingReview(false); }
     };
+
     const handleDeleteReview = async () => {
         const ok = await confirmDialog("Delete Review", "Delete your review?", { variant: 'destructive' });
         if (!ok) return;
@@ -277,6 +284,7 @@ export default function CourseDetailPage({ params }) {
     const handleExamClick     = (exam) => { setSelectedExam(exam); setShowExamHistoryModal(true); };
     const handleStartExam     = () => { if (selectedExam) { setShowExamHistoryModal(false); router.push(`/student/exams/${selectedExam._id}`); } };
     const handleLessonComplete = async () => { await loadCourseData(true); };
+
     const handleAISummarize   = async () => {
         if (!course) return; setAiLoading('summarize'); setShowAiPanel(true);
         try { const res = await api.post('/ai/summarize-lesson', { courseId: course._id, lessonTitle: course.title, content: course.description }); setAiResult({ type: 'AI Summary', content: res.data.summary || res.data.data }); }
@@ -302,30 +310,29 @@ export default function CourseDetailPage({ params }) {
     const resumeToFirst    = () => { const idx = lessons.findIndex(l => !completedIds.includes(l._id?.toString())); setSelectedLessonIndex(idx >= 0 ? idx : 0); setShowLessonPlayerModal(true); };
 
     if (loading) return (
-        <div className="flex h-screen items-center justify-center">
+        <div className="flex h-screen items-center justify-center" style={{ backgroundColor: themeBg }}>
             <div className="flex flex-col items-center gap-3">
                 <div className="relative w-12 h-12">
-                    <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
-                        style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                    <div className="w-12 h-12 rounded-full border-[3px] border-[#4F46E5]/30 border-t-[#4F46E5] animate-spin" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <Sparkles className="w-5 h-5 animate-pulse" style={{ color: C.btnPrimary }} />
+                        <Sparkles className="w-4 h-4 text-[#4F46E5] animate-pulse" />
                     </div>
                 </div>
-                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, opacity: 0.55 }}>Loading course…</p>
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted }}>Loading course hub…</p>
             </div>
         </div>
     );
 
     if (!course) return (
-        <div className="flex h-screen items-center justify-center">
-            <div className="text-center">
+        <div className="flex h-screen items-center justify-center" style={{ backgroundColor: themeBg }}>
+            <div className="text-center rounded-3xl p-10 shadow-sm border" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: C.dangerBg }}>
                     <X className="w-8 h-8" style={{ color: C.danger }} />
                 </div>
                 <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, marginBottom: 12 }}>Course Not Found</h2>
                 <button onClick={() => router.back()}
-                    className="px-4 py-2 rounded-2xl transition-colors"
-                    style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, color: C.text, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
+                    className="px-6 py-2.5 rounded-xl transition-colors font-bold border cursor-pointer"
+                    style={{ backgroundColor: innerBox, borderColor: C.cardBorder, color: C.heading, fontFamily: T.fontFamily, fontSize: T.size.sm }}>
                     Go Back
                 </button>
             </div>
@@ -335,7 +342,7 @@ export default function CourseDetailPage({ params }) {
     const tabs = ['overview', 'lessons', 'assignments', 'discussions', 'resources'];
 
     return (
-        <div className="min-h-screen" style={{ fontFamily: T.fontFamily }}>
+        <div className="min-h-screen pb-20" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily }}>
 
             {/* Instructor Preview Banner */}
             {isInstructor && (
@@ -347,36 +354,36 @@ export default function CourseDetailPage({ params }) {
 
             {/* ── Sticky Header ──────────────────────────────────────────── */}
             <div className="sticky top-0 z-30 shadow-sm"
-                style={{ backgroundColor: C.surfaceWhite, borderBottom: `1px solid ${C.cardBorder}` }}>
+                style={{ backgroundColor: 'rgba(234, 232, 250, 0.9)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${C.cardBorder}` }}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6">
-                    <div className="flex items-center justify-between gap-3 pt-3.5 pb-0">
+                    <div className="flex items-center justify-between gap-3 pt-4 pb-2">
                         <div className="min-w-0 flex-1">
-                            <h1 className="truncate"
-                                style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>
+                            <h1 className="truncate" style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
                                 {course.title}
                             </h1>
                             {enrollment?.batchId && (
-                                <p className="flex items-center gap-1 mt-0.5"
-                                    style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.btnPrimary }}>
+                                <p className="flex items-center gap-1 mt-1" style={{ fontSize: '11px', fontWeight: T.weight.bold, color: C.btnPrimary, margin: 0 }}>
                                     <Users className="w-3 h-3" /> Cohort: {enrollment.batchId.name}
                                 </p>
                             )}
                         </div>
                         {(isEnrolled || isInstructor) && (
                             <button onClick={resumeToFirst}
-                                className="shrink-0 flex items-center gap-1.5 px-4 py-2 text-white rounded-2xl transition-all hover:opacity-90 shadow-sm"
-                                style={{ ...GS, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black }}>
-                                <Play className="w-3 h-3 fill-white" /> Resume
+                                className="shrink-0 flex items-center gap-2 px-5 py-2.5 text-white rounded-xl transition-transform hover:scale-105 shadow-md cursor-pointer border-none"
+                                style={{ ...GS, fontSize: '12px', fontWeight: T.weight.black }}>
+                                <Play className="w-3.5 h-3.5 fill-white" /> Resume Learning
                             </button>
                         )}
                     </div>
-                    <div className="flex gap-0 overflow-x-auto mt-3 -mb-px">
+                    
+                    {/* Modern Tabs */}
+                    <div className="flex gap-2 overflow-x-auto mt-2 pb-2 custom-scrollbar">
                         {tabs.map(tab => (
                             <button key={tab} onClick={() => setActiveTab(tab)}
-                                className="px-4 py-3 whitespace-nowrap border-b-2 transition-all"
+                                className="px-4 py-2 rounded-lg whitespace-nowrap transition-all cursor-pointer border-none"
                                 style={activeTab === tab
-                                    ? { borderBottomColor: C.btnPrimary, color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wide }
-                                    : { borderBottomColor: 'transparent', color: C.text, opacity: 0.45, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wide }}>
+                                    ? { backgroundColor: C.btnPrimary, color: '#fff', fontSize: '11px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: '1px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }
+                                    : { backgroundColor: 'transparent', color: C.textMuted, fontSize: '11px', fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: '1px' }}>
                                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
                             </button>
                         ))}
@@ -386,482 +393,316 @@ export default function CourseDetailPage({ params }) {
 
             {/* Suspended Banner */}
             {isCourseSuspended && isEnrolled && (
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-4">
-                    <div className="p-4 rounded-2xl flex items-start gap-3"
-                        style={{ backgroundColor: C.warningBg, border: `1px solid ${C.warningBorder}` }}>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-6">
+                    <div className="p-4 rounded-2xl flex items-start gap-3 border shadow-sm"
+                        style={{ backgroundColor: C.warningBg, borderColor: C.warningBorder }}>
                         <ShieldAlert className="w-5 h-5 mt-0.5 shrink-0" style={{ color: C.warning }} />
                         <div>
-                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: '#92400E' }}>Course Suspended</p>
-                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#92400E', opacity: 0.75, marginTop: 2 }}>This course is no longer publicly available. You retain full access as an enrolled student.</p>
+                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: '#92400E', margin: 0 }}>Course Suspended</p>
+                            <p style={{ fontSize: T.size.xs, color: '#92400E', opacity: 0.8, marginTop: 4, margin: 0 }}>This course is no longer publicly available. You retain full access as an enrolled student.</p>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* ── Main Grid ──────────────────────────────────────────────── */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5">
-                <div className="grid lg:grid-cols-3 gap-5">
+            {/* ── Main Layout ──────────────────────────────────────────────── */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+                <div className="grid lg:grid-cols-3 gap-6">
 
                     {/* LEFT: 2 cols */}
-                    <div className="lg:col-span-2 space-y-4">
+                    <div className="lg:col-span-2 space-y-6">
 
                         {/* ══ OVERVIEW ═══════════════════════════════════════ */}
                         {activeTab === 'overview' && (
-                            <div className="rounded-2xl overflow-hidden"
-                                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                                {/* Progress Hero */}
-                                {(isEnrolled || isInstructor) && (
-                                    <div className="p-5 relative overflow-hidden" style={GS}>
-                                        <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(#fff 1px,transparent 1px)', backgroundSize: '16px 16px' }} />
-                                        <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                            <div className="flex items-center gap-4">
-                                                <div className="relative w-14 h-14 shrink-0">
-                                                    <svg width="56" height="56" viewBox="0 0 56 56">
-                                                        <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,0.20)" strokeWidth="5" />
-                                                        <circle cx="28" cy="28" r="22" fill="none" stroke="white" strokeWidth="5"
-                                                            strokeDasharray={`${(pct / 100) * 138.2} 138.2`} strokeLinecap="round" transform="rotate(-90 28 28)" />
-                                                    </svg>
-                                                    <span className="absolute inset-0 flex items-center justify-center text-white"
-                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>{pct}%</span>
+                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                {/* What you'll learn */}
+                                {course.whatYouWillLearn?.length > 0 && (
+                                    <div className="rounded-3xl p-6 shadow-sm border" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                                        <h3 className="flex items-center gap-2 mb-4" style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+                                            <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-amber-100"><Zap className="w-4 h-4 text-amber-600" /></div>
+                                            What You'll Learn
+                                        </h3>
+                                        <div className="grid sm:grid-cols-2 gap-3">
+                                            {course.whatYouWillLearn.map((item, i) => (
+                                                <div key={i} className="flex items-start gap-3 p-3.5 rounded-2xl border" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                                                    <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: C.success }} />
+                                                    <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>{item}</span>
                                                 </div>
-                                                <div>
-                                                    <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: 'rgba(255,255,255,0.55)' }}>
-                                                        Current Lesson
-                                                    </p>
-                                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: '#ffffff', lineHeight: T.leading.tight, marginTop: 2 }}>
-                                                        {currentLesson?.title || 'Start Learning'}
-                                                    </p>
-                                                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                                                        <img src={course.tutorId?.userId?.profileImage || '/default-avatar.svg'} className="w-5 h-5 rounded-full" style={{ border: '1px solid rgba(255,255,255,0.30)' }} alt="" />
-                                                        <span style={{ fontFamily: T.fontFamily, fontSize: '11px', color: 'rgba(255,255,255,0.60)' }}>{course.tutorId?.userId?.name}</span>
-                                                        <span style={{ color: 'rgba(255,255,255,0.40)' }}>·</span>
-                                                        <span style={{ fontFamily: T.fontFamily, fontSize: '11px', color: 'rgba(255,255,255,0.60)' }}>{completedCount}/{totalLessons} done</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <button onClick={resumeToFirst}
-                                                className="px-5 py-2.5 bg-white rounded-2xl shadow-md flex items-center gap-1.5 hover:opacity-90 transition-opacity"
-                                                style={{ color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
-                                                <Play className="w-3.5 h-3.5 fill-current" /> Resume Course
-                                            </button>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
 
-                                <div className="p-6 space-y-7">
-                                    {/* What you'll learn */}
-                                    {course.whatYouWillLearn?.length > 0 && (
-                                        <div>
-                                            <h3 className="flex items-center gap-2 mb-3"
-                                                style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>
-                                                <span className="p-1.5 rounded-xl" style={{ backgroundColor: C.warningBg }}>
-                                                    <Zap className="w-4 h-4" style={{ color: C.warning }} />
-                                                </span>
-                                                What You'll Learn
-                                            </h3>
-                                            <div className="grid sm:grid-cols-2 gap-2">
-                                                {course.whatYouWillLearn.map((item, i) => (
-                                                    <div key={i} className="flex items-start gap-2.5 p-3 rounded-2xl"
-                                                        style={{ backgroundColor: C.successBg, border: `1px solid ${C.successBorder}` }}>
-                                                        <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: C.success }} />
-                                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text }}>{item}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                                {/* About */}
+                                <div className="rounded-3xl p-6 shadow-sm border" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                                    <h3 className="flex items-center gap-2 mb-4" style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+                                        <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-blue-100"><Target className="w-4 h-4 text-blue-600" /></div>
+                                        About This Course
+                                    </h3>
+                                    <p className="leading-relaxed whitespace-pre-line" style={{ fontSize: T.size.sm, color: C.text, fontWeight: T.weight.medium, margin: 0 }}>
+                                        {course.description}
+                                    </p>
+                                </div>
 
-                                    {/* About */}
-                                    <div>
-                                        <h3 className="flex items-center gap-2 mb-3"
-                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>
-                                            <span className="p-1.5 rounded-xl" style={{ backgroundColor: 'rgba(59,130,246,0.08)' }}>
-                                                <Target className="w-4 h-4" style={{ color: '#3B82F6' }} />
-                                            </span>
-                                            About This Course
-                                        </h3>
-                                        <p className="leading-relaxed whitespace-pre-line"
-                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, lineHeight: T.leading.relaxed }}>
-                                            {course.description}
-                                        </p>
+                                {/* Requirements */}
+                                {course.requirements?.length > 0 && (
+                                    <div className="rounded-3xl p-6 shadow-sm border" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                                        <h3 className="mb-4" style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Prerequisites</h3>
+                                        <ul className="space-y-2 m-0 p-0 list-none">
+                                            {course.requirements.map((req, i) => (
+                                                <li key={i} className="flex items-start gap-3 p-3.5 rounded-2xl border" style={{ backgroundColor: innerBox, borderColor: C.cardBorder, color: C.heading, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
+                                                    <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: C.btnPrimary }} />{req}
+                                                </li>
+                                            ))}
+                                        </ul>
                                     </div>
+                                )}
 
-                                    {/* Requirements */}
-                                    {course.requirements?.length > 0 && (
-                                        <div>
-                                            <h3 className="mb-3" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>Requirements</h3>
-                                            <ul className="space-y-2">
-                                                {course.requirements.map((req, i) => (
-                                                    <li key={i} className="flex items-start gap-3 p-3 rounded-xl"
-                                                        style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text }}>
-                                                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: C.btnPrimary }} />{req}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
-
-                                    {/* AI Tools */}
-                                    {isEnrolled && (
-                                        <div className="pt-4" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
-                                            <h3 className="mb-3 flex items-center gap-2"
-                                                style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wide, color: C.heading }}>
-                                                <Brain className="w-4 h-4" style={{ color: C.btnPrimary }} /> AI Study Tools
+                                {/* AI Tools (Magical Section) */}
+                                {isEnrolled && (
+                                    <div className="rounded-3xl p-6 shadow-lg border relative overflow-hidden" 
+                                        style={{ background: 'linear-gradient(135deg, #1E1B4B 0%, #4338CA 100%)', borderColor: 'rgba(255,255,255,0.1)' }}>
+                                        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+                                        
+                                        <div className="relative z-10">
+                                            <h3 className="mb-5 flex items-center gap-2 text-white" style={{ fontSize: T.size.md, fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>
+                                                <Brain className="w-5 h-5 text-amber-300" /> AI Study Toolkit
                                             </h3>
+                                            
                                             <div className="flex flex-wrap gap-3">
                                                 <button onClick={handleAISummarize} disabled={aiLoading === 'summarize'}
-                                                    className="flex items-center gap-2 px-4 py-2 text-white rounded-2xl hover:opacity-90 disabled:opacity-60 transition-all"
-                                                    style={{ ...GS, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
-                                                    {aiLoading === 'summarize' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                                                    className="flex items-center gap-2 px-5 py-3 rounded-xl transition-transform hover:scale-105 disabled:opacity-60 cursor-pointer shadow-md border-none"
+                                                    style={{ backgroundColor: '#ffffff', color: '#1E1B4B', fontSize: T.size.sm, fontWeight: T.weight.black }}>
+                                                    {aiLoading === 'summarize' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-amber-500" />}
                                                     Summarize Course
                                                 </button>
                                                 <button onClick={handleAIRevisionNotes} disabled={aiLoading === 'revision'}
-                                                    className="flex items-center gap-2 px-4 py-2 text-white rounded-2xl hover:opacity-90 disabled:opacity-60 transition-all"
-                                                    style={{ background: 'linear-gradient(135deg,#059669,#0d9488)', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
-                                                    {aiLoading === 'revision' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+                                                    className="flex items-center gap-2 px-5 py-3 text-white rounded-xl transition-transform hover:scale-105 disabled:opacity-60 cursor-pointer shadow-md border-none"
+                                                    style={{ background: 'linear-gradient(135deg,#059669,#0d9488)', fontSize: T.size.sm, fontWeight: T.weight.black }}>
+                                                    {aiLoading === 'revision' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
                                                     Generate Revision Notes
                                                 </button>
                                             </div>
-                                            {showAiPanel && (
-                                                <div className="mt-4 rounded-2xl p-5" style={{ backgroundColor: C.darkCard, border: `1px solid ${C.cardBorder}` }}>
-                                                    <div className="flex items-center justify-between mb-3">
-                                                        <h4 className="flex items-center gap-2 text-white"
-                                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
-                                                            <Brain className="w-3.5 h-3.5" />{aiResult?.type || 'Generating…'}
-                                                        </h4>
-                                                        <button onClick={() => setShowAiPanel(false)}><X className="w-4 h-4 text-white/50" /></button>
-                                                    </div>
-                                                    {aiLoading ? (
-                                                        <div className="flex items-center gap-3 py-6 justify-center">
-                                                            <Loader2 className="w-5 h-5 animate-spin" style={{ color: C.btnPrimary }} />
-                                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.70)' }}>AI is thinking…</span>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="prose prose-sm max-w-none whitespace-pre-wrap"
-                                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: 'rgba(255,255,255,0.80)' }}>
-                                                            {aiResult?.content}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
 
-                        {/* ══ LESSONS ════════════════════════════════════════ */}
-                        {activeTab === 'lessons' && (
-                            <div className="space-y-4">
-                                {(isEnrolled || isInstructor) && (
-                                    <div className="rounded-2xl p-4"
-                                        style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                            <div className="flex items-center gap-3">
-                                                <div className="relative w-10 h-10 shrink-0">
-                                                    <svg width="40" height="40" viewBox="0 0 48 48">
-                                                        <circle cx="24" cy="24" r="19" fill="none" stroke={C.innerBg} strokeWidth="4" />
-                                                        <circle cx="24" cy="24" r="19" fill="none" stroke={C.btnPrimary} strokeWidth="4"
-                                                            strokeDasharray={`${(pct / 100) * 119.4} 119.4`} strokeLinecap="round" transform="rotate(-90 24 24)" />
-                                                    </svg>
-                                                    <span className="absolute inset-0 flex items-center justify-center"
-                                                        style={{ fontFamily: T.fontFamily, fontSize: '9px', fontWeight: T.weight.black, color: C.btnPrimary }}>{pct}%</span>
-                                                </div>
-                                                <div>
-                                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>
-                                                        {currentLesson?.title || 'No lesson selected'}
-                                                    </p>
-                                                    <p style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: C.text, opacity: 0.45, marginTop: 2 }}>
-                                                        {completedCount}/{totalLessons} Lessons Done
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <button onClick={() => setShowLessonPlayerModal(true)}
-                                                className="px-4 py-2.5 text-white rounded-2xl flex items-center gap-1.5 hover:opacity-90 transition-all"
-                                                style={{ ...GS, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
-                                                <Play className="w-3 h-3 fill-white" /> Resume
-                                            </button>
+                                            <AnimatePresence>
+                                                {showAiPanel && (
+                                                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-5">
+                                                        <div className="rounded-2xl p-5 border shadow-inner relative" style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.2)' }}>
+                                                            <div className="flex items-center justify-between mb-4">
+                                                                <h4 className="flex items-center gap-2 text-white" style={{ fontSize: T.size.sm, fontWeight: T.weight.black, margin: 0 }}>
+                                                                    <Brain className="w-4 h-4 text-amber-300" />{aiResult?.type || 'Generating Magic…'}
+                                                                </h4>
+                                                                <button onClick={() => setShowAiPanel(false)} className="bg-transparent border-none cursor-pointer"><X className="w-4 h-4 text-white/60 hover:text-white" /></button>
+                                                            </div>
+                                                            
+                                                            {aiLoading ? (
+                                                                <div className="flex items-center gap-3 py-8 justify-center">
+                                                                    <Loader2 className="w-6 h-6 animate-spin text-amber-300" />
+                                                                    <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.8)' }}>Reading course content…</span>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="prose prose-sm max-w-none whitespace-pre-wrap" style={{ fontSize: T.size.sm, color: 'rgba(255,255,255,0.9)', fontWeight: T.weight.medium, lineHeight: 1.6 }}>
+                                                                    {aiResult?.content}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
                                         </div>
                                     </div>
                                 )}
+                            </div>
+                        )}
 
-                                <div className="rounded-2xl overflow-hidden"
-                                    style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                                    <div className="p-5">
-                                        {(() => {
-                                            const modules = course.modules || [];
-                                            if (modules.length === 0) return (
-                                                <>
-                                                    <div className="space-y-2">
-                                                        {pagedLessons.map((lesson, idx) => {
-                                                            const gIdx = (lessonPage - 1) * LESSONS_PER_PAGE + idx;
-                                                            const locked = isLessonLocked(lesson);
-                                                            const isDone = completedIds.includes(lesson._id?.toString());
-                                                            const isAct = lesson._id === currentLesson?._id;
-                                                            const status = locked ? 'locked' : isDone ? 'completed' : isAct ? 'in-progress' : 'pending';
-                                                            return (
-                                                                <div key={lesson._id} onClick={() => !locked && handleLessonClick(lesson)}
-                                                                    className="flex items-center gap-3 p-3.5 rounded-2xl transition-all"
-                                                                    style={locked
-                                                                        ? { opacity: 0.60, cursor: 'not-allowed', backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }
-                                                                        : isAct
-                                                                            ? { backgroundColor: C.btnViewAllBg, border: `2px solid ${C.btnPrimary}`, cursor: 'pointer' }
-                                                                            : { backgroundColor: C.surfaceWhite, border: `2px solid ${C.cardBorder}`, cursor: 'pointer' }}
-                                                                    onMouseEnter={e => { if (!locked && !isAct) e.currentTarget.style.borderColor = C.btnPrimary; }}
-                                                                    onMouseLeave={e => { if (!locked && !isAct) e.currentTarget.style.borderColor = C.cardBorder; }}>
-                                                                    {isAct && <div className="w-1 h-10 rounded-full shrink-0" style={GS} />}
-                                                                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                                                                        style={{ backgroundColor: isDone ? C.successBg : isAct ? C.innerBg : C.cardBg }}>
-                                                                        {isDone ? <CheckCircle className="w-4 h-4" style={{ color: C.success }} />
-                                                                            : lesson.type === 'video' ? <PlayCircle className="w-4 h-4" style={{ color: C.btnPrimary }} />
-                                                                                : lesson.type === 'quiz' ? <FileQuestion className="w-4 h-4" style={{ color: C.warning }} />
-                                                                                    : <FileText className="w-4 h-4" style={{ color: C.text, opacity: 0.4 }} />}
-                                                                    </div>
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <p className="truncate"
-                                                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: isAct ? C.btnPrimary : C.heading }}>
-                                                                            {gIdx + 1}. {lesson.title}
-                                                                        </p>
-                                                                        {lesson.duration > 0 && (
-                                                                            <p className="flex items-center gap-1 mt-0.5"
-                                                                                style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.medium, color: C.text, opacity: 0.45 }}>
-                                                                                <Clock className="w-3 h-3" />{Math.floor(lesson.duration / 60)}:{String(lesson.duration % 60).padStart(2, '0')}
-                                                                            </p>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="shrink-0 flex items-center gap-2">
-                                                                        <StatusBadge status={status} />
-                                                                        {!locked && (
-                                                                            <button onClick={e => { e.stopPropagation(); handleLessonClick(lesson); }}
-                                                                                className="px-3 py-1.5 text-white rounded-xl hover:opacity-90 flex items-center gap-1 transition-all"
-                                                                                style={{ ...GS, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black }}>
-                                                                                {isDone ? <><SkipForward className="w-3 h-3" />Resume</> : <><Play className="w-3 h-3 fill-white" />Play</>}
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                    {totalLessonPages > 1 && (
-                                                        <div className="flex items-center justify-center gap-2 mt-5 pt-4" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
-                                                            <button onClick={() => setLessonPage(p => Math.max(1, p - 1))} disabled={lessonPage === 1}
-                                                                className="p-2 rounded-xl disabled:opacity-40 transition-colors"
-                                                                style={{ border: `1px solid ${C.cardBorder}`, backgroundColor: C.surfaceWhite }}>
-                                                                <ChevronLeft className="w-4 h-4" style={{ color: C.text }} />
-                                                            </button>
-                                                            {Array.from({ length: totalLessonPages }, (_, i) => i + 1).map(pg => (
-                                                                <button key={pg} onClick={() => setLessonPage(pg)}
-                                                                    className="w-8 h-8 rounded-xl transition-all"
-                                                                    style={lessonPage === pg
-                                                                        ? { ...GS, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }
-                                                                        : { border: `1px solid ${C.cardBorder}`, color: C.text, backgroundColor: C.surfaceWhite, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
-                                                                    {pg}
-                                                                </button>
-                                                            ))}
-                                                            <button onClick={() => setLessonPage(p => Math.min(totalLessonPages, p + 1))} disabled={lessonPage === totalLessonPages}
-                                                                className="p-2 rounded-xl disabled:opacity-40"
-                                                                style={{ border: `1px solid ${C.cardBorder}`, backgroundColor: C.surfaceWhite }}>
-                                                                <ChevronRight className="w-4 h-4" style={{ color: C.text }} />
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </>
-                                            );
+                        {/* ══ LESSONS (Clean Accordions) ════════════════════════════════════════ */}
+                        {activeTab === 'lessons' && (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <div className="rounded-3xl p-6 shadow-sm border" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-white shadow-sm border" style={{ borderColor: C.cardBorder }}>
+                                            <BookOpen className="w-4 h-4" style={{ color: C.btnPrimary }} />
+                                        </div>
+                                        <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Course Content</h3>
+                                    </div>
+                                    
+                                    <div className="space-y-4">
+                                        {(course.modules || []).map(module => {
+                                            const mLessons = getLessonsByModule(module._id);
+                                            if (mLessons.length === 0) return null;
+                                            const mDone = mLessons.filter(l => completedIds.includes(l._id?.toString())).length;
+                                            const isExp = expandedModules.includes(module._id);
+                                            
                                             return (
-                                                <div className="space-y-3">
-                                                    {modules.map(module => {
-                                                        const mLessons = getLessonsByModule(module._id);
-                                                        const mDone = mLessons.filter(l => completedIds.includes(l._id?.toString())).length;
-                                                        const isExp = expandedModules.includes(module._id);
-                                                        return (
-                                                            <div key={module._id} className="rounded-2xl overflow-hidden" style={{ border: `2px solid ${C.cardBorder}` }}>
-                                                                <button onClick={() => toggleModule(module._id)}
-                                                                    className="w-full flex items-center justify-between p-4 transition-colors"
-                                                                    style={{ backgroundColor: C.innerBg }}
-                                                                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
-                                                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}>
-                                                                    <div className="flex items-center gap-3">
-                                                                        <ChevronDown className={`w-4 h-4 transition-transform ${isExp ? '' : '-rotate-90'}`} style={{ color: C.text, opacity: 0.45 }} />
-                                                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>{module.title}</span>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.text, opacity: 0.45 }}>{mDone}/{mLessons.length}</span>
-                                                                        {mDone === mLessons.length && mLessons.length > 0 && <CheckCircle className="w-4 h-4" style={{ color: C.success }} />}
-                                                                    </div>
-                                                                </button>
-                                                                {isExp && (
-                                                                    <div>
-                                                                        {mLessons.map((lesson, li) => {
-                                                                            const locked = isLessonLocked(lesson);
-                                                                            const isDone = completedIds.includes(lesson._id?.toString());
-                                                                            const isAct = lesson._id === currentLesson?._id;
-                                                                            const status = locked ? 'locked' : isDone ? 'completed' : isAct ? 'in-progress' : 'pending';
-                                                                            return (
-                                                                                <div key={lesson._id} onClick={() => !locked && handleLessonClick(lesson)}
-                                                                                    className="flex items-center gap-3 px-5 py-3 transition-all"
-                                                                                    style={{
-                                                                                        borderTop: li > 0 ? `1px solid ${C.cardBorder}` : 'none',
-                                                                                        opacity: locked ? 0.60 : 1,
-                                                                                        cursor: locked ? 'not-allowed' : 'pointer',
-                                                                                        backgroundColor: isAct ? C.btnViewAllBg : 'transparent',
-                                                                                    }}
-                                                                                    onMouseEnter={e => { if (!locked && !isAct) e.currentTarget.style.backgroundColor = C.innerBg; }}
-                                                                                    onMouseLeave={e => { if (!locked && !isAct) e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                                                                                    <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0"
-                                                                                        style={{ backgroundColor: isDone ? C.successBg : C.innerBg }}>
-                                                                                        {isDone ? <CheckCircle className="w-3.5 h-3.5" style={{ color: C.success }} />
-                                                                                            : lesson.type === 'video' ? <PlayCircle className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
-                                                                                                : lesson.type === 'quiz' ? <FileQuestion className="w-3.5 h-3.5" style={{ color: C.warning }} />
-                                                                                                    : <FileText className="w-3.5 h-3.5" style={{ color: C.text, opacity: 0.4 }} />}
-                                                                                    </div>
-                                                                                    <span className="flex-1 truncate"
-                                                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: isAct ? T.weight.bold : T.weight.medium, color: isAct ? C.btnPrimary : C.text }}>
-                                                                                        {lesson.title}
-                                                                                    </span>
+                                                <div key={module._id} className="rounded-2xl border overflow-hidden transition-all shadow-sm" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                                                    <button onClick={() => toggleModule(module._id)}
+                                                        className="w-full flex items-center justify-between p-5 border-none cursor-pointer transition-colors"
+                                                        style={{ backgroundColor: 'transparent' }}
+                                                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.4)'; }}
+                                                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-6 h-6 rounded-md flex items-center justify-center transition-transform ${isExp ? 'rotate-180 bg-white' : 'bg-slate-200/50'}`}>
+                                                                <ChevronDown size={14} style={{ color: C.textMuted }} />
+                                                            </div>
+                                                            <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>{module.title}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <span style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted }}>{mDone}/{mLessons.length} Completed</span>
+                                                            {mDone === mLessons.length && mLessons.length > 0 && <CheckCircle size={16} style={{ color: C.success }} />}
+                                                        </div>
+                                                    </button>
+                                                    
+                                                    <AnimatePresence>
+                                                        {isExp && (
+                                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
+                                                                <div className="px-3 pb-3 space-y-2">
+                                                                    {mLessons.map((lesson, li) => {
+                                                                        const locked = isLessonLocked(lesson);
+                                                                        const isDone = completedIds.includes(lesson._id?.toString());
+                                                                        const isAct = lesson._id === currentLesson?._id;
+                                                                        const status = locked ? 'locked' : isDone ? 'completed' : isAct ? 'in-progress' : 'pending';
+                                                                        
+                                                                        return (
+                                                                            <div key={lesson._id} onClick={() => !locked && handleLessonClick(lesson)}
+                                                                                className={`flex items-center gap-3 p-4 rounded-xl transition-all border ${isAct ? 'shadow-md' : 'shadow-sm'}`}
+                                                                                style={{ 
+                                                                                    backgroundColor: isAct ? '#ffffff' : outerCard, 
+                                                                                    borderColor: isAct ? C.btnPrimary : C.cardBorder,
+                                                                                    opacity: locked ? 0.6 : 1,
+                                                                                    cursor: locked ? 'not-allowed' : 'pointer'
+                                                                                }}
+                                                                                onMouseEnter={e => { if(!locked && !isAct) { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
+                                                                                onMouseLeave={e => { if(!locked && !isAct) { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.transform = 'none'; } }}>
+                                                                                
+                                                                                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                                                                                    style={{ backgroundColor: isDone ? C.successBg : isAct ? `${C.btnPrimary}15` : innerBox }}>
+                                                                                    {isDone ? <CheckCircle size={18} style={{ color: C.success }} />
+                                                                                        : lesson.type === 'video' ? <PlayCircle size={18} style={{ color: C.btnPrimary }} />
+                                                                                        : lesson.type === 'quiz' ? <FileQuestion size={18} style={{ color: C.warning }} />
+                                                                                        : <FileText size={18} style={{ color: C.textMuted }} />}
+                                                                                </div>
+                                                                                
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <p className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: isAct ? C.btnPrimary : C.heading, margin: '0 0 2px 0' }}>
+                                                                                        {li + 1}. {lesson.title}
+                                                                                    </p>
+                                                                                    {lesson.duration > 0 && (
+                                                                                        <p className="flex items-center gap-1" style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, margin: 0 }}>
+                                                                                            <Clock size={10} /> {Math.floor(lesson.duration / 60)}:{String(lesson.duration % 60).padStart(2, '0')} mins
+                                                                                        </p>
+                                                                                    )}
+                                                                                </div>
+                                                                                
+                                                                                <div className="shrink-0 flex items-center gap-3">
                                                                                     <StatusBadge status={status} />
                                                                                     {!locked && (
                                                                                         <button onClick={e => { e.stopPropagation(); handleLessonClick(lesson); }}
-                                                                                            className="px-3 py-1 text-white rounded-xl hover:opacity-90 flex items-center gap-1"
-                                                                                            style={{ ...GS, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black }}>
-                                                                                            <Play className="w-3 h-3 fill-white" /> Play
+                                                                                            className="hidden sm:flex items-center gap-1.5 px-4 h-8 text-white rounded-lg transition-transform hover:scale-105 border-none cursor-pointer shadow-sm"
+                                                                                            style={{ ...GS, fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                                                            {isDone ? <><SkipForward size={12} />Review</> : <><Play size={12} className="fill-white" />Play</>}
                                                                                         </button>
                                                                                     )}
                                                                                 </div>
-                                                                            );
-                                                                        })}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })}
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
                                                 </div>
                                             );
-                                        })()}
+                                        })}
                                     </div>
-                                </div>
-
-                                {/* Video Preview */}
-                                <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}` }}>
-                                    <div className="aspect-video bg-slate-900 relative flex items-center justify-center">
-                                        {currentLesson ? (
-                                            <>
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                                <button onClick={() => setShowLessonPlayerModal(true)} className="relative z-10">
-                                                    <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/50 hover:scale-110 transition-transform">
-                                                        <Play className="w-7 h-7 text-white fill-white ml-1" />
-                                                    </div>
-                                                </button>
-                                                <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between z-10">
-                                                    <p className="text-white truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black }}>{currentLesson.title}</p>
-                                                    {completedIds.includes(currentLesson._id?.toString()) && (
-                                                        <span className="flex items-center gap-1 px-2.5 py-1 text-white rounded-full"
-                                                            style={{ backgroundColor: 'rgba(16,185,129,0.90)', fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black }}>
-                                                            <CheckCircle className="w-3 h-3" /> Completed
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </>
-                                        ) : <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, opacity: 0.35 }}>Select a lesson to preview</span>}
-                                    </div>
-                                    {nextLesson && (
-                                        <div className="flex items-center gap-4 p-4" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
-                                            <div className="w-14 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: C.innerBg }}>
-                                                <PlayCircle className="w-5 h-5" style={{ color: C.text, opacity: 0.25 }} />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: C.text, opacity: 0.40 }}>
-                                                    Upcoming
-                                                </p>
-                                                <p className="truncate mt-0.5" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>
-                                                    {nextLesson.title}
-                                                </p>
-                                            </div>
-                                            <button onClick={() => { setSelectedLessonIndex(lessons.findIndex(l => l._id === nextLesson._id)); setShowLessonPlayerModal(true); }}
-                                                className="px-3 py-1.5 rounded-xl flex items-center gap-1 shrink-0 transition-colors"
-                                                style={{ border: `1.5px solid ${C.cardBorder}`, color: C.btnPrimary, backgroundColor: C.innerBg, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black }}
-                                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
-                                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}>
-                                                <Play className="w-3 h-3 fill-current" /> Play
-                                            </button>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         )}
 
-                        {/* ══ ASSIGNMENTS ════════════════════════════════════ */}
+                        {/* ── ASSIGNMENTS ── */}
                         {activeTab === 'assignments' && (
-                            <div className="rounded-2xl p-6 space-y-4"
-                                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                                <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>Assignments</h3>
+                            <div className="rounded-3xl p-6 space-y-4 shadow-sm border animate-in fade-in slide-in-from-bottom-2 duration-300"
+                                style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-white shadow-sm border" style={{ borderColor: C.cardBorder }}>
+                                        <ClipboardList className="w-4 h-4" style={{ color: C.btnPrimary }} />
+                                    </div>
+                                    <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Assignments</h3>
+                                </div>
+                                
                                 {(!isEnrolled && !isInstructor) ? (
-                                    <div className="text-center py-12 rounded-2xl" style={{ backgroundColor: C.innerBg, border: `2px dashed ${C.cardBorder}` }}>
-                                        <Lock className="w-10 h-10 mx-auto mb-3" style={{ color: C.text, opacity: 0.25 }} />
-                                        <p className="mb-4" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.text, opacity: 0.55 }}>Enroll to access assignments</p>
-                                        <DBtn onClick={handleEnroll} className="px-5 py-2.5 text-xs">Enroll Now</DBtn>
+                                    <div className="text-center py-12 rounded-2xl border-2 border-dashed" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                                        <Lock className="w-12 h-12 mx-auto mb-4" style={{ color: C.textMuted, opacity: 0.3 }} />
+                                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 16px 0' }}>Enroll to access assignments</p>
+                                        <DBtn onClick={handleEnroll} className="px-6 py-3 text-sm">Enroll Now</DBtn>
                                     </div>
                                 ) : assignments.length > 0 ? assignments.map(assignment => {
                                     const sub = assignment.mySubmission;
                                     const isGraded = sub?.status === 'graded';
                                     const isSubmitted = sub?.status === 'submitted';
+                                    
                                     return (
                                         <div key={assignment._id} onClick={() => router.push(`/student/courses/${id}/assignments/${assignment._id}`)}
-                                            className="flex items-start gap-4 p-4 rounded-2xl transition-all cursor-pointer"
-                                            style={{ border: `2px solid ${C.cardBorder}` }}
-                                            onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.boxShadow = S.active; }}
-                                            onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.boxShadow = 'none'; }}>
-                                            <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white shrink-0"
-                                                style={{ backgroundColor: isGraded ? C.success : isSubmitted ? C.warning : C.btnPrimary }}>
-                                                <ClipboardList className="w-5 h-5" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>{assignment.title}</h4>
-                                                    {isGraded
-                                                        ? <span className="px-2.5 py-0.5 rounded-full" style={{ backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black }}>{sub.grade}/{assignment.totalMarks}</span>
-                                                        : isSubmitted
-                                                            ? <span className="px-2.5 py-0.5 rounded-full" style={{ backgroundColor: C.warningBg, color: C.warning, border: `1px solid ${C.warningBorder}`, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black }}>Submitted</span>
-                                                            : <span className="px-2.5 py-0.5 rounded-full" style={{ backgroundColor: C.innerBg, color: C.text, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black }}>Pending</span>}
+                                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl transition-all cursor-pointer border shadow-sm"
+                                            style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}
+                                            onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.transform = 'none'; }}>
+                                            
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white shrink-0 shadow-md"
+                                                    style={{ backgroundColor: isGraded ? C.success : isSubmitted ? C.warning : C.btnPrimary }}>
+                                                    <ClipboardList size={20} />
                                                 </div>
-                                                <div className="flex items-center gap-4" style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: C.text, opacity: 0.45 }}>
-                                                    {assignment.dueDate && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />Due {new Date(assignment.dueDate).toLocaleDateString()}</span>}
-                                                    <span className="flex items-center gap-1"><Award className="w-3 h-3" style={{ color: C.btnPrimary, opacity: 0.70 }} />{assignment.totalMarks} pts</span>
+                                                <div>
+                                                    <h4 style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: '0 0 4px 0' }}>{assignment.title}</h4>
+                                                    <div className="flex items-center gap-3">
+                                                        {isGraded
+                                                            ? <span className="px-2 py-0.5 rounded-md" style={{ backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontSize: '9px', fontWeight: T.weight.black, textTransform: 'uppercase' }}>Score: {sub.grade}/{assignment.totalMarks}</span>
+                                                            : isSubmitted
+                                                            ? <span className="px-2 py-0.5 rounded-md" style={{ backgroundColor: C.warningBg, color: C.warning, border: `1px solid ${C.warningBorder}`, fontSize: '9px', fontWeight: T.weight.black, textTransform: 'uppercase' }}>Submitted</span>
+                                                            : <span className="px-2 py-0.5 rounded-md" style={{ backgroundColor: C.surfaceWhite, color: C.textMuted, border: `1px solid ${C.cardBorder}`, fontSize: '9px', fontWeight: T.weight.black, textTransform: 'uppercase' }}>Pending</span>}
+                                                        
+                                                        {assignment.dueDate && <span style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted }}><Calendar size={10} className="inline mb-0.5 mr-1" />Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>}
+                                                    </div>
                                                 </div>
                                             </div>
+                                            <button className="h-9 px-5 rounded-xl border-none text-white text-xs font-bold transition-opacity hover:opacity-80 cursor-pointer shadow-sm w-full sm:w-auto"
+                                                style={{ backgroundColor: isGraded || isSubmitted ? C.success : C.btnPrimary }}>
+                                                {isGraded || isSubmitted ? 'View Details' : 'Start Assignment'}
+                                            </button>
                                         </div>
                                     );
                                 }) : (
-                                    <div className="text-center py-12 rounded-2xl" style={{ backgroundColor: C.innerBg, border: `2px dashed ${C.cardBorder}` }}>
-                                        <ClipboardList className="w-10 h-10 mx-auto mb-3" style={{ color: C.text, opacity: 0.20 }} />
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, opacity: 0.40 }}>No assignments yet</p>
+                                    <div className="text-center py-12 rounded-2xl border-2 border-dashed" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                                        <ClipboardList className="w-12 h-12 mx-auto mb-3" style={{ color: C.textMuted, opacity: 0.3 }} />
+                                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>No assignments found.</p>
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        {/* ══ DISCUSSIONS ════════════════════════════════════ */}
+                        {/* ── REVIEWS ── */}
                         {activeTab === 'discussions' && (
-                            <div className="rounded-2xl p-6 space-y-6"
-                                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                            <div className="rounded-3xl p-6 space-y-6 shadow-sm border animate-in fade-in slide-in-from-bottom-2 duration-300"
+                                style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                                
                                 {/* Rating hero */}
-                                <div className="flex items-start gap-6 p-5 rounded-2xl relative overflow-hidden" style={GS}>
+                                <div className="flex flex-col md:flex-row items-center gap-8 p-8 rounded-3xl relative overflow-hidden shadow-inner border border-white/10" style={GS}>
                                     <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(#fff 1px,transparent 1px)', backgroundSize: '16px 16px' }} />
                                     <div className="relative text-center shrink-0">
-                                        <div style={{ fontFamily: T.fontFamily, fontSize: '48px', fontWeight: T.weight.black, color: '#ffffff', marginBottom: 4 }}>{course.rating?.toFixed(1)}</div>
-                                        <div className="flex gap-0.5 justify-center mb-1">
-                                            {[...Array(5)].map((_, i) => <Star key={i} className={`w-3.5 h-3.5 ${i < Math.round(course.rating) ? 'text-amber-400 fill-amber-400' : 'fill-white/25 text-white/25'}`} />)}
+                                        <div style={{ fontSize: '56px', fontWeight: T.weight.black, color: '#ffffff', lineHeight: 1, marginBottom: 8 }}>{course.rating?.toFixed(1) || '0.0'}</div>
+                                        <div className="flex gap-1 justify-center mb-2">
+                                            {[...Array(5)].map((_, i) => <Star key={i} className={`w-4 h-4 ${i < Math.round(course.rating) ? 'text-amber-400 fill-amber-400' : 'fill-white/25 text-white/25'}`} />)}
                                         </div>
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.50)' }}>{course.reviewCount} reviews</p>
+                                        <p style={{ fontSize: '11px', fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(255,255,255,0.6)', margin: 0 }}>{course.reviewCount} Course Reviews</p>
                                     </div>
-                                    <div className="relative flex-1 space-y-2">
+                                    <div className="relative flex-1 w-full space-y-2.5">
                                         {ratingDistribution.map(dist => (
                                             <div key={dist.rating} className="flex items-center gap-3">
-                                                <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, color: 'rgba(255,255,255,0.55)', width: 20 }}>{dist.rating}★</span>
-                                                <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.10)' }}>
-                                                    <div className="h-full rounded-full" style={{ width: `${dist.percentage}%`, backgroundColor: 'rgba(255,255,255,0.55)', transition: 'width 0.6s ease' }} />
+                                                <span style={{ fontSize: '11px', fontWeight: T.weight.black, color: 'rgba(255,255,255,0.7)', width: 24 }}>{dist.rating}★</span>
+                                                <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                                                    <div className="h-full rounded-full" style={{ width: `${dist.percentage}%`, backgroundColor: '#fff', transition: 'width 0.8s ease' }} />
                                                 </div>
-                                                <span style={{ fontFamily: T.fontFamily, fontSize: '10px', width: 16, textAlign: 'right', fontWeight: T.weight.medium, color: 'rgba(255,255,255,0.50)' }}>{dist.count}</span>
+                                                <span style={{ fontSize: '11px', width: 20, textAlign: 'right', fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.6)' }}>{dist.count}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -869,108 +710,105 @@ export default function CourseDetailPage({ params }) {
 
                                 {isEnrolled && (
                                     <DBtn onClick={() => { if (myReview) setReviewForm({ rating: myReview.rating, comment: myReview.comment }); setShowReviewModal(true); }}
-                                        className="w-full py-3 text-sm flex items-center justify-center gap-2">
-                                        <MessageSquare className="w-4 h-4" />
-                                        {myReview ? 'Edit Your Review' : 'Write a Review'}
+                                        className="w-full py-4 text-sm flex items-center justify-center gap-2 shadow-lg hover:scale-[1.01]">
+                                        <MessageSquare size={16} /> {myReview ? 'Edit Your Review' : 'Write a Review'}
                                     </DBtn>
                                 )}
 
-                                <div className="flex items-center gap-2">
-                                    <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wide, color: C.text, opacity: 0.40 }}>Sort:</span>
+                                <div className="flex items-center gap-3 bg-white p-1 rounded-xl w-fit shadow-sm border border-slate-200">
                                     {['recent', 'helpful', 'rating'].map(s => (
                                         <button key={s} onClick={() => setSortBy(s)}
-                                            className="px-3 py-1.5 rounded-xl capitalize transition-all"
+                                            className="px-4 py-2 rounded-lg capitalize transition-all border-none cursor-pointer"
                                             style={sortBy === s
-                                                ? { ...GS, color: '#ffffff', fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black }
-                                                : { backgroundColor: C.innerBg, color: C.text, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black }}>
-                                            {s.charAt(0).toUpperCase() + s.slice(1)}
+                                                ? { backgroundColor: C.btnPrimary, color: '#fff', fontSize: '11px', fontWeight: T.weight.black, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }
+                                                : { backgroundColor: 'transparent', color: C.textMuted, fontSize: '11px', fontWeight: T.weight.bold }}>
+                                            {s}
                                         </button>
                                     ))}
                                 </div>
 
-                                {reviews.length > 0 ? (
-                                    <div className="space-y-3">
+                                {loadingReviews ? (
+                                    <div className="flex justify-center py-12"><div className="w-8 h-8 rounded-full border-[3px] border-[#4F46E5]/30 border-t-[#4F46E5] animate-spin" /></div>
+                                ) : reviews.length > 0 ? (
+                                    <div className="space-y-4">
                                         {reviews.map(review => (
-                                            <div key={review._id} className="p-5 rounded-2xl transition-all"
-                                                style={review._id === myReview?._id
-                                                    ? { border: `2px solid ${C.btnPrimary}`, backgroundColor: C.btnViewAllBg }
-                                                    : { border: `2px solid ${C.cardBorder}`, backgroundColor: C.surfaceWhite }}>
-                                                <div className="flex items-start justify-between mb-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <img src={review.student?.profileImage || '/default-avatar.svg'} alt="" className="w-9 h-9 rounded-2xl" style={{ border: `2px solid ${C.cardBorder}` }} />
+                                            <div key={review._id} className="p-6 rounded-2xl transition-all border"
+                                                style={{ backgroundColor: review._id === myReview?._id ? '#ffffff' : innerBox, borderColor: review._id === myReview?._id ? C.btnPrimary : C.cardBorder, boxShadow: review._id === myReview?._id ? S.cardHover : 'none' }}>
+                                                <div className="flex items-start justify-between gap-4 mb-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center shrink-0 border-2 shadow-sm bg-white" style={{ borderColor: C.cardBorder }}>
+                                                            {review.student?.profileImage
+                                                                ? <img src={review.student.profileImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                                                                : <span style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.btnPrimary }}>{review.student?.name?.[0]?.toUpperCase() || '?'}</span>}
+                                                        </div>
                                                         <div>
-                                                            <div className="flex items-center gap-2">
-                                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>{review.student?.name}</p>
-                                                                {review._id === myReview?._id && <span className="px-2 py-0.5 text-white rounded-full" style={{ ...GS, fontFamily: T.fontFamily, fontSize: '9px', fontWeight: T.weight.black }}>You</span>}
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <p style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>{review.student?.name}</p>
+                                                                {review._id === myReview?._id && <span className="px-2 py-0.5 text-white rounded-md" style={{ ...GS, fontSize: '9px', fontWeight: T.weight.black, textTransform: 'uppercase' }}>You</span>}
                                                             </div>
-                                                            <div className="flex items-center gap-2 mt-0.5">
-                                                                {[...Array(5)].map((_, i) => <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'fill-current'}`} style={i >= review.rating ? { color: C.cardBorder } : {}} />)}
-                                                                <span style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.text, opacity: 0.40 }}>{new Date(review.createdAt).toLocaleDateString()}</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <StarRow rating={review.rating} size={3} />
+                                                                <span style={{ fontSize: '10px', color: C.textMuted, fontWeight: T.weight.bold }}>{new Date(review.createdAt).toLocaleDateString()}</span>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    {review._id === myReview?._id && (
-                                                        <div className="flex gap-1">
+                                                </div>
+                                                
+                                                <p style={{ fontSize: T.size.sm, color: C.heading, lineHeight: 1.6, fontWeight: T.weight.medium, margin: '0 0 12px 0' }}>"{review.comment}"</p>
+
+                                                {review.tutorResponse?.comment && (
+                                                    <div className="mt-4 p-4 rounded-xl border-l-[4px] shadow-sm" style={{ backgroundColor: '#ffffff', borderLeftColor: C.btnPrimary }}>
+                                                        <p className="flex items-center gap-1.5" style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.btnPrimary, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 6px 0' }}>
+                                                            <Award size={14} /> Instructor Reply
+                                                        </p>
+                                                        <p style={{ fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.medium, margin: 0, lineHeight: 1.5 }}>{review.tutorResponse.comment}</p>
+                                                    </div>
+                                                )}
+
+                                                <div className="flex items-center justify-between mt-4 pt-4 border-t" style={{ borderColor: C.cardBorder }}>
+                                                    {review._id !== myReview?._id ? (
+                                                        <button onClick={() => toggleHelpful(review._id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors border-none cursor-pointer"
+                                                            style={{ backgroundColor: C.surfaceWhite, color: C.textMuted, fontSize: '11px', fontWeight: T.weight.bold, border: `1px solid ${C.cardBorder}` }}
+                                                            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#EAE8FA'} onMouseLeave={e => e.currentTarget.style.backgroundColor = C.surfaceWhite}>
+                                                            <ThumbsUp size={14} /> Helpful ({review.helpfulCount || 0})
+                                                        </button>
+                                                    ) : (
+                                                        <div className="flex gap-2">
                                                             <button onClick={() => { setReviewForm({ rating: review.rating, comment: review.comment }); setShowReviewModal(true); }}
-                                                                className="p-1.5 rounded-xl transition-colors" style={{ color: C.btnPrimary }}
-                                                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}
-                                                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                                                                <Edit3 className="w-3.5 h-3.5" />
+                                                                className="p-2 rounded-lg bg-white border cursor-pointer hover:bg-slate-50 transition-colors" style={{ borderColor: C.cardBorder }}>
+                                                                <Edit3 size={14} style={{ color: C.btnPrimary }} />
                                                             </button>
                                                             <button onClick={handleDeleteReview}
-                                                                className="p-1.5 rounded-xl transition-colors" style={{ color: C.danger }}
-                                                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.dangerBg; }}
-                                                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                                className="p-2 rounded-lg bg-white border cursor-pointer hover:bg-red-50 transition-colors" style={{ borderColor: C.cardBorder }}>
+                                                                <Trash2 size={14} style={{ color: C.danger }} />
                                                             </button>
                                                         </div>
                                                     )}
                                                 </div>
-                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, lineHeight: T.leading.relaxed }}>{review.comment}</p>
-                                                {review.tutorResponse && (
-                                                    <div className="mt-3 p-3 rounded-r-2xl" style={{ backgroundColor: C.innerBg, borderLeft: `3px solid ${C.btnPrimary}` }}>
-                                                        <p className="flex items-center gap-1 mb-1"
-                                                            style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: C.btnPrimary }}>
-                                                            <Award className="w-3 h-3" />Instructor
-                                                        </p>
-                                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.text }}>{review.tutorResponse.comment}</p>
-                                                    </div>
-                                                )}
-                                                {review._id !== myReview?._id && (
-                                                    <button onClick={() => toggleHelpful(review._id)}
-                                                        className="mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-colors"
-                                                        style={{ backgroundColor: C.innerBg, color: C.text, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold }}
-                                                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
-                                                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}>
-                                                        <ThumbsUp className="w-3.5 h-3.5" /> Helpful ({review.helpfulCount || 0})
-                                                    </button>
-                                                )}
                                             </div>
                                         ))}
-                                        {hasMoreReviews && (
-                                            <button onClick={() => loadReviews(true)} disabled={loadingReviews}
-                                                className="w-full py-3 rounded-2xl transition-all"
-                                                style={{ border: `2px dashed ${C.cardBorder}`, color: C.text, opacity: 0.50, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}
-                                                onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.opacity = '1'; }}
-                                                onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.opacity = '0.50'; }}>
-                                                {loadingReviews ? 'Loading…' : 'Load More Reviews'}
-                                            </button>
-                                        )}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-10 rounded-2xl" style={{ backgroundColor: C.innerBg, border: `2px dashed ${C.cardBorder}` }}>
-                                        <MessageSquare className="w-10 h-10 mx-auto mb-3" style={{ color: C.text, opacity: 0.18 }} />
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, opacity: 0.40 }}>No reviews yet. Be the first!</p>
+                                    <div className="text-center py-16 rounded-3xl border-2 border-dashed" style={{ borderColor: C.cardBorder, backgroundColor: innerBox }}>
+                                        <MessageSquare className="w-12 h-12 mx-auto mb-3" style={{ color: C.textMuted, opacity: 0.3 }} />
+                                        <p style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>No reviews yet.</p>
+                                        <p style={{ fontSize: T.size.sm, color: C.textMuted, margin: 0 }}>Be the first one to share your experience!</p>
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        {/* ══ RESOURCES ══════════════════════════════════════ */}
+                        {/* ── RESOURCES ── */}
                         {activeTab === 'resources' && (
-                            <div className="rounded-2xl p-6 space-y-4"
-                                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                                <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>Course Resources</h3>
+                            <div className="rounded-3xl p-6 space-y-6 shadow-sm border animate-in fade-in slide-in-from-bottom-2 duration-300"
+                                style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-white shadow-sm border" style={{ borderColor: C.cardBorder }}>
+                                        <Download className="w-4 h-4" style={{ color: C.btnPrimary }} />
+                                    </div>
+                                    <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Course Resources</h3>
+                                </div>
+
                                 {(() => {
                                     const groupedResources = lessons.map(l => {
                                         const lessonRes = [];
@@ -981,47 +819,39 @@ export default function CourseDetailPage({ params }) {
                                     }).filter(g => g.resources.length > 0);
 
                                     if (groupedResources.length === 0) return (
-                                        <div className="text-center py-10 rounded-2xl" style={{ backgroundColor: C.innerBg, border: `2px dashed ${C.cardBorder}` }}>
-                                            <FileText className="w-10 h-10 mx-auto mb-3" style={{ color: C.text, opacity: 0.20 }} />
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, opacity: 0.40 }}>No resources available for this course.</p>
+                                        <div className="text-center py-16 rounded-2xl border-2 border-dashed" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                                            <FileText className="w-12 h-12 mx-auto mb-3" style={{ color: C.textMuted, opacity: 0.3 }} />
+                                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>No resources available</p>
                                         </div>
                                     );
 
                                     return (
-                                        <div className="space-y-6">
+                                        <div className="space-y-8">
                                             {groupedResources.map((group, idx) => (
-                                                <div key={group.lessonId} className="space-y-3">
-                                                    <h4 className="pb-2 flex items-center gap-2"
-                                                        style={{ borderBottom: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontWeight: T.weight.bold, color: C.heading }}>
-                                                        <span className="w-6 h-6 rounded-lg flex items-center justify-center"
-                                                            style={{ backgroundColor: C.innerBg, color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}>
-                                                            {idx + 1}
-                                                        </span>
+                                                <div key={group.lessonId} className="space-y-4">
+                                                    <h4 className="flex items-center gap-3" style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+                                                        <span className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ background: C.gradientBtn, fontSize: '10px' }}>{idx + 1}</span>
                                                         {group.title}
                                                     </h4>
-                                                    <div className="space-y-2">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                         {group.resources.map((res, i) => (
-                                                            <div key={i} className="flex items-center justify-between p-4 rounded-2xl transition-all"
-                                                                style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}
-                                                                onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.boxShadow = S.active; }}
-                                                                onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.boxShadow = 'none'; }}>
-                                                                <div className="flex items-center gap-4 min-w-0">
-                                                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: C.btnViewAllBg }}>
-                                                                        <FileText className="w-5 h-5" style={{ color: C.btnPrimary }} />
+                                                            <div key={i} className="flex items-center justify-between p-4 rounded-2xl transition-all hover:-translate-y-1 shadow-sm border"
+                                                                style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                                                                <div className="flex items-center gap-3 min-w-0 pr-4">
+                                                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white shadow-sm shrink-0">
+                                                                        <FileText size={18} color={C.btnPrimary} />
                                                                     </div>
-                                                                    <div className="min-w-0 pr-4">
-                                                                        <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>{res.name || 'Document'}</p>
-                                                                        <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.widest, color: C.text, opacity: 0.40 }}>
+                                                                    <div className="min-w-0">
+                                                                        <p className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 2px 0' }}>{res.name || 'Document'}</p>
+                                                                        <span style={{ fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: '1px', color: C.textMuted }}>
                                                                             {res.type?.split('/')[1] || 'File'}
                                                                         </span>
                                                                     </div>
                                                                 </div>
                                                                 <a href={res.url} target="_blank" rel="noopener noreferrer"
-                                                                    className="px-4 py-2 rounded-xl transition-all shrink-0"
-                                                                    style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black }}
-                                                                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnPrimary; e.currentTarget.style.color = '#ffffff'; }}
-                                                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; e.currentTarget.style.color = C.btnViewAllText; }}>
-                                                                    View
+                                                                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-white border cursor-pointer hover:bg-slate-50 transition-colors"
+                                                                    style={{ borderColor: C.cardBorder, color: C.btnPrimary }}>
+                                                                    <Download size={16} />
                                                                 </a>
                                                             </div>
                                                         ))}
@@ -1035,149 +865,166 @@ export default function CourseDetailPage({ params }) {
                         )}
                     </div>
 
-                    {/* RIGHT SIDEBAR */}
-                    <div className="lg:col-span-1 space-y-4">
+                    {/* ── RIGHT: Sidebar (Progress, Pricing, Instructor) ───────────────────────────────── */}
+                    <div className="lg:col-span-1 space-y-6">
 
                         {activeTab === 'lessons' && (isEnrolled || isInstructor) && (
-                            <>
-                                <div className="rounded-2xl p-5" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>Progress</h3>
-                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: C.btnPrimary }}>{completedCount}/{totalLessons}</span>
-                                    </div>
-                                    <CircularProgress pct={pct} completed={completedCount} total={totalLessons} />
+                            <div className="rounded-3xl p-6 shadow-sm border sticky top-24" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Progress Tracker</h3>
+                                    <span className="px-2.5 py-1 rounded-lg" style={{ backgroundColor: innerBox, color: C.btnPrimary, fontSize: '10px', fontWeight: T.weight.black }}>{completedCount}/{totalLessons}</span>
                                 </div>
-
-                                <div className="rounded-2xl p-5" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                                    <h3 className="mb-4" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>Course Info</h3>
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <img src={course.tutorId?.userId?.profileImage || '/default-avatar.svg'} alt="" className="w-10 h-10 rounded-2xl" style={{ border: `1px solid ${C.cardBorder}` }} />
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>{course.tutorId?.userId?.name || 'Instructor'}</p>
-                                    </div>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: C.text, opacity: 0.45 }}>Updated: {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString() : '—'}</p>
-                                    <p className="flex items-center gap-1 mt-1" style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: C.text, opacity: 0.45 }}>
-                                        <Users className="w-3 h-3" /> {(course.enrolledCount || 0).toLocaleString()} Students
-                                    </p>
-                                </div>
-
-                                <div className="rounded-2xl p-5" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: C.innerBg }}>
-                                            <BarChart2 className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
-                                        </div>
-                                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>Quiz Performance</h3>
-                                    </div>
-                                    <div className="space-y-3.5">
+                                <CircularProgress pct={pct} completed={completedCount} total={totalLessons} />
+                                
+                                <div className="mt-8 pt-6 border-t" style={{ borderColor: C.cardBorder }}>
+                                    <h3 className="mb-4" style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>Quiz Performance</h3>
+                                    <div className="space-y-3">
                                         {quizScores.map((q, i) => <QuizScoreRow key={i} title={q.title} score={q.score} />)}
                                         {quizScores.length === 0 && (
-                                            <p className="text-center py-2" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, opacity: 0.40 }}>No quiz attempts yet</p>
+                                            <p className="text-center py-4 rounded-xl border-2 border-dashed" style={{ backgroundColor: innerBox, borderColor: C.cardBorder, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>No quizzes attempted yet</p>
                                         )}
                                     </div>
-                                    <Link href={`/student/courses/${id}`} className="inline-flex items-center gap-1 mt-4"
-                                        style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black, color: C.btnPrimary }}>
-                                        View All <ChevronRight className="w-3 h-3" />
+                                    <Link href={`/student/history`} className="mt-4 block text-center py-3 rounded-xl border transition-colors cursor-pointer"
+                                        style={{ backgroundColor: innerBox, borderColor: C.cardBorder, color: C.btnPrimary, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
+                                        View Full Report
                                     </Link>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Enrollment / Pricing Card — only for non-enrolled, non-instructor */}
+                        {activeTab !== 'lessons' && !isEnrolled && !isInstructor && (
+                            <div className="rounded-3xl overflow-hidden shadow-lg border" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                                <div className="aspect-video relative overflow-hidden group" style={{ backgroundColor: innerBox }}>
+                                    <img src={course.thumbnail || 'https://via.placeholder.com/640x360'} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+                                        <div className="w-16 h-16 bg-white/95 backdrop-blur-md rounded-full flex items-center justify-center shadow-xl cursor-pointer hover:scale-110 transition-transform">
+                                            <Play className="w-6 h-6 ml-1" style={{ fill: C.btnPrimary, color: C.btnPrimary }} />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-6">
+                                    <div className="flex items-center gap-3 mb-5">
+                                        <span style={{ fontSize: T.size['3xl'], fontWeight: T.weight.black, color: C.heading, lineHeight: 1 }}>
+                                            {course.isFree ? 'Free' : `₹${course.price}`}
+                                        </span>
+                                        {course.oldPrice && !course.isFree && (
+                                            <div className="flex items-center gap-2">
+                                                <span style={{ fontSize: T.size.md, textDecoration: 'line-through', color: C.textMuted, fontWeight: T.weight.bold }}>₹{course.oldPrice}</span>
+                                                <span className="px-2 py-0.5 rounded-md" style={{ backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontSize: '10px', fontWeight: T.weight.black }}>
+                                                    {Math.round((1 - course.price / course.oldPrice) * 100)}% OFF
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <DBtn onClick={handleEnroll} disabled={enrolling} className="w-full py-4 text-sm shadow-[0_4px_14px_rgba(79,70,229,0.3)]">
+                                        {enrolling ? <><Loader2 className="w-4 h-4 inline mr-2 animate-spin" />Processing…</> : course.isFree ? 'Enroll Now for Free' : 'Buy Now Securely'}
+                                    </DBtn>
+                                    <p className="text-center mt-4" style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '16px 0 0 0' }}>
+                                        🔒 30-Day Money-Back Guarantee
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Course Includes — always visible */}
+                        {activeTab !== 'lessons' && (
+                            <>
+                                <div className="rounded-3xl p-6 shadow-sm border" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                                    <h3 className="mb-5" style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>This Course Includes</h3>
+                                    <div className="space-y-3">
+                                        {[
+                                            { icon: <PlayCircle size={16} style={{ color: C.btnPrimary }} />,  label: `${totalLessons} video lessons` },
+                                            { icon: <Clock size={16} style={{ color: C.chartLine }} />,        label: `${Math.round(totalDuration / 3600)} hours on-demand video` },
+                                            { icon: <Download size={16} style={{ color: C.success }} />,       label: 'Downloadable study resources' },
+                                            { icon: <Trophy size={16} style={{ color: C.warning }} />,         label: 'Certificate of completion' },
+                                            { icon: <Globe size={16} style={{ color: '#3B82F6' }} />,          label: 'Full lifetime access' },
+                                        ].map((item, i) => (
+                                            <div key={i} className="flex items-center gap-3 p-3 rounded-xl border" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                                                <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center shrink-0">{item.icon}</div>
+                                                <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>{item.label}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Instructor Info Mini */}
+                                <div className="rounded-3xl p-6 shadow-sm border text-center" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                                    <h3 className="mb-5 pb-4 border-b" style={{ borderColor: C.cardBorder, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+                                        Your Instructor
+                                    </h3>
+                                    <div className="flex flex-col items-center">
+                                        <div className="w-24 h-24 rounded-full overflow-hidden mb-4 shadow-md border-4" style={{ borderColor: C.surfaceWhite }}>
+                                            <img src={course.tutorId?.userId?.profileImage || '/default-avatar.svg'} alt="" className="w-full h-full object-cover" />
+                                        </div>
+                                        <h4 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: '0 0 4px 0' }}>{course.tutorId?.userId?.name || 'Instructor Name'}</h4>
+                                        <p style={{ fontSize: '11px', fontWeight: T.weight.bold, color: C.btnPrimary, textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+                                            {course.tutorId?.experience || 0} Years Experience
+                                        </p>
+                                        <button onClick={() => router.push(`/tutor/${course.tutorId?._id}`)}
+                                            className="w-full mt-6 py-3 rounded-xl border cursor-pointer transition-colors hover:bg-white"
+                                            style={{ backgroundColor: innerBox, borderColor: C.cardBorder, color: C.btnPrimary, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
+                                            View Full Profile
+                                        </button>
+                                    </div>
                                 </div>
                             </>
                         )}
 
-                        {/* Enrollment / Pricing Card */}
-                        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                            <div className="aspect-video relative overflow-hidden group" style={{ backgroundColor: C.innerBg }}>
-                                <img src={course.thumbnail || 'https://via.placeholder.com/640x360'} alt={course.title}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30">
-                                    <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
-                                        <Play className="w-6 h-6 ml-0.5 fill-current" style={{ color: C.btnPrimary }} />
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="p-5">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading }}>
-                                        {course.isFree ? 'Free' : `₹${course.price}`}
-                                    </span>
-                                    {course.oldPrice && !course.isFree && (
-                                        <>
-                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.md, textDecoration: 'line-through', color: C.text, opacity: 0.40 }}>₹{course.oldPrice}</span>
-                                            <span className="px-2 py-0.5 rounded-full"
-                                                style={{ backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black }}>
-                                                {Math.round((1 - course.price / course.oldPrice) * 100)}% OFF
-                                            </span>
-                                        </>
-                                    )}
-                                </div>
-                                {isInstructor ? (
-                                    <DBtn onClick={() => router.push(`/tutor/courses/${id}`)} className="w-full py-3 text-sm flex items-center justify-center gap-2">
-                                        <Edit3 className="w-4 h-4" /> Edit Course
-                                    </DBtn>
-                                ) : !isEnrolled ? (
-                                    <DBtn onClick={handleEnroll} disabled={enrolling} className="w-full py-3 text-sm">
-                                        {enrolling ? 'Processing…' : course.isFree ? 'Enroll Now' : 'Buy Now'}
-                                    </DBtn>
-                                ) : (
-                                    <div className="w-full py-3 text-white rounded-2xl flex items-center justify-center gap-2"
-                                        style={{ backgroundColor: C.success, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black }}>
-                                        <CheckCircle className="w-4 h-4" /> Enrolled
-                                    </div>
-                                )}
-                                <p className="text-center mt-3" style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: C.text, opacity: 0.40 }}>
-                                    30-Day Money-Back Guarantee
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Course Includes */}
-                        <div className="rounded-2xl p-5" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                            <h3 className="mb-4" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>This Course Includes</h3>
-                            <div className="space-y-2">
-                                {[
-                                    { icon: <PlayCircle className="w-4 h-4" style={{ color: C.btnPrimary }} />, label: `${totalLessons} video lessons`,    bg: C.innerBg },
-                                    { icon: <Clock className="w-4 h-4" style={{ color: C.chartLine }} />,     label: `${Math.round(totalDuration / 3600)}h on-demand`, bg: 'rgba(94,157,157,0.08)' },
-                                    { icon: <Download className="w-4 h-4" style={{ color: C.success }} />,   label: 'Downloadable resources',         bg: C.successBg },
-                                    { icon: <Trophy className="w-4 h-4" style={{ color: C.warning }} />,     label: 'Certificate of completion',      bg: C.warningBg },
-                                    { icon: <Globe className="w-4 h-4" style={{ color: '#3B82F6' }} />,       label: 'Lifetime access',                bg: 'rgba(59,130,246,0.08)' },
-                                ].map((item, i) => (
-                                    <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl" style={{ backgroundColor: item.bg }}>
-                                        {item.icon}
-                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text }}>{item.label}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Instructor */}
-                        <div className="rounded-2xl p-5" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                            <h3 className="mb-4 pb-3" style={{ borderBottom: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>
-                                Course Instructor
-                            </h3>
-                            <div className="flex flex-col items-center text-center">
-                                <div className="w-20 h-20 rounded-2xl overflow-hidden mb-3" style={{ border: `2px solid ${C.cardBorder}` }}>
-                                    <img src={course.tutorId?.userId?.profileImage || '/default-avatar.svg'} alt="" className="w-full h-full object-cover" />
-                                </div>
-                                <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>{course.tutorId?.userId?.name || 'Unknown'}</h4>
-                                {course.tutorId?.experience && (
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.btnPrimary, marginTop: 4 }}>{course.tutorId.experience} Years Experience</p>
-                                )}
-                                {course.tutorId?.bio && (
-                                    <p className="line-clamp-3 mt-2" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, lineHeight: T.leading.relaxed, color: C.text, opacity: 0.50 }}>
-                                        {course.tutorId.bio}
-                                    </p>
-                                )}
-                            </div>
-                            <button onClick={() => router.push(`/tutor/${course.tutorId?._id}`)}
-                                className="w-full mt-4 py-2 rounded-2xl transition-colors"
-                                style={{ border: `1.5px solid ${C.cardBorder}`, color: C.btnPrimary, backgroundColor: C.innerBg, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black }}
-                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
-                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}>
-                                View Full Profile
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* ══ MODALS ══════════════════════════════════════════════════ */}
+            {/* ── Floating AI Button ────────────────────────────────────── */}
+            <button onClick={() => setAiWidgetOpen(true)}
+                className="fixed bottom-8 right-8 z-40 flex items-center gap-3 px-5 h-14 text-white rounded-full shadow-2xl transition-all hover:scale-105 cursor-pointer border-none"
+                style={{ background: C.gradientBtn, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
+                <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white/20">
+                    <Bot size={18} />
+                    <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-indigo-600" />
+                </div>
+                Ask Course AI
+            </button>
+
+            {/* ── AI Drawer ─────────────────────────────────────────────── */}
+            {aiWidgetOpen && (
+                <>
+                    <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setAiWidgetOpen(false)} />
+                    <div className="fixed bottom-0 right-0 z-50 w-full sm:w-[420px] h-[85vh] sm:h-[600px] sm:bottom-8 sm:right-8 sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border animate-in slide-in-from-bottom-10 sm:slide-in-from-right-10 duration-300"
+                        style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                        
+                        <div className="px-6 py-5 flex items-center justify-between relative overflow-hidden shrink-0 border-b"
+                            style={{ background: C.gradientBtn, borderColor: C.cardBorder }}>
+                            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '14px 14px' }} />
+                            <div className="relative flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center border shadow-inner" style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.2)' }}>
+                                    <Bot size={20} className="text-white" />
+                                </div>
+                                <div>
+                                    <p style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: '#ffffff', margin: '0 0 2px 0' }}>Course Assistant</p>
+                                    <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Ask anything about content</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setAiWidgetOpen(false)} className="relative w-8 h-8 rounded-xl flex items-center justify-center transition-colors cursor-pointer border-none hover:bg-white/20"
+                                style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                                <X size={16} className="text-white" />
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-hidden" style={{ backgroundColor: innerBox }}>
+                            <AiTutorWidget
+                                title="AI Insights"
+                                subtitle="I have analyzed the entire course curriculum for you."
+                                context={{ pageType: 'course_details', courseId: course._id }}
+                                className="h-full border-none rounded-none shadow-none bg-transparent"
+                                recommendedTopics={['What are the prerequisites?', 'What are the main learning outcomes?', 'Is this suitable for beginners?']}
+                            />
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Other Modals remain unchanged visually as they are imported components */}
             {showLessonPlayerModal && lessons[selectedLessonIndex] && (
                 <LessonPlayerModal lessons={lessons} modules={course.modules} reviews={reviews}
                     initialIndex={selectedLessonIndex} courseId={id}
@@ -1188,125 +1035,7 @@ export default function CourseDetailPage({ params }) {
                     onViewAttempt={data => { setSelectedResult(data); setShowExamHistoryModal(false); setShowResultModal(true); }}
                     onStartExam={handleStartExam} />
             )}
-            {showResultModal && selectedResult && (
-                <ExamResultModal result={selectedResult} onClose={() => { setShowResultModal(false); setShowExamHistoryModal(true); }} />
-            )}
-
-            {/* Review Modal */}
-            {showReviewModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto" style={{ backgroundColor: C.surfaceWhite }}>
-                        <div className="p-6 relative overflow-hidden" style={{ ...GS, borderBottom: `1px solid ${C.cardBorder}` }}>
-                            <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(#fff 1px,transparent 1px)', backgroundSize: '14px 14px' }} />
-                            <div className="relative flex items-center justify-between">
-                                <div>
-                                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.black, color: '#ffffff' }}>
-                                        {myReview ? 'Edit Review' : 'Write a Review'}
-                                    </h3>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: 'rgba(255,255,255,0.50)', marginTop: 2 }}>{course.title}</p>
-                                </div>
-                                <button onClick={() => { setShowReviewModal(false); setReviewForm({ rating: 0, comment: '' }); }}
-                                    className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.10)' }}>
-                                    <X className="w-4 h-4 text-white" />
-                                </button>
-                            </div>
-                        </div>
-                        <form onSubmit={handleSubmitReview} className="p-6 space-y-5">
-                            <div>
-                                <label className="block mb-3"
-                                    style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: C.text, opacity: 0.55 }}>
-                                    Rating
-                                </label>
-                                <div className="flex gap-2">
-                                    {[1, 2, 3, 4, 5].map(r => (
-                                        <button key={r} type="button" onClick={() => setReviewForm(prev => ({ ...prev, rating: r }))} className="transition-transform hover:scale-125">
-                                            <Star className={`w-9 h-9 ${r <= reviewForm.rating ? 'text-amber-400 fill-amber-400' : 'fill-current'}`}
-                                                style={r > reviewForm.rating ? { color: C.cardBorder } : {}} />
-                                        </button>
-                                    ))}
-                                </div>
-                                {reviewForm.rating > 0 && (
-                                    <p className="mt-2"
-                                        style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: C.btnPrimary }}>
-                                        {['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][reviewForm.rating - 1]}
-                                    </p>
-                                )}
-                            </div>
-                            <div>
-                                <label className="block mb-2"
-                                    style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: C.text, opacity: 0.55 }}>
-                                    Your Review
-                                </label>
-                                <textarea value={reviewForm.comment} onChange={e => setReviewForm(prev => ({ ...prev, comment: e.target.value }))}
-                                    rows={5} maxLength={500} placeholder="Share your experience…"
-                                    className="w-full px-4 py-3 rounded-2xl resize-none focus:outline-none transition-all"
-                                    style={{ border: `1.5px solid ${C.cardBorder}`, color: C.heading, backgroundColor: C.cardBg, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium }}
-                                    onFocus={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
-                                    onBlur={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.boxShadow = 'none'; }} />
-                                <p className="text-right mt-1" style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.text, opacity: 0.40 }}>{reviewForm.comment.length}/500</p>
-                            </div>
-                            <div className="flex gap-3">
-                                <button type="button" onClick={() => { setShowReviewModal(false); setReviewForm({ rating: 0, comment: '' }); }}
-                                    className="flex-1 py-2.5 rounded-2xl transition-colors"
-                                    style={{ border: `1.5px solid ${C.cardBorder}`, color: C.text, backgroundColor: C.cardBg, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black }}>
-                                    Cancel
-                                </button>
-                                <DBtn type="submit" disabled={submittingReview || reviewForm.rating === 0 || reviewForm.comment.trim().length < 10} className="flex-1 py-2.5 text-sm">
-                                    {submittingReview ? 'Submitting…' : myReview ? 'Update Review' : 'Submit Review'}
-                                </DBtn>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
             {course && <ReportAbuseModal isOpen={showReportModal} onClose={() => setShowReportModal(false)} targetId={course._id} targetType="Course" />}
-
-            {/* Floating AI Button */}
-            <button onClick={() => setAiWidgetOpen(true)}
-                className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 px-4 py-3 text-white rounded-2xl shadow-xl transition-all hover:scale-105 hover:shadow-2xl"
-                style={{ ...GS, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
-                <div className="relative">
-                    <Bot className="w-5 h-5" />
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white" />
-                </div>
-                Sapience Course Assistant
-            </button>
-
-            {/* AI Drawer */}
-            {aiWidgetOpen && (
-                <>
-                    <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={() => setAiWidgetOpen(false)} />
-                    <div className="fixed bottom-0 right-0 z-50 w-full sm:w-[420px] h-[85vh] sm:h-[600px] sm:bottom-6 sm:right-6 sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-                        style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily }}>
-                        <div className="px-5 py-4 flex items-center justify-between relative overflow-hidden" style={GS}>
-                            <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(#fff 1px,transparent 1px)', backgroundSize: '14px 14px' }} />
-                            <div className="relative flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
-                                    <Bot className="w-4 h-4 text-white" />
-                                </div>
-                                <div>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: '#ffffff' }}>Sapience Course Assistant</p>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: 'rgba(255,255,255,0.50)' }}>Ask anything about this course</p>
-                                </div>
-                            </div>
-                            <button onClick={() => setAiWidgetOpen(false)}
-                                className="relative w-8 h-8 flex items-center justify-center rounded-xl transition-colors"
-                                style={{ backgroundColor: 'rgba(255,255,255,0.10)' }}>
-                                <X className="w-4 h-4 text-white" />
-                            </button>
-                        </div>
-                        <div className="flex-1 overflow-auto">
-                            <AiTutorWidget
-                                title="Sapience Course Assistant"
-                                subtitle="Curious about this course? Ask away!"
-                                context={{ pageType: 'course_details', courseId: course._id }}
-                                recommendedTopics={['What are the prerequisites?', 'What are the main learning outcomes?', 'Is this suitable for beginners?']}
-                            />
-                        </div>
-                    </div>
-                </>
-            )}
         </div>
     );
 }

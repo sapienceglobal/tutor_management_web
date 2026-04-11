@@ -4,10 +4,15 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
     Search, Star, Award, MapPin, ArrowRight,
-    CheckCircle, BookOpen, Filter, Sparkles, Users, X
+    CheckCircle, BookOpen, Filter, Sparkles, Users, X, User
 } from 'lucide-react';
 import api from '@/lib/axios';
-import { C, T, S, R, cx, pageStyle } from '@/constants/studentTokens';
+import { C, T, S, R } from '@/constants/studentTokens';
+
+// ─── Theme Colors ─────────────────────────────────────────────────────────────
+const themeBg = '#dfdaf3';
+const outerCard = '#EAE8FA';
+const innerBox = '#E3DFF8';
 
 const RATE_OPTIONS = [
     { label: 'Any rate',       value: '' },
@@ -15,6 +20,30 @@ const RATE_OPTIONS = [
     { label: 'Under ₹1000/hr', value: '1000' },
     { label: 'Under ₹2000/hr', value: '2000' },
 ];
+
+// Focus Handlers
+const onFocusHandler = e => {
+    e.target.style.borderColor = C.btnPrimary;
+    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.15)';
+};
+const onBlurHandler = e => {
+    e.target.style.borderColor = C.cardBorder;
+    e.target.style.boxShadow = 'none';
+};
+
+const baseInputStyle = {
+    backgroundColor: C.surfaceWhite,
+    border: `1px solid ${C.cardBorder}`,
+    borderRadius: R.xl,
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.sm,
+    fontWeight: T.weight.bold,
+    outline: 'none',
+    width: '100%',
+    padding: '12px 16px',
+    transition: 'all 0.2s ease',
+};
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 function Avatar({ src, name, size = 'lg' }) {
@@ -24,10 +53,10 @@ function Avatar({ src, name, size = 'lg' }) {
             width: dim, height: dim,
             borderRadius: R.xl,
             overflow: 'hidden',
-            border: '2px solid white',
+            border: `2px solid ${C.surfaceWhite}`,
             boxShadow: S.card,
             flexShrink: 0,
-            backgroundColor: C.iconBg,
+            backgroundColor: innerBox,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
             {src ? (
@@ -37,7 +66,7 @@ function Avatar({ src, name, size = 'lg' }) {
                     fontFamily: T.fontFamily,
                     fontSize: size === 'lg' ? T.size.xl : T.size.md,
                     fontWeight: T.weight.black,
-                    color: C.iconColor,
+                    color: C.btnPrimary,
                 }}>
                     {name?.[0]?.toUpperCase() || 'T'}
                 </span>
@@ -50,10 +79,10 @@ function Avatar({ src, name, size = 'lg' }) {
 function TabBtn({ active, onClick, children }) {
     return (
         <button onClick={onClick}
-            className="px-4 py-2 rounded-xl text-sm transition-all"
+            className="px-5 py-2.5 rounded-xl transition-all border-none cursor-pointer"
             style={active
-                ? { background: C.gradientBtn, color: '#ffffff', fontFamily: T.fontFamily, fontWeight: T.weight.bold }
-                : { color: C.text, opacity: 0.7, fontFamily: T.fontFamily, fontWeight: T.weight.semibold }}>
+                ? { background: C.btnPrimary, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }
+                : { backgroundColor: 'transparent', color: C.textMuted, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>
             {children}
         </button>
     );
@@ -62,91 +91,92 @@ function TabBtn({ active, onClick, children }) {
 // ─── Tutor Card ───────────────────────────────────────────────────────────────
 function TutorCard({ tutor }) {
     return (
-        <div className="flex flex-col group hover:-translate-y-0.5 transition-all duration-300"
-            style={{ ...cx.card(), overflow: 'hidden' }}
-            onMouseEnter={e => { e.currentTarget.style.boxShadow = S.cardHover; e.currentTarget.style.borderColor = `${C.btnPrimary}40`; }}
-            onMouseLeave={e => { e.currentTarget.style.boxShadow = S.card; e.currentTarget.style.borderColor = C.cardBorder; }}>
+        <div className="flex flex-col group transition-all duration-300 rounded-3xl border shadow-sm"
+            style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = S.cardHover; e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = S.card; e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.transform = 'none'; }}>
 
-            <div className="p-5 flex-1 flex flex-col">
+            <div className="p-6 flex-1 flex flex-col">
                 {/* Avatar + info */}
-                <div className="flex items-start gap-3.5 mb-4">
+                <div className="flex items-start gap-4 mb-5">
                     <Avatar src={tutor.userId?.profileImage} name={tutor.userId?.name} />
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
+                    <div className="flex-1 min-w-0 pt-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                            <h3 className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
                                 {tutor.userId?.name || 'Tutor'}
                             </h3>
                             {tutor.isVerified && (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider"
                                     style={{ backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: T.fontFamily }}>
                                     <CheckCircle className="w-3 h-3" /> Verified
                                 </span>
                             )}
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
-                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.btnPrimary }}>
+                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.btnPrimary }}>
                                 {tutor.categoryId?.name || 'Expert'}
                             </span>
                             {tutor.instituteId && (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                                    style={{ backgroundColor: `${C.chartLine}25`, color: C.chartLine, letterSpacing: T.tracking.wide, fontFamily: T.fontFamily }}>
+                                <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase"
+                                    style={{ backgroundColor: innerBox, color: C.textMuted, border: `1px solid ${C.cardBorder}`, letterSpacing: '0.5px', fontFamily: T.fontFamily }}>
                                     {tutor.instituteId.name || 'Institute'}
                                 </span>
                             )}
                         </div>
-                        {/* Rating */}
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                            {[1,2,3,4,5].map(s => (
-                                <Star key={s} className={`w-3 h-3 ${s <= Math.round(tutor.rating || 0) ? 'fill-current' : ''}`}
-                                    style={{ color: s <= Math.round(tutor.rating || 0) ? '#f59e0b' : C.cardBorder }} />
-                            ))}
-                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, marginLeft: 2 }}>
-                                {tutor.rating?.toFixed(1) || 'New'}
-                            </span>
-                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                                ({tutor.reviewCount || 0})
-                            </span>
-                        </div>
                     </div>
                 </div>
 
-                {/* Bio */}
-                <p className="line-clamp-2 mb-3.5"
-                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, lineHeight: T.leading.relaxed, fontWeight: T.weight.medium }}>
-                    {tutor.bio || 'Expert tutor ready to help you achieve your learning goals.'}
-                </p>
+                {/* Rating & Bio */}
+                <div className="mb-4 space-y-3">
+                    <div className="flex items-center gap-1.5">
+                        <div className="flex items-center">
+                            {[1,2,3,4,5].map(s => (
+                                <Star key={s} className={`w-3.5 h-3.5 ${s <= Math.round(tutor.rating || 0) ? 'fill-amber-400 text-amber-400' : 'fill-transparent text-slate-300'}`} />
+                            ))}
+                        </div>
+                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: C.heading, marginLeft: 2 }}>
+                            {tutor.rating?.toFixed(1) || 'New'}
+                        </span>
+                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>
+                            ({tutor.reviewCount || 0} reviews)
+                        </span>
+                    </div>
+                    <p className="line-clamp-2" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, lineHeight: 1.5, fontWeight: T.weight.medium, margin: 0 }}>
+                        {tutor.bio || 'Expert tutor ready to help you achieve your learning goals with personalized guidance.'}
+                    </p>
+                </div>
 
                 {/* Meta pills */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold"
-                        style={{ backgroundColor: `${C.btnPrimary}18`, color: C.btnPrimary, fontFamily: T.fontFamily }}>
-                        <Award className="w-3 h-3" /> {tutor.experience || 0} yrs exp
+                <div className="flex flex-wrap gap-2 mb-5">
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold"
+                        style={{ backgroundColor: innerBox, color: C.heading, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily }}>
+                        <Award className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} /> {tutor.experience || 0} yrs exp
                     </span>
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold"
-                        style={{ backgroundColor: C.innerBg, color: C.text, fontFamily: T.fontFamily }}>
-                        <Users className="w-3 h-3" /> {tutor.studentsCount || 0} students
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold"
+                        style={{ backgroundColor: innerBox, color: C.heading, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily }}>
+                        <Users className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} /> {tutor.studentsCount || 0} students
                     </span>
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold"
-                        style={{ backgroundColor: C.innerBg, color: C.text, fontFamily: T.fontFamily }}>
-                        <MapPin className="w-3 h-3" /> {tutor.location || 'Online'}
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold"
+                        style={{ backgroundColor: innerBox, color: C.heading, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily }}>
+                        <MapPin className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} /> {tutor.location || 'Online'}
                     </span>
                 </div>
 
                 {/* Footer: rate + CTA */}
-                <div className="mt-auto pt-3.5 flex items-center justify-between gap-3"
+                <div className="mt-auto pt-4 flex items-center justify-between gap-3"
                     style={{ borderTop: `1px solid ${C.cardBorder}` }}>
                     <div>
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px 0' }}>
                             Hourly Rate
                         </p>
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading }}>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading, margin: 0, lineHeight: 1 }}>
                             ₹{tutor.hourlyRate ?? 0}
                         </p>
                     </div>
-                    <Link href={`/student/tutors/${tutor._id}`}>
-                        <button className="flex items-center gap-1.5 px-4 py-2 text-white rounded-xl text-xs transition-all hover:opacity-90 group-hover:shadow-md"
+                    <Link href={`/student/tutors/${tutor._id}`} className="text-decoration-none">
+                        <button className="flex items-center justify-center gap-1.5 px-5 h-10 text-white rounded-xl text-xs transition-all shadow-md cursor-pointer border-none group-hover:scale-105"
                             style={{ background: C.gradientBtn, fontFamily: T.fontFamily, fontWeight: T.weight.bold }}>
-                            Book Session <ArrowRight className="w-3.5 h-3.5" />
+                            Book Session <ArrowRight className="w-4 h-4" />
                         </button>
                     </Link>
                 </div>
@@ -184,7 +214,7 @@ export default function FindTutorsPage() {
     const fetchCategories = async () => {
         try {
             const res = await api.get('/categories');
-            if (res.data.success) setCategories(res.data.categories || []);
+            if (res.data?.success) setCategories(res.data.categories || []);
         } catch {}
     };
 
@@ -197,7 +227,7 @@ export default function FindTutorsPage() {
             if (maxRate)    params.set('maxRate', maxRate);
             if (activeTab)  params.set('scope', activeTab);
             const res = await api.get(`/tutors?${params.toString()}`);
-            if (res.data.success) setTutors(res.data.tutors || []);
+            if (res.data?.success) setTutors(res.data.tutors || []);
         } catch { setTutors([]); }
         finally { setLoading(false); }
     };
@@ -206,73 +236,64 @@ export default function FindTutorsPage() {
     const clearFilters = () => { setCategoryId(''); setMaxRate(''); };
     const activeFilterCount = [categoryId, maxRate].filter(Boolean).length;
 
-    const selectStyle = {
-        ...cx.input(),
-        width: '100%',
-        padding: '10px 14px',
-        cursor: 'pointer',
-        appearance: 'none',
-    };
-
     return (
-        <div className="space-y-5 pb-10" style={pageStyle}>
+        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily, color: C.text }}>
 
-            {/* ── Header ───────────────────────────────────────────────── */}
-            <div className="flex items-start justify-between flex-wrap gap-3">
-                <div>
-                    <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading }}>
-                        Find a Tutor
-                    </h1>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, opacity: 0.55, marginTop: 2 }}>
-                        Connect with verified tutors for 1-on-1 learning
-                    </p>
+            {/* ── Header & Tabs ───────────────────────────────────────────────── */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-3xl" style={{ backgroundColor: outerCard, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: innerBox, borderRadius: R.xl }}>
+                        <User size={24} color={C.btnPrimary} />
+                    </div>
+                    <div>
+                        <h1 style={{ fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading, margin: '0 0 2px 0' }}>Find a Tutor</h1>
+                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>
+                            Connect with verified experts for personalized 1-on-1 learning.
+                        </p>
+                    </div>
                 </div>
 
                 {myInstitutes.length > 0 && (
-                    <div className="flex items-center gap-1 p-1 rounded-2xl"
-                        style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}` }}>
+                    <div className="flex p-1 rounded-xl shrink-0" style={{ backgroundColor: innerBox, border: `1px solid ${C.cardBorder}` }}>
                         <TabBtn active={activeTab === 'institute'} onClick={() => setActiveTab('institute')}>
                             My Institute
                         </TabBtn>
                         <TabBtn active={activeTab === 'global'} onClick={() => setActiveTab('global')}>
-                            Global
+                            Global Tutors
                         </TabBtn>
                     </div>
                 )}
             </div>
 
             {/* ── Search + Filter card ──────────────────────────────────── */}
-            <div className="p-4 space-y-3"
-                style={{ ...cx.card(), borderRadius: R['2xl'] }}>
-                <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2.5">
-                    {/* Search */}
+            <div className="p-5 rounded-3xl shadow-sm" style={{ backgroundColor: outerCard, border: `1px solid ${C.cardBorder}` }}>
+                <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: C.textMuted }} />
-                        <input type="text" placeholder="Search by name or subject…"
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: C.textMuted }} />
+                        <input type="text" placeholder="Search tutors by name or subject..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            style={{ ...cx.input(), width: '100%', padding: '10px 14px 10px 38px' }}
-                            onFocus={e => { Object.assign(e.target.style, cx.inputFocus); }}
-                            onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
+                            style={{ ...baseInputStyle, paddingLeft: '40px', height: '48px', backgroundColor: C.surfaceWhite }}
+                            onFocus={onFocusHandler}
+                            onBlur={onBlurHandler}
                         />
                     </div>
 
-                    <div className="flex gap-2">
-                        <button type="submit"
-                            className="px-5 py-2.5 text-sm text-white rounded-xl transition-all hover:opacity-90"
+                    <div className="flex gap-2 shrink-0">
+                        <button type="submit" className="px-6 h-12 text-sm text-white rounded-xl transition-all hover:opacity-90 shadow-md cursor-pointer border-none"
                             style={{ background: C.gradientBtn, fontFamily: T.fontFamily, fontWeight: T.weight.bold }}>
                             Search
                         </button>
                         <button type="button" onClick={() => setShowFilters(!showFilters)}
-                            className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-xl border transition-all"
+                            className="flex items-center justify-center gap-2 px-5 h-12 text-sm rounded-xl transition-all cursor-pointer border"
                             style={showFilters || activeFilterCount > 0
-                                ? { backgroundColor: `${C.btnPrimary}18`, color: C.btnPrimary, borderColor: `${C.btnPrimary}40`, fontFamily: T.fontFamily, fontWeight: T.weight.bold }
-                                : { ...cx.btnSecondary(), fontFamily: T.fontFamily }}>
+                                ? { backgroundColor: innerBox, color: C.btnPrimary, borderColor: C.btnPrimary, fontFamily: T.fontFamily, fontWeight: T.weight.bold }
+                                : { backgroundColor: C.surfaceWhite, color: C.heading, borderColor: C.cardBorder, fontFamily: T.fontFamily, fontWeight: T.weight.bold }}>
                             <Filter className="w-4 h-4" />
                             Filters
                             {activeFilterCount > 0 && (
                                 <span className="w-5 h-5 text-white text-[10px] font-black rounded-full flex items-center justify-center"
-                                    style={{ backgroundColor: C.btnPrimary, fontFamily: T.fontFamily }}>
+                                    style={{ backgroundColor: C.btnPrimary }}>
                                     {activeFilterCount}
                                 </span>
                             )}
@@ -282,92 +303,86 @@ export default function FindTutorsPage() {
 
                 {/* Expanded filters */}
                 {showFilters && (
-                    <div className="pt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
-                        style={{ borderTop: `1px solid ${C.cardBorder}` }}>
-                        <div>
-                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 6 }}>
-                                Category
-                            </label>
-                            <select value={categoryId} onChange={e => setCategoryId(e.target.value)}
-                                style={selectStyle}>
-                                <option value="">All categories</option>
-                                {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 6 }}>
-                                Max Hourly Rate
-                            </label>
-                            <select value={maxRate} onChange={e => setMaxRate(e.target.value)}
-                                style={selectStyle}>
-                                {RATE_OPTIONS.map(o => <option key={o.value || 'any'} value={o.value}>{o.label}</option>)}
-                            </select>
-                        </div>
-                        {activeFilterCount > 0 && (
-                            <div className="flex items-end">
-                                <button onClick={clearFilters}
-                                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl transition-all hover:opacity-80"
-                                    style={{ backgroundColor: C.dangerBg, color: C.danger, border: `1px solid ${C.dangerBorder}`, fontFamily: T.fontFamily }}>
-                                    <X className="w-4 h-4" /> Clear filters
-                                </button>
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="pt-5 mt-5 overflow-hidden" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 items-end">
+                            <div className="space-y-2">
+                                <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+                                    Category
+                                </label>
+                                <select value={categoryId} onChange={e => setCategoryId(e.target.value)}
+                                    style={{ ...baseInputStyle, cursor: 'pointer', appearance: 'none', height: '44px' }} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+                                    <option value="">All categories</option>
+                                    {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                                </select>
                             </div>
-                        )}
-                    </div>
+                            <div className="space-y-2">
+                                <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+                                    Max Hourly Rate
+                                </label>
+                                <select value={maxRate} onChange={e => setMaxRate(e.target.value)}
+                                    style={{ ...baseInputStyle, cursor: 'pointer', appearance: 'none', height: '44px' }} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+                                    {RATE_OPTIONS.map(o => <option key={o.value || 'any'} value={o.value}>{o.label}</option>)}
+                                </select>
+                            </div>
+                            {activeFilterCount > 0 && (
+                                <div className="h-11 flex items-center">
+                                    <button onClick={clearFilters}
+                                        className="flex items-center gap-2 px-4 h-full text-sm font-bold rounded-xl transition-all hover:opacity-80 cursor-pointer border"
+                                        style={{ backgroundColor: C.dangerBg, color: C.danger, borderColor: C.dangerBorder, fontFamily: T.fontFamily }}>
+                                        <X className="w-4 h-4" /> Clear filters
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
                 )}
             </div>
 
             {/* ── Results count ────────────────────────────────────────── */}
             {!loading && tutors.length > 0 && (
-                <div className="flex items-center justify-between">
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, fontWeight: T.weight.semibold }}>
-                        <span style={{ color: C.heading, fontWeight: T.weight.black }}>{tutors.length}</span>{' '}
-                        tutor{tutors.length !== 1 ? 's' : ''} found
+                <div className="flex items-center justify-between px-2">
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, fontWeight: T.weight.bold, margin: 0 }}>
+                        Found <span style={{ color: C.btnPrimary, fontWeight: T.weight.black }}>{tutors.length}</span> tutor{tutors.length !== 1 ? 's' : ''}
                     </p>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+                    <p className="px-3 py-1 rounded-lg border" style={{ backgroundColor: innerBox, borderColor: C.cardBorder, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: 0 }}>
                         {activeTab === 'institute' ? '📍 My Institute' : '🌐 Global'}
                     </p>
                 </div>
             )}
 
-            {/* ── Results ──────────────────────────────────────────────── */}
+            {/* ── Results Grid ──────────────────────────────────────────────── */}
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3">
-                    <div className="relative w-11 h-11">
-                        <div className="w-11 h-11 rounded-full border-[3px] animate-spin"
-                            style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <Sparkles className="w-4 h-4 animate-pulse" style={{ color: C.btnPrimary }} />
-                        </div>
-                    </div>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, opacity: 0.55 }}>
-                        Finding tutors…
+                    <div className="w-12 h-12 rounded-full border-[3px] border-[#4F46E5]/30 border-t-[#4F46E5] animate-spin" />
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted, margin: 0 }}>
+                        Finding experts...
                     </p>
                 </div>
             ) : tutors.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {tutors.map(tutor => <TutorCard key={tutor._id} tutor={tutor} />)}
                 </div>
             ) : (
                 /* Empty state */
-                <div className="rounded-2xl overflow-hidden relative"
-                    style={{ backgroundColor: C.darkCard, borderRadius: R['2xl'] }}>
-                    <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
+                <div className="rounded-3xl overflow-hidden relative shadow-lg"
+                    style={{ backgroundColor: '#1E1B4B' }}>
+                    <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
                         style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '18px 18px' }} />
-                    <div className="relative text-center py-14 px-6">
-                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                            style={{ backgroundColor: 'rgba(255,255,255,0.10)' }}>
-                            <Search className="w-7 h-7" style={{ color: 'rgba(255,255,255,0.50)' }} />
+                    <div className="relative text-center py-20 px-6">
+                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 border shadow-inner"
+                            style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }}>
+                            <Search className="w-8 h-8" style={{ color: 'rgba(255,255,255,0.7)' }} />
                         </div>
-                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.black, color: '#ffffff', marginBottom: 8 }}>
-                            No tutors found
+                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.black, color: '#ffffff', marginBottom: 8 }}>
+                            No Tutors Found
                         </h3>
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: 'rgba(255,255,255,0.55)', marginBottom: 20 }}>
-                            Try adjusting your search or clearing filters.
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: 'rgba(255,255,255,0.6)', marginBottom: 24 }}>
+                            Try adjusting your search terms or clearing the active filters.
                         </p>
                         <button onClick={() => { setSearchTerm(''); clearFilters(); fetchTutors(); }}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors"
-                            style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.20)', fontFamily: T.fontFamily }}>
-                            <X className="w-4 h-4" /> Clear all & retry
+                            className="inline-flex items-center gap-2 px-6 h-11 rounded-xl text-sm font-bold transition-all cursor-pointer border shadow-lg hover:scale-105"
+                            style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)', fontFamily: T.fontFamily }}>
+                            <X className="w-4 h-4" /> Clear all filters
                         </button>
                     </div>
                 </div>

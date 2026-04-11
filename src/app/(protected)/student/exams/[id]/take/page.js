@@ -39,7 +39,7 @@ export default function TakeExamPage({ params }) {
     const [step, setStep] = useState('instructions');
     const [agreedToInstructions, setAgreedToInstructions] = useState(false);
     const [startedAt, setStartedAt] = useState(null);
-    const [micVolume, setMicVolume] = useState(0); // 🔥 NEW: Live Mic Volume State
+    const [micVolume, setMicVolume] = useState(0);
 
     // ── Section-based timing ─────────────────────────────────────────────
     const [sectionTimers, setSectionTimers] = useState({});
@@ -162,7 +162,6 @@ export default function TakeExamPage({ params }) {
                 return;
             }
             try {
-                // Dynamically request permissions based on exam settings
                 const constraints = {};
                 if (exam.isProctoringEnabled) constraints.video = { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } };
                 if (exam.isAudioProctoringEnabled) constraints.audio = true;
@@ -194,7 +193,6 @@ export default function TakeExamPage({ params }) {
         return () => { cancelled = true; };
     }, [loading, exam]);
 
-    // ── Keep Video Stream Attached when Screen Changes ────────────────────
     useEffect(() => {
         if (exam?.isProctoringEnabled && videoRef.current && mediaStreamRef.current) {
             if (videoRef.current.srcObject !== mediaStreamRef.current) {
@@ -204,7 +202,6 @@ export default function TakeExamPage({ params }) {
         }
     }, [step, exam]);
 
-    // ── Cleanup Camera on Exit ────────────────────────────────────────────
     useEffect(() => {
         return () => {
             if (mediaStreamRef.current) {
@@ -215,10 +212,6 @@ export default function TakeExamPage({ params }) {
 
     // 🔥 ── LIVE MIC VOLUME VISUALIZER (VERIFICATION STEP) ─────────────────
     useEffect(() => {
-        // FIXED — verification AUR exam dono pe kaam karega
-        // const isAudioActive = step === 'verification' || isExamRunning;
-        // if (!isAudioActive || !exam?.isAudioProctoringEnabled || !mediaStreamRef.current) return;
-
         if (step !== 'verification' || !exam?.isAudioProctoringEnabled || !mediaStreamRef.current) return;
 
         let audioContext;
@@ -247,7 +240,6 @@ export default function TakeExamPage({ params }) {
                         sum += dataArray[i];
                     }
                     const average = sum / dataArray.length;
-                    // Multiply to make it visually bounce more
                     const volumePercent = Math.min(100, Math.round(average * 1.5));
                     setMicVolume(volumePercent);
                     animationId = requestAnimationFrame(updateVolume);
@@ -274,14 +266,14 @@ export default function TakeExamPage({ params }) {
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
-            console.warn("Speech Recognition API not supported in this browser. Falling back to simple noise detection only.");
+            console.warn("Speech Recognition API not supported. Falling back to noise detection.");
             return;
         }
 
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = false;
-        recognition.lang = 'en-IN'; // Works well for English and Hinglish
+        recognition.lang = 'en-IN';
 
         let isStoppedIntentionally = false;
 
@@ -564,16 +556,6 @@ export default function TakeExamPage({ params }) {
         return `${h > 0 ? h + ':' : ''}${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     };
 
-    const toggleFullscreen = () => {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(console.error);
-            setIsFullscreen(true);
-        } else {
-            document.exitFullscreen?.();
-            setIsFullscreen(false);
-        }
-    };
-
     const getQuestionStatus = (index) => {
         const sel = selections[index] || {};
         const hasAnswer = (sel.optionIndex !== undefined && sel.optionIndex !== null)
@@ -594,6 +576,18 @@ export default function TakeExamPage({ params }) {
         if (!exam) return counts;
         exam.questions.forEach((_, idx) => { counts[getQuestionStatus(idx)]++; });
         return counts;
+    };
+
+    // Helper for grid button styles
+    const getGridBtnStyles = (status) => {
+        switch (status) {
+            case 'answered': return 'text-[#1E1B4B] border-[#22C55E] border-b-[#22C55E]';
+            case 'not_answered': return 'text-[#EF4444] border-[#EF4444] border-b-[#EF4444]';
+            case 'marked': return 'text-[#A855F7] border-[#A855F7] border-b-[#A855F7]';
+            case 'marked_answered': return 'text-[#F97316] border-[#FBBF24] border-b-[#FBBF24]';
+            case 'not_visited':
+            default: return 'text-[#1E1B4B] border-slate-200 border-b-[#8B95A5]';
+        }
     };
 
     // ── Loading ──────────────────────────────────────────────────────────
@@ -756,120 +750,165 @@ export default function TakeExamPage({ params }) {
     }
 
     // ════════════════════════════════════════════════════════════════════
-    // SCREEN 2 — PRE-EXAM VERIFICATION (Industry Standard)
+    // SCREEN 2 — PRE-EXAM VERIFICATION
+    // ════════════════════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════
+    // SCREEN 2 — PRE-EXAM VERIFICATION (No-Scroll Optimized Split Layout)
     // ════════════════════════════════════════════════════════════════════
     if (step === 'verification') {
-        // Validation check for Start Button
         const isVideoOk = !exam.isProctoringEnabled || (faceStatus === 'active' && faceCount === 1 && isFaceAligned);
         const isAudioOk = !exam.isAudioProctoringEnabled || (cameraPermission === 'granted');
         const canStart = isVideoOk && isAudioOk;
 
         return (
-            <div className="min-h-[80vh] flex flex-col items-center justify-center py-10 px-4" style={{ fontFamily: T.fontFamily }}>
+            <div className="h-screen flex flex-col items-center justify-center p-4 md:p-6 bg-[#F4F6FB] overflow-hidden" style={{ fontFamily: T.fontFamily }}>
                 <CameraBlockModal />
-                <div className="max-w-2xl w-full bg-white rounded-3xl shadow-sm border border-slate-100 p-6 md:p-8 text-center relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[var(--theme-sidebar)] to-[var(--theme-primary)]" />
-                    <div className="w-16 h-16 bg-[var(--theme-primary)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <UserCheck className="w-8 h-8 text-[var(--theme-primary)]" />
-                    </div>
-                    <h2 className="text-2xl md:text-3xl font-black text-slate-800 mb-2">System & Identity Verification</h2>
-                    <p className="text-slate-500 mb-8 max-w-lg mx-auto text-sm">Please ensure you are in a quiet room and your face is clearly visible. This exam is proctored.</p>
+                
+                {/* Main Card - Forced to max available height */}
+                <div className="max-w-5xl w-full bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative flex flex-col max-h-full">
+                    {/* Top Gradient Bar */}
+                    <div className="absolute top-0 left-0 w-full h-1.5 bg-[#6366F1] shrink-0" />
 
-                    {/* Video Area */}
-                    {exam.isProctoringEnabled && (
-                        <div className="relative w-full max-w-[480px] aspect-[4/3] mx-auto bg-slate-900 rounded-3xl overflow-hidden shadow-xl mb-6 ring-4 ring-slate-100">
-                            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100" />
-                            {faceStatus === 'loading' && (
-                                <div className="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center text-white backdrop-blur-sm">
-                                    <Loader2 className="w-10 h-10 animate-spin mb-4 text-[var(--theme-primary)]" />
-                                    <p className="font-bold text-lg tracking-wide">Loading AI Models...</p>
-                                    <p className="text-xs text-slate-400 mt-2">Setting up visual proctoring.</p>
-                                </div>
-                            )}
-                            {faceStatus === 'active' && (
-                                <div className="absolute top-4 left-0 right-0 flex justify-center z-10 pointer-events-none">
-                                    {faceCount === 0 && <span className="bg-red-600/90 backdrop-blur-md border border-red-500/50 text-white px-5 py-2 rounded-full text-xs font-black shadow-lg uppercase tracking-wider animate-pulse">No Face Detected</span>}
-                                    {faceCount > 1 && <span className="bg-red-600/90 backdrop-blur-md border border-red-500/50 text-white px-5 py-2 rounded-full text-xs font-black shadow-lg uppercase tracking-wider animate-pulse">Multiple Faces Detected!</span>}
-                                    {faceCount === 1 && !isFaceAligned && <span className="bg-amber-500/90 backdrop-blur-md border border-amber-400/50 text-white px-5 py-2 rounded-full text-xs font-black shadow-lg uppercase tracking-wider">Please Look Straight</span>}
-                                    {faceCount === 1 && isFaceAligned && <span className="bg-emerald-500/90 backdrop-blur-md border border-emerald-400/50 text-white px-5 py-2 rounded-full text-xs font-black shadow-lg uppercase tracking-wider flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Face Verified</span>}
-                                </div>
-                            )}
-                            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                                <div className={cn("w-[60%] h-[70%] border-2 border-dashed rounded-[100%] transition-colors duration-500", faceStatus !== 'active' ? "border-white/20" : faceCount === 1 && isFaceAligned ? "border-emerald-500/80 bg-emerald-500/10" : "border-amber-500/80 bg-amber-500/10")} />
-                            </div>
+                    {/* Header - Reduced paddings */}
+                    <div className="px-6 pt-5 pb-4 flex items-center gap-4 border-b border-slate-100 bg-white shrink-0">
+                        <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center shrink-0 hidden sm:flex">
+                            <UserCheck className="w-6 h-6 text-indigo-600" />
                         </div>
-                    )}
-
-                    {/* 🔥 NEW: Live Mic Audio Check Bars */}
-                    {exam.isAudioProctoringEnabled && (
-                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 max-w-sm mx-auto flex items-center justify-between mb-8 shadow-inner">
-                            <div className="flex items-center gap-3">
-                                <div className={cn(
-                                    "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200",
-                                    micVolume > 5 ? "bg-emerald-100 text-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.3)]" : "bg-slate-200 text-slate-400"
-                                )}>
-                                    <Mic className="w-5 h-5" />
-                                </div>
-                                <div className="text-left">
-                                    <h4 className="text-sm font-black text-slate-800">Live Mic Check</h4>
-                                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Say something loudly</p>
-                                </div>
-                            </div>
-                            {/* Animated Audio Bars */}
-                            <div className="flex items-end gap-1 h-8 px-2 pb-1">
-                                {[1, 2, 3, 4, 5, 6, 7].map((bar) => {
-                                    const threshold = bar * 8; // Sensitivty map
-                                    const isActive = micVolume > threshold;
-                                    // Make height dynamic based on exact volume for a bouncy feel
-                                    const rawHeight = isActive ? 30 + (micVolume * 0.7) : 25;
-                                    const finalHeight = Math.min(100, Math.max(20, rawHeight));
-
-                                    return (
-                                        <div
-                                            key={bar}
-                                            className={cn(
-                                                "w-1.5 rounded-full transition-all duration-75",
-                                                isActive ? "bg-emerald-500" : "bg-slate-200"
-                                            )}
-                                            style={{ height: `${finalHeight}%` }}
-                                        />
-                                    )
-                                })}
-                            </div>
+                        <div>
+                            <h2 className="text-xl md:text-2xl font-black text-[#1E1B4B] mb-1">System & Identity Verification</h2>
+                            <p className="text-slate-500 text-xs font-medium">Please ensure you are in a quiet, well-lit room. This exam environment is actively monitored.</p>
                         </div>
-                    )}
-
-                    {/* Status Checklist */}
-                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 max-w-sm mx-auto text-left mb-8 space-y-3">
-                        <div className="flex items-center gap-3">
-                            {cameraPermission === 'granted' ? <CheckCircle className="text-emerald-500 w-5 h-5" /> : <Loader2 className="w-5 h-5 animate-spin text-slate-400" />}
-                            <span className={cn("text-sm font-semibold", cameraPermission === 'granted' ? "text-slate-800" : "text-slate-400")}>Hardware Permissions Granted</span>
-                        </div>
-
-                        {exam.isProctoringEnabled && (
-                            <>
-                                <div className="flex items-center gap-3">
-                                    {faceStatus === 'active' ? <CheckCircle className="text-emerald-500 w-5 h-5" /> : <div className="w-5 h-5 rounded-full border-2 border-slate-200 flex-shrink-0" />}
-                                    <span className={cn("text-sm font-semibold", faceStatus === 'active' ? "text-slate-800" : "text-slate-400")}>Visual AI Model Loaded</span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    {(faceCount === 1 && isFaceAligned) ? <CheckCircle className="text-emerald-500 w-5 h-5" /> : <div className="w-5 h-5 rounded-full border-2 border-slate-200 flex-shrink-0" />}
-                                    <span className={cn("text-sm font-semibold", (faceCount === 1 && isFaceAligned) ? "text-slate-800" : "text-slate-400")}>Face Position & Lighting Optimal</span>
-                                </div>
-                            </>
-                        )}
-
-                        {exam.isAudioProctoringEnabled && (
-                            <div className="flex items-center gap-3">
-                                {micVolume > 5 ? <CheckCircle className="text-emerald-500 w-5 h-5" /> : <div className="w-5 h-5 rounded-full border-2 border-slate-200 flex-shrink-0" />}
-                                <span className={cn("text-sm font-semibold", micVolume > 5 ? "text-slate-800" : "text-slate-400")}>Microphone Input Received</span>
-                            </div>
-                        )}
                     </div>
 
-                    <button disabled={!canStart} onClick={() => { setStep('exam'); setStartedAt(new Date().toISOString()); }} className={cn("w-full max-w-sm mx-auto py-4 text-white text-base font-bold rounded-2xl transition-all flex items-center justify-center gap-2", canStart ? "hover:scale-[1.02] shadow-xl hover:shadow-2xl" : "opacity-50 cursor-not-allowed")} style={{ backgroundColor: canStart ? 'var(--theme-primary)' : 'var(--theme-sidebar)' }}>
-                        {canStart ? 'Start Exam Now' : 'Complete Verification to Start'} {canStart && <ArrowRight className="w-5 h-5" />}
-                    </button>
+                    {/* Main Split Content - Flexible height */}
+                    <div className="flex flex-col lg:flex-row p-5 md:p-6 gap-6 lg:gap-8 bg-slate-50/50 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
+
+                        {/* ── LEFT COLUMN: Camera & Mic ── */}
+                        <div className="flex-1 flex flex-col gap-4 min-h-0">
+                            
+                            {/* Video Area */}
+                            {exam.isProctoringEnabled && (
+                                <div className="flex flex-col h-full min-h-0">
+                                    <h3 className="text-[14px] font-bold text-[#1E1B4B] mb-2 flex items-center gap-2 shrink-0">
+                                        <Eye className="w-4 h-4 text-indigo-600" /> Live Camera Feed
+                                    </h3>
+                                    {/* Changed aspect ratio to aspect-video (16:9) to save vertical space */}
+                                    <div className="relative w-full aspect-video bg-slate-900 rounded-2xl overflow-hidden shadow-md ring-1 ring-slate-200 shrink-0">
+                                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100" />
+                                        
+                                        {faceStatus === 'loading' && (
+                                            <div className="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center text-white backdrop-blur-sm">
+                                                <Loader2 className="w-8 h-8 animate-spin mb-3 text-indigo-500" />
+                                                <p className="font-bold text-sm tracking-wide">Loading AI Models...</p>
+                                            </div>
+                                        )}
+                                        {faceStatus === 'active' && (
+                                            <div className="absolute top-3 left-0 right-0 flex justify-center z-10 pointer-events-none">
+                                                {faceCount === 0 && <span className="bg-red-600/90 backdrop-blur-md border border-red-500/50 text-white px-4 py-1.5 rounded-full text-[10px] font-black shadow-lg uppercase tracking-wider animate-pulse">No Face Detected</span>}
+                                                {faceCount > 1 && <span className="bg-red-600/90 backdrop-blur-md border border-red-500/50 text-white px-4 py-1.5 rounded-full text-[10px] font-black shadow-lg uppercase tracking-wider animate-pulse">Multiple Faces Detected!</span>}
+                                                {faceCount === 1 && !isFaceAligned && <span className="bg-amber-500/90 backdrop-blur-md border border-amber-400/50 text-white px-4 py-1.5 rounded-full text-[10px] font-black shadow-lg uppercase tracking-wider">Please Look Straight</span>}
+                                                {faceCount === 1 && isFaceAligned && <span className="bg-emerald-500/90 backdrop-blur-md border border-emerald-400/50 text-white px-4 py-1.5 rounded-full text-[10px] font-black shadow-lg uppercase tracking-wider flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5" /> Face Verified</span>}
+                                            </div>
+                                        )}
+                                        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                                            <div className={cn("w-[50%] h-[70%] border-2 border-dashed rounded-[100%] transition-colors duration-500", faceStatus !== 'active' ? "border-white/20" : faceCount === 1 && isFaceAligned ? "border-emerald-500/80 bg-emerald-500/10" : "border-amber-500/80 bg-amber-500/10")} />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Live Mic Check */}
+                            {exam.isAudioProctoringEnabled && (
+                                <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between shadow-sm shrink-0">
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn(
+                                            "w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200",
+                                            micVolume > 5 ? "bg-emerald-100 text-emerald-600 shadow-[0_0_12px_rgba(16,185,129,0.3)]" : "bg-slate-100 text-slate-400"
+                                        )}>
+                                            <Mic className="w-4 h-4" />
+                                        </div>
+                                        <div className="text-left">
+                                            <h4 className="text-[14px] font-bold text-[#1E1B4B]">Microphone Check</h4>
+                                            <p className="text-[11px] font-medium text-slate-500">Speak to test audio levels</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-end gap-1 h-6 px-1 pb-1">
+                                        {[1, 2, 3, 4, 5, 6, 7].map((bar) => {
+                                            const threshold = bar * 8; 
+                                            const isActive = micVolume > threshold;
+                                            const rawHeight = isActive ? 30 + (micVolume * 0.7) : 25;
+                                            const finalHeight = Math.min(100, Math.max(20, rawHeight));
+
+                                            return (
+                                                <div
+                                                    key={bar}
+                                                    className={cn("w-1 rounded-full transition-all duration-75", isActive ? "bg-emerald-500" : "bg-slate-200")}
+                                                    style={{ height: `${finalHeight}%` }}
+                                                />
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* ── RIGHT COLUMN: Checklist & Action ── */}
+                        <div className="flex-1 flex flex-col justify-between min-h-0">
+                            
+                            <div>
+                                <h3 className="text-[14px] font-bold text-[#1E1B4B] mb-3 flex items-center gap-2">
+                                    <CheckSquare className="w-4 h-4 text-indigo-600" /> Pre-Exam Checklist
+                                </h3>
+                                
+                                {/* Compact Checklist */}
+                                <div className="space-y-2.5 mb-4">
+                                    {[
+                                        { show: true, label: "Hardware Permissions Granted", sub: "Camera & mic access enabled", isReady: cameraPermission === 'granted' },
+                                        { show: exam.isProctoringEnabled, label: "Visual AI Model Loaded", sub: "Proctoring engine active", isReady: faceStatus === 'active' },
+                                        { show: exam.isProctoringEnabled, label: "Face Position Optimal", sub: "Lighting & angle verified", isReady: faceCount === 1 && isFaceAligned },
+                                        { show: exam.isAudioProctoringEnabled, label: "Microphone Input Received", sub: "Audio levels detectable", isReady: micVolume > 5 }
+                                    ].map((item, idx) => item.show && (
+                                        <div key={idx} className={cn("flex items-center gap-3 p-3 rounded-lg border transition-colors", item.isReady ? "bg-white border-emerald-100 shadow-sm" : "bg-slate-50/50 border-slate-200")}>
+                                            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shrink-0", item.isReady ? "bg-emerald-50" : "bg-slate-100")}>
+                                                {item.isReady ? <CheckCircle className="w-4 h-4 text-emerald-500" /> : <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className={cn("text-[14px] font-bold truncate", item.isReady ? "text-[#1E1B4B]" : "text-slate-500")}>{item.label}</p>
+                                                <p className="text-[11px] font-medium text-slate-400 truncate mt-0.5">{item.sub}</p>
+                                            </div>
+                                            <div className="shrink-0">
+                                                {item.isReady ? (
+                                                    <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-100 px-2 py-1 rounded">Ready</span>
+                                                ) : (
+                                                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 bg-slate-200 px-2 py-1 rounded">Pending</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="shrink-0 mt-auto">
+                                {/* Security Notice - More compact */}
+                                <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3.5 flex gap-3 mb-4">
+                                    <Lock className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                                    <p className="text-[12px] text-indigo-900 font-medium leading-snug">
+                                        Environment monitored by AI. Stay in frame, avoid talking, and do not switch tabs.
+                                    </p>
+                                </div>
+
+                                {/* Start Button */}
+                                <button disabled={!canStart} onClick={() => { setStep('exam'); setStartedAt(new Date().toISOString()); }} 
+                                    className={cn("w-full py-3.5 text-white text-[16px] font-bold rounded-xl transition-all flex items-center justify-center gap-2", 
+                                    canStart ? "bg-[#1E1B4B] hover:bg-slate-800 shadow-md hover:shadow-lg hover:-translate-y-0.5 border-[1px] border-[#1E1B4B]" : "bg-slate-300 cursor-not-allowed text-slate-500")}>
+                                    {canStart ? 'Start Exam Now' : 'Complete Verification'} 
+                                    {canStart && <ArrowRight className="w-5 h-5" />}
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
                 </div>
             </div>
         );
@@ -879,6 +918,7 @@ export default function TakeExamPage({ params }) {
     // ADAPTIVE MODE (Requires `step === 'exam'`)
     // ════════════════════════════════════════════════════════════════════
     if (isAdaptive && isExamRunning) {
+        // [Existing Adaptive Logic unchanged, omitted for brevity but should be retained]
         return (
             <div className="fixed inset-0 z-50 flex flex-col bg-[#F8FAFC] overflow-hidden" style={{ fontFamily: T.fontFamily }}>
                 <header className="h-16 text-white flex items-center justify-between px-6 shadow-sm z-30 shrink-0 bg-[#1e293b]">
@@ -955,7 +995,7 @@ export default function TakeExamPage({ params }) {
     }
 
     // ════════════════════════════════════════════════════════════════════
-    // SCREEN 3 — STANDARD EXAM PLAYER (FOCUS MODE & PREMIUM UI)
+    // SCREEN 3 — PREMIUM UI EXAM PLAYER (Matching Exactly with Image)
     // ════════════════════════════════════════════════════════════════════
     if (isExamRunning) {
         const currentQ = exam.questions[currentQuestionIndex];
@@ -964,364 +1004,245 @@ export default function TakeExamPage({ params }) {
         const totalMarksObtainable = exam.totalMarks || exam.questions.length;
         const answeredCount = counts.answered + counts.marked_answered;
         const marksProgress = Math.round((answeredCount / exam.questions.length) * 100);
-        const isLowTime = timeLeft < 300;
 
         return (
-            <div className="fixed inset-0 z-50 flex flex-col bg-[#F8FAFC] overflow-hidden" style={{ fontFamily: T.fontFamily }}>
+            <div className="fixed inset-0 z-50 flex flex-col bg-[#F4F6FB] overflow-hidden" style={{ fontFamily: T.fontFamily }}>
 
-                {/* ── 1. Top Header Bar ── */}
-                <div className="px-6 py-4 flex items-center justify-between bg-white border-b border-slate-200 shrink-0 z-30">
-                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
-                        <div className="w-6 h-6 bg-[var(--theme-primary)]/10 rounded text-[var(--theme-primary)] flex items-center justify-center">
-                            <LayoutGrid className="w-4 h-4" />
+                {/* ── 1. Top Header Row ── */}
+                <div className="px-4 md:px-6 pt-5 flex items-center justify-between shrink-0 z-30">
+                    <div className="flex items-center gap-3 bg-white rounded-xl px-5 py-3 shadow-sm border border-slate-100">
+                        <div className="w-6 h-6 bg-[#EAE8FA] rounded flex items-center justify-center">
+                            <LayoutGrid className="w-4 h-4 text-[#6366F1]" />
                         </div>
-                        <span className="font-black text-sm text-slate-800 tracking-wide">Test: {exam.title}</span>
+                        <span className="text-[16px] text-slate-500 font-medium">Test: <span className="font-black text-[#1E1B4B] ml-1">{exam.title}</span></span>
                     </div>
                     <button onClick={() => handleSubmit(false)} disabled={submitting}
-                        className="flex items-center gap-2 px-6 py-2.5 text-white text-sm font-bold rounded-xl transition-all disabled:opacity-60 shadow-md hover:shadow-lg hover:-translate-y-0.5"
-                        style={{ backgroundColor: 'var(--theme-primary)' }}>
-                        {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                        className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#7C3AED] to-[#6366F1] text-white text-[17px] font-medium rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 border-none">
+                        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
                         Submit Test
                     </button>
                 </div>
 
-                {/* ── 2. Premium Stats Bar ── */}
-                <div className="px-6 py-3 flex items-center gap-4 bg-[#F8FAFC] shrink-0 z-20 overflow-x-auto custom-scrollbar">
-                    <div className={cn('flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-black tabular-nums border shadow-sm bg-white shrink-0',
-                        isLowTime ? 'text-red-600 border-red-200 animate-pulse' : 'text-slate-800 border-slate-200')}>
-                        <Timer className={cn("w-5 h-5", isLowTime ? "text-red-500" : "text-[var(--theme-primary)]")} />
-                        Time Left: {formatTime(timeLeft)}
+                {/* ── 2. Stats Row ── */}
+                <div className="px-4 md:px-6 py-5 flex gap-4 overflow-x-auto shrink-0 z-20 custom-scrollbar border-b border-slate-100/50">
+
+                    {/* Time Left Box */}
+                    <div className="flex-1 flex items-center justify-center gap-3 px-5 py-3.5 rounded-xl bg-white border border-slate-100 shadow-sm shrink-0 whitespace-nowrap min-w-[200px]">
+                        <Timer className="w-[22px] h-[22px] text-[#4338CA]" />
+                        <span className="text-[16px] font-medium text-slate-500">Time Left:</span>
+                        <span className="text-[22px] font-black text-[#1E1B4B]">{formatTime(timeLeft)}</span>
                     </div>
 
-                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-white text-slate-700 border border-slate-200 shadow-sm shrink-0">
-                        <HelpCircle className="w-5 h-5 text-[var(--theme-primary)]" />
-                        Questions: {currentQuestionIndex + 1} / {exam.questions.length}
+                    {/* Questions Box */}
+                    <div className="flex-1 flex items-center justify-center gap-3 px-5 py-3.5 rounded-xl bg-white border border-slate-100 shadow-sm shrink-0 whitespace-nowrap min-w-[200px]">
+                        <Clock className="w-[22px] h-[22px] text-[#4338CA]" />
+                        <span className="text-[16px] font-medium text-slate-500">Questions:</span>
+                        <span className="text-[22px] font-black text-[#1E1B4B]">{currentQuestionIndex + 1} / {exam.questions.length}</span>
                     </div>
 
-                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-white text-slate-700 border border-slate-200 shadow-sm shrink-0">
-                        <Users className="w-5 h-5 text-[var(--theme-primary)]" />
-                        Marks: {answeredCount * Math.round(totalMarksObtainable / exam.questions.length)} / {totalMarksObtainable}
+                    {/* Marks Box */}
+                    <div className="flex-1 flex items-center justify-center gap-3 px-5 py-3.5 rounded-xl bg-white border border-slate-100 shadow-sm shrink-0 whitespace-nowrap min-w-[200px]">
+                        <Award className="w-[22px] h-[22px] text-[#EA580C]" />
+                        <span className="text-[16px] font-medium text-slate-500">Marks:</span>
+                        <span className="text-[22px] font-black text-[#1E1B4B]">{answeredCount * Math.round(totalMarksObtainable / exam.questions.length)} / {totalMarksObtainable}</span>
                     </div>
 
-                    <div className="flex items-center gap-3 w-48 sm:w-64 px-4 py-2.5 bg-white border border-slate-200 rounded-xl shadow-sm shrink-0">
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Progress</span>
-                        <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50 shadow-inner">
-                            <div className="h-full rounded-full transition-all duration-500"
-                                style={{ width: `${marksProgress}%`, backgroundColor: 'var(--theme-primary)' }} />
+                    {/* Progress Box */}
+                    <div className="flex-1 flex items-center justify-center gap-4 px-5 py-3.5 bg-white rounded-xl border border-slate-100 shadow-sm shrink-0 whitespace-nowrap min-w-[250px]">
+                        <span className="text-[16px] font-medium text-slate-500">Progress</span>
+                        <div className="w-24 h-2.5 bg-[#EAE8FA] rounded-full overflow-hidden">
+                            <div className="h-full bg-[#22C55E] rounded-full transition-all duration-500" style={{ width: `${marksProgress}%` }} />
                         </div>
-                        <span className="text-xs font-black text-slate-700">{marksProgress}%</span>
+                        <span className="text-[20px] font-black text-[#1E1B4B]">{marksProgress}%</span>
                     </div>
+
                 </div>
 
-                {/* ── Main Layout (Left: Questions, Right: Sidebar) ── */}
-                <div className="flex-1 flex overflow-hidden w-full mx-auto">
+                {/* ── Main Layout Split ── */}
+                <div className="flex-1 flex flex-col lg:flex-row gap-4 w-full px-4 md:px-6 pb-6 overflow-hidden">
 
                     {/* ── LEFT: Question Area ── */}
-                    <main className="flex-1 flex flex-col overflow-hidden bg-white m-4 mr-2 rounded-2xl border border-slate-200 shadow-sm relative">
+                    <main className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm relative overflow-hidden border border-slate-100">
+                        <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+                            <motion.div key={currentQ._id} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
 
-                        {hasSections && (
-                            <div className="h-12 border-b border-slate-200 flex items-center gap-2 px-6 bg-slate-50 shrink-0 overflow-x-auto z-10">
-                                {exam.sections.map((sec, secIdx) => (
-                                    <button key={secIdx}
-                                        onClick={() => { setActiveSection(secIdx); setCurrentQuestionIndex(sec.questionStartIndex); }}
-                                        className={cn('px-4 py-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap flex items-center gap-2',
-                                            activeSection === secIdx ? 'bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] ring-1 ring-[var(--theme-primary)]/30'
-                                                : lockedSections.has(secIdx) ? 'bg-red-50 text-red-500 opacity-60'
-                                                    : 'text-slate-500 hover:bg-white border border-transparent hover:border-slate-200')}>
-                                        {lockedSections.has(secIdx) && <Lock className="w-3.5 h-3.5" />}
-                                        {sec.name.toUpperCase()}
-                                        <span className={cn('text-[10px] px-2 py-0.5 rounded-md font-mono bg-white border',
-                                            lockedSections.has(secIdx) ? 'border-red-200 text-red-500' : 'border-slate-200 text-slate-600')}>
-                                            {lockedSections.has(secIdx) ? '00:00' : formatTime(sectionTimers[secIdx] || 0)}
-                                        </span>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                                {/* Question Header */}
 
-                        <div className="flex-1 overflow-y-auto p-6 lg:p-10 custom-scrollbar">
-                            <div className="max-w-4xl w-full">
-                                <motion.div key={currentQ._id} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
+                                <div className="flex items-center gap-3 pb-2 mb-6">
+                                    <h2 className="text-[17px] font-bold text-[#1E1B4B]">
+                                        Q{currentQuestionIndex + 1} of {exam.questions.length}
+                                    </h2>
+                                    <span className="text-slate-300 text-lg font-light">|</span>
+                                    <span className="text-[15px] font-medium text-[#8B95A5] uppercase tracking-wide">
+                                        {currentQ.section || exam.title.toUpperCase() || 'GENERAL'}
+                                    </span>
+                                </div>
 
-                                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
-                                        <h2 className="text-sm font-black text-slate-800 flex items-center gap-2">
-                                            Q{currentQuestionIndex + 1} of {exam.questions.length}
-                                        </h2>
-                                        {currentQ.section && (
-                                            <>
-                                                <span className="text-slate-300">|</span>
-                                                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{currentQ.section}</span>
-                                            </>
-                                        )}
-                                        {isQuestionLocked(currentQuestionIndex) && <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded text-[10px] ml-auto font-bold">LOCKED</span>}
-                                    </div>
+                                {/* Main Question */}
+                                <div className="flex items-start gap-2 mb-6">
+                                    <div className="prose prose-xl max-w-none text-[#1E1B4B] font-bold leading-snug text-[22px]"
+                                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(`Q${currentQuestionIndex + 1}. ` + currentQ.question) }} />
+                                </div>
 
-                                    {currentQ.questionType === 'passage_based' && currentQ.passage && (
-                                        <div className="mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                                            <h4 className="text-xs font-black text-[var(--theme-primary)] uppercase tracking-wider mb-4 flex items-center gap-2">
-                                                <Eye className="w-4 h-4" /> Reference Passage
-                                            </h4>
-                                            <div className="prose prose-sm max-w-none text-slate-700 leading-loose"
-                                                dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentQ.passage) }} />
+                                {/* Options Logic */}
+                                {currentQ.options?.length > 0 && (!currentQ.questionType || currentQ.questionType === 'mcq' || currentQ.questionType === 'passage_based') && (
+                                    <div className="space-y-3.5">
+                                        <div className="inline-flex px-4 py-2.5 bg-[#F4F6FB] text-[#1E1B4B] text-[15px] font-medium rounded-md mb-3">
+                                            Choose one from below options
                                         </div>
-                                    )}
+                                        {currentQ.options.map((option, idx) => {
+                                            const isSelected = currentSel.optionIndex === idx;
+                                            return (
+                                                <div key={idx}
+                                                    onClick={() => !isQuestionLocked(currentQuestionIndex) && handleOptionSelect(idx)}
+                                                    className={cn('flex items-center gap-4 px-5 py-4 rounded-lg border transition-all duration-200',
+                                                        isQuestionLocked(currentQuestionIndex) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+                                                        isSelected ? 'border-[#4338CA] bg-[#F8FAFC] shadow-[0_2px_10px_-3px_rgba(67,56,202,0.15)]' : 'border-[#E2E8F0] bg-white hover:border-slate-300')}>
 
-                                    <div className="flex items-start gap-2 mb-8">
-                                        <span className="text-xl font-black text-[var(--theme-primary)] shrink-0 mt-0.5">Q{currentQuestionIndex + 1}.</span>
-                                        <div className="prose prose-lg max-w-none text-slate-800 font-bold leading-snug"
-                                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentQ.question) }} />
-                                    </div>
-
-                                    {currentQ.options?.length > 0 && (!currentQ.questionType || currentQ.questionType === 'mcq' || currentQ.questionType === 'passage_based') && (
-                                        <div className="space-y-4">
-                                            <div className="inline-block px-3 py-1.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg mb-2">
-                                                Choose one from below options
-                                            </div>
-                                            {currentQ.options.map((option, idx) => {
-                                                const isSelected = currentSel.optionIndex === idx;
-                                                return (
-                                                    <div key={idx}
-                                                        onClick={() => !isQuestionLocked(currentQuestionIndex) && handleOptionSelect(idx)}
-                                                        className={cn('flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 group',
-                                                            isQuestionLocked(currentQuestionIndex) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
-                                                            isSelected ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)]/5 shadow-md shadow-[var(--theme-primary)]/10' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm')}>
-
-                                                        <div className={cn('w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors text-xs font-bold',
-                                                            isSelected ? 'border-[var(--theme-primary)] text-[var(--theme-primary)]' : 'border-slate-300 text-slate-500 group-hover:border-slate-400')}>
-                                                            {String.fromCharCode(65 + idx)}
-                                                        </div>
-
-                                                        <span className={cn('text-base font-semibold transition-colors flex-1', isSelected ? 'text-slate-900' : 'text-slate-600 group-hover:text-slate-800')}>
-                                                            {option.text}
-                                                        </span>
-
-                                                        <div className={cn('w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
-                                                            isSelected ? 'border-[var(--theme-primary)]' : 'border-slate-300')}>
-                                                            {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-[var(--theme-primary)]" />}
-                                                        </div>
+                                                    <div className={cn('w-[22px] h-[22px] rounded-full border-[1.5px] flex items-center justify-center shrink-0 transition-colors text-[13px] font-bold',
+                                                        isSelected ? 'border-[#4338CA] text-[#4338CA]' : 'border-[#CBD5E1] text-transparent')}>
+                                                        {isSelected ? String.fromCharCode(65 + idx) : ''}
                                                     </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
 
-                                    {currentQ.questionType === 'numeric' && (
-                                        <div className="mt-8 bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                                            <label className="block text-sm font-bold text-slate-700 mb-3">Enter your numeric answer:</label>
-                                            <input type="number" step="any"
-                                                value={currentSel.numericAnswer || ''}
-                                                onChange={e => handleNumericAnswer(e.target.value)}
-                                                disabled={isQuestionLocked(currentQuestionIndex)}
-                                                placeholder="e.g. 42.5"
-                                                className="w-full max-w-sm px-5 py-4 rounded-xl border-2 border-slate-300 focus:border-[var(--theme-primary)] focus:ring-0 text-xl font-bold text-slate-800 transition-colors disabled:opacity-50 bg-white"
-                                                style={{ fontFamily: T.fontFamily }} />
-                                        </div>
-                                    )}
-
-                                    {(!currentQ.options?.length || currentQ.questionType === 'subjective') && currentQ.questionType !== 'numeric' && currentQ.questionType !== 'match_the_following' && (
-                                        <div className="mt-8">
-                                            <textarea
-                                                value={currentSel.textAnswer || ''}
-                                                onChange={e => handleSubjectiveAnswer(e.target.value)}
-                                                disabled={isQuestionLocked(currentQuestionIndex)}
-                                                placeholder="Type your detailed explanatory answer here..."
-                                                className="w-full p-6 rounded-2xl border-2 border-slate-200 focus:border-[var(--theme-primary)] focus:ring-4 focus:ring-[var(--theme-primary)]/10 min-h-[250px] resize-y text-slate-800 bg-slate-50 focus:bg-white shadow-inner transition-all text-base font-medium placeholder:text-slate-400 disabled:opacity-50"
-                                                style={{ fontFamily: T.fontFamily }} />
-                                        </div>
-                                    )}
-
-                                    {currentQ.questionType === 'match_the_following' && currentQ.pairs?.length > 0 && (
-                                        <div className="mt-8 space-y-3 bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                                            <p className="text-sm font-bold text-slate-500 mb-5">Select the correct match for each item on the left.</p>
-                                            {currentQ.pairs.map((pair, idx) => (
-                                                <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-                                                    <div className="flex-1 font-bold text-slate-700">{idx + 1}. {pair.left}</div>
-                                                    <div className="hidden sm:block text-slate-300 font-bold px-2">→</div>
-                                                    <div className="flex-1">
-                                                        <select
-                                                            value={currentSel.matchAnswers?.[pair.left] || ''}
-                                                            onChange={e => handleMatchAnswer(pair.left, e.target.value)}
-                                                            disabled={isQuestionLocked(currentQuestionIndex)}
-                                                            className="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-[var(--theme-primary)] disabled:opacity-50 outline-none hover:border-slate-300 transition-colors"
-                                                            style={{ fontFamily: T.fontFamily }}>
-                                                            <option value="" disabled>Select best match…</option>
-                                                            {currentQ.pairs.map((p, i) => (
-                                                                <option key={i} value={p.right}>{String.fromCharCode(65 + i)}. {p.right}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
+                                                    <span className={cn('text-[17px] transition-colors flex-1', isSelected ? 'text-[#1E1B4B] font-medium' : 'text-[#1E1B4B]')}>
+                                                        {option.text}
+                                                    </span>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    <div className="h-10" />
-                                </motion.div>
-                            </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                {/* Numeric Question */}
+                                {currentQ.questionType === 'numeric' && (
+                                    <div className="mt-6">
+                                        <input type="number" step="any"
+                                            value={currentSel.numericAnswer || ''}
+                                            onChange={e => handleNumericAnswer(e.target.value)}
+                                            disabled={isQuestionLocked(currentQuestionIndex)}
+                                            placeholder="Enter numeric value..."
+                                            className="w-full max-w-md px-5 py-4 rounded-xl border border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 text-lg font-bold text-slate-800 transition-colors disabled:opacity-50 bg-white" />
+                                    </div>
+                                )}
+
+                                {/* Subjective Question */}
+                                {currentQ.questionType === 'subjective' && (
+                                    <div className="mt-6">
+                                        <textarea
+                                            value={currentSel.textAnswer || ''}
+                                            onChange={e => handleSubjectiveAnswer(e.target.value)}
+                                            disabled={isQuestionLocked(currentQuestionIndex)}
+                                            placeholder="Type your answer here..."
+                                            className="w-full p-6 rounded-xl border border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 min-h-[200px] resize-y text-slate-800 bg-white transition-all text-base font-medium disabled:opacity-50" />
+                                    </div>
+                                )}
+
+                                <div className="h-10" />
+                            </motion.div>
                         </div>
 
-                        {/* Fixed Bottom Action Bar */}
-                        <div className="h-20 border-t border-slate-200 bg-white px-6 lg:px-10 flex items-center justify-between shrink-0 z-20">
-                            <div className="flex items-center gap-3">
-                                <button onClick={handleClearResponse}
-                                    className="px-5 py-2.5 text-sm font-bold text-orange-500 border-2 border-orange-400 rounded-lg hover:bg-orange-50 transition-colors bg-white">
-                                    Clear Answer
-                                </button>
-                                <button onClick={handleMarkForReview}
-                                    className={cn('px-5 py-2.5 text-sm font-bold border-2 rounded-lg transition-all flex items-center gap-2 bg-white',
-                                        currentSel.isMarked ? 'text-purple-600 border-purple-400 bg-purple-50' : 'text-orange-500 border-orange-400 hover:bg-orange-50')}>
-                                    {currentSel.isMarked ? 'Unmark Review' : 'Mark for Review'}
-                                </button>
-                                <button onClick={handleSkip}
-                                    className="px-5 py-2.5 text-sm font-bold text-slate-600 border-2 border-slate-300 rounded-lg hover:bg-slate-50 transition-colors hidden sm:block bg-white">
-                                    Skip Question
-                                </button>
-                            </div>
-                            <button
-                                onClick={currentQuestionIndex === exam.questions.length - 1 ? () => handleSubmit(false) : handleNext}
-                                className="flex items-center gap-2 px-8 py-3 text-white text-sm font-bold rounded-lg transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 bg-slate-900 hover:bg-slate-800">
+                        {/* Bottom Actions Bar */}
+
+                        <div className="p-6 md:p-8 flex flex-wrap items-center gap-3 bg-white z-20 mt-auto border-t border-slate-50">
+                            <button onClick={handleClearResponse} className="px-6 py-2.5 text-[15px] font-medium text-[#EA580C] border border-[#EA580C] rounded-md hover:bg-orange-50 transition-colors bg-white">
+                                Clear Answer
+                            </button>
+                            <button onClick={handleMarkForReview} className="px-6 py-2.5 text-[15px] font-medium text-[#EA580C] border border-[#EA580C] rounded-md hover:bg-orange-50 transition-colors bg-white">
+                                {currentSel.isMarked ? 'Unmark Review' : 'Mark for Review'}
+                            </button>
+                            <button onClick={handleSkip} className="px-6 py-2.5 text-[15px] font-medium text-[#1E1B4B] border border-[#C7D2FE] rounded-md hover:bg-[#F4F6FB] transition-colors bg-white">
+                                Skip Question
+                            </button>
+                            <button onClick={currentQuestionIndex === exam.questions.length - 1 ? () => handleSubmit(false) : handleNext}
+                                className="ml-auto flex items-center gap-2 px-6 py-2.5 text-white text-[15px] font-medium rounded-md transition-all bg-[#1E1B4B] hover:bg-slate-800 border-[1px] border-[#1E1B4B] shadow-sm">
                                 {currentQuestionIndex === exam.questions.length - 1 ? 'Save & Finish' : 'Save & Next'}
-                                <ArrowRight className="w-4 h-4" />
+                                <ArrowRight className="w-[18px] h-[18px]" />
                             </button>
                         </div>
                     </main>
 
-                    {/* ── RIGHT: Sidebar (Question Palette & Camera) ── */}
-                    <aside className={cn(
-                        'w-[340px] flex flex-col transition-all duration-300 z-40 shrink-0 m-4 ml-0',
-                        !isSidebarOpen && 'hidden lg:flex'
-                    )}>
-                        {/* ── Proctoring Section ────────────────────────────────────────── */}
-                        {exam?.isProctoringEnabled && (
-                            <div className="mb-4 rounded-2xl border border-slate-200 bg-white shadow-sm p-3 flex-shrink-0">
-                                <div className="flex items-center justify-between px-2 mb-2">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                                        <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Live Proctoring</span>
-                                    </div>
-                                    {cameraPermission === 'denied' && <AlertCircle className="w-4 h-4 text-red-500" />}
-                                </div>
+                    {/* ── RIGHT: Sidebar ── */}
+                    <aside className={cn('w-full lg:w-[320px] flex flex-col gap-6 transition-all duration-300 z-40 shrink-0', !isSidebarOpen && 'hidden lg:flex')}>
 
-                                {/* Camera Feed */}
+                        {/* ── Proctoring Camera inside UI (Optional) ── */}
+                        {exam?.isProctoringEnabled && (
+                            <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex-shrink-0">
                                 <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-900 aspect-video w-full shadow-inner">
                                     <ProctoringBadge />
-                                    {!isCameraActive && cameraPermission !== 'denied' && (
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
-                                        </div>
-                                    )}
-                                    {cameraPermission === 'denied' && (
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-red-900/90 p-4 text-center">
-                                            <AlertCircle className="w-6 h-6 text-red-300" />
-                                            <span className="text-[10px] text-red-100 font-bold leading-tight">Camera Denied<br />Exam integrity compromised</span>
-                                        </div>
-                                    )}
-                                    <video ref={videoRef} autoPlay playsInline muted
-                                        className="w-full h-full object-cover transform -scale-x-100" />
+                                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100" />
                                 </div>
-
-                                {/* Audio Bar */}
-                                {/* {exam?.isAudioProctoringEnabled && isCameraActive && (
-                                    <div className="mt-3 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-2">
-                                        <div className={cn(
-                                            "w-7 h-7 rounded-full flex items-center justify-center transition-all flex-shrink-0",
-                                            micVolume > 10 ? "bg-red-100 shadow-[0_0_8px_rgba(239,68,68,0.4)]" : "bg-white border border-slate-200"
-                                        )}>
-                                            <Mic className="w-3.5 h-3.5" style={{ color: micVolume > 10 ? '#EF4444' : '#94A3B8' }} />
-                                        </div>
-                                        <div className="flex items-end gap-1 h-6 flex-1 px-1">
-                                            {[1, 2, 3, 4, 5, 6].map(bar => (
-                                                <div key={bar}
-                                                    className="flex-1 rounded-full transition-all duration-75"
-                                                    style={{
-                                                        height: micVolume > bar * 10 ? `${Math.min(100, 30 + micVolume)}%` : '20%',
-                                                        backgroundColor: micVolume > 40 ? '#EF4444' : micVolume > 10 ? '#F59E0B' : '#E2E8F0',
-                                                    }} />
-                                            ))}
-                                        </div>
-                                        <span className="flex-shrink-0 w-10 text-right" style={{ fontSize: '9px', fontWeight: 800, color: micVolume > 10 ? '#EF4444' : '#94A3B8', textTransform: 'uppercase' }}>
-                                            {micVolume > 40 ? 'VOICE!' : micVolume > 10 ? 'Noise' : 'Silent'}
-                                        </span>
-                                    </div>
-                                )} */}
                             </div>
                         )}
 
-                        {/* ── Questions Navigator ───────────────────────────────────────── */}
-                        <div className="flex-1 flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-0">
+                        <div className="flex-1 flex flex-col min-h-0">
 
-                            {/* Header */}
-                            <div className="h-14 border-b border-slate-200 flex items-center justify-between px-5 shrink-0 bg-slate-50/80">
-                                <div className="flex items-center gap-2.5">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                                    <span className="font-bold text-slate-800 text-sm">
+                            {/* Header: Answered Status & Menu */}
+                            <div className="flex items-center justify-between pb-4 border-b border-[#E2E8F0] mb-6">
+                                <div className="flex items-center gap-3">
+                                    <span className="w-3.5 h-3.5 rounded-full bg-[#22C55E]" />
+                                    <span className="font-medium text-[#1E1B4B] text-[17px]">
                                         {counts?.answered || 0}/{exam?.questions?.length || 0} Answered
                                     </span>
                                 </div>
-                                <Menu className="w-5 h-5 text-slate-400 cursor-pointer lg:hidden hover:text-slate-700 transition-colors" onClick={() => setIsSidebarOpen(false)} />
-                            </div>
-
-                            {/* Scrollable Questions Grid (Scrollbar Hidden) */}
-                            <div className="flex-1 overflow-y-auto p-5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                                <div className="grid grid-cols-5 gap-3">
-                                    {exam?.questions?.map((_, idx) => {
-                                        const status = getQuestionStatus(idx);
-                                        const isCurrent = currentQuestionIndex === idx;
-
-                                        let baseClass = 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 border-b-4';
-
-                                        if (status === 'answered') { baseClass = 'bg-emerald-50 border-emerald-400 text-emerald-700 border-b-emerald-500'; }
-                                        else if (status === 'not_answered') { baseClass = 'bg-red-50 border-red-400 text-red-700 border-b-red-500'; }
-                                        else if (status === 'marked') { baseClass = 'bg-purple-50 border-purple-400 text-purple-700 border-b-purple-500'; }
-                                        else if (status === 'marked_answered') { baseClass = 'bg-yellow-50 border-yellow-400 text-yellow-700 border-b-yellow-500'; }
-
-                                        if (isCurrent) {
-                                            baseClass += ' ring-2 ring-offset-2 ring-slate-800 z-10 font-black';
-                                        }
-
-                                        return (
-                                            <button key={idx} onClick={() => setCurrentQuestionIndex(idx)}
-                                                className={cn('relative aspect-square rounded-lg border flex items-center justify-center text-sm font-bold transition-colors shadow-sm', baseClass)}>
-                                                {idx + 1}
-                                            </button>
-                                        );
-                                    })}
+                                <div className="w-10 h-10 rounded-lg bg-[#EAE8FA] text-[#1E1B4B] flex items-center justify-center cursor-pointer hover:bg-[#DEDBF5] transition-colors">
+                                    <Menu className="w-6 h-6" onClick={() => setIsSidebarOpen(false)} />
                                 </div>
                             </div>
 
-                            {/* Footer: Legend & Submit */}
-                            <div className="p-5 border-t border-slate-200 bg-slate-50 shrink-0">
-                                <div className="grid grid-cols-2 gap-y-3 gap-x-2 mb-5">
+                            {/* Questions Grid */}
+                            <div className="flex flex-wrap justify-center gap-3 max-h-[300px] overflow-y-auto custom-scrollbar px-1 mb-8">
+                                {exam?.questions?.map((_, idx) => {
+                                    const status = getQuestionStatus(idx);
+                                    return (
+                                        <button key={idx} onClick={() => setCurrentQuestionIndex(idx)}
+                                            className={cn('w-12 h-[52px] rounded-md border flex items-center justify-center text-lg font-medium transition-all border-b-[5px] bg-white shadow-sm hover:translate-y-px hover:border-b-[3px]',
+                                                getGridBtnStyles(status)
+                                            )}>
+                                            {idx + 1}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Legend Card */}
+                            <div className="bg-white rounded-3xl shadow-sm p-6 mb-8 border border-slate-100">
+                                <div className="grid grid-cols-2 gap-y-6 gap-x-2">
                                     {[
-                                        { key: 'answered', count: counts?.answered || 0, color: 'emerald', label: 'Answered', bg: 'border-emerald-500' },
-                                        { key: 'not_answered', count: counts?.not_answered || 0, color: 'red', label: 'Not Answered', bg: 'border-red-500' },
-                                        { key: 'marked', count: counts?.marked || 0, color: 'purple', label: 'Marked (Review)', bg: 'border-purple-500' },
-                                        { key: 'marked_answered', count: counts?.marked_answered || 0, color: 'yellow', label: 'Ans & Marked', bg: 'border-yellow-500' },
-                                        { key: 'not_visited', count: counts?.not_visited || 0, color: 'slate', label: 'Not Visited', bg: 'border-slate-400' },
-                                    ].map(({ count, label, bg }) => (
-                                        <div key={label} className="flex items-start gap-2">
-                                            <div className="relative flex items-center justify-center mt-0.5 shrink-0">
-                                                <div className={cn("w-6 h-6 rounded border-2 flex items-center justify-center text-[10px] font-black text-slate-700 bg-white shadow-sm", bg)}>
+                                        { key: 'answered', count: counts?.answered || 0, label: 'Answered', outerBorder: 'border-[#22C55E]', text: 'text-[#1E1B4B]', bottomBg: 'bg-[#22C55E]' },
+                                        { key: 'not_answered', count: counts?.not_answered || 0, label: 'Not Answered', outerBorder: 'border-[#EF4444]', text: 'text-[#EF4444]', bottomBg: 'bg-[#EF4444]' },
+                                        { key: 'marked', count: counts?.marked || 0, label: 'Marked for Review', outerBorder: 'border-[#A855F7]', text: 'text-[#A855F7]', bottomBg: 'bg-[#A855F7]' },
+                                        { key: 'marked_answered', count: counts?.marked_answered || 0, label: 'Answered & Marked for Review', outerBorder: 'border-[#FBBF24]', text: 'text-[#F97316]', bottomBg: 'bg-[#FBBF24]' },
+                                        { key: 'not_visited', count: counts?.not_visited || 0, label: 'Not Visited', outerBorder: 'border-[#8B95A5]', text: 'text-[#1E1B4B]', bottomBg: 'bg-[#8B95A5]' },
+                                    ].map(({ count, label, outerBorder, text, bottomBg }) => (
+                                        <div key={label} className="flex items-center gap-3">
+                                            <div className={cn("w-11 h-14 rounded-md border flex flex-col overflow-hidden shrink-0", outerBorder)}>
+                                                <div className={cn("flex-1 flex items-center justify-center text-[17px] font-medium", text)}>
                                                     {count}
                                                 </div>
+                                                <div className={cn("h-3 w-full", bottomBg)} />
                                             </div>
-                                            <span className="text-[10px] text-slate-600 font-bold leading-tight pt-1">{label}</span>
+                                            <span className="text-[13px] text-[#1E1B4B] font-medium leading-tight pr-1">{label}</span>
                                         </div>
                                     ))}
                                 </div>
+                            </div>
 
+                            {/* Finish Button */}
+                            <div className="mt-auto">
                                 <button onClick={() => handleSubmit(false)} disabled={submitting}
-                                    className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#EF4444] hover:bg-[#DC2626] text-white text-sm font-bold rounded-xl transition-all shadow-sm disabled:opacity-60 border-b-4 border-[#B91C1C] active:border-b-0 active:translate-y-[4px]">
-                                    {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
-                                    {submitting ? 'Submitting...' : 'Finish Test'}
+                                    className="w-full flex items-center justify-center gap-3 py-3.5 bg-[#DE3B49] text-white text-[19px] font-medium rounded-[14px] shadow-sm hover:bg-[#C82A37] transition-colors">
+                                    {submitting ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <div className="w-[22px] h-[22px] rounded-full border-[2.5px] border-white flex items-center justify-center">
+                                            <div className="w-2 h-2 bg-white rounded-full" />
+                                        </div>
+                                    )}
+                                    Finish Test
                                 </button>
                             </div>
                         </div>
                     </aside>
-
-                    <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        className="fixed bottom-24 right-6 z-50 p-4 bg-slate-800 text-white rounded-full shadow-2xl lg:hidden flex items-center justify-center">
-                        <LayoutGrid className="w-6 h-6" />
-                    </button>
                 </div>
             </div>
         );

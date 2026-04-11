@@ -63,7 +63,7 @@ export function TutorHeader({ onMenuClick, onSidebarCollapse, isSidebarCollapsed
         <header
             className="h-[60px] backdrop-blur-sm border-b flex items-center px-4 lg:px-5 sticky top-0 z-40 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] gap-3"
             style={{
-                backgroundColor: 'rgba(255,255,255,0.92)',
+                backgroundColor: '#EAE3FD',
                 borderBottomColor: C.cardBorder,
                 fontFamily: T.fontFamily,
             }}>

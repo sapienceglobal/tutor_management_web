@@ -105,12 +105,12 @@ export const studentNavItems = [
             },
         ]
     },
-    {
+   {
         title: "REPORTS",
         type: "section",
         children: [
             {
-                title: "Results & Analytics",
+                title: "Reports & Analytics", 
                 icon: BarChart3,
                 href: "/student/ai-analytics",
                 type: "link"

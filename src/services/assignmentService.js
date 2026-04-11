@@ -37,7 +37,12 @@ const assignmentService = {
     submitAssignment: async (id, data) => {
         const response = await api.post(`/assignments/${id}/submit`, data);
         return response.data;
+    },
+    getMySubmission: async (id) => {
+        const response = await api.get(`/assignments/${id}/my-submission`);
+        return response.data;
     }
+
 };
 
 export default assignmentService;
