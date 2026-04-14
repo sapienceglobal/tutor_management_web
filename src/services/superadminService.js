@@ -4,9 +4,9 @@ const normalizeError = (error, fallbackMessage) => {
     return error?.response?.data?.message || error?.message || fallbackMessage;
 };
 
-export const fetchPlatformStats = async () => {
+export const fetchPlatformStats = async (params = {}) => {
     try {
-        const res = await api.get('/superadmin/dashboard-stats');
+        const res = await api.get('/superadmin/dashboard-stats', { params });
         return res.data;
     } catch (error) {
         throw new Error(normalizeError(error, 'Failed to fetch platform stats'));
@@ -124,4 +124,44 @@ export const getPlanDetails = (plan) => {
     };
 
     return planConfigs[plan] || planConfigs.free;
+};
+
+
+export const getSubscriptionPlans = async () => {
+    const response = await api.get('/subscriptions');
+    return response.data;
+};
+
+export const createSubscriptionPlan = async (planData) => {
+    const response = await api.post('/subscriptions', planData);
+    return response.data;
+};
+
+export const updateSubscriptionPlan = async (id, planData) => {
+    const response = await api.put(`/subscriptions/${id}`, planData);
+    return response.data;
+};
+
+export const deleteSubscriptionPlan = async (id) => {
+    const response = await api.delete(`/subscriptions/${id}`);
+    return response.data;
+};
+
+export const getSubscriptionsOverview = async () => {
+    try {
+        const res = await api.get('/superadmin/subscriptions-overview');
+        return res.data; // API se { success: true, kpis, distribution, subscriptions } return hoga
+    } catch (error) {
+        throw new Error(normalizeError(error, 'Failed to fetch subscriptions overview data'));
+    }
+};
+
+// Delete Institute Permanently
+export const deleteInstitute = async (id) => {
+    try {
+        const response = await api.delete(`/superadmin/institutes/${id}`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to delete institute' };
+    }
 };

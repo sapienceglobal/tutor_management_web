@@ -1,111 +1,89 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Lock, Shield, AlertCircle, Upgrade, CheckCircle } from 'lucide-react';
-import { useTenant } from '@/hooks/useTenant';
+import React from 'react';
+import { Lock, Crown } from 'lucide-react';
+import { useSubscription } from '@/contexts/SubscriptionContext'; // 🌟 Naya hook use kiya!
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 /**
- * Feature Gate Component
- * Restricts access to features based on subscription plan
+ * Advanced Feature Gate Component
+ * Restricts access based on dynamic subscription features
  */
 export default function FeatureGate({ 
-    feature, 
+    featureName, // e.g., 'aiFeatures', 'hlsStreaming'
     children, 
+    mode = 'lock', // 'lock' (blurs and shows popup) or 'hide' (removes completely)
     fallback = null,
-    showUpgradePrompt = true,
     className = ""
 }) {
-    const { tenant, loading } = useTenant();
-    const [showPrompt, setShowPrompt] = useState(false);
+    // 🌟 Apne naye context se data nikal rahe hain
+    const { hasFeature, role, loading } = useSubscription();
+    const router = useRouter();
 
-    // Check if feature is available
-    const hasFeature = () => {
-        if (!tenant || loading) return false;
-        
-        const features = tenant.features || {};
-        return features[feature] === true;
-    };
+    if (loading) {
+        return <div className={`animate-pulse opacity-50 pointer-events-none ${className}`}>{children}</div>;
+    }
 
-    const getPlanName = () => {
-        if (!tenant) return 'Unknown';
-        const plan = tenant.subscriptionPlan || 'free';
-        return plan.charAt(0).toUpperCase() + plan.slice(1);
-    };
-
-    const getRequiredPlan = () => {
-        const featureRequirements = {
-            aiFeatures: 'basic',
-            hlsStreaming: 'basic',
-            customBranding: 'pro',
-            zoomIntegration: 'basic',
-            customDomain: 'pro',
-            advancedAnalytics: 'pro',
-            apiAccess: 'basic'
-        };
-        
-        return featureRequirements[feature] || 'basic';
-    };
-
-    if (hasFeature()) {
+    // Agar feature available hai, toh original component dikhao
+    if (hasFeature(featureName)) {
         return <div className={className}>{children}</div>;
     }
 
-    if (!showUpgradePrompt) {
+    // Agar mode 'hide' hai, toh UI se poori tarah gayab kar do (e.g., Sidebar tabs)
+    if (mode === 'hide') {
         return fallback || <div className={className}>{fallback}</div>;
     }
 
+    // --- Smart CTA Logic ---
+    const handleUpgradeClick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (role === 'admin') {
+            // Admin ko upgrade page par bhej do (route apne hisaab se check kar lena)
+            router.push('/admin/subscription'); 
+        } else {
+            // Tutor/Student ko error dikhao
+            toast.error('Please ask your Institute Admin to upgrade the plan to unlock this feature.', {
+                icon: '🔒',
+                duration: 4000,
+                style: { borderRadius: '12px', background: '#27225B', color: '#fff', fontSize: '13px', fontWeight: 'bold' }
+            });
+        }
+    };
+
+    // --- Premium Locked UI (Glassmorphism Blur) ---
     return (
-        <div className={`relative ${className}`}>
-            {children}
-            {!hasFeature() && (
-                <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl border border-slate-200">
-                        <div className="text-center">
-                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Lock className="w-8 h-8 text-red-600" />
-                            </div>
-                            
-                            <h3 className="text-xl font-bold text-slate-800 mb-2">Feature Locked</h3>
-                            <p className="text-slate-600 mb-4">
-                                This feature is not available in your <span className="font-semibold text-indigo-600">{getPlanName()}</span> plan.
-                            </p>
-                            
-                            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-4">
-                                <h4 className="font-semibold text-indigo-800 mb-2">Required Plan: {getRequiredPlan().charAt(0).toUpperCase() + getRequiredPlan().slice(1)}</h4>
-                                <ul className="text-sm text-slate-600 space-y-1">
-                                    <li className="flex items-center gap-2">
-                                        <CheckCircle className="w-4 h-4 text-green-500" />
-                                        <span>Unlimited access to this feature</span>
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <Shield className="w-4 h-4 text-indigo-600" />
-                                        <span>Enhanced security and support</span>
-                                    </li>
-                                </ul>
-                            </div>
-                            
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setShowPrompt(false)}
-                                    className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors"
-                                >
-                                    Maybe Later
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        // Contact super admin or redirect to upgrade
-                                        window.location.href = 'mailto:support@sapience.com?subject=Plan Upgrade Request';
-                                    }}
-                                    className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <Upgrade className="w-4 h-4" />
-                                    Upgrade Plan
-                                </button>
-                            </div>
-                        </div>
+        <div className={`relative group rounded-2xl overflow-hidden ${className}`}>
+            
+            {/* Actual Content (Blurred & Unclickable) */}
+            <div className="opacity-30 blur-[3px] pointer-events-none select-none transition-all duration-300" aria-hidden="true">
+                {children}
+            </div>
+
+            {/* Glassmorphism Lock Overlay */}
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#27225B]/5 backdrop-blur-[1px] p-4 text-center">
+                <div className="bg-white p-5 rounded-2xl shadow-[0_10px_40px_-10px_rgba(107,77,241,0.2)] border border-[#E9DFFC] flex flex-col items-center max-w-[260px] transform transition-transform hover:scale-105">
+                    
+                    <div className="w-12 h-12 rounded-full bg-[#F4F0FD] flex items-center justify-center mb-3">
+                        <Lock size={20} className="text-[#6B4DF1]" />
                     </div>
+                    
+                    <h4 className="text-[15px] font-black text-[#27225B] mb-1">Premium Feature</h4>
+                    <p className="text-[12px] font-medium text-[#7D8DA6] mb-5 leading-tight">
+                        This module is locked in your current subscription tier.
+                    </p>
+                    
+                    <button 
+                        onClick={handleUpgradeClick}
+                        className="w-full py-2.5 bg-[#6B4DF1] text-white text-[13px] font-bold rounded-xl hover:bg-[#5839D6] hover:shadow-lg hover:shadow-purple-200 transition-all flex items-center justify-center gap-2 border-none cursor-pointer"
+                    >
+                        <Crown size={16} /> Unlock Feature
+                    </button>
                 </div>
-            )}
+            </div>
+            
         </div>
     );
 }

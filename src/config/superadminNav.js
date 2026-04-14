@@ -14,7 +14,9 @@ import {
     BarChart3,
     Network,
     Activity,
-    ShieldCheck
+    ShieldCheck,
+    CreditCard,   // Subscriptions ke liye
+    Receipt       // Subscription Plans ke liye
 } from 'lucide-react';
 
 export const superadminNavItems = [
@@ -32,73 +34,92 @@ export const superadminNavItems = [
     },
     {
         title: 'Instructors',
-        href: '/superadmin/instructors', // Replace with your actual route
+        href: '/superadmin/instructors',
         icon: Users,
         type: 'link'
     },
     {
         title: 'Students',
-        href: '/superadmin/students', // Replace with your actual route
+        href: '/superadmin/students',
         icon: GraduationCap,
         type: 'link'
     },
     {
         title: 'Courses',
-        href: '/superadmin/courses', // Replace with your actual route
+        href: '/superadmin/courses',
         icon: BookOpen,
         type: 'link'
     },
     {
         title: 'Batches',
-        href: '/superadmin/batches', // Replace with your actual route
+        href: '/superadmin/batches',
         icon: Layers,
         type: 'link'
     },
     {
         title: 'Live Classes',
-        href: '/superadmin/live-classes', // Replace with your actual route
+        href: '/superadmin/live-classes',
         icon: MonitorPlay,
         type: 'link'
     },
     {
         title: 'Attendance',
-        href: '/superadmin/attendance', // Replace with your actual route
+        href: '/superadmin/attendance',
         icon: ClipboardCheck,
         type: 'link'
     },
     {
         title: 'Exams & Assessments',
-        href: '/superadmin/exams', // Replace with your actual route
+        href: '/superadmin/exams',
         icon: FileText,
         type: 'link'
     },
     {
         title: 'Assignments',
-        href: '/superadmin/assignments', // Replace with your actual route
-        icon: FileText, // You can choose a different icon if preferred
+        href: '/superadmin/assignments',
+        icon: FileText,
         type: 'link'
     },
+    
+    // ---- NAYI HEADING (SECTION) NEECHE KI SIDE ----
+    {
+        title: 'Subscription & Billing',
+        type: 'section', 
+        icon: CreditCard,
+        children: [
+             { 
+                 title: 'Total Subscriptions', 
+                 href: '/superadmin/subscriptions', 
+                 icon: CreditCard 
+             },
+             { 
+                 title: 'Subscription Plans', 
+                 href: '/superadmin/subscription-plans', // Apne folder structure ke hisaab se route check kar lena
+                 icon: Receipt 
+             }
+        ]
+    },
+    // ------------------------------------------------
+    
     {
         title: 'Finance',
-        type: 'section', // Has submenu arrow in image
+        type: 'section',
         icon: Wallet,
         children: [
              { title: 'Overview', href: '/superadmin/finance', icon: Wallet },
-             // Add other finance sub-links here
         ]
     },
     {
         title: 'Communication',
-        type: 'section', // Has submenu arrow in image
+        type: 'section',
         icon: MessageSquare,
         children: [
              { title: 'Messages', href: '/superadmin/communication', icon: MessageSquare },
-             // Add other comm sub-links here
         ]
     },
     {
         title: 'AI Coordinator',
-        type: 'section', // Has submenu arrow in image
+        type: 'section',
         icon: Cpu,
         children: [
              { title: 'Settings', href: '/superadmin/ai', icon: Cpu },
@@ -106,13 +127,13 @@ export const superadminNavItems = [
     },
     {
         title: 'Reports & Analytics',
-        href: '/superadmin/activity', // Replaced Platform Activity with this
+        href: '/superadmin/activity',
         icon: BarChart3,
         type: 'link'
     },
     {
         title: 'Integrations',
-        type: 'section', // Has submenu arrow in image
+        type: 'section',
         icon: Network,
         children: [
              { title: 'All Integrations', href: '/superadmin/integrations', icon: Network },
@@ -120,16 +141,16 @@ export const superadminNavItems = [
     },
     {
         title: 'System Monitoring',
-        href: '/superadmin/monitoring', // Replace with your actual route
+        href: '/superadmin/monitoring',
         icon: Activity,
         type: 'link'
     },
     {
         title: 'Audit & Security',
-        type: 'section', // Has submenu arrow in image
+        type: 'section',
         icon: ShieldCheck,
         children: [
              { title: 'Logs', href: '/superadmin/security', icon: ShieldCheck },
         ]
-    }
+    },
 ];

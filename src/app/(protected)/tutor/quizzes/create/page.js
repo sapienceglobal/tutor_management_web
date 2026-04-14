@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import AudienceSelector from '@/components/shared/AudienceSelector';
 import useInstitute from '@/hooks/useInstitute';
 import { C, T, S, R, cx } from '@/constants/tutorTokens';
+import FeatureGate from '@/components/FeatureGate';
 
 const examDetailsSchema = z.object({
     title: z.string().min(3, "Title must be at least 3 characters"),
@@ -190,16 +191,16 @@ function CreateExamPageClient() {
     const [availableStudents, setAvailableStudents] = useState([]);
     const [topics, setTopics] = useState([]);
     const [skills, setSkills] = useState([]);
-    
+
     const [examData, setExamData] = useState({
         title: '', courseId: '', type: defaultType, isFree: true, description: '',
         isPublic: true, duration: 30, passingMarks: 10, questions: [],
         shuffleQuestions: false, shuffleOptions: false, showResultImmediately: true,
         showCorrectAnswers: true, allowRetake: false, maxAttempts: 1, passingPercentage: 50,
         disableFinishButton: false, enableQuestionListView: true, hideSolutions: false,
-        negativeMarking: false, 
-        isProctoringEnabled: false, 
-        isAudioProctoringEnabled: false, 
+        negativeMarking: false,
+        isProctoringEnabled: false,
+        isAudioProctoringEnabled: false,
         strictTabSwitching: false, isScheduled: false, startDate: '', endDate: '',
         audience: { scope: 'institute', instituteId: null, batchIds: [], studentIds: [] },
     });
@@ -424,7 +425,7 @@ function CreateExamPageClient() {
 
     return (
         <div className="min-h-screen pb-20 w-full" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
-            
+
             {/* Header */}
             <div className="sticky top-0 z-50 shadow-sm px-6 h-[72px] flex items-center justify-between" style={{ backgroundColor: C.surfaceWhite, borderBottom: `1px solid ${C.cardBorder}` }}>
                 <div className="flex items-center gap-4">
@@ -469,8 +470,8 @@ function CreateExamPageClient() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
                                             <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assessment Title *</label>
-                                            <input 
-                                                placeholder="e.g. Advanced Thermodynamics" 
+                                            <input
+                                                placeholder="e.g. Advanced Thermodynamics"
                                                 value={examData.title}
                                                 onChange={(e) => setExamData({ ...examData, title: e.target.value })}
                                                 style={{ ...baseInputStyle, borderColor: errors.title ? C.danger : 'transparent' }}
@@ -479,8 +480,8 @@ function CreateExamPageClient() {
                                         </div>
                                         <div className="space-y-2">
                                             <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Category / Course *</label>
-                                            <select 
-                                                value={examData.courseId} 
+                                            <select
+                                                value={examData.courseId}
                                                 onChange={(e) => setExamData({ ...examData, courseId: e.target.value })}
                                                 style={{ ...baseInputStyle, borderColor: errors.courseId ? C.danger : 'transparent' }}
                                                 onFocus={onFocusHandler} onBlur={onBlurHandler}
@@ -499,8 +500,8 @@ function CreateExamPageClient() {
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <div className="space-y-2">
                                             <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assessment Type</label>
-                                            <select 
-                                                value={examData.type} 
+                                            <select
+                                                value={examData.type}
                                                 onChange={(e) => setExamData({ ...examData, type: e.target.value })}
                                                 style={baseInputStyle}
                                                 onFocus={onFocusHandler} onBlur={onBlurHandler}
@@ -512,8 +513,8 @@ function CreateExamPageClient() {
                                         </div>
                                         <div className="space-y-2">
                                             <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Duration (Mins)</label>
-                                            <input 
-                                                type="number" min="1" 
+                                            <input
+                                                type="number" min="1"
                                                 value={examData.duration}
                                                 onChange={(e) => setExamData({ ...examData, duration: parseInt(e.target.value) || 0 })}
                                                 style={baseInputStyle}
@@ -572,24 +573,27 @@ function CreateExamPageClient() {
                                         <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, marginTop: '4px' }}>Setup rules, scoring, and high-level security for this assessment.</p>
                                     </div>
 
-                                    <div className="p-6" style={{ backgroundColor: '#E3DFF8', borderRadius: R['2xl'] }}>
-                                        <div className="flex items-center gap-3 mb-6">
-                                            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ backgroundColor: C.surfaceWhite, borderRadius: R.xl }}>
-                                                <ShieldCheck size={20} color={C.btnPrimary} />
+                                    {/* 🌟 PREMIUM FEATURE: AI Proctoring 🌟 */}
+                                    <FeatureGate featureName="aiFeatures" mode="lock">
+                                        <div className="p-6" style={{ backgroundColor: '#E3DFF8', borderRadius: R['2xl'] }}>
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ backgroundColor: C.surfaceWhite, borderRadius: R.xl }}>
+                                                    <ShieldCheck size={20} color={C.btnPrimary} />
+                                                </div>
+                                                <div>
+                                                    <h2 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Advanced Security & Integrity</h2>
+                                                    <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: 0 }}>Industry-level Proctoring</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h2 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Advanced Security & Integrity</h2>
-                                                <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: 0 }}>Industry-level Proctoring</p>
+                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                                <ToggleRow icon={Eye} label="Visual AI Proctoring" desc="Requires webcam. Flags absence & multiple faces." keyName="isProctoringEnabled" />
+                                                <ToggleRow icon={Mic} label="Audio & Gaze Proctoring" desc="Requires mic. Flags noise & looking away/down." keyName="isAudioProctoringEnabled" />
+                                                <div className="lg:col-span-2">
+                                                    <ToggleRow icon={Layout} label="Strict Environment Lock" desc="Aggressively tracks and flags tab switching." keyName="strictTabSwitching" />
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                            <ToggleRow icon={Eye} label="Visual AI Proctoring" desc="Requires webcam. Flags absence & multiple faces." keyName="isProctoringEnabled" />
-                                            <ToggleRow icon={Mic} label="Audio & Gaze Proctoring" desc="Requires mic. Flags noise & looking away/down." keyName="isAudioProctoringEnabled" />
-                                            <div className="lg:col-span-2">
-                                                <ToggleRow icon={Layout} label="Strict Environment Lock" desc="Aggressively tracks and flags tab switching." keyName="strictTabSwitching" />
-                                            </div>
-                                        </div>
-                                    </div>
+                                    </FeatureGate>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div className="space-y-6">
@@ -603,8 +607,8 @@ function CreateExamPageClient() {
                                                 <div className="flex items-center justify-between p-4" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
                                                     <label style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading }}>Required Pass Percentage</label>
                                                     <div className="relative w-28">
-                                                        <input 
-                                                            type="number" min="0" max="100" 
+                                                        <input
+                                                            type="number" min="0" max="100"
                                                             value={examData.passingPercentage}
                                                             onChange={(e) => setExamData({ ...examData, passingPercentage: parseInt(e.target.value) || 0 })}
                                                             style={{ ...baseInputStyle, backgroundColor: C.surfaceWhite, textAlign: 'center', paddingRight: '2rem' }}
@@ -648,7 +652,7 @@ function CreateExamPageClient() {
                                                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                                                                 <div className="flex items-center justify-between p-4 mt-2" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
                                                                     <label style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>Maximum Allowed Attempts</label>
-                                                                    <input 
+                                                                    <input
                                                                         type="number" min="1" value={examData.maxAttempts}
                                                                         onChange={(e) => setExamData({ ...examData, maxAttempts: parseInt(e.target.value) || 1 })}
                                                                         style={{ ...baseInputStyle, backgroundColor: C.surfaceWhite, textAlign: 'center', width: '80px', padding: '8px' }}
@@ -690,10 +694,13 @@ function CreateExamPageClient() {
                                         <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, marginTop: '4px' }}>Manually author questions or use AI to generate them instantly.</p>
                                     </div>
                                     <div className="flex gap-3 w-full md:w-auto flex-wrap">
-                                        <button onClick={() => setIsAIOpen(true)} className="flex items-center gap-2 h-11 px-5 cursor-pointer transition-opacity hover:opacity-80"
-                                            style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, border: `1px solid ${C.cardBorder}`, borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
-                                            <Sparkles size={16} /> AI Generate
-                                        </button>
+                                        {/* 🌟 PREMIUM FEATURE: AI Generate Button 🌟 */}
+                                        <FeatureGate featureName="aiFeatures" mode="lock">
+                                            <button onClick={() => setIsAIOpen(true)} className="flex items-center gap-2 h-11 px-5 cursor-pointer transition-opacity hover:opacity-80"
+                                                style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, border: `1px solid ${C.cardBorder}`, borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                                <Sparkles size={16} /> AI Generate
+                                            </button>
+                                        </FeatureGate>
                                         <button onClick={() => setIsBankOpen(true)} className="flex items-center gap-2 h-11 px-5 cursor-pointer transition-opacity hover:opacity-80"
                                             style={{ backgroundColor: C.surfaceWhite, color: C.heading, border: `1px solid ${C.cardBorder}`, borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
                                             <Library size={16} /> Import
@@ -712,10 +719,13 @@ function CreateExamPageClient() {
                                         </div>
                                         <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 8px 0' }}>The question bank is empty</h3>
                                         <p className="max-w-sm mb-8" style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: '0 auto 32px' }}>Build your assessment by adding questions manually, pulling from the bank, or let AI do the heavy lifting.</p>
-                                        <button onClick={() => setIsAIOpen(true)} className="flex items-center justify-center h-12 px-8 gap-2 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-lg"
-                                            style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
-                                            <Sparkles size={16} /> Auto-Generate with AI
-                                        </button>
+                                        {/* 🌟 PREMIUM FEATURE: Empty State AI Button 🌟 */}
+                                        <FeatureGate featureName="aiFeatures" mode="lock">
+                                            <button onClick={() => setIsAIOpen(true)} className="flex items-center justify-center h-12 px-8 gap-2 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-lg"
+                                                style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                                <Sparkles size={16} /> Auto-Generate with AI
+                                            </button>
+                                        </FeatureGate>
                                     </div>
                                 ) : (
                                     <div className="space-y-4">
@@ -734,14 +744,14 @@ function CreateExamPageClient() {
                                                     <div className="flex-1 pr-20">
                                                         <div className="flex items-center gap-3 mb-3">
                                                             <span className="px-2.5 py-1 uppercase" style={{ fontSize: '10px', fontWeight: T.weight.black, borderRadius: R.sm, backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, color: C.heading }}>{q.difficulty}</span>
-                                                            <span className="px-2.5 py-1 uppercase" style={{ fontSize: '10px', fontWeight: T.weight.black, borderRadius: R.sm, backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, color: C.textMuted }}>{q.points} Point{q.points>1?'s':''}</span>
+                                                            <span className="px-2.5 py-1 uppercase" style={{ fontSize: '10px', fontWeight: T.weight.black, borderRadius: R.sm, backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, color: C.textMuted }}>{q.points} Point{q.points > 1 ? 's' : ''}</span>
                                                         </div>
                                                         <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(q.question) }} style={{ fontWeight: T.weight.bold, color: C.heading, marginBottom: '20px', fontSize: T.size.base }} />
                                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                             {q.options.map((opt, i) => (
-                                                                <div key={i} className="flex items-center gap-3 p-3 transition-colors" 
-                                                                    style={{ 
-                                                                        borderRadius: R.xl, 
+                                                                <div key={i} className="flex items-center gap-3 p-3 transition-colors"
+                                                                    style={{
+                                                                        borderRadius: R.xl,
                                                                         backgroundColor: C.surfaceWhite,
                                                                         border: `2px solid ${opt.isCorrect ? C.success : C.cardBorder}`,
                                                                         color: opt.isCorrect ? C.success : C.text
@@ -804,8 +814,8 @@ function CreateExamPageClient() {
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6" style={{ backgroundColor: C.surfaceWhite, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}` }}>
                                                         <div className="space-y-2">
                                                             <label style={{ fontSize: T.size.xs, fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '1px' }}>Opening Time</label>
-                                                            <input 
-                                                                type="datetime-local" 
+                                                            <input
+                                                                type="datetime-local"
                                                                 value={examData.startDate ? new Date(examData.startDate).toISOString().slice(0, 16) : ''}
                                                                 onChange={(e) => setExamData({ ...examData, startDate: e.target.value })}
                                                                 style={{ ...baseInputStyle, backgroundColor: '#E3DFF8' }}
@@ -814,8 +824,8 @@ function CreateExamPageClient() {
                                                         </div>
                                                         <div className="space-y-2">
                                                             <label style={{ fontSize: T.size.xs, fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '1px' }}>Closing Time</label>
-                                                            <input 
-                                                                type="datetime-local" 
+                                                            <input
+                                                                type="datetime-local"
                                                                 value={examData.endDate ? new Date(examData.endDate).toISOString().slice(0, 16) : ''}
                                                                 onChange={(e) => setExamData({ ...examData, endDate: e.target.value })}
                                                                 style={{ ...baseInputStyle, backgroundColor: '#E3DFF8' }}
@@ -864,10 +874,10 @@ function CreateExamPageClient() {
                 <div className="space-y-6 p-2" style={{ backgroundColor: '#EAE8FA', padding: '24px', borderRadius: R['2xl'] }}>
                     <div className="space-y-3">
                         <label style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>Topic or Subject</label>
-                        <input 
-                            placeholder="e.g. Newton's Laws of Motion" 
-                            value={aiParams.topic} 
-                            onChange={(e) => setAiParams({ ...aiParams, topic: e.target.value })} 
+                        <input
+                            placeholder="e.g. Newton's Laws of Motion"
+                            value={aiParams.topic}
+                            onChange={(e) => setAiParams({ ...aiParams, topic: e.target.value })}
                             style={baseInputStyle}
                             onFocus={onFocusHandler} onBlur={onBlurHandler}
                         />
@@ -875,18 +885,18 @@ function CreateExamPageClient() {
                     <div className="grid grid-cols-2 gap-5">
                         <div className="space-y-3">
                             <label style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>Number of Questions</label>
-                            <input 
-                                type="number" min="1" max="20" 
-                                value={aiParams.count} 
-                                onChange={(e) => setAiParams({ ...aiParams, count: parseInt(e.target.value) || 5 })} 
+                            <input
+                                type="number" min="1" max="20"
+                                value={aiParams.count}
+                                onChange={(e) => setAiParams({ ...aiParams, count: parseInt(e.target.value) || 5 })}
                                 style={baseInputStyle}
                                 onFocus={onFocusHandler} onBlur={onBlurHandler}
                             />
                         </div>
                         <div className="space-y-3">
                             <label style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>Difficulty</label>
-                            <select 
-                                value={aiParams.difficulty} 
+                            <select
+                                value={aiParams.difficulty}
                                 onChange={(e) => setAiParams({ ...aiParams, difficulty: e.target.value })}
                                 style={baseInputStyle}
                                 onFocus={onFocusHandler} onBlur={onBlurHandler}
@@ -917,16 +927,16 @@ function CreateExamPageClient() {
                         {currentQuestion.options.map((opt, idx) => (
                             <div key={idx} className="flex items-center gap-4">
                                 <div className="flex items-center justify-center w-8">
-                                    <input 
-                                        type="radio" name="correctAnswer" 
-                                        checked={opt.isCorrect} 
-                                        onChange={() => handleCorrectSelect(idx)} 
+                                    <input
+                                        type="radio" name="correctAnswer"
+                                        checked={opt.isCorrect}
+                                        onChange={() => handleCorrectSelect(idx)}
                                         style={{ width: '20px', height: '20px', cursor: 'pointer' }}
                                     />
                                 </div>
-                                <input 
-                                    value={opt.text} 
-                                    onChange={(e) => handleOptionChange(idx, e.target.value)} 
+                                <input
+                                    value={opt.text}
+                                    onChange={(e) => handleOptionChange(idx, e.target.value)}
                                     placeholder={`Option ${String.fromCharCode(65 + idx)}`}
                                     style={{ ...baseInputStyle, backgroundColor: opt.isCorrect ? C.successBg : C.surfaceWhite, borderColor: opt.isCorrect ? C.success : 'transparent' }}
                                     onFocus={onFocusHandler} onBlur={onBlurHandler}
@@ -951,18 +961,18 @@ function CreateExamPageClient() {
                     <div className="grid grid-cols-2 gap-6">
                         <div className="space-y-3">
                             <label style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>Points / Marks</label>
-                            <input 
-                                type="number" min="1" 
-                                value={currentQuestion.points} 
-                                onChange={(e) => setCurrentQuestion({ ...currentQuestion, points: parseFloat(e.target.value) || 1 })} 
+                            <input
+                                type="number" min="1"
+                                value={currentQuestion.points}
+                                onChange={(e) => setCurrentQuestion({ ...currentQuestion, points: parseFloat(e.target.value) || 1 })}
                                 style={baseInputStyle}
                                 onFocus={onFocusHandler} onBlur={onBlurHandler}
                             />
                         </div>
                         <div className="space-y-3">
                             <label style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>Difficulty Level</label>
-                            <select 
-                                value={currentQuestion.difficulty} 
+                            <select
+                                value={currentQuestion.difficulty}
                                 onChange={(e) => setCurrentQuestion({ ...currentQuestion, difficulty: e.target.value })}
                                 style={baseInputStyle}
                                 onFocus={onFocusHandler} onBlur={onBlurHandler}
@@ -975,10 +985,10 @@ function CreateExamPageClient() {
                     </div>
                     <div className="space-y-3">
                         <label style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>Explanation (Optional)</label>
-                        <textarea 
-                            value={currentQuestion.explanation} 
-                            onChange={(e) => setCurrentQuestion({ ...currentQuestion, explanation: e.target.value })} 
-                            placeholder="Explain why the selected answer is correct..." 
+                        <textarea
+                            value={currentQuestion.explanation}
+                            onChange={(e) => setCurrentQuestion({ ...currentQuestion, explanation: e.target.value })}
+                            placeholder="Explain why the selected answer is correct..."
                             style={{ ...baseInputStyle, minHeight: '100px', resize: 'vertical' }}
                             onFocus={onFocusHandler} onBlur={onBlurHandler}
                         />
@@ -1005,9 +1015,9 @@ function CreateExamPageClient() {
                             <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Search Questions</label>
                             <div className="relative">
                                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" color={C.textMuted} />
-                                <input 
-                                    placeholder="Type to search..." 
-                                    value={bankFilters.search || ''} 
+                                <input
+                                    placeholder="Type to search..."
+                                    value={bankFilters.search || ''}
                                     onChange={(e) => setBankFilters({ ...bankFilters, search: e.target.value })}
                                     style={{ ...baseInputStyle, paddingLeft: '2.5rem', backgroundColor: C.surfaceWhite }}
                                     onFocus={onFocusHandler} onBlur={onBlurHandler}
@@ -1016,8 +1026,8 @@ function CreateExamPageClient() {
                         </div>
                         <div className="space-y-2">
                             <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Difficulty</label>
-                            <select 
-                                value={bankFilters.difficulty} 
+                            <select
+                                value={bankFilters.difficulty}
                                 onChange={(e) => setBankFilters({ ...bankFilters, difficulty: e.target.value })}
                                 style={{ ...baseInputStyle, width: '150px', backgroundColor: C.surfaceWhite }}
                                 onFocus={onFocusHandler} onBlur={onBlurHandler}
@@ -1065,7 +1075,7 @@ function CreateExamPageClient() {
                                             if (allSelected) setSelectedBankIds(selectedBankIds.filter(id => !topicIds.includes(id)));
                                             else setSelectedBankIds([...new Set([...selectedBankIds, ...topicIds])]);
                                         }} className="cursor-pointer border-none transition-opacity hover:opacity-80 px-3 py-1.5"
-                                        style={{ fontSize: T.size.xs, color: C.btnPrimary, fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: '0.5px', backgroundColor: C.surfaceWhite, borderRadius: R.md }}>
+                                            style={{ fontSize: T.size.xs, color: C.btnPrimary, fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: '0.5px', backgroundColor: C.surfaceWhite, borderRadius: R.md }}>
                                             {questions.every(q => selectedBankIds.includes(q._id)) ? 'Deselect All' : 'Select All'}
                                         </button>
                                     </div>
@@ -1073,8 +1083,8 @@ function CreateExamPageClient() {
                                         {questions.map((q) => (
                                             <div key={q._id} className="px-5 py-4 flex items-start gap-4 transition-colors hover:opacity-90" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
                                                 <div className="pt-1">
-                                                    <input 
-                                                        type="checkbox" 
+                                                    <input
+                                                        type="checkbox"
                                                         checked={selectedBankIds.includes(q._id)}
                                                         onChange={(e) => {
                                                             if (e.target.checked) setSelectedBankIds([...selectedBankIds, q._id]);

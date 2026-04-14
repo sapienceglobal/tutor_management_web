@@ -165,7 +165,7 @@ export const tutorNavItems = [
     },
 
     // ── CONFIGURATION ──────────────────────────────────────────────────────
-    {
+   {
         title: "COMMUNICATION",
         type: "section",
         children: [
@@ -175,7 +175,7 @@ export const tutorNavItems = [
                 href: "/tutor/ai-buddy",  
                 type: "link",
                 badge: "Premium",
-
+                featureGate: "aiFeatures", 
             },
             {
                 title: "Announcements",

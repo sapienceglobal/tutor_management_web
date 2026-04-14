@@ -11,8 +11,8 @@ import useInstitute from '@/hooks/useInstitute';
 import { C, T, S, R } from '@/constants/tutorTokens';
 
 // ── Shared Colors & Styles ─────────────────────────────────────────────
-const outerCard = '#EAE8FA';   
-const innerBox  = '#E3DFF8';   
+const outerCard = '#EAE8FA';
+const innerBox = '#E3DFF8';
 
 const onFocusHandler = e => {
     e.target.style.borderColor = C.btnPrimary;
@@ -39,10 +39,10 @@ const baseInputStyle = {
 
 // ─── Step Bar ─────────────────────────────────────────────────────────────────
 const STEPS = [
-    { num: 1, label: 'Course Info'  },
-    { num: 2, label: 'Curriculum'   },
-    { num: 3, label: 'Assignments'  },
-    { num: 4, label: 'Publish'      },
+    { num: 1, label: 'Course Info' },
+    { num: 2, label: 'Curriculum' },
+    { num: 3, label: 'Assignments' },
+    { num: 4, label: 'Publish' },
 ];
 
 function StepBar({ current = 1 }) {
@@ -51,7 +51,7 @@ function StepBar({ current = 1 }) {
             style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, borderRadius: R.xl, boxShadow: S.card }}>
             {STEPS.map((step, i) => {
                 const isActive = step.num === current;
-                const isDone   = step.num < current;
+                const isDone = step.num < current;
                 return (
                     <div key={step.num} className="flex items-center">
                         <div className="flex items-center gap-2 px-3 py-1.5" style={{
@@ -149,10 +149,10 @@ const CancelBtn = ({ onClick }) => (
 export default function CreateCoursePage() {
     const router = useRouter();
     const { institute } = useInstitute();
-    
+
     // Wizard State
     const [step, setStep] = useState(1);
-    const [courseId, setCourseId] = useState(null); 
+    const [courseId, setCourseId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
 
@@ -217,7 +217,7 @@ export default function CreateCoursePage() {
                 scope: courseData.audience?.scope,
                 whatYouWillLearn: courseData.whatYouWillLearn.filter(i => i.trim() !== ''),
                 requirements: courseData.requirements.filter(i => i.trim() !== ''),
-                status: 'draft', 
+                status: 'draft',
             };
 
             if (courseId) {
@@ -245,7 +245,7 @@ export default function CreateCoursePage() {
         try {
             const updatedModules = [...modules, { title: moduleTitle }];
             await api.patch(`/courses/${courseId}`, { modules: updatedModules });
-            
+
             const res = await api.get(`/courses/${courseId}`);
             if (res?.data?.success) {
                 setModules(res.data.course.modules);
@@ -264,13 +264,13 @@ export default function CreateCoursePage() {
         try {
             const content = {};
             if (lessonForm.type === 'video') { content.videoUrl = lessonForm.videoUrl; content.duration = Number(lessonForm.duration) * 60; }
-            
+
             const payload = {
                 courseId, moduleId: activeModuleId,
                 title: lessonForm.title, type: lessonForm.type,
                 content, isFree: lessonForm.isFree
             };
-            
+
             const res = await api.post('/lessons', payload);
             if (res?.data?.success) {
                 setLessons(prev => [...prev, res.data.lesson]);
@@ -320,19 +320,19 @@ export default function CreateCoursePage() {
     // ─── UI Helpers ────────────────────────────────────────────────────────
     const learnList = {
         onChange: (idx, val) => setCourseData(prev => { const u = [...prev.whatYouWillLearn]; u[idx] = val; return { ...prev, whatYouWillLearn: u }; }),
-        add:    () => setCourseData(prev => ({ ...prev, whatYouWillLearn: [...prev.whatYouWillLearn, ''] })),
+        add: () => setCourseData(prev => ({ ...prev, whatYouWillLearn: [...prev.whatYouWillLearn, ''] })),
         remove: (idx) => setCourseData(prev => ({ ...prev, whatYouWillLearn: prev.whatYouWillLearn.filter((_, i) => i !== idx) })),
     };
     const reqList = {
         onChange: (idx, val) => setCourseData(prev => { const u = [...prev.requirements]; u[idx] = val; return { ...prev, requirements: u }; }),
-        add:    () => setCourseData(prev => ({ ...prev, requirements: [...prev.requirements, ''] })),
+        add: () => setCourseData(prev => ({ ...prev, requirements: [...prev.requirements, ''] })),
         remove: (idx) => setCourseData(prev => ({ ...prev, requirements: prev.requirements.filter((_, i) => i !== idx) })),
     };
 
     return (
         <div className="w-full min-h-screen p-6 pb-24" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
             <div className="max-w-4xl mx-auto space-y-6">
-                
+
                 {/* Header */}
                 <div className="flex items-center gap-3 mb-6">
                     <Link href="/tutor/courses" className="text-decoration-none">
@@ -358,7 +358,7 @@ export default function CreateCoursePage() {
                             <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Course Title *</label>
                             <input name="title" required value={courseData.title} onChange={handleDataChange} placeholder="e.g. Master React in 30 Days" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Category *</label>
@@ -411,6 +411,11 @@ export default function CreateCoursePage() {
                             <button type="submit" disabled={loading} className="flex items-center justify-center gap-2 h-11 px-8 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md"
                                 style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
                                 {loading ? <Loader2 size={16} className="animate-spin" /> : <>Save & Next <ChevronRight size={16} /></>}
+                            </button>
+                        </div>
+                        <div classname="flex justify-end pt-4">
+                            <button type="submit" disabled={loading} classname="flex items-center justify-center gap-2 ">
+
                             </button>
                         </div>
                     </form>
@@ -549,7 +554,7 @@ export default function CreateCoursePage() {
                             <p style={{ fontSize: T.size.sm, color: C.textMuted, margin: '0 auto 24px', maxWidth: 400, lineHeight: 1.5 }}>
                                 Your course draft is saved. Review your curriculum and publish it when you're ready to go live.
                             </p>
-                            
+
                             <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto mb-8">
                                 <div className="p-4" style={{ backgroundColor: innerBox, borderRadius: R.xl }}>
                                     <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 4px 0' }}>Modules</p>
@@ -583,7 +588,7 @@ export default function CreateCoursePage() {
             {/* ═════════════════════════════════════════════════════════════════
                 MODALS FOR WIZARD
             ══════════════════════════════════════════════════════════════════ */}
-            
+
             {/* Add Module Modal */}
             {modals.module && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(21, 22, 86, 0.4)', backdropFilter: 'blur(4px)' }}>
