@@ -8,6 +8,7 @@ export default function SuspendedPage() {
     const [checking, setChecking] = useState(false);
 
     useEffect(() => {
+        checkStatus();
         const interval = setInterval(checkStatus, 15000);
         return () => clearInterval(interval);
     }, []);

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send } from 'lucide-react';
+import { Loader2, Send, Sparkles } from 'lucide-react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 
@@ -55,42 +55,49 @@ export default function LeadCaptureModal({ triggerText = "Request Information", 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="bg-orange-600 hover:bg-orange-700 text-white shadow-lg hover:shadow-xl transition-all h-12 px-8 rounded-full font-bold">
+                <Button className="bg-[#6B4DF1] hover:bg-[#5839D6] text-white shadow-[0_4px_14px_rgba(107,77,241,0.3)] transition-all h-[42px] px-6 rounded-xl font-bold text-[13px] border-none">
                     {triggerText}
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md border-0 shadow-2xl rounded-2xl p-0 overflow-hidden">
-                <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-black p-8 text-white relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-                    <div className="absolute -bottom-8 -left-8 w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+            <DialogContent className="sm:max-w-md border border-[#E9DFFC] shadow-[0_20px_60px_-15px_rgba(107,77,241,0.2)] rounded-[32px] p-0 overflow-hidden bg-white font-sans">
+                
+                {/* Premium Header */}
+                <div className="bg-[#27225B] p-8 text-white relative overflow-hidden">
+                    {/* Decorative glowing blobs */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#6B4DF1] rounded-full mix-blend-screen filter blur-[60px] opacity-40 animate-pulse"></div>
+                    <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-[#FC8730] rounded-full mix-blend-screen filter blur-[60px] opacity-20"></div>
 
-                    <DialogHeader className="relative z-10 text-left">
-                        <DialogTitle className="text-2xl font-black mb-2 flex items-center gap-2">
-                            Have questions?
+                    <DialogHeader className="relative z-10 text-left space-y-1.5">
+                        <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center mb-3 border border-white/20">
+                            <Sparkles className="text-[#E9DFFC] w-5 h-5" />
+                        </div>
+                        <DialogTitle className="text-[22px] font-black text-white m-0 tracking-tight">
+                            Capture New Lead
                         </DialogTitle>
-                        <DialogDescription className="text-slate-300">
-                            Leave your details below and one of our academic counselors will reach out to you shortly.
+                        <DialogDescription className="text-[#A0ABC0] text-[13px] font-medium m-0 leading-relaxed">
+                            Enter the prospect's details below to add them to your CRM pipeline.
                         </DialogDescription>
                     </DialogHeader>
                 </div>
 
+                {/* Form Body */}
                 <div className="p-8 bg-white">
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name" className="text-slate-700 font-semibold">Full Name *</Label>
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="name" className="text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wide">Full Name <span className="text-[#E53E3E]">*</span></Label>
                             <Input
                                 id="name"
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
                                 placeholder="e.g. John Doe"
-                                className="bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-xl h-12"
+                                className="w-full bg-[#F8F6FC] border border-[#E9DFFC] p-3.5 rounded-xl font-semibold text-[#27225B] text-[14px] h-12 focus-visible:ring-2 focus-visible:ring-[#6B4DF1] focus-visible:border-transparent transition-all placeholder:text-[#A0ABC0]"
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="email" className="text-slate-700 font-semibold">Email *</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="email" className="text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wide">Email <span className="text-[#E53E3E]">*</span></Label>
                                 <Input
                                     id="email"
                                     name="email"
@@ -98,44 +105,44 @@ export default function LeadCaptureModal({ triggerText = "Request Information", 
                                     value={formData.email}
                                     onChange={handleChange}
                                     placeholder="john@example.com"
-                                    className="bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-xl h-12"
+                                    className="w-full bg-[#F8F6FC] border border-[#E9DFFC] p-3.5 rounded-xl font-semibold text-[#27225B] text-[14px] h-12 focus-visible:ring-2 focus-visible:ring-[#6B4DF1] focus-visible:border-transparent transition-all placeholder:text-[#A0ABC0]"
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="phone" className="text-slate-700 font-semibold">Phone Number</Label>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="phone" className="text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wide">Phone Number</Label>
                                 <Input
                                     id="phone"
                                     name="phone"
                                     type="tel"
                                     value={formData.phone}
                                     onChange={handleChange}
-                                    placeholder="+1 (555) 000-0000"
-                                    className="bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-xl h-12"
+                                    placeholder="+91 98765 43210"
+                                    className="w-full bg-[#F8F6FC] border border-[#E9DFFC] p-3.5 rounded-xl font-semibold text-[#27225B] text-[14px] h-12 focus-visible:ring-2 focus-visible:ring-[#6B4DF1] focus-visible:border-transparent transition-all placeholder:text-[#A0ABC0]"
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="message" className="text-slate-700 font-semibold">Message / Questions (Optional)</Label>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="message" className="text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wide">Inquiry Notes (Optional)</Label>
                             <Textarea
                                 id="message"
                                 name="message"
                                 value={formData.message}
                                 onChange={handleChange}
-                                placeholder="What would you like to know?"
-                                className="bg-slate-50 border-slate-200 focus:border-indigo-500 rounded-xl resize-none min-h-[100px]"
+                                placeholder="What is the prospect interested in?"
+                                className="w-full bg-[#F8F6FC] border border-[#E9DFFC] p-3.5 rounded-xl font-semibold text-[#27225B] text-[14px] min-h-[100px] resize-none focus-visible:ring-2 focus-visible:ring-[#6B4DF1] focus-visible:border-transparent transition-all placeholder:text-[#A0ABC0]"
                             />
                         </div>
 
                         <Button
                             type="submit"
                             disabled={loading}
-                            className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md font-bold text-lg mt-6 flex items-center gap-2 group transition-all"
+                            className="w-full h-12 bg-[#6B4DF1] hover:bg-[#5839D6] text-white rounded-xl shadow-[0_4px_14px_rgba(107,77,241,0.2)] font-bold text-[14px] mt-2 flex items-center justify-center gap-2 group transition-all border-none"
                         >
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                                 <>
-                                    Submit Request
-                                    <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                    <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                                    Add to Pipeline
                                 </>
                             )}
                         </Button>

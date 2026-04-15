@@ -1,9 +1,31 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Wrench } from 'lucide-react';
 import Link from 'next/link';
+import api from '@/lib/axios';
 
 export default function MaintenancePage() {
+    const [checking, setChecking] = useState(false);
+
+    useEffect(() => {
+        checkStatus();
+        const interval = setInterval(checkStatus, 15000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const checkStatus = async () => {
+        setChecking(true);
+        try {
+            const res = await api.get('/auth/me');
+            if (res.data.success) {
+                const role = res.data.user?.role;
+                const dashPaths = { admin: '/admin/dashboard', tutor: '/tutor/dashboard', student: '/student/dashboard' };
+                window.location.href = dashPaths[role] || '/login';
+            }
+        } catch { } finally { setChecking(false); }
+    };
+
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden"
             style={{ background: '#080b14', fontFamily: "'DM Sans', sans-serif" }}>

@@ -1,9 +1,32 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { AlertTriangle, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import api from '@/lib/axios';
 
 export default function SubscriptionExpiredPage() {
+    const [checking, setChecking] = useState(false);
+
+    useEffect(() => {
+        checkStatus();
+        const interval = setInterval(checkStatus, 15000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const checkStatus = async () => {
+        setChecking(true);
+        try {
+            const res = await api.get('/auth/me');
+            // If the institute is fully active, they shouldn't be here
+            if (res.data.success && res.data.user?.institute?.isActive === true) {
+                const role = res.data.user?.role;
+                const dashPaths = { admin: '/admin/dashboard', tutor: '/tutor/dashboard', student: '/student/dashboard' };
+                window.location.href = dashPaths[role] || '/';
+            }
+        } catch { } finally { setChecking(false); }
+    };
+
     return (
         <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-900">
             {/* Background effects */}
