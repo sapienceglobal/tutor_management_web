@@ -12,16 +12,19 @@ import {
     Headset,
     Settings,
     BrainCircuit,
-    CreditCard,   
-    Receipt,      
-    LayoutTemplate, 
+    CreditCard,
+    Receipt,
+    LayoutTemplate,
     Network,
     Activity,
     ShieldCheck,
     IndianRupee,
     ShieldAlert,
     Radar,
-    ListTree
+    ListTree,
+    Server,
+      Zap
+
 } from 'lucide-react';
 
 export const superadminNavItems = [
@@ -40,7 +43,7 @@ export const superadminNavItems = [
     },
     {
         title: 'Global Users',
-        href: '/superadmin/users', 
+        href: '/superadmin/users',
         icon: Users,
         type: 'link'
     },
@@ -48,11 +51,11 @@ export const superadminNavItems = [
     // ─── SAAS & REVENUE ───
     {
         title: 'Subscription & Billing',
-        type: 'section', 
+        type: 'section',
         icon: CreditCard,
         children: [
-             { title: 'Total Subscriptions', href: '/superadmin/subscriptions', icon: CreditCard },
-             { title: 'Subscription Plans', href: '/superadmin/subscription-plans', icon: Receipt }
+            { title: 'Total Subscriptions', href: '/superadmin/subscriptions', icon: CreditCard },
+            { title: 'Subscription Plans', href: '/superadmin/subscription-plans', icon: Receipt }
         ]
     },
     {
@@ -60,8 +63,8 @@ export const superadminNavItems = [
         type: 'section',
         icon: Wallet,
         children: [
-             { title: 'Revenue Overview', href: '/superadmin/finance', icon: Wallet },
-             { title: 'Tutor Settlements', href: '/superadmin/payouts', icon: IndianRupee },
+            { title: 'Revenue Overview', href: '/superadmin/finance', icon: Wallet },
+            { title: 'Tutor Settlements', href: '/superadmin/payouts', icon: IndianRupee },
         ]
     },
 
@@ -71,25 +74,26 @@ export const superadminNavItems = [
         type: 'section',
         icon: Radar,
         children: [
-             { title: 'Live Classes', href: '/superadmin/live-classes', icon: MonitorPlay },
-             { title: 'Active Courses', href: '/superadmin/courses', icon: BookOpen },
-             { title: 'Global Batches', href: '/superadmin/batches', icon: Layers },
-             { title: 'Exams & Proctoring', href: '/superadmin/exams', icon: FileText },
-             { title: 'Assignments', href: '/superadmin/assignments', icon: FileText },
-             { title: 'Attendance Stats', href: '/superadmin/attendance', icon: ClipboardCheck },
+            { title: 'Live Classes', href: '/superadmin/live-classes', icon: MonitorPlay },
+            { title: 'Active Courses', href: '/superadmin/courses', icon: BookOpen },
+            { title: 'Global Batches', href: '/superadmin/batches', icon: Layers },
+            { title: 'Exams & Proctoring', href: '/superadmin/exams', icon: FileText },
+            { title: 'Assignments', href: '/superadmin/assignments', icon: FileText },
+            { title: 'Attendance Stats', href: '/superadmin/attendance', icon: ClipboardCheck },
         ]
     },
 
     // ─── TRUST, SAFETY & SYSTEM ───
     {
-        title: 'Trust & Security',
+        title: 'Trust & System Health',
         type: 'section',
         icon: ShieldCheck,
         children: [
-             { title: 'Abuse Reports', href: '/superadmin/reports', icon: ShieldAlert },
-             { title: 'Audit Logs (Tech)', href: '/superadmin/security', icon: ShieldCheck },
-             // 👇 Yahan tumhara Activity Route map kiya hai ekdam clear naam ke sath!
-             { title: 'Activity Timeline', href: '/superadmin/activity', icon: ListTree } 
+            { title: 'Abuse Reports', href: '/superadmin/reports', icon: ShieldAlert },
+            { title: 'Audit Logs (Tech)', href: '/superadmin/security', icon: ShieldCheck },
+            { title: 'Activity Timeline', href: '/superadmin/activity', icon: ListTree },
+            // 👇 YE RAHA TUMHARA MONITORING ROUTE!
+            { title: 'System Monitoring', href: '/superadmin/monitoring', icon: Server }
         ]
     },
 
@@ -99,8 +103,8 @@ export const superadminNavItems = [
         type: 'section',
         icon: LayoutTemplate,
         children: [
-             { title: 'Pages', href: '/superadmin/cms/pages', icon: LayoutTemplate },
-             { title: 'Blogs', href: '/superadmin/cms/blogs', icon: FileText }
+            { title: 'Pages', href: '/superadmin/cms/pages', icon: LayoutTemplate },
+            { title: 'Blogs', href: '/superadmin/cms/blogs', icon: FileText }
         ]
     },
     {
@@ -116,12 +120,24 @@ export const superadminNavItems = [
         type: 'link'
     },
 
-    // ─── CONFIGURATION ───
+
+    // ─── AI INTELLIGENCE HUB ───
     {
-        title: 'AI Coordinator',
-        href: '/superadmin/ai-coordinator',
+        title: 'AI Intelligence',
+        type: 'section',
         icon: BrainCircuit,
-        type: 'link'
+        children: [
+            {
+                title: 'Live Chat (God Mode)',
+                href: '/superadmin/ai-coordinator',
+                icon: MessageSquare
+            },
+            {
+                title: 'Daily Briefings',
+                href: '/superadmin/ai-coordinator/briefings',
+                icon: Zap
+            }
+        ]
     },
     {
         title: 'API Integrations',

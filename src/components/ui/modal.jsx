@@ -18,8 +18,9 @@ export function Modal({ isOpen, onClose, title, children, className }) {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
-            <div className={`bg-white rounded-xl shadow-xl w-full max-w-md animate-in fade-in zoom-in-95 duration-200 ${className || ''}`}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+            {/* 🌟 CHANGE: 'max-w-md' ko className ke fallback me daal diya */}
+            <div className={`bg-white rounded-xl shadow-xl w-full animate-in fade-in zoom-in-95 duration-200 ${className || 'max-w-md'}`}>
                 <div className="flex items-center justify-between p-4 border-b">
                     <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
                     <button

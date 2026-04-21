@@ -12,13 +12,13 @@ import assignmentService from '@/services/assignmentService';
 import { C, T, S, R } from '@/constants/studentTokens';
 
 // ─── Theme ───────────────────────────────────────────────────────────────────
-const themeBg  = '#dfdaf3';
+const themeBg = '#dfdaf3';
 const outerCard = '#EAE8FA';
-const innerBox  = '#E3DFF8';
+const innerBox = '#E3DFF8';
 const PAGE_SIZE = 8;
 
 const onFocus = e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)'; };
-const onBlur  = e => { e.target.style.borderColor = 'transparent'; e.target.style.boxShadow = 'none'; };
+const onBlur = e => { e.target.style.borderColor = 'transparent'; e.target.style.boxShadow = 'none'; };
 
 const baseInput = {
     backgroundColor: C.surfaceWhite, border: '1.5px solid transparent', borderRadius: R.xl,
@@ -29,9 +29,9 @@ const baseInput = {
 
 // ─── Submission Detail Drawer ─────────────────────────────────────────────────
 function SubmissionDrawer({ row, onClose }) {
-    const [data, setData]     = useState(null);
+    const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError]   = useState('');
+    const [error, setError] = useState('');
 
     useEffect(() => {
         const load = async () => {
@@ -95,7 +95,45 @@ function SubmissionDrawer({ row, onClose }) {
                             <p style={{ color: C.danger, fontSize: T.size.sm, fontWeight: T.weight.bold }}>{error}</p>
                         </div>
                     )}
+                    {/* ── ASSIGNMENT INSTRUCTIONS & FILES (NEW) ── */}
+                    {data && asgn && (
+                        <div className="rounded-2xl p-5 mb-6 border" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                            <h3 className="flex items-center gap-2" style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: '0 0 12px 0' }}>
+                                <FileText size={16} style={{ color: C.btnPrimary }} /> Assignment Details
+                            </h3>
+                            <p className="whitespace-pre-wrap" style={{ fontSize: T.size.sm, color: C.heading, lineHeight: 1.6, margin: 0 }}>
+                                {asgn.description || 'No description provided.'}
+                            </p>
 
+                            {/* Tutor's Reference Files */}
+                            {asgn.attachments?.length > 0 && (
+                                <div className="mt-4 pt-4 border-t" style={{ borderColor: C.cardBorder }}>
+                                    <p style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>
+                                        Reference Materials
+                                    </p>
+                                    <div className="space-y-2">
+                                        {asgn.attachments.map((file, idx) => (
+                                            <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer"
+                                                className="flex items-center justify-between p-3 rounded-xl transition-all border text-decoration-none group"
+                                                style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}
+                                                onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.backgroundColor = '#fff'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.backgroundColor = outerCard; }}>
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className="p-2 rounded-lg bg-white shadow-sm shrink-0">
+                                                        <Download className="w-4 h-4" style={{ color: C.btnPrimary }} />
+                                                    </div>
+                                                    <p className="truncate m-0" style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>
+                                                        {file.name || 'Download Attachment'}
+                                                    </p>
+                                                </div>
+                                            </a>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+             
                     {data && sub && (
                         <>
                             {/* Grade Card */}
@@ -285,13 +323,13 @@ function SubmissionDrawer({ row, onClose }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function StudentAssignmentsPage() {
-    const [enrollments, setEnrollments]     = useState([]);
-    const [allRows, setAllRows]             = useState([]);
-    const [loading, setLoading]             = useState(true);
-    const [activeTab, setActiveTab]         = useState('All');
-    const [courseFilter, setCourseFilter]   = useState('');
-    const [currentPage, setCurrentPage]     = useState(1);
-    const [viewRow, setViewRow]             = useState(null); // for drawer
+    const [enrollments, setEnrollments] = useState([]);
+    const [allRows, setAllRows] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('All');
+    const [courseFilter, setCourseFilter] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [viewRow, setViewRow] = useState(null); // for drawer
 
     useEffect(() => {
         const fetchData = async () => {
@@ -323,35 +361,35 @@ export default function StudentAssignmentsPage() {
     const getStatus = (row) => {
         const sub = row.mySubmission;
         const due = row.dueDate ? new Date(row.dueDate) : null;
-        if (sub?.status === 'graded')    return { label: 'Graded', type: 'graded' };
+        if (sub?.status === 'graded') return { label: 'Graded', type: 'graded' };
         if (sub?.status === 'submitted') return { label: 'Submitted', type: 'submitted' };
-        if (due && due < now)            return { label: 'Overdue',   type: 'overdue' };
+        if (due && due < now) return { label: 'Overdue', type: 'overdue' };
         return { label: 'Pending', type: 'pending' };
     };
 
-    const pendingCount   = allRows.filter(r => getStatus(r).type === 'pending').length;
-    const submittedCount = allRows.filter(r => ['submitted','graded'].includes(getStatus(r).type)).length;
-    const overdueCount   = allRows.filter(r => getStatus(r).type === 'overdue').length;
-    const gradedCount    = allRows.filter(r => getStatus(r).type === 'graded').length;
+    const pendingCount = allRows.filter(r => getStatus(r).type === 'pending').length;
+    const submittedCount = allRows.filter(r => ['submitted', 'graded'].includes(getStatus(r).type)).length;
+    const overdueCount = allRows.filter(r => getStatus(r).type === 'overdue').length;
+    const gradedCount = allRows.filter(r => getStatus(r).type === 'graded').length;
 
     const filtered = allRows.filter(row => {
         const s = getStatus(row);
-        if (activeTab === 'Pending'   && s.type !== 'pending')                     return false;
-        if (activeTab === 'Submitted' && !['submitted','graded'].includes(s.type)) return false;
-        if (activeTab === 'Overdue'   && s.type !== 'overdue')                     return false;
-        if (activeTab === 'Graded'    && s.type !== 'graded')                      return false;
+        if (activeTab === 'Pending' && s.type !== 'pending') return false;
+        if (activeTab === 'Submitted' && !['submitted', 'graded'].includes(s.type)) return false;
+        if (activeTab === 'Overdue' && s.type !== 'overdue') return false;
+        if (activeTab === 'Graded' && s.type !== 'graded') return false;
         if (courseFilter && !row.courseTitle.toLowerCase().includes(courseFilter.toLowerCase())) return false;
         return true;
     });
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-    const pageRows   = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    const pageRows = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
     const getStatusCfg = (type) => {
-        if (type === 'overdue')   return { bg: C.dangerBg,  color: C.danger,    border: C.dangerBorder,   icon: AlertCircle,  accent: C.danger };
-        if (type === 'graded')    return { bg: C.successBg, color: C.success,   border: C.successBorder,  icon: Star,         accent: C.success };
-        if (type === 'submitted') return { bg: C.warningBg, color: C.warning,   border: C.warningBorder,  icon: CheckCircle,  accent: C.warning };
-        return                           { bg: '#EEF2FF',   color: C.btnPrimary, border: '#C7D2FE',        icon: Clock,        accent: C.btnPrimary };
+        if (type === 'overdue') return { bg: C.dangerBg, color: C.danger, border: C.dangerBorder, icon: AlertCircle, accent: C.danger };
+        if (type === 'graded') return { bg: C.successBg, color: C.success, border: C.successBorder, icon: Star, accent: C.success };
+        if (type === 'submitted') return { bg: C.warningBg, color: C.warning, border: C.warningBorder, icon: CheckCircle, accent: C.warning };
+        return { bg: '#EEF2FF', color: C.btnPrimary, border: '#C7D2FE', icon: Clock, accent: C.btnPrimary };
     };
 
     if (loading) return (
@@ -362,11 +400,11 @@ export default function StudentAssignmentsPage() {
     );
 
     const TABS = [
-        { key: 'All',       label: `All (${allRows.length})` },
-        { key: 'Pending',   label: `${pendingCount} Pending`,   danger: false },
+        { key: 'All', label: `All (${allRows.length})` },
+        { key: 'Pending', label: `${pendingCount} Pending`, danger: false },
         { key: 'Submitted', label: `Submitted (${submittedCount})` },
-        { key: 'Graded',    label: `${gradedCount} Graded` },
-        { key: 'Overdue',   label: `${overdueCount} Overdue`,   danger: true },
+        { key: 'Graded', label: `${gradedCount} Graded` },
+        { key: 'Overdue', label: `${overdueCount} Overdue`, danger: true },
     ];
 
     return (
@@ -401,10 +439,10 @@ export default function StudentAssignmentsPage() {
             {/* ── Stats Row ──────────────────────────────────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: 'Pending',   value: pendingCount,   bg: '#EEF2FF',   color: C.btnPrimary, icon: Clock },
-                    { label: 'Submitted', value: submittedCount, bg: C.warningBg, color: C.warning,    icon: CheckCircle },
-                    { label: 'Graded',    value: gradedCount,    bg: C.successBg, color: C.success,    icon: Award },
-                    { label: 'Overdue',   value: overdueCount,   bg: C.dangerBg,  color: C.danger,     icon: AlertCircle },
+                    { label: 'Pending', value: pendingCount, bg: '#EEF2FF', color: C.btnPrimary, icon: Clock },
+                    { label: 'Submitted', value: submittedCount, bg: C.warningBg, color: C.warning, icon: CheckCircle },
+                    { label: 'Graded', value: gradedCount, bg: C.successBg, color: C.success, icon: Award },
+                    { label: 'Overdue', value: overdueCount, bg: C.dangerBg, color: C.danger, icon: AlertCircle },
                 ].map(({ label, value, bg, color, icon: Icon }) => (
                     <div key={label} className="p-5 rounded-2xl border transition-transform hover:-translate-y-0.5 cursor-pointer"
                         style={{ backgroundColor: outerCard, borderColor: C.cardBorder, boxShadow: S.card }}
@@ -459,8 +497,8 @@ export default function StudentAssignmentsPage() {
                             <p style={{ fontSize: T.size.sm, color: C.textMuted, margin: 0 }}>No assignments match your current filter.</p>
                         </div>
                     ) : pageRows.map((row) => {
-                        const status    = getStatus(row);
-                        const cfg       = getStatusCfg(status.type);
+                        const status = getStatus(row);
+                        const cfg = getStatusCfg(status.type);
                         const StatusIcon = cfg.icon;
                         const isSubmittedOrGraded = ['submitted', 'graded'].includes(status.type);
 

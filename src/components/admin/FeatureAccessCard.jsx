@@ -1,68 +1,86 @@
 'use client';
 
-import { Shield, CheckCircle, XCircle, Crown, Zap, Video, Palette, Users, Brain } from 'lucide-react';
+import { Shield, CheckCircle, XCircle, Video, Palette, Users, Brain, Zap, Cpu, Code } from 'lucide-react';
 
 export default function FeatureAccessCard({ tenant, onUpgrade }) {
+    // 🌟 Updated to match our New Enterprise Database Schema
     const features = [
         {
+            key: 'zoomIntegration',
+            name: 'Zoom Live Classes',
+            description: 'Integrate Zoom for live classes and meetings',
+            icon: Users,
+            available: tenant?.features?.zoomIntegration
+        },
+        {
             key: 'hlsStreaming',
-            name: 'HLS Streaming',
-            description: 'Upload and stream high-quality video content',
+            name: 'HLS Video Security',
+            description: 'Securely upload and stream encrypted video content',
             icon: Video,
-            requiredPlan: 'Enterprise',
             available: tenant?.features?.hlsStreaming
         },
         {
             key: 'customBranding',
-            name: 'Custom Branding',
+            name: 'White-Label Branding',
             description: 'Customize institute colors, logo, and theme',
             icon: Palette,
-            requiredPlan: 'Pro',
             available: tenant?.features?.customBranding
         },
         {
-            key: 'zoomIntegration',
-            name: 'Zoom Integration',
-            description: 'Integrate Zoom for live classes and meetings',
-            icon: Users,
-            requiredPlan: 'Basic',
-            available: tenant?.features?.zoomIntegration
+            key: 'apiAccess',
+            name: 'Enterprise API Access',
+            description: 'Access backend APIs for custom ERP integrations',
+            icon: Code,
+            available: tenant?.features?.apiAccess
         },
         {
-            key: 'aiFeatures',
-            name: 'AI Features',
-            description: 'AI-powered content generation and analytics',
+            key: 'aiAssistant',
+            name: 'AI Assistant & Summary',
+            description: 'Smart chatbot, doubt solver, and automated lecture notes',
+            icon: Zap,
+            available: tenant?.features?.aiAssistant
+        },
+        {
+            key: 'aiAssessment',
+            name: 'AI Assessment & Proctoring',
+            description: 'Auto-grading, plagiarism checks, and strict webcam proctoring',
             icon: Brain,
-            requiredPlan: 'Pro',
-            available: tenant?.features?.aiFeatures
+            available: tenant?.features?.aiAssessment
+        },
+        {
+            key: 'aiIntelligence',
+            name: 'AI Intelligence & Risk',
+            description: 'Predict dropout risks, study plans, and generate automated reports',
+            icon: Cpu,
+            available: tenant?.features?.aiIntelligence
         }
     ];
 
+    // Added some dynamic fallback coloring
     const getPlanColor = (plan) => {
-        switch (plan) {
-            case 'enterprise': return 'text-purple-600 bg-purple-50';
-            case 'pro': return 'text-blue-600 bg-blue-50';
-            case 'basic': return 'text-green-600 bg-green-50';
-            default: return 'text-slate-600 bg-slate-50';
-        }
+        const p = plan?.toLowerCase() || '';
+        if (p.includes('enterprise')) return 'text-purple-600 bg-purple-50 border border-purple-200';
+        if (p.includes('pro')) return 'text-blue-600 bg-blue-50 border border-blue-200';
+        if (p.includes('basic') || p.includes('starter')) return 'text-green-600 bg-green-50 border border-green-200';
+        return 'text-slate-600 bg-slate-50 border border-slate-200';
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-indigo-50 rounded-lg flex items-center justify-center">
-                    <Shield className="w-6 h-6 text-indigo-600" />
+        <div className="bg-white rounded-2xl shadow-sm border border-[#E9DFFC] p-6 lg:p-8">
+            <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 bg-[#F4F0FD] rounded-[10px] flex items-center justify-center shrink-0 border border-[#E9DFFC]">
+                    <Shield className="w-6 h-6 text-[#6B4DF1]" />
                 </div>
                 <div>
-                    <h3 className="font-semibold text-slate-800 text-lg">Subscription Features</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getPlanColor(tenant?.subscriptionPlan)}`}>
+                    <h3 className="text-[17px] font-black text-[#27225B] m-0">Subscription Features</h3>
+                    <div className="flex items-center gap-2 mt-1.5">
+                        <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wide ${getPlanColor(tenant?.subscriptionPlan)}`}>
                             {tenant?.subscriptionPlan || 'Free'} Plan
                         </span>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-[12px] font-bold text-[#7D8DA6]">
                             {tenant?.subscriptionExpiresAt 
                                 ? `Expires: ${new Date(tenant.subscriptionExpiresAt).toLocaleDateString()}`
-                                : 'No expiry'
+                                : 'No expiry limit'
                             }
                         </span>
                     </div>
@@ -75,42 +93,47 @@ export default function FeatureAccessCard({ tenant, onUpgrade }) {
                     return (
                         <div 
                             key={feature.key}
-                            className={`p-4 rounded-lg border-2 transition-all ${
+                            className={`p-4 rounded-xl border-2 transition-all ${
                                 feature.available 
-                                    ? 'border-green-200 bg-green-50' 
-                                    : 'border-slate-200 bg-slate-50'
+                                    ? 'border-emerald-100 bg-emerald-50/30' 
+                                    : 'border-slate-100 bg-slate-50/50'
                             }`}
                         >
-                            <div className="flex items-start gap-3">
-                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            <div className="flex items-start gap-4">
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
                                     feature.available 
-                                        ? 'bg-green-100 text-green-600' 
-                                        : 'bg-slate-100 text-slate-400'
+                                        ? 'bg-emerald-100 text-emerald-600' 
+                                        : 'bg-slate-200 text-slate-400'
                                 }`}>
                                     <Icon className="w-5 h-5" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <h4 className="font-semibold text-slate-800">{feature.name}</h4>
+                                        <h4 className={`font-black text-[14px] ${feature.available ? 'text-[#27225B]' : 'text-slate-500'}`}>
+                                            {feature.name}
+                                        </h4>
                                         {feature.available ? (
-                                            <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                            <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                                         ) : (
                                             <XCircle className="w-4 h-4 text-slate-400 flex-shrink-0" />
                                         )}
                                     </div>
-                                    <p className="text-sm text-slate-600 mb-2">{feature.description}</p>
-                                    <div className="flex items-center justify-between">
-                                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                    <p className="text-[12px] font-medium text-slate-500 mb-3 leading-snug">
+                                        {feature.description}
+                                    </p>
+                                    <div className="flex items-center justify-between mt-auto">
+                                        <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wide ${
                                             feature.available
-                                                ? 'bg-green-100 text-green-700'
-                                                : 'bg-slate-100 text-slate-600'
+                                                ? 'bg-emerald-100 text-emerald-700'
+                                                : 'bg-slate-200 text-slate-500'
                                         }`}>
-                                            {feature.available ? 'Available' : `Requires ${feature.requiredPlan}`}
+                                            {feature.available ? 'Available' : 'Requires Upgrade'}
                                         </span>
+                                        
                                         {!feature.available && onUpgrade && (
                                             <button
                                                 onClick={() => onUpgrade(feature)}
-                                                className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                                                className="text-[12px] text-[#6B4DF1] hover:text-[#5839D6] font-bold border-none bg-transparent cursor-pointer"
                                             >
                                                 Upgrade →
                                             </button>
@@ -122,29 +145,6 @@ export default function FeatureAccessCard({ tenant, onUpgrade }) {
                     );
                 })}
             </div>
-
-            {/* Upgrade CTA */}
-            {tenant?.subscriptionPlan === 'free' && (
-                <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
-                    <div className="flex items-center gap-3">
-                        <Crown className="w-6 h-6 text-indigo-600" />
-                        <div className="flex-1">
-                            <h4 className="font-semibold text-indigo-900">Unlock All Features</h4>
-                            <p className="text-sm text-indigo-700">
-                                Upgrade to Pro or Enterprise plan to access advanced features
-                            </p>
-                        </div>
-                        {onUpgrade && (
-                            <button
-                                onClick={() => onUpgrade()}
-                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm transition-colors"
-                            >
-                                View Plans
-                            </button>
-                        )}
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

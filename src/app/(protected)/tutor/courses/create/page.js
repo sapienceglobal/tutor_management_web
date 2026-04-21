@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -10,7 +10,7 @@ import AudienceSelector from '@/components/shared/AudienceSelector';
 import useInstitute from '@/hooks/useInstitute';
 import { C, T, S, R } from '@/constants/tutorTokens';
 
-// ── Shared Colors & Styles ─────────────────────────────────────────────
+// â”€â”€ Shared Colors & Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const outerCard = '#EAE8FA';
 const innerBox = '#E3DFF8';
 
@@ -37,7 +37,7 @@ const baseInputStyle = {
     transition: 'all 0.2s ease',
 };
 
-// ─── Step Bar ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Step Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const STEPS = [
     { num: 1, label: 'Course Info' },
     { num: 2, label: 'Curriculum' },
@@ -145,7 +145,7 @@ const CancelBtn = ({ onClick }) => (
     </button>
 );
 
-// ─── Main SPA Wizard ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Main SPA Wizard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function CreateCoursePage() {
     const router = useRouter();
     const { institute } = useInstitute();
@@ -177,6 +177,7 @@ export default function CreateCoursePage() {
     const [moduleTitle, setModuleTitle] = useState('');
     const [lessonForm, setLessonForm] = useState({ title: '', type: 'video', videoUrl: '', duration: '', isFree: false });
     const [assignmentForm, setAssignmentForm] = useState({ title: '', description: '', totalMarks: 100 });
+    const [assignmentFiles, setAssignmentFiles] = useState([]);
 
     useEffect(() => { fetchCategories(); }, []);
 
@@ -199,7 +200,7 @@ export default function CreateCoursePage() {
         setCourseData(prev => ({ ...prev, [name]: value }));
     };
 
-    // ─── Step 1: Save Course Info (Draft) ──────────────────────────────────
+    // â”€â”€â”€ Step 1: Save Course Info (Draft) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleStep1Submit = async (e) => {
         e.preventDefault();
         if (!courseData.title || !courseData.description || !courseData.category || !courseData.price) {
@@ -237,7 +238,7 @@ export default function CreateCoursePage() {
         } finally { setLoading(false); }
     };
 
-    // ─── Step 2: Curriculum Management ─────────────────────────────────────
+    // â”€â”€â”€ Step 2: Curriculum Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleAddModule = async (e) => {
         e.preventDefault();
         if (!moduleTitle.trim()) return;
@@ -282,15 +283,37 @@ export default function CreateCoursePage() {
         finally { setLoading(false); }
     };
 
-    // ─── Step 3: Assignments Management ────────────────────────────────────
+    // â”€â”€â”€ Step 3: Assignments Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleAddAssignment = async (e) => {
         e.preventDefault();
         if (!assignmentForm.title.trim()) return;
         setLoading(true);
         try {
+            // ðŸŒŸ 1. Upload files first if any
+            const uploadedAttachments = [];
+            if (assignmentFiles.length > 0) {
+                for (const file of assignmentFiles) {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    const res = await api.post('/upload/file', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                    if (res.data?.fileUrl || res.data?.url) {
+                        uploadedAttachments.push({
+                            name: res.data.name || file.name,
+                            url: res.data.fileUrl || res.data.url,
+                            type: res.data.type || file.type
+                        });
+                    }
+                }
+            }
+
+            // ðŸŒŸ 2. Create Assignment with attachments
             const payload = {
-                courseId, title: assignmentForm.title, description: assignmentForm.description,
-                totalMarks: Number(assignmentForm.totalMarks), status: 'published',
+                courseId,
+                title: assignmentForm.title,
+                description: assignmentForm.description,
+                totalMarks: Number(assignmentForm.totalMarks),
+                status: 'published',
+                attachments: uploadedAttachments, // Injecting files here!
                 audience: { scope: courseData.audience?.scope, instituteId: institute?._id || null }
             };
             const res = await api.post('/assignments', payload);
@@ -298,26 +321,41 @@ export default function CreateCoursePage() {
                 setAssignments(prev => [...prev, res.data.assignment]);
                 setModals({ ...modals, assignment: false });
                 setAssignmentForm({ title: '', description: '', totalMarks: 100 });
-                toast.success('Assignment added');
+                setAssignmentFiles([]); // Reset files
+                toast.success('Assignment added with attachments!');
             }
-        } catch { toast.error('Failed to add assignment'); }
-        finally { setLoading(false); }
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to add assignment');
+        } finally { setLoading(false); }
     };
 
-    // ─── Step 4: Final Publish ─────────────────────────────────────────────
+    // ðŸŒŸ File Handlers
+    const handleAssignmentFileUpload = (e) => {
+        const files = Array.from(e.target.files);
+        const valid = files.filter(f => {
+            if (f.size > 20 * 1024 * 1024) { toast.error(`${f.name} is too large (Max 20MB)`); return false; }
+            return true;
+        });
+        setAssignmentFiles(prev => [...prev, ...valid]);
+        e.target.value = '';
+    };
+    const removeAssignmentFile = (idx) => setAssignmentFiles(prev => prev.filter((_, i) => i !== idx));
+
+    // â”€â”€â”€ Step 4: Final Publish â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handlePublish = async () => {
         setLoading(true);
         try {
             const res = await api.patch(`/courses/${courseId}`, { status: 'published' });
             if (res?.data?.success) {
-                toast.success('Course Published Successfully! 🎉');
+                toast.success('Course Published Successfully! ðŸŽ‰');
                 router.push('/tutor/courses');
             }
         } catch { toast.error('Failed to publish course'); }
         finally { setLoading(false); }
     };
 
-    // ─── UI Helpers ────────────────────────────────────────────────────────
+    // â”€â”€â”€ UI Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const learnList = {
         onChange: (idx, val) => setCourseData(prev => { const u = [...prev.whatYouWillLearn]; u[idx] = val; return { ...prev, whatYouWillLearn: u }; }),
         add: () => setCourseData(prev => ({ ...prev, whatYouWillLearn: [...prev.whatYouWillLearn, ''] })),
@@ -349,9 +387,9 @@ export default function CreateCoursePage() {
 
                 <StepBar current={step} />
 
-                {/* ═════════════════════════════════════════════════════════════════
+                {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                     STEP 1: COURSE INFO
-                ══════════════════════════════════════════════════════════════════ */}
+                â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
                 {step === 1 && (
                     <form onSubmit={handleStep1Submit} className="p-6 space-y-6" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                         <div className="space-y-2">
@@ -368,7 +406,7 @@ export default function CreateCoursePage() {
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Price (₹) *</label>
+                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Price (â‚¹) *</label>
                                 <input name="price" type="number" min="0" required value={courseData.price} onChange={handleDataChange} placeholder="0.00" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
                             </div>
                         </div>
@@ -413,17 +451,17 @@ export default function CreateCoursePage() {
                                 {loading ? <Loader2 size={16} className="animate-spin" /> : <>Save & Next <ChevronRight size={16} /></>}
                             </button>
                         </div>
-                        <div classname="flex justify-end pt-4">
-                            <button type="submit" disabled={loading} classname="flex items-center justify-center gap-2 ">
+                        <div className="flex justify-end pt-4">
+                            <button type="submit" disabled={loading} className="flex items-center justify-center gap-2 ">
 
                             </button>
                         </div>
                     </form>
                 )}
 
-                {/* ═════════════════════════════════════════════════════════════════
+                {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                     STEP 2: CURRICULUM
-                ══════════════════════════════════════════════════════════════════ */}
+                â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
                 {step === 2 && (
                     <div className="space-y-6">
                         <div className="p-6 flex items-center justify-between" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
@@ -490,9 +528,9 @@ export default function CreateCoursePage() {
                     </div>
                 )}
 
-                {/* ═════════════════════════════════════════════════════════════════
+                {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                     STEP 3: ASSIGNMENTS
-                ══════════════════════════════════════════════════════════════════ */}
+                â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
                 {step === 3 && (
                     <div className="space-y-6">
                         <div className="p-6 flex items-center justify-between" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
@@ -541,9 +579,9 @@ export default function CreateCoursePage() {
                     </div>
                 )}
 
-                {/* ═════════════════════════════════════════════════════════════════
+                {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                     STEP 4: PUBLISH
-                ══════════════════════════════════════════════════════════════════ */}
+                â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
                 {step === 4 && (
                     <div className="space-y-6">
                         <div className="p-10 text-center" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
@@ -585,9 +623,9 @@ export default function CreateCoursePage() {
                 )}
             </div>
 
-            {/* ═════════════════════════════════════════════════════════════════
+            {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                 MODALS FOR WIZARD
-            ══════════════════════════════════════════════════════════════════ */}
+            â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
 
             {/* Add Module Modal */}
             {modals.module && (
@@ -610,7 +648,7 @@ export default function CreateCoursePage() {
             {/* Add Lesson Modal */}
             {modals.lesson && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(21, 22, 86, 0.4)', backdropFilter: 'blur(4px)' }}>
-                    <div className="w-full max-w-lg p-6" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.cardHover }}>
+                    <div className="w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto custom-scrollbar" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.cardHover }}>
                         <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 16px 0' }}>Add Lesson</h3>
                         <form onSubmit={handleAddLesson} className="space-y-4">
                             <input type="text" value={lessonForm.title} onChange={e => setLessonForm({ ...lessonForm, title: e.target.value })} required placeholder="Lesson Title" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} autoFocus />
@@ -635,16 +673,47 @@ export default function CreateCoursePage() {
             {/* Add Assignment Modal */}
             {modals.assignment && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(21, 22, 86, 0.4)', backdropFilter: 'blur(4px)' }}>
-                    <div className="w-full max-w-lg p-6" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.cardHover }}>
+                    <div className="w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto custom-scrollbar" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.cardHover }}>
                         <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 16px 0' }}>Add Assignment</h3>
                         <form onSubmit={handleAddAssignment} className="space-y-4">
                             <input type="text" value={assignmentForm.title} onChange={e => setAssignmentForm({ ...assignmentForm, title: e.target.value })} required placeholder="Assignment Title" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} autoFocus />
-                            <textarea rows={3} value={assignmentForm.description} onChange={e => setAssignmentForm({ ...assignmentForm, description: e.target.value })} placeholder="Brief description..." style={{ ...baseInputStyle, resize: 'none' }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                            <textarea rows={3} value={assignmentForm.description} onChange={e => setAssignmentForm({ ...assignmentForm, description: e.target.value })} placeholder="Brief description & instructions..." style={{ ...baseInputStyle, resize: 'none' }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
                             <input type="number" value={assignmentForm.totalMarks} onChange={e => setAssignmentForm({ ...assignmentForm, totalMarks: e.target.value })} required placeholder="Total Marks" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
-                            <div className="flex justify-end gap-3 pt-2">
+
+                            {/* ðŸŒŸ NEW FILE UPLOAD ZONE */}
+                            <div className="mt-4 border-t pt-4" style={{ borderColor: C.cardBorder }}>
+                                <label style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' }}>
+                                    Attach Reference Files
+                                </label>
+                                <div className="border-2 border-dashed rounded-2xl p-6 text-center transition-colors cursor-pointer mb-4"
+                                    style={{ borderColor: C.cardBorder, backgroundColor: innerBox }}
+                                    onClick={() => document.getElementById('tutor-assignment-upload').click()}>
+                                    <input type="file" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg" onChange={handleAssignmentFileUpload} className="hidden" id="tutor-assignment-upload" />
+                                    <Upload className="w-6 h-6 mx-auto mb-2" style={{ color: C.btnPrimary }} />
+                                    <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, margin: 0 }}>Click to attach PDFs or Documents</p>
+                                </div>
+
+                                {assignmentFiles.length > 0 && (
+                                    <div className="space-y-2 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+                                        {assignmentFiles.map((f, i) => (
+                                            <div key={i} className="flex items-center justify-between p-2.5 rounded-xl border" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder }}>
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <FileText size={14} style={{ color: C.btnPrimary, flexShrink: 0 }} />
+                                                    <p className="truncate m-0" style={{ fontSize: '11px', fontWeight: T.weight.bold, color: C.heading }}>{f.name}</p>
+                                                </div>
+                                                <button type="button" onClick={(e) => { e.stopPropagation(); removeAssignmentFile(i); }} className="w-6 h-6 flex items-center justify-center rounded-md cursor-pointer border-none bg-red-50 hover:bg-red-100 transition-colors shrink-0" style={{ color: C.danger }}>
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-4">
                                 <button type="button" onClick={() => setModals({ ...modals, assignment: false })} className="px-5 py-2 cursor-pointer bg-transparent border-none hover:opacity-70" style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>Cancel</button>
                                 <button type="submit" disabled={loading || !assignmentForm.title} className="px-6 py-2 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md" style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
-                                    {loading ? <Loader2 size={16} className="animate-spin" /> : 'Save'}
+                                    {loading ? <Loader2 size={16} className="animate-spin" /> : 'Save Assignment'}
                                 </button>
                             </div>
                         </form>

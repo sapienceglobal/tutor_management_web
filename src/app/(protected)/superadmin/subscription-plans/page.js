@@ -25,8 +25,7 @@ export default function SubscriptionPlansPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [openMenuId, setOpenMenuId] = useState(null); 
     const [searchTerm, setSearchTerm] = useState('');
-
-    const initialFormState = {
+const initialFormState = {
         _id: null,
         name: '',
         price: '',
@@ -34,15 +33,20 @@ export default function SubscriptionPlansPage() {
         isActive: true,
         isPopular: false,
         features: {
+            // Core Limits
             maxTutors: 5,
             maxStudents: 100,
             storageLimitGB: 10,
+            // Advanced LMS
             hlsStreaming: false, 
-            aiBasic: false,      
             customBranding: false, 
             zoomIntegration: false,
-            apiAccess: false,    
-            supportType: 'email' 
+            apiAccess: false,
+            // 🌟 The New AI Tiers & Credits
+            aiAssistant: false,    // Basic Chat, Notes
+            aiAssessment: false,   // Auto-grading, Plagiarism, Proctoring
+            aiIntelligence: false, // Risk Predictor, Automation
+            aiCreditsPerMonth: 1000 // The Bankruptcy Firewall
         }
     };
     const [formData, setFormData] = useState(initialFormState);
@@ -124,11 +128,15 @@ export default function SubscriptionPlansPage() {
         return acc + (count * monthlyValue);
     }, 0);
 
-    const advancedFeatures = [
+const advancedFeatures = [
         { key: 'hlsStreaming', label: 'HLS Video Security', icon: Video },
-        { key: 'aiBasic', label: 'AI Proctoring & Grading', icon: Cpu },
         { key: 'customBranding', label: 'White-Label Branding', icon: Globe },
-        { key: 'apiAccess', label: 'Enterprise API Access', icon: ShieldCheck }
+        { key: 'apiAccess', label: 'Enterprise API Access', icon: ShieldCheck },
+        { key: 'zoomIntegration', label: 'Zoom Live Classes', icon: Video },
+        // 🌟 New AI Tiers
+        { key: 'aiAssistant', label: 'AI Assistant (Chat & Summary)', icon: Zap },
+        { key: 'aiAssessment', label: 'AI Assessment (Proctoring & Grading)', icon: ShieldCheck },
+        { key: 'aiIntelligence', label: 'AI Intelligence (Risk & Analytics)', icon: Cpu }
     ];
 
     const getTheme = (index, name) => {
@@ -365,7 +373,41 @@ export default function SubscriptionPlansPage() {
                                     </select>
                                 </div>
                             </div>
-
+{/* 🌟 NEW: Core Plan Limits & AI Credits */}
+                            <div className="col-span-2 mt-2">
+                                <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Core Limits & Credits</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-[#F8F6FC] p-4 rounded-2xl border border-purple-100/50">
+                                   <div>
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Max Tutors</label>
+                                        <input type="number" min="-1" required 
+                                            value={formData.features.maxTutors ?? ''} 
+                                            onChange={(e) => setFormData({...formData, features: {...formData.features, maxTutors: e.target.value === '' ? '' : parseInt(e.target.value)}})} 
+                                            className="w-full bg-white border border-gray-200 p-2 rounded-lg font-bold text-[#2D235C] text-[13px] outline-none focus:border-purple-500" />
+                                        <p className="text-[9px] text-gray-400 mt-1">-1 for Unlimited</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Max Students</label>
+                                        <input type="number" min="-1" required 
+                                            value={formData.features.maxStudents ?? ''} 
+                                            onChange={(e) => setFormData({...formData, features: {...formData.features, maxStudents: e.target.value === '' ? '' : parseInt(e.target.value)}})} 
+                                            className="w-full bg-white border border-gray-200 p-2 rounded-lg font-bold text-[#2D235C] text-[13px] outline-none focus:border-purple-500" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Storage (GB)</label>
+                                        <input type="number" min="1" required 
+                                            value={formData.features.storageLimitGB ?? ''} 
+                                            onChange={(e) => setFormData({...formData, features: {...formData.features, storageLimitGB: e.target.value === '' ? '' : parseInt(e.target.value)}})} 
+                                            className="w-full bg-white border border-gray-200 p-2 rounded-lg font-bold text-[#2D235C] text-[13px] outline-none focus:border-purple-500" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-[#8B5CF6] uppercase mb-1 block">AI Credits/Mo</label>
+                                        <input type="number" min="0" required 
+                                            value={formData.features.aiCreditsPerMonth ?? ''} 
+                                            onChange={(e) => setFormData({...formData, features: {...formData.features, aiCreditsPerMonth: e.target.value === '' ? '' : parseInt(e.target.value)}})} 
+                                            className="w-full bg-white border border-purple-300 p-2 rounded-lg font-black text-[#8B5CF6] text-[13px] outline-none focus:ring-1 focus:ring-purple-500 shadow-sm" />
+                                    </div>
+                                </div>
+                            </div>
                             <label className="flex items-center justify-between p-4 bg-purple-50 rounded-xl cursor-pointer border border-purple-100">
                                 <div className="flex items-center gap-3">
                                     <Zap size={18} className="text-[#8B5CF6]" />

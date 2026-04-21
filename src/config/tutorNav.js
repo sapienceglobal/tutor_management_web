@@ -169,13 +169,13 @@ export const tutorNavItems = [
         title: "COMMUNICATION",
         type: "section",
         children: [
-            {
+           {
                 title: "AI Buddy",
                 icon: BrainCircuit,
                 href: "/tutor/ai-buddy",  
                 type: "link",
                 badge: "Premium",
-                featureGate: "aiFeatures", 
+                featureGate: "aiAssistant", 
             },
             {
                 title: "Announcements",

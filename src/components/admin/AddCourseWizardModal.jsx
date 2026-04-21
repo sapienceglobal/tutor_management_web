@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Check, BookOpen, Plus, Trash2, Loader2, ChevronRight, CheckCircle2, Rocket, Upload } from 'lucide-react';
+import { X, Check, BookOpen, Plus, Trash2, Loader2, ChevronRight, CheckCircle2, Rocket, Upload, ImageIcon } from 'lucide-react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 
@@ -218,8 +218,9 @@ export default function AddCourseWizardModal({ isOpen, onClose, onSubmit, course
                                                 <>
                                                     <img src={formData.thumbnail} alt="Thumbnail preview" className="w-full h-full object-cover" />
                                                     <div className="absolute inset-0 bg-black/40 items-center justify-center hidden group-hover:flex">
-                                                        <ImageIcon className="text-white w-6 h-6" />
+                                                        <ImageIcon clas sName="text-white w-6 h-6" />
                                                     </div>
+                                                    
                                                 </>
                                             ) : (
                                                 <>
@@ -228,9 +229,8 @@ export default function AddCourseWizardModal({ isOpen, onClose, onSubmit, course
                                                 </>
                                             )}
                                         </div>
-                                        
                                         <div className="flex flex-col justify-center gap-1">
-                                            <p className="text-[13px] font-bold text-[#27225B] m-0">Attach an engaging hero image.</p>
+                                            <p className="text-[13px] font-bold text-[#27225B] m-0">Attach an engaging hero image.</p>  
                                             <p className="text-[12px] font-semibold text-[#A0ABC0] m-0 text-balance">The recommended size is 1200x675 pixels.</p>
                                         </div>
                                     </div>

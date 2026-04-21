@@ -747,7 +747,7 @@ export default function CourseDetailPage({ params }) {
                                                                 {review._id === myReview?._id && <span className="px-2 py-0.5 text-white rounded-md" style={{ ...GS, fontSize: '9px', fontWeight: T.weight.black, textTransform: 'uppercase' }}>You</span>}
                                                             </div>
                                                             <div className="flex items-center gap-2">
-                                                                <StarRow rating={review.rating} size={3} />
+                                                                <Star rating={review.rating} size={3} />
                                                                 <span style={{ fontSize: '10px', color: C.textMuted, fontWeight: T.weight.bold }}>{new Date(review.createdAt).toLocaleDateString()}</span>
                                                             </div>
                                                         </div>
@@ -1036,6 +1036,97 @@ export default function CourseDetailPage({ params }) {
                     onStartExam={handleStartExam} />
             )}
             {course && <ReportAbuseModal isOpen={showReportModal} onClose={() => setShowReportModal(false)} targetId={course._id} targetType="Course" />}
+                {/* ── REVIEWS MODAL ───────────────────────────────────────────── */}
+            <AnimatePresence>
+                {showReviewModal && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" 
+                            onClick={() => setShowReviewModal(false)} 
+                        />
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95, y: 20 }} 
+                                animate={{ opacity: 1, scale: 1, y: 0 }} 
+                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                className="bg-white w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl pointer-events-auto border"
+                                style={{ borderColor: C.cardBorder }}
+                            >
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+                                        {myReview ? 'Edit Your Review' : 'Write a Review'}
+                                    </h3>
+                                    <button onClick={() => setShowReviewModal(false)} className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 hover:bg-gray-200 border-none cursor-pointer transition-colors">
+                                        <X size={16} className="text-gray-500" />
+                                    </button>
+                                </div>
+
+                                <form onSubmit={handleSubmitReview} className="space-y-6">
+                                    {/* Star Rating */}
+                                    <div className="flex flex-col items-center gap-3 py-4 rounded-2xl border border-dashed" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted, margin: 0 }}>Tap a star to rate</p>
+                                        <div className="flex gap-2">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <button
+                                                    key={star}
+                                                    type="button"
+                                                    onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                                                    className="bg-transparent border-none cursor-pointer p-1 transition-transform hover:scale-110"
+                                                >
+                                                    <Star
+                                                        size={36}
+                                                        className={reviewForm.rating >= star ? 'fill-amber-400 text-amber-400' : 'fill-white text-gray-300 drop-shadow-sm'}
+                                                    />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Comment Textarea */}
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, marginBottom: '8px' }}>
+                                            Share your experience
+                                        </label>
+                                        <textarea
+                                            value={reviewForm.comment}
+                                            onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                                            placeholder="What did you like about this course? How can it improve?"
+                                            rows={4}
+                                            className="w-full p-4 rounded-xl border focus:outline-none focus:ring-2 resize-none transition-shadow"
+                                            style={{ backgroundColor: '#ffffff', borderColor: C.cardBorder, color: C.heading, fontSize: T.size.sm, outlineColor: C.btnPrimary }}
+                                        />
+                                        <div className="flex justify-between items-center mt-2">
+                                            <p style={{ fontSize: '11px', color: reviewForm.comment.length < 10 ? C.danger : C.success, fontWeight: T.weight.bold }}>
+                                                {reviewForm.comment.length < 10 ? `Minimum 10 characters (${reviewForm.comment.length}/10)` : 'Looks good!'}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div className="flex items-center gap-3 pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowReviewModal(false)}
+                                            className="flex-1 py-3.5 rounded-xl border font-bold cursor-pointer transition-colors hover:bg-gray-50"
+                                            style={{ backgroundColor: 'transparent', borderColor: C.cardBorder, color: C.textMuted, fontSize: T.size.sm }}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <DBtn
+                                            type="submit"
+                                            disabled={submittingReview || reviewForm.rating === 0 || reviewForm.comment.length < 10}
+                                            className="flex-1 py-3.5"
+                                        >
+                                            {submittingReview ? <Loader2 className="w-5 h-5 mx-auto animate-spin" /> : 'Post Review'}
+                                        </DBtn>
+                                    </div>
+                                </form>
+                            </motion.div>
+                        </div>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

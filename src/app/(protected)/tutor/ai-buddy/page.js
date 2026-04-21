@@ -11,33 +11,34 @@ import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { C, T, S } from '@/constants/tutorTokens';
 import Link from 'next/link';
+import FeatureGate from '@/components/FeatureGate';
 
 // ─── Activity icon map (backend action → icon + color) ───────────────────────
 const ACTION_ICON_MAP = {
-    'question_generation':  { Icon: CheckSquare, color: '#6366F1', bg: '#EEF2FF' },
+    'question_generation': { Icon: CheckSquare, color: '#6366F1', bg: '#EEF2FF' },
     'generate_lesson_quiz': { Icon: CheckSquare, color: '#6366F1', bg: '#EEF2FF' },
-    'tutor_chat':           { Icon: HelpCircle,  color: '#8B5CF6', bg: '#F5F3FF' },
-    'tutor_chat_session':   { Icon: MessageSquare, color: '#8B5CF6', bg: '#F5F3FF' },
-    'summarize_lesson':     { Icon: FileStack,   color: '#10B981', bg: '#ECFDF5' },
-    'revision_notes':       { Icon: FileStack,   color: '#10B981', bg: '#ECFDF5' },
-    'analytics':            { Icon: BarChart2,   color: '#F59E0B', bg: '#FFFBEB' },
-    'contextual_chat':      { Icon: MessageSquare, color: '#EC4899', bg: '#FDF2F8' },
+    'tutor_chat': { Icon: HelpCircle, color: '#8B5CF6', bg: '#F5F3FF' },
+    'tutor_chat_session': { Icon: MessageSquare, color: '#8B5CF6', bg: '#F5F3FF' },
+    'summarize_lesson': { Icon: FileStack, color: '#10B981', bg: '#ECFDF5' },
+    'revision_notes': { Icon: FileStack, color: '#10B981', bg: '#ECFDF5' },
+    'analytics': { Icon: BarChart2, color: '#F59E0B', bg: '#FFFBEB' },
+    'contextual_chat': { Icon: MessageSquare, color: '#EC4899', bg: '#FDF2F8' },
 };
 const DEFAULT_ICON = { Icon: Sparkles, color: '#6366F1', bg: '#EEF2FF' };
 
 // ─── Quick tool cards ─────────────────────────────────────────────────────────
 const QUICK_TOOLS = [
-    { title: 'AI Assistant Chat',    sub: 'Get Instant Help',         icon: Bot,        href: '/tutor/ai-buddy/assistant',      gradient: 'linear-gradient(135deg, #6366F1, #4F46E5)', btnLabel: 'Start Chat', btnColor: '#4F46E5' },
-    { title: 'Lecture Summary',      sub: 'Upload & Summarize',       icon: FileStack,  href: '/tutor/ai-buddy/lecture-summary', gradient: 'linear-gradient(135deg, #8B5CF6, #7C3AED)', btnLabel: 'Upload',    btnColor: '#7C3AED' },
-    { title: 'Doubt Solver',         sub: 'Ask Any Question',         icon: HelpCircle, href: '/tutor/ai-buddy/doubt-solver',   gradient: 'linear-gradient(135deg, #10B981, #059669)', btnLabel: 'Solve',     btnColor: '#059669' },
-    { title: 'Assignment Evaluator', sub: 'Auto-Grade Submissions',   icon: CheckSquare,href: '/tutor/ai-buddy/assignment-eval', gradient: 'linear-gradient(135deg, #F59E0B, #D97706)', btnLabel: 'Evaluate',  btnColor: '#D97706' },
+    { title: 'AI Assistant Chat', sub: 'Get Instant Help', icon: Bot, href: '/tutor/ai-buddy/assistant', gradient: 'linear-gradient(135deg, #6366F1, #4F46E5)', btnLabel: 'Start Chat', btnColor: '#4F46E5', featureKey: 'aiAssistant' },
+    { title: 'Lecture Summary', sub: 'Upload & Summarize', icon: FileStack, href: '/tutor/ai-buddy/lecture-summary', gradient: 'linear-gradient(135deg, #8B5CF6, #7C3AED)', btnLabel: 'Upload', btnColor: '#7C3AED', featureKey: 'aiAssistant' },
+    { title: 'Doubt Solver', sub: 'Ask Any Question', icon: HelpCircle, href: '/tutor/ai-buddy/doubt-solver', gradient: 'linear-gradient(135deg, #10B981, #059669)', btnLabel: 'Solve', btnColor: '#059669', featureKey: 'aiAssistant' },
+    { title: 'Assignment Evaluator', sub: 'Auto-Grade Submissions', icon: CheckSquare, href: '/tutor/ai-buddy/assignment-eval', gradient: 'linear-gradient(135deg, #F59E0B, #D97706)', btnLabel: 'Evaluate', btnColor: '#D97706', featureKey: 'aiAssessment' },
 ];
 
 const QUICK_AI_TOOLS = [
-    { title: 'Assignment Evaluator', sub: 'Auto Evaluate Submissions', icon: CheckSquare, color: '#6366F1', href: '/tutor/ai-buddy/assignment-eval' },
-    { title: 'Subjective Checker',   sub: 'Check Answer Scripts',      icon: PenLine,     color: '#8B5CF6', href: '/tutor/ai-buddy/subjective-check' },
-    { title: 'Plagiarism Check',     sub: 'Scan Content',              icon: ScanSearch,  color: '#10B981', href: '/tutor/ai-buddy/plagiarism' },
-    { title: 'Notes Simplifier',     sub: 'Simplify Complex Notes',    icon: Sparkles,    color: '#F59E0B', href: '/tutor/ai-buddy/notes-simplifier' },
+    { title: 'Assignment Evaluator', sub: 'Auto Evaluate Submissions', icon: CheckSquare, color: '#6366F1', href: '/tutor/ai-buddy/assignment-eval', featureKey: 'aiAssessment' },
+    { title: 'Subjective Checker', sub: 'Check Answer Scripts', icon: PenLine, color: '#8B5CF6', href: '/tutor/ai-buddy/subjective-check', featureKey: 'aiAssessment' },
+    { title: 'Plagiarism Check', sub: 'Scan Content', icon: ScanSearch, color: '#10B981', href: '/tutor/ai-buddy/plagiarism', featureKey: 'aiAssessment' },
+    { title: 'Notes Simplifier', sub: 'Simplify Complex Notes', icon: Sparkles, color: '#F59E0B', href: '/tutor/ai-buddy/notes-simplifier', featureKey: 'aiAssistant' },
 ];
 
 // ─── Sparkline SVG ────────────────────────────────────────────────────────────
@@ -93,13 +94,13 @@ function ActivityChart({ chartData }) {
         );
     }
 
-    const days    = chartData.map(d => d.day);
+    const days = chartData.map(d => d.day);
     const aiChats = chartData.map(d => d.aiChats);
     const quizGen = chartData.map(d => d.quizGenerated);
 
     const W = 560, H = 160, PAD = 32;
     const maxVal = Math.max(...aiChats, ...quizGen, 1); // avoid division by zero
-    const xStep  = (W - PAD * 2) / Math.max(days.length - 1, 1);
+    const xStep = (W - PAD * 2) / Math.max(days.length - 1, 1);
 
     const toSvgPts = (vals) =>
         vals.map((v, i) => `${PAD + i * xStep},${H - PAD - (v / maxVal) * (H - PAD * 2)}`).join(' ');
@@ -142,10 +143,10 @@ function ActivityChart({ chartData }) {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function AiBuddyDashboardPage() {
-    const [stats, setStats]                   = useState(null);
-    const [chartData, setChartData]           = useState([]);
+    const [stats, setStats] = useState(null);
+    const [chartData, setChartData] = useState([]);
     const [recentActivities, setRecentActivities] = useState([]);
-    const [loading, setLoading]               = useState(true);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -197,27 +198,31 @@ export default function AiBuddyDashboardPage() {
                 {QUICK_TOOLS.map(tool => {
                     const Icon = tool.icon;
                     return (
-                        <div key={tool.title}
-                            className="rounded-2xl p-5 flex flex-col gap-3 transition-all duration-200 hover:-translate-y-0.5"
-                            style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}
-                            onMouseEnter={e => { e.currentTarget.style.boxShadow = S.cardHover; }}
-                            onMouseLeave={e => { e.currentTarget.style.boxShadow = S.card; }}>
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                                style={{ background: tool.gradient }}>
-                                <Icon className="w-5 h-5 text-white" />
+                        <FeatureGate key={tool.title} featureName={tool.featureKey} mode="lock">
+                    
+                            <div
+                                className="rounded-2xl p-5 flex flex-col gap-3 transition-all duration-200 hover:-translate-y-0.5 h-full"
+                                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}
+                                onMouseEnter={e => { e.currentTarget.style.boxShadow = S.cardHover; }}
+                                onMouseLeave={e => { e.currentTarget.style.boxShadow = S.card; }}
+                            >
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                                    style={{ background: tool.gradient }}>
+                                    <Icon className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, marginBottom: 2 }}>
+                                        {tool.title}
+                                    </h3>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>{tool.sub}</p>
+                                </div>
+                                <Link href={tool.href}
+                                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white text-xs font-bold w-fit mt-auto transition-all hover:opacity-90"
+                                    style={{ backgroundColor: tool.btnColor }}>
+                                    {tool.btnLabel} <ArrowRight className="w-3 h-3" />
+                                </Link>
                             </div>
-                            <div>
-                                <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, marginBottom: 2 }}>
-                                    {tool.title}
-                                </h3>
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>{tool.sub}</p>
-                            </div>
-                            <Link href={tool.href}
-                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white text-xs font-bold w-fit mt-auto transition-all hover:opacity-90"
-                                style={{ backgroundColor: tool.btnColor }}>
-                                {tool.btnLabel} <ArrowRight className="w-3 h-3" />
-                            </Link>
-                        </div>
+                        </FeatureGate>
                     );
                 })}
             </div>
@@ -236,10 +241,10 @@ export default function AiBuddyDashboardPage() {
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
-                        { label: 'Total Students',  value: stats?.totalStudents  ?? '—', spark: '#6366F1', up: true },
-                        { label: 'Courses',          value: stats?.courseCount    ?? '—', spark: '#10B981', up: true },
-                        { label: 'Active AI Tools',  value: `${stats?.activeToolsCount ?? 0}/20`, spark: '#6366F1', up: true, bar: (stats?.activeToolsCount ?? 0) / 20, barColor: '#6366F1' },
-                        { label: 'Total AI Tasks',   value: stats?.totalTasks     ?? '—', spark: '#F59E0B', up: true },
+                        { label: 'Total Students', value: stats?.totalStudents ?? '—', spark: '#6366F1', up: true },
+                        { label: 'Courses', value: stats?.courseCount ?? '—', spark: '#10B981', up: true },
+                        { label: 'Active AI Tools', value: `${stats?.activeToolsCount ?? 0}/20`, spark: '#6366F1', up: true, bar: (stats?.activeToolsCount ?? 0) / 20, barColor: '#6366F1' },
+                        { label: 'Total AI Tasks', value: stats?.totalTasks ?? '—', spark: '#F59E0B', up: true },
                     ].map(stat => (
                         <div key={stat.label} className="p-3 rounded-2xl" style={{ backgroundColor: C.innerBg }}>
                             <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, marginBottom: 4 }}>{stat.label}</p>
@@ -294,9 +299,9 @@ export default function AiBuddyDashboardPage() {
                     </div>
                     <div className="space-y-2.5">
                         {[
-                            { label: 'Quizzes Created',  value: stats?.quizzesCreated    ?? 0, color: '#6366F1' },
-                            { label: 'Doubts Solved',    value: stats?.doubtsSolved      ?? 0, color: '#F59E0B' },
-                            { label: 'Notes Generated',  value: stats?.summariesGenerated ?? 0, color: '#8B5CF6' },
+                            { label: 'Quizzes Created', value: stats?.quizzesCreated ?? 0, color: '#6366F1' },
+                            { label: 'Doubts Solved', value: stats?.doubtsSolved ?? 0, color: '#F59E0B' },
+                            { label: 'Notes Generated', value: stats?.summariesGenerated ?? 0, color: '#8B5CF6' },
                         ].map(item => (
                             <div key={item.label} className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -325,26 +330,28 @@ export default function AiBuddyDashboardPage() {
                         {QUICK_AI_TOOLS.map(tool => {
                             const Icon = tool.icon;
                             return (
-                                <Link key={tool.title} href={tool.href}
-                                    className="flex items-center justify-between p-4 rounded-2xl border-2 transition-all hover:-translate-y-0.5"
-                                    style={{ borderColor: `${tool.color}20`, backgroundColor: `${tool.color}06` }}
-                                    onMouseEnter={e => { e.currentTarget.style.borderColor = `${tool.color}50`; e.currentTarget.style.boxShadow = `0 4px 16px ${tool.color}18`; }}
-                                    onMouseLeave={e => { e.currentTarget.style.borderColor = `${tool.color}20`; e.currentTarget.style.boxShadow = 'none'; }}>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                                            style={{ backgroundColor: `${tool.color}15` }}>
-                                            <Icon className="w-4 h-4" style={{ color: tool.color }} />
+                                <FeatureGate key={tool.title} featureName={tool.featureKey} mode="lock">
+                                    <Link href={tool.href}
+                                        className="flex items-center justify-between p-4 rounded-2xl border-2 transition-all hover:-translate-y-0.5"
+                                        style={{ borderColor: `${tool.color}20`, backgroundColor: `${tool.color}06` }}
+                                        onMouseEnter={e => { e.currentTarget.style.borderColor = `${tool.color}50`; e.currentTarget.style.boxShadow = `0 4px 16px ${tool.color}18`; }}
+                                        onMouseLeave={e => { e.currentTarget.style.borderColor = `${tool.color}20`; e.currentTarget.style.boxShadow = 'none'; }}>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                                                style={{ backgroundColor: `${tool.color}15` }}>
+                                                <Icon className="w-4 h-4" style={{ color: tool.color }} />
+                                            </div>
+                                            <div>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>{tool.title}</p>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted }}>{tool.sub}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>{tool.title}</p>
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted }}>{tool.sub}</p>
+                                        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                                            style={{ backgroundColor: tool.color }}>
+                                            <ArrowRight className="w-3.5 h-3.5 text-white" />
                                         </div>
-                                    </div>
-                                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                                        style={{ backgroundColor: tool.color }}>
-                                        <ArrowRight className="w-3.5 h-3.5 text-white" />
-                                    </div>
-                                </Link>
+                                    </Link>
+                                </FeatureGate>
                             );
                         })}
                     </div>

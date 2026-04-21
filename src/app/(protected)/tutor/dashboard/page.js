@@ -248,13 +248,13 @@ export default function TutorDashboard() {
   ];
 
   const totalReviews = stats?.totalReviews || 1;
-  const ratingsData = [
-    { label: '5 Star', value: Math.round(((stats?.ratingsDistribution?.[5] || 0) / totalReviews) * 100), color: 'bg-emerald-500' },
-    { label: '4 Star', value: Math.round(((stats?.ratingsDistribution?.[4] || 0) / totalReviews) * 100), color: 'bg-blue-500' },
-    { label: '3 Star', value: Math.round(((stats?.ratingsDistribution?.[3] || 0) / totalReviews) * 100), color: 'bg-yellow-500' },
-    { label: '2 Star', value: Math.round(((stats?.ratingsDistribution?.[2] || 0) / totalReviews) * 100), color: 'bg-orange-500' },
-    { label: '1 Star', value: Math.round(((stats?.ratingsDistribution?.[1] || 0) / totalReviews) * 100), color: 'bg-red-500' },
-  ];
+  // const ratingsData = [
+  //   { label: '5 Star', value: Math.round(((stats?.ratingsDistribution?.[5] || 0) / totalReviews) * 100), color: 'bg-emerald-500' },
+  //   { label: '4 Star', value: Math.round(((stats?.ratingsDistribution?.[4] || 0) / totalReviews) * 100), color: 'bg-blue-500' },
+  //   { label: '3 Star', value: Math.round(((stats?.ratingsDistribution?.[3] || 0) / totalReviews) * 100), color: 'bg-yellow-500' },
+  //   { label: '2 Star', value: Math.round(((stats?.ratingsDistribution?.[2] || 0) / totalReviews) * 100), color: 'bg-orange-500' },
+  //   { label: '1 Star', value: Math.round(((stats?.ratingsDistribution?.[1] || 0) / totalReviews) * 100), color: 'bg-red-500' },
+  // ];
 
   const recentEnrollments = stats?.recentEnrollments?.map((e) => ({
     id: `#ENR-${e._id.slice(-4)}`,
@@ -270,24 +270,24 @@ export default function TutorDashboard() {
 
 
   // 👇 Data Table Action Handlers (Ye add karo) 👇
-  const handleViewEnrollment = (row) => {
-    if (row.studentId) router.push(`/tutor/students/${row.studentId}`);
-    else toast.error('Student details not available');
-  };
+  // const handleViewEnrollment = (row) => {
+  //   if (row.studentId) router.push(`/tutor/students/${row.studentId}`);
+  //   else toast.error('Student details not available');
+  // };
 
-  const handleDeleteEnrollment = async (row) => {
-    const ok = await confirmDialog('Remove Enrollment', 'Are you sure you want to remove this enrollment?', { variant: 'destructive' });
-    if (!ok) return;
-    try {
-      const res = await api.delete(`/enrollments/tutor/${row.originalId}`);
-      if (res.data.success) {
-        toast.success('Enrollment removed');
-        fetchDashboardData();
-      }
-    } catch {
-      toast.error('Failed to remove enrollment');
-    }
-  };
+  // const handleDeleteEnrollment = async (row) => {
+  //   const ok = await confirmDialog('Remove Enrollment', 'Are you sure you want to remove this enrollment?', { variant: 'destructive' });
+  //   if (!ok) return;
+  //   try {
+  //     const res = await api.delete(`/enrollments/tutor/${row.originalId}`);
+  //     if (res.data.success) {
+  //       toast.success('Enrollment removed');
+  //       fetchDashboardData();
+  //     }
+  //   } catch {
+  //     toast.error('Failed to remove enrollment');
+  //   }
+  // };
 
   return (
     <div className="w-full min-h-screen p-6 md:p-8"
@@ -524,7 +524,7 @@ export default function TutorDashboard() {
       </div>
 
       {/* ── SECTION 6: Upcoming Exams + Ratings + Quick Links ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="md:col-span-1 space-y-6">
           <div style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, padding: '16px', boxShadow: S.card }}>
             <UpcomingExamsWidget isTutor={true} />
@@ -538,17 +538,17 @@ export default function TutorDashboard() {
             <QuickLinksWidget stats={stats} isTutor={true} />
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* ── SECTION 7: Recent Enrollments Table ── */}
-      <div>
+      {/* <div>
         <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 16px 0' }}>
           Recent Enrollments
         </h3>
         <div style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, padding: '16px', boxShadow: S.card }}>
           <DataTable data={recentEnrollments} onView={handleViewEnrollment} onDelete={handleDeleteEnrollment} isTutor={true} />
         </div>
-      </div>
+      </div> */}
 
     </div>
   );

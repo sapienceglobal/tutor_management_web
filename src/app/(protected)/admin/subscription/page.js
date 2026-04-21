@@ -45,33 +45,38 @@ export default function SubscriptionPage() {
         }
     };
 
-    const handleUpgrade = (plan) => {
-        toast.success(`Upgrade to ${plan} initiated!`);
+    const handleUpgrade = (planName) => {
+        // Here you would typically call your payment gateway / Stripe API
+        toast.success(`Upgrade to ${planName} initiated! Redirecting to payment...`);
         setShowUpgradeModal(false);
     };
 
     const getPlanGradient = (plan) => {
         switch (plan?.toLowerCase()) {
-            case 'enterprise': return 'from-[#6B4DF1] to-[#8C68F2]'; // Deep Purple
-            case 'pro': return 'from-[#4F7BF0] to-[#6EA0FF]'; // Rich Blue
-            case 'basic': return 'from-[#4ABCA8] to-[#60D3C0]'; // Emerald Green
-            case 'free': return 'from-[#A0ABC0] to-[#CBD5E1]'; // Neutral Grey
-            default: return 'from-[#6B4DF1] to-[#8C68F2]';
+            case 'enterprise': 
+            case 'enterprise plus': return 'from-[#6B4DF1] to-[#8C68F2]'; 
+            case 'pro': return 'from-[#4F7BF0] to-[#6EA0FF]'; 
+            case 'starter': 
+            case 'basic': return 'from-[#4ABCA8] to-[#60D3C0]'; 
+            case 'free': return 'from-[#A0ABC0] to-[#CBD5E1]'; 
+            default: return 'from-[#A0ABC0] to-[#CBD5E1]';
         }
     };
 
     const getPlanIcon = (plan) => {
         switch (plan?.toLowerCase()) {
-            case 'enterprise': return <Crown size={48} className="text-white opacity-90" />;
+            case 'enterprise': 
+            case 'enterprise plus': return <Crown size={48} className="text-white opacity-90" />;
             case 'pro': return <Zap size={48} className="text-white opacity-90" />;
+            case 'starter': 
             case 'basic': return <CheckCircle size={48} className="text-white opacity-90" />;
             case 'free': return <CreditCard size={48} className="text-white opacity-90" />;
-            default: return <Crown size={48} className="text-white opacity-90" />;
+            default: return <CreditCard size={48} className="text-white opacity-90" />;
         }
     };
 
     const formatDate = (dateString) => {
-        if (!dateString) return 'No expiry';
+        if (!dateString) return 'No expiry / Lifetime';
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -121,7 +126,6 @@ export default function SubscriptionPage() {
                     
                     {/* Left: Premium Plan Card */}
                     <div className={`bg-gradient-to-br ${getPlanGradient(institute?.subscriptionPlan)} rounded-2xl p-8 flex flex-col items-center justify-center text-center relative overflow-hidden shadow-lg`}>
-                        {/* Decorative background shapes */}
                         <div className="absolute top-[-20px] right-[-20px] w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
                         <div className="absolute bottom-[-10px] left-[-10px] w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
                         
@@ -158,26 +162,39 @@ export default function SubscriptionPage() {
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center pb-3 border-b border-[#E9DFFC]/50">
                                     <span className="text-[13px] font-bold text-[#7D8DA6]">Maximum Instructors</span>
-                                    <span className="text-[14px] font-black text-[#27225B]">{institute?.features?.maxTutors || 'Unlimited'}</span>
+                                    <span className="text-[14px] font-black text-[#27225B]">
+                                        {institute?.features?.maxTutors === -1 ? 'Unlimited' : institute?.features?.maxTutors || 0}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between items-center pb-3 border-b border-[#E9DFFC]/50">
                                     <span className="text-[13px] font-bold text-[#7D8DA6]">Maximum Students</span>
-                                    <span className="text-[14px] font-black text-[#27225B]">{institute?.features?.maxStudents || 'Unlimited'}</span>
+                                    <span className="text-[14px] font-black text-[#27225B]">
+                                        {institute?.features?.maxStudents === -1 ? 'Unlimited' : institute?.features?.maxStudents || 0}
+                                    </span>
                                 </div>
+                                <div className="flex justify-between items-center pb-3 border-b border-[#E9DFFC]/50">
+                                    <span className="text-[13px] font-bold text-[#7D8DA6]">Storage Limit</span>
+                                    <span className="text-[14px] font-black text-[#27225B]">
+                                        {institute?.features?.storageLimitGB || 0} GB
+                                    </span>
+                                </div>
+
+                                {/* 🌟 NEW: Real AI Credit Tracking */}
                                 <div className="flex justify-between items-center">
                                     <div className="flex items-center gap-2">
                                         <Cpu className="w-4 h-4 text-[#FC8730]" />
-                                        <span className="text-[13px] font-bold text-[#7D8DA6]">AI Buddy Usage</span>
+                                        <span className="text-[13px] font-bold text-[#7D8DA6]">AI Credits Available</span>
                                     </div>
                                     <div className="flex items-center gap-2">
+                                        {/* Simple Progress Bar */}
                                         <div className="w-24 h-2 bg-[#E9DFFC] rounded-full overflow-hidden hidden sm:block">
                                             <div 
                                                 className="h-full bg-[#FC8730]" 
-                                                style={{ width: `${Math.min(100, ((institute?.aiUsageCount || 0) / (institute?.aiUsageQuota || 1000)) * 100)}%` }}
+                                                style={{ width: `${Math.min(100, ((institute?.features?.aiCreditsPerMonth || 0) / 10000) * 100)}%` }} // Reference logic
                                             ></div>
                                         </div>
-                                        <span className="text-[14px] font-black text-[#27225B]">
-                                            {institute?.aiUsageCount || 0} <span className="text-[#A0ABC0] font-medium">/ {institute?.aiUsageQuota || 1000}</span>
+                                        <span className="text-[14px] font-black text-[#8B5CF6]">
+                                            {institute?.features?.aiCreditsPerMonth?.toLocaleString() || 0} <span className="text-[#A0ABC0] font-medium text-[11px]">Credits</span>
                                         </span>
                                     </div>
                                 </div>
@@ -211,6 +228,7 @@ export default function SubscriptionPage() {
             </div>
 
             {/* ── Feature Access Section ── */}
+          
             <FeatureAccessCard 
                 tenant={institute} 
                 onUpgrade={() => setShowUpgradeModal(true)}

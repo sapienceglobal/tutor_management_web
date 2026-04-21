@@ -398,68 +398,96 @@ export default function InstitutesPage() {
                                 </div>
 
                                 {/* Subscription Plan - 🌟 NOW DYNAMIC */}
+                             {/* Subscription Plan - 🌟 NOW DYNAMIC & CUSTOMIZABLE */}
                                 <div className="bg-white p-5 rounded-2xl border border-[#E9DFFC] shadow-sm">
-                                    <h3 className="text-[13px] font-black text-[#6B4DF1] uppercase tracking-wider mb-4">Subscription Plan</h3>
+                                    <h3 className="text-[13px] font-black text-[#6B4DF1] uppercase tracking-wider mb-4">Subscription Plan & Limits</h3>
 
                                     {availablePlans.length === 0 ? (
                                         <div className="bg-[#FFF7ED] border border-[#FDBA74] rounded-xl p-4 flex flex-col items-center justify-center text-center">
                                             <AlertCircle className="w-6 h-6 text-[#FC8730] mb-2" />
-                                            <h4 className="text-[14px] font-bold text-[#9A3412] m-0">No Plans Configured</h4>
-                                            <p className="text-[12px] text-[#C05621] mt-1 mb-3">You need to create at least one subscription plan before onboarding an institute.</p>
-                                            <Link href="/superadmin/subscription-plans" className="text-[13px] font-bold text-white bg-[#FC8730] px-4 py-2 rounded-lg hover:bg-[#EA580C] transition-colors">
+                                            <h4 className="text-[14px] font-bold text-[#9A3412] m-0">No Premium Plans Configured</h4>
+                                            <p className="text-[12px] text-[#C05621] mt-1 mb-3">You can create the institute with a free default plan, or setup premium plans first.</p>
+                                            <Link href="/superadmin/subscription-plans" className="text-[13px] font-bold text-white bg-[#FC8730] px-4 py-2 rounded-lg hover:bg-[#EA580C] transition-colors text-decoration-none">
                                                 Manage Plans
                                             </Link>
                                         </div>
-                                    ) : (
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="block text-[13px] font-bold text-[#27225B] mb-2">Select Plan</label>
-                                                <select
-                                                    value={formData.planId}
-                                                    onChange={(e) => {
-                                                        const selectedId = e.target.value;
-                                                        const selectedPlan = availablePlans.find(p => p._id === selectedId);
+                                    ) : null}
+
+                                    <div className="space-y-4 mt-4">
+                                        <div>
+                                            <label className="block text-[13px] font-bold text-[#27225B] mb-2">Select Base Plan</label>
+                                            <select
+                                                value={formData.planId || 'free'}
+                                                onChange={(e) => {
+                                                    const selectedId = e.target.value;
+                                                    if (selectedId === 'free') {
                                                         setFormData({
                                                             ...formData,
-                                                            planId: selectedId,
-                                                            maxTutors: selectedPlan?.features?.maxTutors === -1 ? 1000 : (selectedPlan?.features?.maxTutors || 5),
-                                                            maxStudents: selectedPlan?.features?.maxStudents === -1 ? 10000 : (selectedPlan?.features?.maxStudents || 50)
+                                                            planId: '',
+                                                            maxTutors: 5,
+                                                            maxStudents: 50,
+                                                            storageLimitGB: 5,
+                                                            aiCreditsPerMonth: 0
                                                         });
-                                                    }}
-                                                    className="w-full p-3 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] text-[13px] font-bold text-[#27225B] outline-none cursor-pointer"
-                                                >
-                                                    {availablePlans.map(plan => (
-                                                        <option key={plan._id} value={plan._id}>
-                                                            {plan.name} ({plan.features.maxTutors === -1 ? 'Unlimited' : plan.features.maxTutors} Tutors, {plan.features.maxStudents === -1 ? 'Unlimited' : plan.features.maxStudents} Students)
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                                        return;
+                                                    }
+                                                    
+                                                    const selectedPlan = availablePlans.find(p => p._id === selectedId);
+                                                    setFormData({
+                                                        ...formData,
+                                                        planId: selectedId,
+                                                        maxTutors: selectedPlan?.features?.maxTutors === -1 ? 1000 : (selectedPlan?.features?.maxTutors || 5),
+                                                        maxStudents: selectedPlan?.features?.maxStudents === -1 ? 10000 : (selectedPlan?.features?.maxStudents || 50),
+                                                        storageLimitGB: selectedPlan?.features?.storageLimitGB || 10,
+                                                        aiCreditsPerMonth: selectedPlan?.features?.aiCreditsPerMonth || 0
+                                                    });
+                                                }}
+                                                className="w-full p-3 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] text-[13px] font-bold text-[#27225B] outline-none cursor-pointer"
+                                            >
+                                                <option value="free">No Plan (Free / Default Limits)</option>
+                                                {availablePlans.map(plan => (
+                                                    <option key={plan._id} value={plan._id}>
+                                                        {plan.name} ({plan.features.maxTutors === -1 ? 'Unlimited' : plan.features.maxTutors} Tutors, {plan.features.maxStudents === -1 ? 'Unlimited' : plan.features.maxStudents} Students)
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="bg-[#F8F6FC] p-4 rounded-xl border border-purple-100/50">
+                                            <p className="text-[10px] font-bold text-gray-500 uppercase mb-3">Custom Limit Overrides</p>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                                 <div>
-                                                    <label className="block text-[13px] font-bold text-[#27225B] mb-1.5">Max Tutors Limit</label>
-                                                    <input type="number" min="1" max="10000" value={formData.maxTutors} onChange={(e) => setFormData({ ...formData, maxTutors: parseInt(e.target.value) || 5 })} className="w-full p-2.5 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] text-[13px] font-bold text-[#27225B]" />
+                                                    <label className="block text-[11px] font-bold text-[#27225B] mb-1.5">Max Tutors</label>
+                                                    <input type="number" min="1" value={formData.maxTutors} onChange={(e) => setFormData({ ...formData, maxTutors: parseInt(e.target.value) || 5 })} className="w-full p-2.5 bg-white border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#6B4DF1] text-[13px] font-bold text-[#27225B]" />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[13px] font-bold text-[#27225B] mb-1.5">Max Students Limit</label>
-                                                    <input type="number" min="1" max="100000" value={formData.maxStudents} onChange={(e) => setFormData({ ...formData, maxStudents: parseInt(e.target.value) || 50 })} className="w-full p-2.5 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] text-[13px] font-bold text-[#27225B]" />
+                                                    <label className="block text-[11px] font-bold text-[#27225B] mb-1.5">Max Students</label>
+                                                    <input type="number" min="1" value={formData.maxStudents} onChange={(e) => setFormData({ ...formData, maxStudents: parseInt(e.target.value) || 50 })} className="w-full p-2.5 bg-white border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#6B4DF1] text-[13px] font-bold text-[#27225B]" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[11px] font-bold text-[#27225B] mb-1.5">Storage (GB)</label>
+                                                    <input type="number" min="1" value={formData.storageLimitGB || 5} onChange={(e) => setFormData({ ...formData, storageLimitGB: parseInt(e.target.value) || 5 })} className="w-full p-2.5 bg-white border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#6B4DF1] text-[13px] font-bold text-[#27225B]" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[11px] font-bold text-[#8B5CF6] mb-1.5">AI Credits/Mo</label>
+                                                    <input type="number" min="0" value={formData.aiCreditsPerMonth || 0} onChange={(e) => setFormData({ ...formData, aiCreditsPerMonth: parseInt(e.target.value) || 0 })} className="w-full p-2.5 bg-white border border-purple-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#6B4DF1] text-[13px] font-black text-[#8B5CF6] shadow-sm" />
                                                 </div>
                                             </div>
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                             </form>
                         </div>
 
                         <div className="p-5 border-t border-[#F4F0FD] bg-white flex justify-end gap-3 shrink-0">
                             <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-6 py-2.5 bg-white border border-[#E9DFFC] text-[#7A6C9B] font-bold text-[13px] rounded-xl cursor-pointer hover:bg-[#F9F7FC] transition-colors">Cancel</button>
-                            <button
+                           <button
                                 type="submit"
                                 form="add-inst-form"
-                                disabled={availablePlans.length === 0} // Disable agar plans nahi hain
+                                disabled={loading} // 🌟 Disabled hata diya taaki Free par bhi create ho sake
                                 className="px-8 py-2.5 bg-[#6B4DF1] text-white font-bold text-[13px] rounded-xl hover:bg-[#5839D6] disabled:bg-[#D1C4F9] transition-colors shadow-md border-none cursor-pointer"
                             >
-                                Create Institute
+                                {loading ? 'Creating...' : 'Create Institute'}
                             </button>
                         </div>
                     </div>

@@ -8,52 +8,55 @@ import {
     Bot, HelpCircle, FileStack, NotebookPen,
     CheckSquare, PenLine, ScanSearch,
     Lightbulb, Map, AlertTriangle, UserMinus,
-    Eye, Shield, Wand2, Hammer, Bell, Sparkles
+    Eye, Shield, Wand2, Hammer, Bell, Sparkles,
+    Crown,Lock
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { C, T } from '@/constants/tutorTokens';
+import FeatureGate from '@/components/FeatureGate';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 const AI_NAV = [
-    { title: 'AI Dashboard', href: '/tutor/ai-buddy', icon: LayoutGrid, type: 'link' },
+    { title: 'AI Dashboard', href: '/tutor/ai-buddy', icon: LayoutGrid, type: 'link', featureKey: 'aiAssistant' },
     {
-        title: 'Smart Teaching', type: 'group', color: '#3B82F6',
+        title: 'Smart Teaching', type: 'group', color: '#3B82F6', featureKey: 'aiAssistant', // 🌟 Starter
         children: [
-            { title: 'AI Assistant Chat', href: '/tutor/ai-buddy/assistant',        icon: Bot },
-            { title: 'AI Doubt Solver',   href: '/tutor/ai-buddy/doubt-solver',     icon: HelpCircle },
-            { title: 'Lecture Summary',   href: '/tutor/ai-buddy/lecture-summary',  icon: FileStack },
-            { title: 'Notes Simplifier',  href: '/tutor/ai-buddy/notes-simplifier', icon: NotebookPen },
+            { title: 'AI Assistant Chat', href: '/tutor/ai-buddy/assistant', icon: Bot },
+            { title: 'AI Doubt Solver', href: '/tutor/ai-buddy/doubt-solver', icon: HelpCircle },
+            { title: 'Lecture Summary', href: '/tutor/ai-buddy/lecture-summary', icon: FileStack },
+            { title: 'Notes Simplifier', href: '/tutor/ai-buddy/notes-simplifier', icon: NotebookPen },
         ],
     },
     {
-        title: 'Smart Assessment', type: 'group', color: '#F59E0B',
+        title: 'Smart Assessment', type: 'group', color: '#F59E0B', featureKey: 'aiAssessment', // 🌟 Pro
         children: [
-            { title: 'Assignment Evaluator', href: '/tutor/ai-buddy/assignment-eval',  icon: CheckSquare },
-            { title: 'Subjective Checker',   href: '/tutor/ai-buddy/subjective-check', icon: PenLine },
-            { title: 'Plagiarism Insight',   href: '/tutor/ai-buddy/plagiarism',       icon: ScanSearch },
+            { title: 'Assignment Evaluator', href: '/tutor/ai-buddy/assignment-eval', icon: CheckSquare },
+            { title: 'Subjective Checker', href: '/tutor/ai-buddy/subjective-check', icon: PenLine },
+            { title: 'Plagiarism Insight', href: '/tutor/ai-buddy/plagiarism', icon: ScanSearch },
         ],
     },
     {
-        title: 'Student Intelligence', type: 'group', color: '#10B981',
+        title: 'Student Intelligence', type: 'group', color: '#10B981', featureKey: 'aiIntelligence', // 🌟 Enterprise
         children: [
-            { title: 'Weak Topics',    href: '/tutor/ai-buddy/weak-topics',    icon: Lightbulb },
-            { title: 'Study Plan',     href: '/tutor/ai-buddy/study-plan',     icon: Map },
+            { title: 'Weak Topics', href: '/tutor/ai-buddy/weak-topics', icon: Lightbulb },
+            { title: 'Study Plan', href: '/tutor/ai-buddy/study-plan', icon: Map },
             { title: 'Risk Predictor', href: '/tutor/ai-buddy/risk-predictor', icon: AlertTriangle },
-            { title: 'Dropout Risk',   href: '/tutor/ai-buddy/dropout-risk',   icon: UserMinus },
+            { title: 'Dropout Risk', href: '/tutor/ai-buddy/dropout-risk', icon: UserMinus },
         ],
     },
     {
-        title: 'Exam Intelligence', type: 'group', color: '#8B5CF6',
+        title: 'Exam Intelligence', type: 'group', color: '#8B5CF6', featureKey: 'aiAssessment', // 🌟 Pro
         children: [
-            { title: 'Proctoring Alerts', href: '/tutor/ai-buddy/proctoring',       icon: Eye },
-            { title: 'Exam Review',       href: '/tutor/ai-buddy/suspicion-review', icon: Shield },
+            { title: 'Proctoring Alerts', href: '/tutor/ai-buddy/proctoring', icon: Eye },
+            { title: 'Exam Review', href: '/tutor/ai-buddy/suspicion-review', icon: Shield },
         ],
     },
     {
-        title: 'AI Automation', type: 'group', color: '#EC4899',
+        title: 'AI Automation', type: 'group', color: '#EC4899', featureKey: 'aiIntelligence', // 🌟 Enterprise
         children: [
-            { title: 'AI Report Generator', href: '/tutor/ai-buddy/report-gen',     icon: Wand2 },
-            { title: 'AI Course Builder',   href: '/tutor/ai-buddy/course-builder', icon: Hammer },
-            { title: 'AI Notifications',    href: '/tutor/ai-buddy/notifications',  icon: Bell },
+            { title: 'AI Report Generator', href: '/tutor/ai-buddy/report-gen', icon: Wand2 },
+            { title: 'AI Course Builder', href: '/tutor/ai-buddy/course-builder', icon: Hammer },
+            { title: 'AI Notifications', href: '/tutor/ai-buddy/notifications', icon: Bell },
         ],
     },
 ];
@@ -71,7 +74,7 @@ function AiSubSidebar({ collapsed, setCollapsed }) {
                 if (res.data?.success) {
                     setSidebarStats({
                         totalSessions: res.data.stats?.totalSessions ?? 0,
-                        totalTasks:    res.data.stats?.totalTasks    ?? 0,
+                        totalTasks: res.data.stats?.totalTasks ?? 0,
                     });
                 }
             })
@@ -90,13 +93,13 @@ function AiSubSidebar({ collapsed, setCollapsed }) {
     const toggle = (title) => setExpandedGroups(prev => ({ ...prev, [title]: !prev[title] }));
 
     const SB = {
-        bg:           'rgba(255,255,255,0.95)',
-        border:       'rgba(117,115,232,0.12)',
-        activeBg:     'rgba(117,115,232,0.10)',
-        hoverBg:      'rgba(117,115,232,0.06)',
-        activeText:   '#4F46E5',
+        bg: 'rgba(255,255,255,0.95)',
+        border: 'rgba(117,115,232,0.12)',
+        activeBg: 'rgba(117,115,232,0.10)',
+        hoverBg: 'rgba(117,115,232,0.06)',
+        activeText: '#4F46E5',
         inactiveText: '#64748B',
-        headerBg:     'linear-gradient(135deg, #6366F1, #4F46E5)',
+        headerBg: 'linear-gradient(135deg, #6366F1, #4F46E5)',
     };
 
     if (collapsed) {
@@ -174,7 +177,8 @@ function AiSubSidebar({ collapsed, setCollapsed }) {
 
                     const isOpen = expandedGroups[item.title];
                     return (
-                        <div key={item.title} className="mb-1">
+
+                        <FeatureGate key={item.title} featureName={item.featureKey} mode="lock" className="mb-1">
                             <button onClick={() => toggle(item.title)}
                                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all"
                                 style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: item.color }}
@@ -203,7 +207,7 @@ function AiSubSidebar({ collapsed, setCollapsed }) {
                                     })}
                                 </div>
                             </div>
-                        </div>
+                        </FeatureGate>
                     );
                 })}
             </div>
@@ -215,7 +219,7 @@ function AiSubSidebar({ collapsed, setCollapsed }) {
                         AI Usage
                     </p>
                     {[
-                        { label: 'Chats',      value: sidebarStats.totalSessions },
+                        { label: 'Chats', value: sidebarStats.totalSessions },
                         { label: 'Tasks Done', value: sidebarStats.totalTasks },
                     ].map(({ label, value }) => (
                         <div key={label} className="flex items-center justify-between mb-1">
@@ -230,17 +234,68 @@ function AiSubSidebar({ collapsed, setCollapsed }) {
         </div>
     );
 }
-
+const getRequiredFeatureForPath = (pathname) => {
+    for (const item of AI_NAV) {
+        if (item.type === 'link' && pathname === item.href) {
+            return item.featureKey;
+        }
+        if (item.type === 'group') {
+            const isMatch = item.children.some(child => pathname === child.href || pathname.startsWith(child.href + '/'));
+            if (isMatch) return item.featureKey;
+        }
+    }
+    return 'aiAssistant'; // Default base feature
+};
 // ─── Layout ───────────────────────────────────────────────────────────────────
 export default function AiBuddyLayout({ children }) {
     const [collapsed, setCollapsed] = useState(false);
+    const pathname = usePathname();
+    
+    // 🌟 2. Context se details nikali
+    const { hasFeature, loading, openUpsellModal } = useSubscription();
+
+    // 🌟 3. Current page ke liye kaunsi chaabi chahiye?
+    const requiredFeature = getRequiredFeatureForPath(pathname);
+    
+    // 🌟 4. Check karo ki kya user ke paas wo chaabi hai?
+    const isAuthorized = hasFeature(requiredFeature);
 
     return (
         <div className="flex h-[calc(100vh-64px)] overflow-hidden rounded-2xl"
             style={{ border: '1px solid rgba(117,115,232,0.12)', boxShadow: '0 4px 32px rgba(117,115,232,0.08)' }}>
+            
             <AiSubSidebar collapsed={collapsed} setCollapsed={setCollapsed} />
-            <div className="flex-1 overflow-y-auto">
-                {children}
+            
+            <div className="flex-1 overflow-y-auto relative bg-[#F8F6FC]">
+                {/* 🌟 5. Route Protection Logic */}
+                {loading ? (
+                    <div className="flex h-full items-center justify-center">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-[#6B4DF1]"></div>
+                    </div>
+                ) : isAuthorized ? (
+                    // Agar authorized hai, toh actual page dikhao
+                    children
+                ) : (
+                    // Agar URL bypass karke aaya hai, toh Access Denied dikhao!
+                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 bg-white/80 backdrop-blur-md">
+                        <div className="bg-white p-8 rounded-3xl shadow-2xl border border-[#E9DFFC] max-w-md w-full text-center transform transition-all">
+                            <div className="w-20 h-20 bg-[#F4F0FD] rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Lock size={32} className="text-[#6B4DF1]" />
+                            </div>
+                            <h2 className="text-2xl font-black text-[#27225B] mb-2">Access Restricted</h2>
+                            <p className="text-[#7D8DA6] text-[14px] font-medium mb-8 leading-relaxed">
+                                The module you are trying to access requires the <strong className="text-[#6B4DF1]">{requiredFeature}</strong> feature, which is not available in your current plan.
+                            </p>
+                            
+                            <button 
+                                onClick={openUpsellModal}
+                                className="w-full py-3.5 bg-[#6B4DF1] text-white text-[14px] font-bold rounded-xl hover:bg-[#5839D6] transition-colors shadow-lg shadow-[#6B4DF1]/30 flex items-center justify-center gap-2 border-none cursor-pointer"
+                            >
+                                <Crown size={18} /> View Upgrade Options
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -574,7 +574,7 @@ function CreateExamPageClient() {
                                     </div>
 
                                     {/* 🌟 PREMIUM FEATURE: AI Proctoring 🌟 */}
-                                    <FeatureGate featureName="aiFeatures" mode="lock">
+                                    <FeatureGate featureName="aiAssessment" mode="lock">
                                         <div className="p-6" style={{ backgroundColor: '#E3DFF8', borderRadius: R['2xl'] }}>
                                             <div className="flex items-center gap-3 mb-6">
                                                 <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ backgroundColor: C.surfaceWhite, borderRadius: R.xl }}>
@@ -695,7 +695,7 @@ function CreateExamPageClient() {
                                     </div>
                                     <div className="flex gap-3 w-full md:w-auto flex-wrap">
                                         {/* 🌟 PREMIUM FEATURE: AI Generate Button 🌟 */}
-                                        <FeatureGate featureName="aiFeatures" mode="lock">
+                                        <FeatureGate featureName="aiAssessment" mode="lock">
                                             <button onClick={() => setIsAIOpen(true)} className="flex items-center gap-2 h-11 px-5 cursor-pointer transition-opacity hover:opacity-80"
                                                 style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, border: `1px solid ${C.cardBorder}`, borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
                                                 <Sparkles size={16} /> AI Generate
@@ -720,7 +720,7 @@ function CreateExamPageClient() {
                                         <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 8px 0' }}>The question bank is empty</h3>
                                         <p className="max-w-sm mb-8" style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: '0 auto 32px' }}>Build your assessment by adding questions manually, pulling from the bank, or let AI do the heavy lifting.</p>
                                         {/* 🌟 PREMIUM FEATURE: Empty State AI Button 🌟 */}
-                                        <FeatureGate featureName="aiFeatures" mode="lock">
+                                        <FeatureGate featureName="aiAssessment" mode="lock">
                                             <button onClick={() => setIsAIOpen(true)} className="flex items-center justify-center h-12 px-8 gap-2 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-lg"
                                                 style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
                                                 <Sparkles size={16} /> Auto-Generate with AI
@@ -916,8 +916,11 @@ function CreateExamPageClient() {
             </Modal>
 
             {/* Add/Edit Question Modal */}
-            <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title={editingIndex >= 0 ? "Edit Question" : "Add New Question"}>
-                <div className="space-y-6 max-h-[80vh] overflow-y-auto p-1 custom-scrollbar" style={{ backgroundColor: '#EAE8FA', padding: '24px', borderRadius: R['2xl'] }}>
+{/* Add/Edit Question Modal */}
+{/* 🌟 Modal tag par className="max-w-4xl" lagao */}
+<Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title={editingIndex >= 0 ? "Edit Question" : "Add New Question"} className="max-w-4xl">
+    {/* 🌟 Andar wale div se wo lambi wali width classes HATA do */}
+    <div className="space-y-6 max-h-[80vh] overflow-y-auto p-1 custom-scrollbar" style={{ backgroundColor: '#EAE8FA', padding: '24px', borderRadius: R['2xl'] }}>
                     <div className="space-y-3">
                         <label style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>Question Content</label>
                         <RichTextEditor value={currentQuestion.question} onChange={(html) => setCurrentQuestion({ ...currentQuestion, question: html })} />
@@ -1008,8 +1011,10 @@ function CreateExamPageClient() {
             </Modal>
 
             {/* Import from Bank Modal */}
-            <Modal isOpen={isBankOpen} onClose={() => setIsBankOpen(false)} title="Import from Question Bank">
-                <div className="space-y-5 flex flex-col p-1" style={{ backgroundColor: '#EAE8FA', padding: '24px', borderRadius: R['2xl'] }}>
+         
+<Modal isOpen={isBankOpen} onClose={() => setIsBankOpen(false)} title="Import from Question Bank" className="max-w-5xl">
+    {/* 🌟 Andar wale div se wo lambi wali width classes HATA do */}
+    <div className="space-y-5 flex flex-col p-1" style={{ backgroundColor: '#EAE8FA', padding: '24px', borderRadius: R['2xl'] }}>
                     <div className="flex gap-4 items-end shrink-0 p-4" style={{ backgroundColor: '#E3DFF8', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}` }}>
                         <div className="flex-1 space-y-2">
                             <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Search Questions</label>
