@@ -31,7 +31,7 @@ export const C = {
     // ── Admin-controlled — via ThemeContext CSS vars ───────────────────────
     // These update automatically when admin changes theme settings.
 
-    pageBg:      '#dfdaf3',   // hardcoded — no CSS var flash on load
+    pageBg:      '#f3f4f5',   // hardcoded — no CSS var flash on load
      btnPrimary:  '#7573E8',   //  'var(--theme-primary)',         // #7573E8 default
    
     darkCard:    'var(--theme-sidebar)',         // #3D3B8E default — dark hero cards, AI section
@@ -53,7 +53,7 @@ export const C = {
     statValue:  '#1D225E',   // stat card numbers from backend
 
     // Surfaces
-    cardBg:       '#EAE8FA',  // stat cards, panels, performance card bg
+    cardBg:       '#ffff',  // stat cards, panels, performance card bg
     surfaceWhite: '#ffffff',  // pure white inner surfaces
     innerBg:      'rgba(220,215,246,0.55)', // inner rows, hover bg
 
@@ -87,7 +87,7 @@ export const C = {
 export const T = {
 
     // Admin-controlled via --theme-font CSS var
-    fontFamily:     'var(--theme-font, "DM Sans", sans-serif)',
+fontFamily: 'var(--font-kanit), sans-serif',
     fontFamilyMono: "'JetBrains Mono', monospace",
 
     // Fixed design scale — change here → all pages update
@@ -127,9 +127,21 @@ export const T = {
 };
 
 // ─── S — Shadows ──────────────────────────────────────────────────────────────
+// export const S = {
+//     card:      '0 2px 12px rgba(98,103,233,0.08)',
+//     cardHover: '0 4px 20px rgba(98,103,233,0.14)',
+//     btn:       '0 4px 14px rgba(117,115,232,0.30)',
+//     btnDark:   '0 4px 14px rgba(61,59,142,0.35)',
+//     active:    '0 2px 8px rgba(98,103,233,0.20)',
+// };
+// ─── S — Shadows ──────────────────────────────────────────────────────────────
 export const S = {
-    card:      '0 2px 12px rgba(98,103,233,0.08)',
-    cardHover: '0 4px 20px rgba(98,103,233,0.14)',
+  
+    card:      'rgba(149, 157, 165, 0.2) 0px 8px 24px',
+    
+    // Hover ke liye shadow ko thoda aur smooth/bada kar diya
+    cardHover: 'rgba(149, 157, 165, 0.3) 0px 12px 32px', 
+    
     btn:       '0 4px 14px rgba(117,115,232,0.30)',
     btnDark:   '0 4px 14px rgba(61,59,142,0.35)',
     active:    '0 2px 8px rgba(98,103,233,0.20)',

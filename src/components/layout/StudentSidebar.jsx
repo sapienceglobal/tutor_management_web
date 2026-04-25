@@ -11,7 +11,7 @@ import { C, T, R } from '@/constants/studentTokens';
 
 // ─── Sidebar-specific color constants ────────────────────────────────────────
 const SB = {
-    bg:           '#C5BFEA',          // darker lavender — creates contrast vs page #DCD7F6
+    bg:           '#e7f3ff',          // darker lavender — creates contrast vs page #DCD7F6
     activeBg:     '#5A72D4',          // active item background
     activeText:   '#ffffff',          // active item text + icon
     inactiveText: '#242661',          // inactive item text
@@ -63,7 +63,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
     const activeLinkStyle = {
         backgroundColor: SB.activeBg,
         color: SB.activeText,
-        borderRadius: R.xl,
+        borderRadius: '9999px', // Changed to fully rounded
         boxShadow: '0 4px 12px rgba(90,114,212,0.35)',
         fontFamily: T.fontFamily,
         fontSize: T.size.sm,
@@ -73,7 +73,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
     const inactiveLinkStyle = {
         backgroundColor: 'transparent',
         color: SB.inactiveText,
-        borderRadius: R.xl,
+        borderRadius: '9999px', // Changed to fully rounded
         fontFamily: T.fontFamily,
         fontSize: T.size.sm,
         fontWeight: T.weight.semibold,
@@ -83,7 +83,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
     const expandedBtnStyle = {
         backgroundColor: SB.hoverBg,
         color: SB.inactiveText,
-        borderRadius: R.xl,
+        borderRadius: '9999px', // Changed to fully rounded
         fontFamily: T.fontFamily,
         fontSize: T.size.sm,
         fontWeight: T.weight.bold,
@@ -268,7 +268,8 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                             return (
                                                                 <Link key={sub.title} href={sub.href}
                                                                     onClick={() => setIsOpen(false)}
-                                                                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 relative"
+                                                                    // Changed rounded-xl to rounded-full here
+                                                                    className="flex items-center gap-2.5 px-3 py-2 rounded-full transition-all duration-150 relative"
                                                                     style={subActive
                                                                         ? { backgroundColor: SB.activeBg, color: SB.activeText, fontWeight: T.weight.bold, fontFamily: T.fontFamily, fontSize: T.size.sm, boxShadow: '0 2px 8px rgba(90,114,212,0.30)' }
                                                                         : { color: SB.inactiveText, opacity: 0.75, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium }

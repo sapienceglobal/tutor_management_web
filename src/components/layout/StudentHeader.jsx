@@ -43,7 +43,7 @@ export function StudentHeader({ user, institute, onLogout, onMenuClick, onSideba
 
     return (
         <>
-            <header className="sticky top-0 z-40 w-full bg-[#f1eefa] backdrop-blur-sm border-b border-slate-200/70 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]">
+            <header className="sticky top-0 z-40 w-full bg-[#ffff] backdrop-blur-sm border-b border-slate-200/70 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]">
                 <div className="h-[60px] flex items-center justify-between px-4 lg:px-5 gap-3">
 
                     <div className="flex items-center gap-2 flex-shrink-0">

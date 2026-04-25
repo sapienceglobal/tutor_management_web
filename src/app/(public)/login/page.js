@@ -147,7 +147,7 @@ const LoginPageClient = () => {
                     </div>
 
                     {/* Right Form */}
-                    <div className="p-8 lg:p-12 flex flex-col justify-center bg-white/80 lg:bg-white/50 backdrop-blur-xl">
+                    <div className="p-8 lg:p-12 flex flex-col justify-center bg-[#f3f3f3]">
                         <div className="max-w-md mx-auto w-full">
                             <div className="text-center mb-10">
                                 <h1 className="text-3xl font-bold text-slate-800 mb-2">Welcome Back</h1>
@@ -171,7 +171,7 @@ const LoginPageClient = () => {
 
                             <form onSubmit={handleSubmit} className="space-y-5">
                                 <div className="space-y-2">
-                                    <Label htmlFor="email" className="text-slate-700 font-medium ml-1">Email</Label>
+                                    <Label htmlFor="email" className="text-slate-700 font-bold ml-1">Email</Label>
                                     <div className="relative group">
                                         <Mail className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors"/>
                                         <Input id="email" name="email" type="email" required placeholder="name@example.com"
@@ -187,13 +187,13 @@ const LoginPageClient = () => {
 
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between ml-1">
-                                        <Label htmlFor="password" className="text-slate-700 font-medium">Password</Label>
+                                        <Label htmlFor="password" className="text-slate-700 font-bold">Password</Label>
                                         <a href="/forgot-password" className="text-xs font-semibold text-indigo-600 hover:text-indigo-500">Forgot password?</a>
                                     </div>
                                     <div className="relative group">
                                         <Lock className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors"/>
                                         <Input id="password" name="password" type="password" placeholder="••••••••"
-                                            className="pl-12 h-12 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl shadow-sm"
+                                            className="shadow-input pl-12 h-12 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl "
                                             value={formData.password} onChange={handleChange}/>
                                     </div>
                                 </div>

@@ -16,6 +16,7 @@ export default {
             },
         },
         extend: {
+            
             colors: {
                 border: "hsl(var(--border))",
                 input: "hsl(var(--input))",
@@ -110,6 +111,10 @@ export default {
                 "shimmer": "shimmer 3s linear infinite",
                 "slide-in": "slide-in 0.5s ease-out forwards",
             },
+             boxShadow: {
+        'input': '0px 8px 24px rgba(149, 157, 165, 0.2)',
+      }
+
         },
     },
     plugins: [typography],

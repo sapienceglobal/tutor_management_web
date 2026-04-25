@@ -35,6 +35,8 @@
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 
+  --font-sans: var(--theme-font);
+
   @keyframes accordion-down {
     from {
       height: 0
@@ -74,7 +76,20 @@
   --theme-muted: #f1f5f9;
   --theme-border: #e2e8f0;
 
-  --theme-font: 'DM Sans', sans-serif;
+/* Option 1: Inter (Sabse Clean aur Professional - Highly Recommended) */
+  /* --theme-font: var(--font-inter), sans-serif; */
+
+  /* Option 2: Plus Jakarta Sans (Techy aur Modern Dashboard feel) */
+  /* --theme-font: var(--font-jakarta), sans-serif; */
+
+  /* Option 3: Sora (Bold, thoda futuristic aur sharp) */
+  /* --theme-font: var(--font-sora), sans-serif; */
+
+  /* Option 4: Outfit (Friendly aur smooth) */
+  /* --theme-font: var(--font-outfit), sans-serif; */
+
+  /* Option 5: Kanit (Thoda squarish aur sporty) */
+--theme-font: var(--font-kanit), sans-serif;
   --theme-radius: 1rem;
   /* rounded-2xl = 1rem */
   --theme-radius-sm: 0.75rem;
