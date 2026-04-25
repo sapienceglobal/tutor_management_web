@@ -209,9 +209,9 @@ export default function TutorDetailPage({ params }) {
         dateTime.setHours(hours, minutes || 0, 0, 0);
         try {
             setBookingLoading(true);
-            const res = await api.post('/appointments', { tutorId: id, dateTime: dateTime.toISOString(), notes: bookingNote });
+            const res = await api.post('/appointments', { tutorId: id, dateTime: dateTime.toISOString(), notes: bookingNote, sessionType: 'online_live' });
             if (res.data?.success) {
-                toast.success('Appointment requested successfully! 🎉');
+                toast.success('Live class requested successfully! 🎉');
                 setBookingNote(''); setSelectedSlot(null); fetchSlotsForDate();
             }
         } catch (err) {
@@ -320,7 +320,7 @@ export default function TutorDetailPage({ params }) {
                                             {[
                                                 { icon: Award,  text: `${tutor.experience ?? 0} yrs exp` },
                                                 { icon: Users,  text: `${tutor.studentsCount || 0} students` },
-                                                { icon: MapPin, text: tutor.location || 'Online' },
+                                                { icon: MapPin, text: 'Live Online' },
                                             ].map(({ icon: Icon, text }) => (
                                                 <span key={text} className="flex items-center gap-1.5 text-xs font-bold" style={{ color: C.textMuted }}>
                                                     <Icon size={14} style={{ color: C.btnPrimary }} /> {text}
@@ -533,7 +533,7 @@ export default function TutorDetailPage({ params }) {
                                     
                                     {/* Date picker */}
                                     <div>
-                                        <SectionTitle icon={CalendarIcon}>Select a Date</SectionTitle>
+                                    <SectionTitle icon={CalendarIcon}>Select Live Class Date</SectionTitle>
                                         <div className="flex gap-2.5 overflow-x-auto pb-3 custom-scrollbar">
                                             {calendarDays.map(date => {
                                                 const dateStr = format(date, 'yyyy-MM-dd');
@@ -566,7 +566,7 @@ export default function TutorDetailPage({ params }) {
 
                                     {/* Time slots */}
                                     <div>
-                                        <SectionTitle icon={Clock}>Available Time Slots</SectionTitle>
+                                        <SectionTitle icon={Clock}>Available Live Class Slots</SectionTitle>
                                         {availableSlots.length > 0 ? (
                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                                 {availableSlots.map(slot => (
@@ -624,11 +624,12 @@ export default function TutorDetailPage({ params }) {
                                     </p>
                                 </div>
                                 <dl className="space-y-3">
-                                    {[
-                                        { label: 'Date',     value: selectedDate ? format(selectedDate, 'MMM d, yyyy') : '—', highlight: false },
-                                        { label: 'Time',     value: selectedSlot || 'Select a slot',                  highlight: !!selectedSlot },
-                                        { label: 'Duration', value: '60 mins',                                        highlight: false },
-                                    ].map(item => (
+                                        {[
+                                            { label: 'Date',     value: selectedDate ? format(selectedDate, 'MMM d, yyyy') : '—', highlight: false },
+                                            { label: 'Time',     value: selectedSlot || 'Select a slot',                  highlight: !!selectedSlot },
+                                            { label: 'Duration', value: '60 mins',                                        highlight: false },
+                                            { label: 'Mode',     value: 'Online Live',                                    highlight: true },
+                                        ].map(item => (
                                         <div key={item.label} className="flex items-center justify-between">
                                             <dt style={{ fontSize: T.size.xs, color: C.textMuted, fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                                 {item.label}
@@ -644,7 +645,7 @@ export default function TutorDetailPage({ params }) {
                             {/* Note Textarea */}
                             <div className="space-y-2">
                                 <label style={{ display: 'block', fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>
-                                    Message for Tutor (Optional)
+                                    Message for Live Class (Optional)
                                 </label>
                                 <textarea rows={3} placeholder="What do you want to learn?"
                                     value={bookingNote}
@@ -661,7 +662,7 @@ export default function TutorDetailPage({ params }) {
                                 style={{ background: C.gradientBtn, color: '#fff', fontSize: T.size.sm, fontWeight: T.weight.black }}>
                                 {bookingLoading
                                     ? <><Loader2 size={16} className="animate-spin" /> Requesting…</>
-                                    : <><CalendarIcon size={16} /> Book Appointment</>}
+                                    : <><CalendarIcon size={16} /> Book Live Class</>}
                             </button>
 
                             <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textAlign: 'center', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { normalizeMediaUrlsDeep } from '@/lib/mediaUrl';
 
 // Use Next.js API proxy so API key stays server-side (never sent from browser).
 const api = axios.create({
@@ -25,7 +26,14 @@ api.interceptors.request.use(
 
 // Add a response interceptor to handle errors
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        const responseType = response?.config?.responseType;
+        const canNormalize = !responseType || responseType === 'json' || responseType === 'text';
+        if (canNormalize && response?.data) {
+            response.data = normalizeMediaUrlsDeep(response.data);
+        }
+        return response;
+    },
     (error) => {
         // Handle 401 — Unauthorized
         if (error.response && error.response.status === 401) {

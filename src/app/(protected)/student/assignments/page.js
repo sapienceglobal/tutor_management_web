@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/axios';
 import assignmentService from '@/services/assignmentService';
+import { resolveMediaUrl } from '@/lib/mediaUrl';
 import { C, T, S, R } from '@/constants/studentTokens';
 
 // ─── Theme ───────────────────────────────────────────────────────────────────
@@ -113,14 +114,16 @@ function SubmissionDrawer({ row, onClose }) {
                                     </p>
                                     <div className="space-y-2">
                                         {asgn.attachments.map((file, idx) => (
-                                            <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer"
+                                            <a key={idx} href={resolveMediaUrl(file.url)} target="_blank" rel="noopener noreferrer"
                                                 className="flex items-center justify-between p-3 rounded-xl transition-all border text-decoration-none group"
                                                 style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}
                                                 onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.backgroundColor = '#fff'; }}
                                                 onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.backgroundColor = outerCard; }}>
                                                 <div className="flex items-center gap-3 min-w-0">
                                                     <div className="p-2 rounded-lg bg-white shadow-sm shrink-0">
-                                                        <Download className="w-4 h-4" style={{ color: C.btnPrimary }} />
+                                                        {String(file.type || '').toLowerCase().startsWith('image/')
+                                                            ? <img src={resolveMediaUrl(file.url)} alt={file.name || 'attachment'} className="w-8 h-8 rounded-md object-cover" />
+                                                            : <Download className="w-4 h-4" style={{ color: C.btnPrimary }} />}
                                                     </div>
                                                     <p className="truncate m-0" style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>
                                                         {file.name || 'Download Attachment'}
@@ -266,14 +269,16 @@ function SubmissionDrawer({ row, onClose }) {
                                     </div>
                                     <div className="p-4 space-y-2.5">
                                         {sub.attachments.map((file, i) => (
-                                            <a key={i} href={file.url} target="_blank" rel="noopener noreferrer"
+                                            <a key={i} href={resolveMediaUrl(file.url)} target="_blank" rel="noopener noreferrer"
                                                 className="flex items-center justify-between p-3.5 rounded-xl border transition-all group no-underline"
                                                 style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}
                                                 onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.backgroundColor = '#fff'; }}
                                                 onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.backgroundColor = outerCard; }}>
                                                 <div className="flex items-center gap-3 min-w-0">
                                                     <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: innerBox }}>
-                                                        <FileText size={14} style={{ color: C.btnPrimary }} />
+                                                        {String(file.type || '').toLowerCase().startsWith('image/')
+                                                            ? <img src={resolveMediaUrl(file.url)} alt={file.name || 'attachment'} className="w-8 h-8 rounded-md object-cover" />
+                                                            : <FileText size={14} style={{ color: C.btnPrimary }} />}
                                                     </div>
                                                     <p className="truncate m-0" style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>
                                                         {file.name}

@@ -6,6 +6,7 @@ import { ArrowLeft, Loader2, User, Download, X, Calculator, ClipboardList } from
 import api from '@/lib/axios';
 import assignmentService from '@/services/assignmentService';
 import { toast } from 'react-hot-toast';
+import { resolveMediaUrl } from '@/lib/mediaUrl';
 import { C, T, S, R } from '@/constants/tutorTokens';
 
 // Focus Handlers
@@ -261,11 +262,13 @@ export default function AssignmentSubmissionsPage({ params }) {
                                 {selectedSubmission.attachments?.length > 0 ? (
                                     <div className="space-y-2">
                                         {selectedSubmission.attachments.map((file, idx) => (
-                                            <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer"
+                                            <a key={idx} href={resolveMediaUrl(file.url)} target="_blank" rel="noopener noreferrer"
                                                 className="flex items-center gap-3 p-3 transition-opacity hover:opacity-80 text-decoration-none"
                                                 style={{ backgroundColor: '#ffffff', borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
                                                 <div className="p-2" style={{ backgroundColor: '#E3DFF8', borderRadius: R.md }}>
-                                                    <Download size={16} color={C.btnPrimary} />
+                                                    {String(file.type || '').toLowerCase().startsWith('image/')
+                                                        ? <img src={resolveMediaUrl(file.url)} alt={file.name || 'attachment'} className="w-8 h-8 rounded-md object-cover" />
+                                                        : <Download size={16} color={C.btnPrimary} />}
                                                 </div>
                                                 <p className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{file.name}</p>
                                             </a>

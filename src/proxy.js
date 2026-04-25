@@ -43,6 +43,13 @@ export async function proxy(request) {
             if (pathname === '/login' || pathname === '/register') {
                 return NextResponse.redirect(new URL('/superadmin', request.url));
             }
+            // Block superadmin from navigating into other role panels by URL
+            const crossPanel = pathname.startsWith('/admin')
+                || pathname.startsWith('/tutor')
+                || pathname.startsWith('/student');
+            if (crossPanel) {
+                return NextResponse.redirect(new URL('/superadmin/dashboard', request.url));
+            }
             return NextResponse.next();
         }
 

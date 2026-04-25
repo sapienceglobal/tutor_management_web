@@ -10,6 +10,7 @@ import {
 import api from '@/lib/axios';
 import assignmentService from '@/services/assignmentService';
 import { toast } from 'react-hot-toast';
+import { resolveMediaUrl } from '@/lib/mediaUrl';
 import { C, T, S, R } from '@/constants/studentTokens';
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
@@ -210,14 +211,16 @@ export default function StudentAssignmentDetailsPage({ params }) {
                                         </h3>
                                         <div className="grid sm:grid-cols-2 gap-3">
                                             {assignment.attachments.map((file, idx) => (
-                                                <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer"
+                                                <a key={idx} href={resolveMediaUrl(file.url)} target="_blank" rel="noopener noreferrer"
                                                     className="flex items-center justify-between p-4 rounded-2xl transition-all border text-decoration-none group"
                                                     style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}
                                                     onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.boxShadow = S.cardHover; }}
                                                     onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.boxShadow = 'none'; }}>
                                                     <div className="flex items-center gap-3 min-w-0">
                                                         <div className="p-2.5 rounded-xl bg-white shadow-sm shrink-0">
-                                                            <FileText className="w-4 h-4" style={{ color: C.btnPrimary }} />
+                                                            {String(file.type || '').toLowerCase().startsWith('image/')
+                                                                ? <img src={resolveMediaUrl(file.url)} alt={file.name || 'attachment'} className="w-10 h-10 rounded-lg object-cover" />
+                                                                : <FileText className="w-4 h-4" style={{ color: C.btnPrimary }} />}
                                                         </div>
                                                         <p className="truncate m-0" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
                                                             {file.name}
@@ -356,14 +359,16 @@ export default function StudentAssignmentDetailsPage({ params }) {
                                                     <div key={idx} className="flex items-center justify-between p-3.5 rounded-xl border transition-colors" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
                                                         <div className="flex items-center gap-3 min-w-0">
                                                             <div className="p-2 rounded-lg bg-white shadow-sm shrink-0">
-                                                                <FileText className="w-4 h-4" style={{ color: C.btnPrimary }} />
+                                                                {String(file.type || '').toLowerCase().startsWith('image/')
+                                                                    ? <img src={resolveMediaUrl(file.url)} alt={file.name || 'attachment'} className="w-10 h-10 rounded-lg object-cover" />
+                                                                    : <FileText className="w-4 h-4" style={{ color: C.btnPrimary }} />}
                                                             </div>
                                                             <div className="min-w-0">
                                                                 <p className="truncate m-0" style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>{file.name}</p>
                                                             </div>
                                                         </div>
                                                         <div className="flex gap-1 shrink-0">
-                                                            <a href={file.url} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg transition-colors hover:bg-white cursor-pointer" style={{ color: C.btnPrimary }}>
+                                                            <a href={resolveMediaUrl(file.url)} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg transition-colors hover:bg-white cursor-pointer" style={{ color: C.btnPrimary }}>
                                                                 <Download className="w-4 h-4" />
                                                             </a>
                                                             {!isGraded && (

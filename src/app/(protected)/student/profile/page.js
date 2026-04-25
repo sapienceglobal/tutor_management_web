@@ -10,15 +10,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
-// ── Reusable themed Toggle ───────────────────────────────────────────────────
-const Toggle = ({ checked, onToggle }) => (
-    <button type="button" onClick={onToggle}
-        className="w-11 h-6 rounded-full transition-colors relative shrink-0"
-        style={{ backgroundColor: checked ? 'var(--theme-primary)' : 'color-mix(in srgb, var(--theme-foreground) 15%, transparent)' }}>
-        <span className={`block w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-transform duration-200 ${checked ? 'translate-x-5' : 'translate-x-0.5'}`} />
-    </button>
-);
-
 export default function StudentProfilePage() {
     const router = useRouter();
     const [user, setUser] = useState(null);
@@ -27,9 +18,6 @@ export default function StudentProfilePage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [editForm, setEditForm] = useState({ name: '', phone: '', dateOfBirth: '', gender: '' });
-    const [notifSettings, setNotifSettings] = useState({ email: true, push: true, sms: false });
-    const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-    const [sessions, setSessions] = useState([]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -45,16 +33,9 @@ export default function StudentProfilePage() {
                     const u = meRes.data.user;
                     setUser(u);
                     setEditForm({ name: u.name || '', phone: u.phone || '', dateOfBirth: u.dateOfBirth || '', gender: u.gender || '' });
-                    setNotifSettings({
-                        email: u.notificationSettings?.email !== false,
-                        push: u.notificationSettings?.push !== false,
-                        sms: u.notificationSettings?.sms === true,
-                    });
                 }
                 if (enrollRes.data?.enrollments) setEnrollments(enrollRes.data.enrollments);
                 if (batchesRes.data?.batches) setBatches(batchesRes.data.batches);
-                const sessionsRes = await api.get('/auth/sessions').catch(() => ({ data: { sessions: [] } }));
-                if (sessionsRes.data?.sessions) setSessions(sessionsRes.data.sessions);
             } catch {
                 const stored = localStorage.getItem('user');
                 if (stored) setUser(JSON.parse(stored));
@@ -85,12 +66,7 @@ export default function StudentProfilePage() {
         finally { setSaving(false); }
     };
 
-    const handleNotificationToggle = async (key, value) => {
-        const next = { ...notifSettings, [key]: value };
-        setNotifSettings(next);
-        try { await api.patch('/auth/notification-settings', next); }
-        catch { setNotifSettings(notifSettings); }
-    };
+
 
     const studentId      = user?._id ? `SAP-STU-${String(user._id).slice(-4)}` : '—';
     const firstEnrollment = enrollments[0];
@@ -262,65 +238,7 @@ export default function StudentProfilePage() {
                         </div>
                     </div>
 
-                    {/* ── Notification Settings ──────────────────────────── */}
-                    <div className="rounded-2xl border overflow-hidden" style={cardStyle}>
-                        <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--theme-border)' }}>
-                            <h2 className="font-black text-sm" style={{ color: 'var(--theme-foreground)' }}>Notification Settings</h2>
-                        </div>
-                        <div className="p-5 space-y-4">
-                            {[
-                                { key: 'email', label: 'Email Notifications'    },
-                                { key: 'sms',   label: 'SMS Notifications'      },
-                                { key: 'push',  label: 'Exam Reminders'         },
-                            ].map(item => (
-                                <div key={item.key} className="flex items-center justify-between">
-                                    <span className="text-sm font-medium" style={{ color: 'var(--theme-foreground)' }}>{item.label}</span>
-                                    <Toggle checked={notifSettings[item.key]} onToggle={() => handleNotificationToggle(item.key, !notifSettings[item.key])} />
-                                </div>
-                            ))}
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium" style={{ color: 'var(--theme-foreground)' }}>AI Study Recommendations</span>
-                                <Toggle checked={true} onToggle={() => {}} />
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* ── Security Settings ──────────────────────────────── */}
-                    <div className="rounded-2xl border overflow-hidden" style={cardStyle}>
-                        <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--theme-border)' }}>
-                            <h2 className="font-black text-sm" style={{ color: 'var(--theme-foreground)' }}>Security Settings</h2>
-                        </div>
-                        <div className="p-5 space-y-2">
-                            <Link href="/student/profile/change-password"
-                                className="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all"
-                                style={{ color: 'var(--theme-foreground)' }}
-                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--theme-primary) 6%, transparent)'; e.currentTarget.style.color = 'var(--theme-primary)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--theme-foreground)'; }}>
-                                <span className="flex items-center gap-2 text-sm font-medium">
-                                    <Lock className="w-4 h-4" /> Change Password
-                                </span>
-                                <ChevronRight className="w-4 h-4 opacity-35" />
-                            </Link>
-                            <div className="flex items-center justify-between px-3 py-2.5">
-                                <span className="text-sm font-medium" style={{ color: 'var(--theme-foreground)' }}>Two-Factor Authentication</span>
-                                <Toggle checked={twoFactorEnabled} onToggle={() => setTwoFactorEnabled(v => !v)} />
-                            </div>
-                            <div className="px-3 pt-3 border-t" style={{ borderColor: 'var(--theme-border)' }}>
-                                <p className="text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: 'var(--theme-foreground)', opacity: 0.32 }}>
-                                    Recent Sessions
-                                </p>
-                                <ul className="space-y-1.5">
-                                    {(sessions.length > 0 ? sessions.slice(0, 3) : [{ browser: 'Chrome', device: 'Windows', lastActive: null }])
-                                        .map((s, i) => (
-                                            <li key={i} className="text-xs" style={{ color: 'var(--theme-foreground)', opacity: 0.45 }}>
-                                                {s.browser || 'Browser'} on {s.device || 'Device'} —{' '}
-                                                {s.lastActive ? new Date(s.lastActive).toLocaleString() : 'Today'}
-                                            </li>
-                                        ))}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 {/* ── Right Sidebar ─────────────────────────────────────── */}

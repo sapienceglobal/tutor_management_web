@@ -158,7 +158,7 @@ function TutorCard({ tutor }) {
                     </span>
                     <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold"
                         style={{ backgroundColor: innerBox, color: C.heading, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily }}>
-                        <MapPin className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} /> {tutor.location || 'Online'}
+                        <MapPin className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} /> Live Online
                     </span>
                 </div>
 
@@ -176,7 +176,7 @@ function TutorCard({ tutor }) {
                     <Link href={`/student/tutors/${tutor._id}`} className="text-decoration-none">
                         <button className="flex items-center justify-center gap-1.5 px-5 h-10 text-white rounded-xl text-xs transition-all shadow-md cursor-pointer border-none group-hover:scale-105"
                             style={{ background: C.gradientBtn, fontFamily: T.fontFamily, fontWeight: T.weight.bold }}>
-                            Book Session <ArrowRight className="w-4 h-4" />
+                            Book Live Class <ArrowRight className="w-4 h-4" />
                         </button>
                     </Link>
                 </div>
@@ -248,7 +248,7 @@ export default function FindTutorsPage() {
                     <div>
                         <h1 style={{ fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading, margin: '0 0 2px 0' }}>Find a Tutor</h1>
                         <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>
-                            Connect with verified experts for personalized 1-on-1 learning.
+                            Connect with verified experts for personalized 1-on-1 live online classes.
                         </p>
                     </div>
                 </div>

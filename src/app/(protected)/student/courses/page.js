@@ -6,8 +6,9 @@ import {
     Search, FolderOpen, FileCheck, Video, ChevronDown,
     FileText, Sparkles, Megaphone, Pencil,
     Trash2, Star, GraduationCap, BookOpen, Brain, PlayCircle, ChevronLeft, ChevronRight, ArrowRight,
-    Loader2
+    Loader2, Heart
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import api from '@/lib/axios';
 import { getAudienceDisplay } from '@/lib/audienceDisplay';
 import { C, T, S, R } from '@/constants/studentTokens';
@@ -136,7 +137,7 @@ function EnrolledCourseCard({ enrollment, index }) {
 }
 
 // ─── Discover course card ─────────────────────────────────────────────────────
-function DiscoverCourseCard({ course }) {
+function DiscoverCourseCard({ course, isWishlisted, onWishlistToggle }) {
     const instructorName = course.tutorId?.userId?.name || 'Instructor';
     const audienceInfo = getAudienceDisplay(course);
     const isFree = !course.price || course.price === 0;
@@ -150,6 +151,16 @@ function DiscoverCourseCard({ course }) {
                     style={isFree ? { backgroundColor: 'rgba(16, 185, 129, 0.9)' } : {}}>
                     {isFree ? 'FREE' : `₹${course.price}`}
                 </div>
+                <button
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (onWishlistToggle) onWishlistToggle(course._id, isWishlisted);
+                    }}
+                    className="absolute top-3 left-3 p-2 rounded-full backdrop-blur-md transition-all group/heart bg-white/80 hover:bg-white shadow-md z-10 border-none cursor-pointer"
+                >
+                    <Heart className={`w-4 h-4 transition-all duration-300 ${isWishlisted ? 'fill-red-500 text-red-500 scale-110' : 'text-slate-500 group-hover/heart:text-red-400'}`} />
+                </button>
             </div>
             <div className="p-5 flex-1 flex flex-col">
                 <div className="flex items-start justify-between gap-2 mb-1">
@@ -205,6 +216,25 @@ export default function MyCoursesPage() {
     const [myInstitutes, setMyInstitutes]           = useState([]);
     const [discoverSearch, setDiscoverSearch]       = useState('');
     const [discoverCategory, setDiscoverCategory]   = useState('');
+    const [wishlistIds, setWishlistIds]             = useState([]);
+
+    const handleWishlistToggle = async (courseId, currentlyWishlisted) => {
+        try {
+            if (currentlyWishlisted) {
+                setWishlistIds(prev => prev.filter(id => id !== courseId));
+                await api.delete(`/wishlist/${courseId}`);
+                toast.success('Removed from wishlist');
+            } else {
+                setWishlistIds(prev => [...prev, courseId]);
+                await api.post('/wishlist', { courseId });
+                toast.success('Added to wishlist');
+            }
+        } catch (err) {
+            if (currentlyWishlisted) setWishlistIds(prev => [...prev, courseId]);
+            else setWishlistIds(prev => prev.filter(id => id !== courseId));
+            toast.error(err.response?.data?.message || 'Failed to update wishlist');
+        }
+    };
 
 
     useEffect(() => { fetchData(); fetchMembership(); }, []);
@@ -239,13 +269,14 @@ export default function MyCoursesPage() {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [enrollRes, examsRes, liveRes, batchesRes, annRes, aiRes] = await Promise.all([
+            const [enrollRes, examsRes, liveRes, batchesRes, annRes, aiRes, wishlistRes] = await Promise.all([
                 api.get('/enrollments/my-enrollments'),
                 api.get('/student/exams/all').catch(() => ({ data: { exams: [] } })),
                 api.get('/live-classes').catch(() => ({ data: { liveClasses: [] } })),
                 api.get('/batches/my').catch(() => ({ data: { batches: [] } })),
                 api.get('/enrollments/my-announcements').catch(() => ({ data: { announcements: [] } })),
                 api.get('/ai/quick-recommendations').catch(() => ({ data: { recommendations: [] } })),
+                api.get('/wishlist').catch(() => ({ data: { data: [] } })),
             ]);
             if (enrollRes.data.success) setEnrollments(enrollRes.data.enrollments || []);
             if (examsRes.data?.exams) setUpcomingExamsCount(examsRes.data.exams.filter(e => e.endDate && new Date(e.endDate) >= new Date() && !e.isCompleted).length);
@@ -253,6 +284,7 @@ export default function MyCoursesPage() {
             if (batchesRes.data?.batches) setBatches(batchesRes.data.batches);
             if (annRes.data?.announcements) setAnnouncements(annRes.data.announcements);
             if (aiRes.data?.recommendations) setAiRecommendations(aiRes.data.recommendations);
+            if (wishlistRes.data?.data) setWishlistIds(wishlistRes.data.data.map(w => w.course?._id || w.course));
         } catch (err) { console.error(err); }
         finally { setLoading(false); }
     };
@@ -460,7 +492,7 @@ export default function MyCoursesPage() {
                                 });
                                 return filtered.length > 0 ? (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                        {filtered.map(course => <DiscoverCourseCard key={course._id} course={course} />)}
+                                        {filtered.map(course => <DiscoverCourseCard key={course._id} course={course} isWishlisted={wishlistIds.includes(course._id)} onWishlistToggle={handleWishlistToggle} />)}
                                     </div>
                                 ) : (
                                     <div className="rounded-3xl p-12 text-center" style={{ backgroundColor: C.cardBg, border: `1px dashed ${C.cardBorder}` }}>

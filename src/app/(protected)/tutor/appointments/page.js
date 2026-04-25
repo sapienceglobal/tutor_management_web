@@ -84,6 +84,14 @@ export default function ManageAppointmentsPage() {
         }
     };
 
+    const handleJoin = (link) => {
+        if (!link) {
+            toast.error('Meeting link is not available yet');
+            return;
+        }
+        window.open(link, '_blank');
+    };
+
     const filtered = appointments.filter(apt =>
         activeTab === 'history'
             ? apt.status === 'completed' || apt.status === 'cancelled'
@@ -110,7 +118,7 @@ export default function ManageAppointmentsPage() {
                     </div>
                     <div>
                         <h1 style={{ color: C.heading, fontSize: T.size.xl, fontWeight: T.weight.black, margin: '0 0 4px 0' }}>Manage Appointments</h1>
-                        <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.medium, margin: 0 }}>Track and manage your student bookings</p>
+                        <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.medium, margin: 0 }}>Track and manage your online live class bookings</p>
                     </div>
                 </div>
 
@@ -212,9 +220,9 @@ export default function ManageAppointmentsPage() {
                                             style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}>
                                             <MessageSquare size={16} /> Message
                                         </button>
-                                        <button className="flex-1 flex items-center justify-center gap-2 h-10 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-sm"
+                                        <button onClick={() => handleJoin(apt.meetingLink)} className="flex-1 flex items-center justify-center gap-2 h-10 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-sm"
                                             style={{ background: C.gradientBtn, color: '#fff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
-                                            <Video size={16} /> Join
+                                            <Video size={16} /> Join Live
                                         </button>
                                     </div>
                                 )}

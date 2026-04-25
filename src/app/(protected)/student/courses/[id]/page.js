@@ -9,7 +9,7 @@ import {
     ShieldAlert, Eye, ClipboardList, Brain, FileText, Loader2,
     ChevronLeft, ChevronRight, BarChart2,
     AlertCircle, Play, SkipForward, Bot,
-    BookOpen
+    BookOpen, Heart
 } from 'lucide-react';
 import api from '@/lib/axios';
 import assignmentService from '@/services/assignmentService';
@@ -137,6 +137,7 @@ export default function CourseDetailPage({ params }) {
     const [hasMoreReviews, setHasMoreReviews]     = useState(true);
     const [loadingReviews, setLoadingReviews]     = useState(false);
     const [isWishlisted, setIsWishlisted]         = useState(false);
+    const [wishlistLoading, setWishlistLoading]   = useState(false);
     const [showExamHistoryModal, setShowExamHistoryModal] = useState(false);
     const [showLessonPlayerModal, setShowLessonPlayerModal] = useState(false);
     const [selectedExam, setSelectedExam]         = useState(null);
@@ -236,9 +237,9 @@ export default function CourseDetailPage({ params }) {
     const toggleWishlist = async () => {
         try {
             setWishlistLoading(true);
-            if (isWishlisted) { await api.delete(`/wishlist/${id}`); setIsWishlisted(false); }
-            else { await api.post('/wishlist', { courseId: id }); setIsWishlisted(true); }
-        } catch (_) { } finally { setWishlistLoading(false); }
+            if (isWishlisted) { await api.delete(`/wishlist/${id}`); setIsWishlisted(false); toast.success('Removed from wishlist'); }
+            else { await api.post('/wishlist', { courseId: id }); setIsWishlisted(true); toast.success('Added to wishlist'); }
+        } catch (_) { toast.error('Failed to update wishlist'); } finally { setWishlistLoading(false); }
     };
     
     const handleEnroll = async () => {
@@ -367,13 +368,23 @@ export default function CourseDetailPage({ params }) {
                                 </p>
                             )}
                         </div>
-                        {(isEnrolled || isInstructor) && (
-                            <button onClick={resumeToFirst}
-                                className="shrink-0 flex items-center gap-2 px-5 py-2.5 text-white rounded-xl transition-transform hover:scale-105 shadow-md cursor-pointer border-none"
-                                style={{ ...GS, fontSize: '12px', fontWeight: T.weight.black }}>
-                                <Play className="w-3.5 h-3.5 fill-white" /> Resume Learning
-                            </button>
-                        )}
+                        <div className="shrink-0 flex items-center gap-2">
+                            {/* Sticky Header Wishlist Button */}
+                            {(!isEnrolled && !isInstructor) && (
+                                <button onClick={toggleWishlist} disabled={wishlistLoading}
+                                    className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all shadow-sm cursor-pointer border ${isWishlisted ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}
+                                >
+                                    {wishlistLoading ? <Loader2 className="w-5 h-5 animate-spin text-slate-400" /> : <Heart className={`w-5 h-5 transition-transform ${isWishlisted ? 'fill-red-500 text-red-500 scale-110' : 'text-slate-400'}`} />}
+                                </button>
+                            )}
+                            {(isEnrolled || isInstructor) && (
+                                <button onClick={resumeToFirst}
+                                    className="shrink-0 flex items-center gap-2 px-5 py-2 h-10 text-white rounded-xl transition-transform hover:scale-105 shadow-md cursor-pointer border-none"
+                                    style={{ ...GS, fontSize: '12px', fontWeight: T.weight.black }}>
+                                    <Play className="w-3.5 h-3.5 fill-white" /> Resume Learning
+                                </button>
+                            )}
+                        </div>
                     </div>
                     
                     {/* Modern Tabs */}
@@ -917,9 +928,16 @@ export default function CourseDetailPage({ params }) {
                                             </div>
                                         )}
                                     </div>
-                                    <DBtn onClick={handleEnroll} disabled={enrolling} className="w-full py-4 text-sm shadow-[0_4px_14px_rgba(79,70,229,0.3)]">
-                                        {enrolling ? <><Loader2 className="w-4 h-4 inline mr-2 animate-spin" />Processing…</> : course.isFree ? 'Enroll Now for Free' : 'Buy Now Securely'}
-                                    </DBtn>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <DBtn onClick={handleEnroll} disabled={enrolling} className="flex-1 py-4 text-sm shadow-[0_4px_14px_rgba(79,70,229,0.3)]">
+                                            {enrolling ? <><Loader2 className="w-4 h-4 inline mr-2 animate-spin" />Processing…</> : course.isFree ? 'Enroll Now for Free' : 'Buy Now Securely'}
+                                        </DBtn>
+                                        <button onClick={toggleWishlist} disabled={wishlistLoading}
+                                            className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 transition-all shadow-sm border cursor-pointer ${isWishlisted ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}
+                                        >
+                                            {wishlistLoading ? <Loader2 className="w-6 h-6 animate-spin text-slate-400" /> : <Heart className={`w-6 h-6 transition-transform ${isWishlisted ? 'fill-red-500 text-red-500 scale-110' : 'text-slate-400'}`} />}
+                                        </button>
+                                    </div>
                                     <p className="text-center mt-4" style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '16px 0 0 0' }}>
                                         🔒 30-Day Money-Back Guarantee
                                     </p>

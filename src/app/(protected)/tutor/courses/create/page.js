@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Plus, X, Upload, ChevronRight, ChevronLeft, BookOpen, Video, FileText, CheckCircle2, Rocket, Trash2, ArrowLeft } from 'lucide-react';
+import { Loader2, Plus, X, Upload, ChevronRight, ChevronLeft, BookOpen, Video, FileText, CheckCircle2, Rocket, Trash2, ArrowLeft, AlertCircle } from 'lucide-react';
 import api from '@/lib/axios';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
@@ -36,6 +36,18 @@ const baseInputStyle = {
     padding: '10px 16px',
     transition: 'all 0.2s ease',
 };
+
+const createDefaultLessonForm = () => ({
+    title: '',
+    description: '',
+    type: 'video',
+    videoUrl: '',
+    duration: '',
+    isFree: false,
+    attachments: [],
+    documents: [],
+    quiz: { passingScore: 70, timeLimit: '', questions: [] },
+});
 
 // â”€â”€â”€ Step Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const STEPS = [
@@ -81,7 +93,7 @@ function StepBar({ current = 1 }) {
     );
 }
 
-function ThumbnailUpload({ value, onChange }) {
+function ThumbnailUpload({ value, onFileSelect, uploading }) {
     return (
         <div className="space-y-2">
             <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>
@@ -93,13 +105,16 @@ function ThumbnailUpload({ value, onChange }) {
                     <input type="file" className="hidden" accept="image/*" id="thumb-upload"
                         onChange={e => {
                             const file = e.target.files?.[0];
-                            if (file) onChange({ target: { name: 'thumbnail', value: URL.createObjectURL(file) } });
+                            if (file) onFileSelect(file);
+                            e.target.value = '';
                         }} />
                     <label htmlFor="thumb-upload" className="flex flex-col items-center cursor-pointer w-full h-full justify-center">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}` }}>
                             <Upload size={18} color={C.btnPrimary} />
                         </div>
-                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>Browse files</p>
+                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
+                            {uploading ? 'Uploading...' : 'Browse files'}
+                        </p>
                         <p style={{ fontSize: '11px', color: C.textMuted, margin: 0 }}>JPG, PNG, GIF</p>
                     </label>
                 </div>
@@ -154,6 +169,7 @@ export default function CreateCoursePage() {
     const [step, setStep] = useState(1);
     const [courseId, setCourseId] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
     const [categories, setCategories] = useState([]);
 
     // Data States
@@ -175,9 +191,10 @@ export default function CreateCoursePage() {
 
     // Modal Forms
     const [moduleTitle, setModuleTitle] = useState('');
-    const [lessonForm, setLessonForm] = useState({ title: '', type: 'video', videoUrl: '', duration: '', isFree: false });
+    const [lessonForm, setLessonForm] = useState(createDefaultLessonForm);
     const [assignmentForm, setAssignmentForm] = useState({ title: '', description: '', totalMarks: 100 });
     const [assignmentFiles, setAssignmentFiles] = useState([]);
+    const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
     useEffect(() => { fetchCategories(); }, []);
 
@@ -200,9 +217,38 @@ export default function CreateCoursePage() {
         setCourseData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleThumbnailUpload = async (file) => {
+        if (!file) return;
+        const previewUrl = URL.createObjectURL(file);
+        setCourseData((prev) => ({ ...prev, thumbnail: previewUrl }));
+        setIsUploadingThumbnail(true);
+
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+            const res = await api.post('/upload/image', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            const uploadedUrl = res.data?.imageUrl || res.data?.url;
+            if (!uploadedUrl) throw new Error('Upload response missing image URL');
+            setCourseData((prev) => ({ ...prev, thumbnail: uploadedUrl }));
+            toast.success('Thumbnail uploaded');
+        } catch (error) {
+            setCourseData((prev) => ({ ...prev, thumbnail: '' }));
+            toast.error(error?.response?.data?.message || 'Failed to upload thumbnail');
+        } finally {
+            URL.revokeObjectURL(previewUrl);
+            setIsUploadingThumbnail(false);
+        }
+    };
+
     // â”€â”€â”€ Step 1: Save Course Info (Draft) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleStep1Submit = async (e) => {
         e.preventDefault();
+        if (isUploadingThumbnail) {
+            return toast.error('Please wait for thumbnail upload to finish');
+        }
         if (!courseData.title || !courseData.description || !courseData.category || !courseData.price) {
             return toast.error('Please fill in all required fields');
         }
@@ -263,12 +309,25 @@ export default function CreateCoursePage() {
         if (!lessonForm.title || !activeModuleId) return;
         setLoading(true);
         try {
-            const content = {};
-            if (lessonForm.type === 'video') { content.videoUrl = lessonForm.videoUrl; content.duration = Number(lessonForm.duration) * 60; }
+            let attachments = Array.isArray(lessonForm.attachments) ? lessonForm.attachments : [];
+            const content = { attachments };
+            if (lessonForm.type === 'video') {
+                content.videoUrl = lessonForm.videoUrl;
+                content.duration = Number(lessonForm.duration) * 60;
+            } else if (lessonForm.type === 'document') {
+                content.documents = lessonForm.documents;
+                content.duration = Number(lessonForm.duration) * 60 || 0;
+            } else if (lessonForm.type === 'quiz') {
+                content.quiz = {
+                    ...lessonForm.quiz,
+                    timeLimit: lessonForm.quiz.timeLimit ? Number(lessonForm.quiz.timeLimit) : null,
+                };
+                content.duration = Number(lessonForm.duration) * 60 || 0;
+            }
 
             const payload = {
                 courseId, moduleId: activeModuleId,
-                title: lessonForm.title, type: lessonForm.type,
+                title: lessonForm.title, description: lessonForm.description, type: lessonForm.type,
                 content, isFree: lessonForm.isFree
             };
 
@@ -276,11 +335,100 @@ export default function CreateCoursePage() {
             if (res?.data?.success) {
                 setLessons(prev => [...prev, res.data.lesson]);
                 setModals({ ...modals, lesson: false });
-                setLessonForm({ title: '', type: 'video', videoUrl: '', duration: '', isFree: false });
+                setLessonForm(createDefaultLessonForm());
                 toast.success('Lesson added');
             }
         } catch { toast.error('Failed to add lesson'); }
         finally { setLoading(false); }
+    };
+
+    const handleLessonFileUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+            const res = await api.post('/upload/file', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+            if (res.data?.success || res.data?.fileUrl) {
+                setLessonForm(prev => ({
+                    ...prev,
+                    attachments: [...prev.attachments, {
+                        name: res.data.name || file.name,
+                        url: res.data.fileUrl || res.data.url,
+                        type: res.data.type || file.type
+                    }]
+                }));
+                toast.success('File uploaded');
+            }
+        } catch {
+            toast.error('Failed to upload file');
+        } finally {
+            e.target.value = '';
+        }
+    };
+
+    const handleLessonDocumentUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+            const res = await api.post('/upload/file', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+            if (res.data?.success || res.data?.fileUrl) {
+                setLessonForm(prev => ({
+                    ...prev,
+                    documents: [...prev.documents, {
+                        name: res.data.name || file.name,
+                        url: res.data.fileUrl || res.data.url,
+                        type: res.data.type || file.type
+                    }]
+                }));
+                toast.success('Document uploaded');
+            }
+        } catch {
+            toast.error('Failed to upload document');
+        } finally {
+            e.target.value = '';
+        }
+    };
+
+    const handleLessonVideoUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const resolveUrl = (raw) => {
+            if (!raw) return '';
+            if (/^https?:\/\//i.test(raw)) return raw;
+            const base = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/api\/?$/, '').replace(/\/+$/, '');
+            return base ? `${base}${raw.startsWith('/') ? '' : '/'}${raw}` : raw;
+        };
+        const fd = new FormData();
+        fd.append('video', file);
+        setIsUploadingVideo(true);
+        try {
+            const res = await api.post('/upload/video-hls', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+            if (res.data?.success) {
+                setLessonForm(prev => ({ ...prev, videoUrl: resolveUrl(res.data.estimatedPlaylistUrl) }));
+                toast.success('Video uploaded and is processing for HLS!');
+            }
+        } catch (error) {
+            const msg = error.response?.data?.message || '';
+            if (error.response?.status === 403 && /(hls|feature|subscription)/i.test(msg)) {
+                try {
+                    const fd2 = new FormData();
+                    fd2.append('file', file);
+                    const fb = await api.post('/upload/file', fd2, { headers: { 'Content-Type': 'multipart/form-data' } });
+                    if (fb.data?.success || fb.data?.fileUrl) {
+                        setLessonForm(prev => ({ ...prev, videoUrl: fb.data.fileUrl || fb.data.url }));
+                        toast.success('Video uploaded (standard mode).');
+                        return;
+                    }
+                } catch { /* ignore fallback upload errors */ }
+            }
+            toast.error(msg || 'Failed to upload video');
+        } finally {
+            setIsUploadingVideo(false);
+            e.target.value = '';
+        }
     };
 
     // â”€â”€â”€ Step 3: Assignments Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -416,7 +564,7 @@ export default function CreateCoursePage() {
                             <textarea name="description" required rows={4} value={courseData.description} onChange={handleDataChange} placeholder="Provide a brief summary for your course..." style={{ ...baseInputStyle, resize: 'vertical', minHeight: '100px' }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
                         </div>
 
-                        <ThumbnailUpload value={courseData.thumbnail} onChange={handleDataChange} />
+                        <ThumbnailUpload value={courseData.thumbnail} onFileSelect={handleThumbnailUpload} uploading={isUploadingThumbnail} />
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-2">
@@ -446,9 +594,9 @@ export default function CreateCoursePage() {
                         </div>
 
                         <div className="flex justify-end pt-4">
-                            <button type="submit" disabled={loading} className="flex items-center justify-center gap-2 h-11 px-8 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md"
+                            <button type="submit" disabled={loading || isUploadingThumbnail} className="flex items-center justify-center gap-2 h-11 px-8 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md"
                                 style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
-                                {loading ? <Loader2 size={16} className="animate-spin" /> : <>Save & Next <ChevronRight size={16} /></>}
+                                {(loading || isUploadingThumbnail) ? <Loader2 size={16} className="animate-spin" /> : <>Save & Next <ChevronRight size={16} /></>}
                             </button>
                         </div>
                         <div className="flex justify-end pt-4">
@@ -491,7 +639,7 @@ export default function CreateCoursePage() {
                                                 <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
                                                     Module {idx + 1}: {mod.title}
                                                 </h3>
-                                                <button onClick={() => { setActiveModuleId(mod._id); setModals({ ...modals, lesson: true }); }} className="flex items-center justify-center gap-1.5 h-8 px-3 cursor-pointer border-none transition-opacity hover:opacity-80 shadow-sm"
+                                                <button onClick={() => { setActiveModuleId(mod._id); setLessonForm(createDefaultLessonForm()); setModals({ ...modals, lesson: true }); }} className="flex items-center justify-center gap-1.5 h-8 px-3 cursor-pointer border-none transition-opacity hover:opacity-80 shadow-sm"
                                                     style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, borderRadius: R.md, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
                                                     <Plus size={14} /> Add Lesson
                                                 </button>
@@ -651,18 +799,130 @@ export default function CreateCoursePage() {
                     <div className="w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto custom-scrollbar" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.cardHover }}>
                         <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 16px 0' }}>Add Lesson</h3>
                         <form onSubmit={handleAddLesson} className="space-y-4">
-                            <input type="text" value={lessonForm.title} onChange={e => setLessonForm({ ...lessonForm, title: e.target.value })} required placeholder="Lesson Title" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} autoFocus />
-                            <select value={lessonForm.type} onChange={e => setLessonForm({ ...lessonForm, type: e.target.value })} style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler}>
-                                <option value="video">Video</option>
-                                <option value="document">Document</option>
-                            </select>
+                            <div className="grid grid-cols-3 gap-2">
+                                {['video', 'document', 'quiz'].map(type => (
+                                    <button key={type} type="button"
+                                        onClick={() => setLessonForm(prev => ({ ...prev, type }))}
+                                        className="py-2.5 rounded-xl border-2 text-xs font-bold capitalize transition-all cursor-pointer"
+                                        style={lessonForm.type === type
+                                            ? { borderColor: C.btnPrimary, backgroundColor: '#ECEAFF', color: C.btnPrimary, fontFamily: T.fontFamily }
+                                            : { borderColor: C.cardBorder, backgroundColor: C.surfaceWhite, color: C.textMuted, fontFamily: T.fontFamily }}>
+                                        {type}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <input type="text" value={lessonForm.title} onChange={e => setLessonForm(prev => ({ ...prev, title: e.target.value }))} required placeholder="Lesson Title" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} autoFocus />
+                            <textarea rows={3} value={lessonForm.description} onChange={e => setLessonForm(prev => ({ ...prev, description: e.target.value }))} placeholder="Briefly describe what students will learn..." style={{ ...baseInputStyle, resize: 'none' }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+
+                            <div className="mt-1 border-t pt-4" style={{ borderColor: C.cardBorder }}>
+                                <label style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' }}>
+                                    Resources & Attachments
+                                </label>
+                                {lessonForm.attachments.length > 0 && (
+                                    <div className="space-y-2 mb-3 max-h-36 overflow-y-auto pr-1 custom-scrollbar">
+                                        {lessonForm.attachments.map((file, idx) => (
+                                            <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl border" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder }}>
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <FileText size={14} style={{ color: C.btnPrimary, flexShrink: 0 }} />
+                                                    <div className="min-w-0">
+                                                        <p className="truncate m-0" style={{ fontSize: '11px', fontWeight: T.weight.bold, color: C.heading }}>{file.name}</p>
+                                                        <p className="m-0" style={{ fontSize: '10px', color: C.textMuted, textTransform: 'uppercase' }}>{file.type?.split('/')[1] || 'File'}</p>
+                                                    </div>
+                                                </div>
+                                                <button type="button" onClick={() => setLessonForm(prev => ({ ...prev, attachments: prev.attachments.filter((_, i) => i !== idx) }))} className="w-6 h-6 flex items-center justify-center rounded-md cursor-pointer border-none bg-red-50 hover:bg-red-100 transition-colors shrink-0" style={{ color: C.danger }}>
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <input type="file" onChange={handleLessonFileUpload} className="hidden" id="tutor-lesson-resource-upload" />
+                                <label htmlFor="tutor-lesson-resource-upload" className="flex items-center justify-center gap-2 w-full py-2.5 border-2 border-dashed rounded-xl text-xs font-semibold cursor-pointer transition-all"
+                                    style={{ borderColor: C.btnPrimary, color: C.btnPrimary, backgroundColor: '#ECEAFF', fontFamily: T.fontFamily }}>
+                                    <Plus size={14} /> Upload Resource
+                                </label>
+                            </div>
+
                             {lessonForm.type === 'video' && (
-                                <input type="url" value={lessonForm.videoUrl} onChange={e => setLessonForm({ ...lessonForm, videoUrl: e.target.value })} required placeholder="Video URL (YouTube/Vimeo)" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                                <div className="space-y-3">
+                                    <input type="file" onChange={handleLessonVideoUpload} accept="video/mp4,video/x-m4v,video/*" className="hidden" id="tutor-lesson-video-upload" disabled={isUploadingVideo} />
+                                    <label htmlFor="tutor-lesson-video-upload" className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-dashed text-sm font-semibold transition-all ${isUploadingVideo ? 'opacity-60 cursor-wait' : 'cursor-pointer'}`}
+                                        style={{ borderColor: C.btnPrimary, color: C.btnPrimary, backgroundColor: '#ECEAFF', fontFamily: T.fontFamily }}>
+                                        {isUploadingVideo
+                                            ? <><Loader2 size={14} className="animate-spin" /> Uploading & Processing…</>
+                                            : <><Video size={14} /> Upload Video (Auto HLS)</>}
+                                    </label>
+                                    <input type="url" value={lessonForm.videoUrl} onChange={e => setLessonForm(prev => ({ ...prev, videoUrl: e.target.value }))} required placeholder="https://example.com/video.mp4" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                                    <p style={{ fontSize: '11px', color: C.textMuted, margin: 0 }}>Direct video link or YouTube URL</p>
+                                </div>
                             )}
+
+                            {lessonForm.type === 'document' && (
+                                <div className="space-y-3">
+                                    {lessonForm.documents.length > 0 && (
+                                        <div className="space-y-2 max-h-36 overflow-y-auto pr-1 custom-scrollbar">
+                                            {lessonForm.documents.map((file, idx) => (
+                                                <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl border" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder }}>
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <FileText size={14} style={{ color: C.warning, flexShrink: 0 }} />
+                                                        <p className="truncate m-0" style={{ fontSize: '11px', fontWeight: T.weight.bold, color: C.heading }}>{file.name}</p>
+                                                    </div>
+                                                    <button type="button" onClick={() => setLessonForm(prev => ({ ...prev, documents: prev.documents.filter((_, i) => i !== idx) }))} className="w-6 h-6 flex items-center justify-center rounded-md cursor-pointer border-none bg-red-50 hover:bg-red-100 transition-colors shrink-0" style={{ color: C.danger }}>
+                                                        <X size={12} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <input type="file" onChange={handleLessonDocumentUpload} className="hidden" id="tutor-lesson-doc-upload" accept=".pdf,.doc,.docx,.ppt,.pptx" />
+                                    <label htmlFor="tutor-lesson-doc-upload" className="flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed rounded-xl text-sm font-semibold cursor-pointer transition-all"
+                                        style={{ borderColor: C.warningBorder, backgroundColor: C.warningBg, color: C.warning, fontFamily: T.fontFamily }}>
+                                        <Upload size={14} /> Upload Document
+                                    </label>
+                                </div>
+                            )}
+
+                            {lessonForm.type === 'quiz' && (
+                                <div className="p-4 rounded-2xl border text-center" style={{ borderColor: '#CFC8FF', backgroundColor: '#F3F1FF' }}>
+                                    <AlertCircle size={20} className="mx-auto mb-2" style={{ color: C.btnPrimary }} />
+                                    <h4 style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>Quiz Builder</h4>
+                                    <p style={{ fontSize: T.size.xs, color: C.textMuted, margin: '4px 0 14px 0' }}>
+                                        Questions are managed in the Quiz Builder after creation.
+                                    </p>
+                                    <div className="grid grid-cols-2 gap-3 text-left">
+                                        {[
+                                            { label: 'Passing Score (%)', key: 'passingScore', placeholder: '70' },
+                                            { label: 'Time Limit (mins)', key: 'timeLimit', placeholder: 'No limit' },
+                                        ].map(({ label, key, placeholder }) => (
+                                            <div key={key}>
+                                                <label style={{ display: 'block', fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                                                    {label}
+                                                </label>
+                                                <input type="number" placeholder={placeholder} value={lessonForm.quiz?.[key] || ''} onChange={e => setLessonForm(prev => ({ ...prev, quiz: { ...prev.quiz, [key]: e.target.value } }))} style={{ ...baseInputStyle, padding: '8px 12px' }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {lessonForm.type !== 'quiz' && (
+                                <>
+                                    <input type="number" value={lessonForm.duration} onChange={e => setLessonForm(prev => ({ ...prev, duration: e.target.value }))} placeholder="Duration (minutes)" style={baseInputStyle} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                                    <label className="flex items-center gap-3 p-3.5 rounded-xl cursor-pointer" style={{ backgroundColor: innerBox }}>
+                                        <input type="checkbox" checked={lessonForm.isFree} onChange={e => setLessonForm(prev => ({ ...prev, isFree: e.target.checked }))} className="w-4 h-4 rounded" style={{ accentColor: C.btnPrimary }} />
+                                        <div>
+                                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>Free preview lesson</p>
+                                            <p style={{ fontSize: T.size.xs, color: C.textMuted, margin: 0 }}>Students can watch this without enrolling</p>
+                                        </div>
+                                    </label>
+                                </>
+                            )}
+
                             <div className="flex justify-end gap-3 pt-2">
                                 <button type="button" onClick={() => setModals({ ...modals, lesson: false })} className="px-5 py-2 cursor-pointer bg-transparent border-none hover:opacity-70" style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>Cancel</button>
                                 <button type="submit" disabled={loading || !lessonForm.title} className="px-6 py-2 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md" style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
-                                    {loading ? <Loader2 size={16} className="animate-spin" /> : 'Save'}
+                                    {loading ? <Loader2 size={16} className="animate-spin" /> : 'Add Lesson'}
                                 </button>
                             </div>
                         </form>
