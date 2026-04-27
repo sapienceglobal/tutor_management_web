@@ -7,9 +7,6 @@ import { Loader2, MessageSquare, Send, Search, GraduationCap, CheckCheck, PlayCi
 import { C, T, S, R } from '@/constants/studentTokens';
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
-const themeBg = '#dfdaf3';
-const outerCard = '#EAE8FA';
-const innerBox = '#E3DFF8';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const timeLabel = (value) => {
@@ -239,7 +236,7 @@ export default function StudentMessagesPage() {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily }}>
+            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: C.pageBgAlt, fontFamily: T.fontFamily }}>
                 <Loader2 className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
                 <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading messages...</p>
             </div>
@@ -247,12 +244,12 @@ export default function StudentMessagesPage() {
     }
 
     return (
-        <div className="w-full h-screen lg:h-[calc(100vh-100px)] p-6 flex flex-col gap-6" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full h-screen lg:h-[calc(100vh-100px)] p-6 flex flex-col gap-6" style={{ backgroundColor: C.pageBgAlt, fontFamily: T.fontFamily, color: C.text }}>
             
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 shrink-0" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 shrink-0" style={{ backgroundColor: C.outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 flex items-center justify-center shrink-0" style={{ backgroundColor: innerBox, borderRadius: R.xl }}>
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0" style={{ backgroundColor: C.innerBox, borderRadius: R.xl }}>
                         <MessageSquare size={24} color={C.btnPrimary} />
                     </div>
                     <div>
@@ -267,7 +264,7 @@ export default function StudentMessagesPage() {
             </div>
 
             {tutors.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-10 rounded-3xl" style={{ backgroundColor: outerCard, border: `1px dashed ${C.cardBorder}` }}>
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-10 rounded-3xl" style={{ backgroundColor: C.outerCard, border: `1px dashed ${C.cardBorder}` }}>
                     <GraduationCap size={48} color={C.textMuted} style={{ opacity: 0.3, marginBottom: '16px' }} />
                     <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 8px 0' }}>No tutor conversations yet</h3>
                     <p style={{ fontSize: T.size.sm, color: C.textMuted, margin: 0, maxWidth: '280px' }}>Enroll in a course to start direct messaging with your tutors.</p>
@@ -277,9 +274,9 @@ export default function StudentMessagesPage() {
 
                     {/* ── Inbox Sidebar (OUTER CARD) ────────────────────────────────── */}
                     <aside className="lg:col-span-4 flex flex-col overflow-hidden" 
-                        style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        style={{ backgroundColor: C.outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                         
-                        <div className="p-4 shrink-0" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: innerBox }}>
+                        <div className="p-4 shrink-0" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBox }}>
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2" size={16} color={C.textMuted} />
                                 <input
@@ -304,7 +301,7 @@ export default function StudentMessagesPage() {
                                             }}
                                             className="w-full text-left px-5 py-4 border-none cursor-pointer transition-all"
                                             style={{ 
-                                                backgroundColor: active ? innerBox : 'transparent',
+                                                backgroundColor: active ? C.innerBox : 'transparent',
                                                 borderBottom: `1px solid ${C.cardBorder}`
                                             }}>
                                             <div className="flex gap-3 items-center">
@@ -341,7 +338,7 @@ export default function StudentMessagesPage() {
                                             }}
                                             className="w-full text-left px-5 py-4 border-none cursor-pointer transition-all"
                                             style={{ 
-                                                backgroundColor: active ? innerBox : 'transparent',
+                                                backgroundColor: active ? C.innerBox : 'transparent',
                                                 borderBottom: `1px solid ${C.cardBorder}`
                                             }}>
                                             <div className="flex gap-3 items-center">
@@ -363,12 +360,12 @@ export default function StudentMessagesPage() {
 
                     {/* ── Chat Window (OUTER CARD) ──────────────────────────────────── */}
                     <main className="lg:col-span-8 flex flex-col overflow-hidden" 
-                        style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        style={{ backgroundColor: C.outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                         
                         {selectedTutorId && currentTutor ? (
                             <>
                                 {/* Chat Header */}
-                                <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: innerBox }}>
+                                <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBox }}>
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white font-bold shadow-sm" style={{ background: C.gradientBtn }}>
                                             {currentTutor.name?.[0]?.toUpperCase()}
@@ -397,7 +394,7 @@ export default function StudentMessagesPage() {
                                 </div>
 
                                 {/* Messages List (INNER BOX FEEL) */}
-                                <div className="flex-1 overflow-y-auto p-5 custom-scrollbar space-y-4" style={{ backgroundColor: innerBox }}>
+                                <div className="flex-1 overflow-y-auto p-5 custom-scrollbar space-y-4" style={{ backgroundColor: C.innerBox }}>
                                     {loadingMessages ? (
                                         <div className="h-full flex items-center justify-center"><Loader2 className="animate-spin" color={C.btnPrimary} /></div>
                                     ) : messages.length > 0 ? (
@@ -407,7 +404,7 @@ export default function StudentMessagesPage() {
                                                 <div key={msg._id}>
                                                     {showDate && (
                                                         <div className="flex justify-center my-6">
-                                                            <span style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, backgroundColor: outerCard, padding: '4px 12px', borderRadius: R.md, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                            <span style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, backgroundColor: C.outerCard, padding: '4px 12px', borderRadius: R.md, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                                                 {dateLabel(msg.sentAt)}
                                                             </span>
                                                         </div>
@@ -445,7 +442,7 @@ export default function StudentMessagesPage() {
                                 </div>
 
                                 {/* Reply Input Area */}
-                                <div className="p-4 shrink-0" style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: innerBox }}>
+                                <div className="p-4 shrink-0" style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBox }}>
                                     <div className="flex items-center gap-3">
                                         <textarea
                                             value={draft}
@@ -465,7 +462,7 @@ export default function StudentMessagesPage() {
                             </>
                         ) : (
                             <div className="flex-1 flex flex-col items-center justify-center text-center p-10">
-                                <div className="w-16 h-16 rounded-3xl flex items-center justify-center mb-4 shadow-sm" style={{ backgroundColor: innerBox }}>
+                                <div className="w-16 h-16 rounded-3xl flex items-center justify-center mb-4 shadow-sm" style={{ backgroundColor: C.innerBox }}>
                                     <MessageSquare size={32} color={C.btnPrimary} />
                                 </div>
                                 <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 8px 0' }}>Select a Conversation</h3>

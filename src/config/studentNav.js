@@ -1,35 +1,25 @@
-import {
-    LayoutDashboard,
-    BookOpen,
-    FileText,
-    ClipboardList,
-    BarChart3,
-    Brain,
-    Video,
-    Users,
-    Calendar,
-    CreditCard,
-    Award,
-    User,
-    Settings,
-    GraduationCap,
-    Heart,
-    Search,
-    Compass,
-    MessageSquare,
-    Sparkles,
-    HelpCircle,
-    BookMarked,
-    ScrollText,
-    Target,
-    CalendarCheck,
-} from 'lucide-react';
+import { 
+    MdDashboard, 
+    MdMenuBook, 
+    MdAssignment, 
+    MdArticle, 
+    MdVideocam, 
+    MdAutoAwesome, 
+    MdChat, 
+    MdPeople, 
+    MdBarChart, 
+    MdSearch, 
+    MdCreditCard, 
+    MdWorkspacePremium, 
+    MdPerson, 
+    MdSettings 
+} from 'react-icons/md';
 
 export const studentNavItems = [
     {
         title: "Dashboard",
         href: "/student/dashboard",
-        icon: LayoutDashboard,
+        icon: MdDashboard,
         type: "link"
     },
     {
@@ -38,7 +28,7 @@ export const studentNavItems = [
         children: [
             {
                 title: "Courses",
-                icon: BookOpen,
+                icon: MdMenuBook,
                 submenu: [
                     { title: "My Courses", href: "/student/courses" },
                     { title: "Explore Courses", href: "/student/courses?tab=discover" },
@@ -47,13 +37,13 @@ export const studentNavItems = [
             },
             {
                 title: "Assignments",
-                icon: ClipboardList,
+                icon: MdAssignment,
                 href: "/student/assignments",
                 type: "link"
             },
             {
                 title: "Tests",
-                icon: FileText,
+                icon: MdArticle,
                 submenu: [
                     { title: "My Exams", href: "/student/exams" },
                     { title: "Upcoming Exams", href: "/student/upcoming-exams" },
@@ -63,13 +53,13 @@ export const studentNavItems = [
             },
             {
                 title: "Live Classes",
-                icon: Video,
+                icon: MdVideocam,
                 href: "/student/live-classes",
                 type: "link"
             },
             {
                 title: "AI Buddy",
-                icon: Sparkles,
+                icon: MdAutoAwesome,
                 submenu: [
                     { title: "AI Tutor Chat", href: "/student/ai-tutor" },
                     { title: "Doubt Solver", href: "/student/ai-buddy/doubt-solver" },
@@ -81,7 +71,7 @@ export const studentNavItems = [
             },
             {
                 title: "Messages",
-                icon: MessageSquare,
+                icon: MdChat,
                 href: "/student/messages",
                 type: "link"
             },
@@ -93,13 +83,13 @@ export const studentNavItems = [
         children: [
             {
                 title: "Batches",
-                icon: Users,
+                icon: MdPeople,
                 href: "/student/batches",
                 type: "link"
             },
             {
                 title: "Leave Requests",
-                icon: FileText,
+                icon: MdArticle,
                 href: "/student/leaves",
                 type: "link"
             },
@@ -111,13 +101,13 @@ export const studentNavItems = [
         children: [
             {
                 title: "Reports & Analytics", 
-                icon: BarChart3,
+                icon: MdBarChart,
                 href: "/student/ai-analytics",
                 type: "link"
             },
             {
                 title: "Find a Tutor",
-                icon: Search,
+                icon: MdSearch,
                 href: "/student/tutors",
                 type: "link"
             },
@@ -129,25 +119,25 @@ export const studentNavItems = [
         children: [
             {
                 title: "Payments",
-                icon: CreditCard,
+                icon: MdCreditCard,
                 href: "/student/payments",
                 type: "link"
             },
             {
                 title: "Certificates",
-                icon: Award,
+                icon: MdWorkspacePremium,
                 href: "/student/profile/certificates",
                 type: "link"
             },
             {
                 title: "Profile",
-                icon: User,
+                icon: MdPerson,
                 href: "/student/profile",
                 type: "link"
             },
             {
                 title: "Settings",
-                icon: Settings,
+                icon: MdSettings,
                 href: "/student/profile/settings",
                 type: "link"
             },

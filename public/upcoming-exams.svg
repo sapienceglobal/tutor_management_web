@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" id="a-result">
+  <g>
+    <path fill="#ffe0b2" d="M41,26l5.9,10.43v24h-40v-50h40V27.67l-2.12-3.75c-.47.26-.84-.39-1.31-.13s-.1.91-.57,1.17-.85-.39-1.32-.13S41.51,25.75,41,26Z"></path>
+    <polygon fill="#fff3e1" points="8.93 58.65 8.93 10.48 6.93 10.48 6.93 60.48 46.93 60.48 46.93 58.65 8.93 58.65"></polygon>
+    <polygon fill="#fecc81" points="55.93 10.48 55.93 43.59 46.93 27.67 46.93 10.48 15.93 10.48 15.93 3.48 48.93 3.48 55.93 10.48"></polygon>
+    <polygon fill="#fcb64d" points="48.88 27.04 48.65 8.94 17.88 8.94 17.88 3.48 15.93 3.48 15.93 10.48 46.93 10.48 46.93 27.67 55.93 43.59 55.93 39.98 48.88 27.04"></polygon>
+    <polygon fill="#fecc81" points="55.93 52.36 55.93 53.48 46.93 53.48 46.93 36.44 54.05 49.03 55.1 50.89 55.93 52.36"></polygon>
+    <polygon fill="#fcb64d" points="46.93 36.44 46.93 53.48 48.83 53.48 48.83 39.8 46.93 36.44"></polygon>
+    <polygon fill="#ffe0b2" points="48.59 10.48 48.59 3.48 55.59 10.48 48.59 10.48"></polygon>
+    <line x1="15.97" x2="10.97" y1="12.98" y2="26.31" fill="#ffe0b2"></line>
+    <line x1="15.97" x2="18.47" y1="12.98" y2="27.98" fill="#ffe0b2"></line>
+    <line x1="10.97" x2="20.14" y1="22.15" y2="20.48" fill="#ffe0b2"></line>
+    <circle cx="32.93" cy="46.48" r="10" fill="#f8981d"></circle>
+    <circle cx="32.93" cy="46.48" r="8.66" fill="#ffcb29"></circle>
+    <circle cx="27.43" cy="43.98" r="1" fill="#fafbfb"></circle>
+    <circle cx="38.43" cy="43.98" r="1" fill="#ffe0b2"></circle>
+    <path fill="#e0e0e0" d="M29.93,47.81h6a1,1,0,0,1,1,1v.33a4,4,0,0,1-4,4h0a4,4,0,0,1-4-4v-.33a1,1,0,0,1,1-1Z"></path>
+    <path fill="#fafbfb" d="M36.2,47.81h-6a1,1,0,0,0-1,1v.34a4.93,4.93,0,0,0,.05.54,1,1,0,0,1,.73-.32h6a1,1,0,0,1,1,1h0a3.88,3.88,0,0,0,.22-1.23v-.34A1,1,0,0,0,36.2,47.81Z"></path>
+    <rect width="4" height="4" x="12.93" y="32.48" fill="#57c1ef"></rect>
+    <rect width="4" height="4" x="12.93" y="38.48" fill="#57c1ef"></rect>
+    <rect width="4" height="4" x="12.93" y="44.48" fill="#57c1ef"></rect>
+    <path fill="#f8981d" d="M57.83,47l-1.89,1v0L46.93,32l-4-7.08c.47-.26.1-.91.57-1.17s.84.39,1.31.13l2.12,3.75,9,15.92Z"></path>
+    <path fill="#ffcb29" d="M55.93,48v0l-1.88,1L46.93,36.44,41,26c.48-.26.11-.91.58-1.18s.84.4,1.32.13l4,7.08Z"></path>
+    <path fill="#ffe0b2" d="M44.81,23.92c-.47.26-.84-.39-1.31-.13s-.1.91-.57,1.17-.85-.39-1.32-.13-.1.92-.58,1.18l-.89-1.58-1.27-6.64,5.05,4.55Z"></path>
+    <path fill="#fff3e1" d="M44.55 23.48a.55.55 0 00-.27.43.58.58 0 00.53 0l-.25-.44zM41.19 24.12l-1-5.12-1.34-1.21 1.27 6.64L41 26c.47-.26.12-.89.57-1.17zM42.66 24.52a.56.56 0 00-.27.44.57.57 0 00.54 0 .52.52 0 00.26-.43A.55.55 0 0042.66 24.52z"></path>
+    <path fill="#fecc81" d="M41.17 25.85A.41.41 0 0041 26v0a.52.52 0 00.18-.18zM43.06 24.81a.44.44 0 00-.17.16h0a.4.4 0 00.17-.17zM43.92 22.34l-5.05-4.55.33 1.71 4.28 3.86.21.37c.38 0 .71.41 1.12.19z"></path>
+    <polygon fill="#ffe0b2" points="55.94 47.99 55.93 48 55.93 47.97 55.94 47.99"></polygon>
+    <line x1="40.9" x2="39.64" y1="19.93" y2="20.63" fill="#ffe0b2"></line>
+    <polygon fill="#ef4438" points="58.88 48.8 55.93 50.43 55.1 50.89 54.05 49.03 55.93 48 55.94 47.99 57.83 46.95 58.88 48.8"></polygon>
+    <polygon fill="#dc3226" points="54.24 49.03 54.25 49.02 56.14 47.98 57.15 49.76 58.88 48.8 57.83 46.95 55.94 47.99 55.93 48 54.05 49.03 54.09 49.11 54.24 49.03"></polygon>
+    <path fill="#fafbfb" d="M59.16,52.34,58,53a1.5,1.5,0,0,1-2-.57l0,0-.83-1.47.83-.46,3-1.63.86,1.53A1.47,1.47,0,0,1,59.16,52.34Z"></path>
+    <path fill="#bdbdbd" d="M59.74,50.33l-.86-1.53-3,1.63-.83.46.08.15,2.41-1.33.86,1.53a1.46,1.46,0,0,1-.06,1.52l.77-.42A1.47,1.47,0,0,0,59.74,50.33Z"></path>
+    <line x1="14.92" x2="14.1" y1="35.31" y2="33.85" fill="#ffe0b2"></line>
+    <line x1="17.43" x2="14.92" y1="31.98" y2="35.31" fill="#ffe0b2"></line>
+    <line x1="14.92" x2="14.1" y1="41.31" y2="39.85" fill="#ffe0b2"></line>
+    <line x1="17.43" x2="14.92" y1="37.98" y2="41.31" fill="#ffe0b2"></line>
+    <line x1="14.92" x2="14.1" y1="47.31" y2="45.85" fill="#ffe0b2"></line>
+    <line x1="17.43" x2="14.92" y1="43.98" y2="47.31" fill="#ffe0b2"></line>
+    <path fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round" d="M41,26l5.9,10.43v24h-40v-50h40V27.67l-2.12-3.75c-.47.26-.84-.39-1.31-.13s-.1.91-.57,1.17-.85-.39-1.32-.13S41.51,25.75,41,26Z"></path>
+    <polygon fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round" points="55.93 10.48 55.93 43.59 46.93 27.67 46.93 10.48 15.93 10.48 15.93 3.48 48.93 3.48 55.93 10.48"></polygon>
+    <polygon fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round" points="55.93 52.36 55.93 53.48 46.93 53.48 46.93 36.44 54.05 49.03 55.1 50.89 55.93 52.36"></polygon>
+    <polygon fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round" points="48.59 10.48 48.59 3.48 55.59 10.48 48.59 10.48"></polygon>
+    <path fill="#fecc81" d="M20.6,20.39l-2.33.43L17,13.3s0,0,0-.05a.49.49,0,0,0,0-.11l-.05-.06L16.84,13,16.76,13l-.06,0h0l-.1,0h-.13l-.06,0-.09,0-.08.05a.46.46,0,0,0-.07.07.41.41,0,0,0-.05.09s0,0,0,.05L12.83,21.8l-1.4.26a.5.5,0,0,0-.4.58.51.51,0,0,0,.49.41h.09l.81-.15-1.36,3.65a.5.5,0,0,0,.29.65l.17,0a.5.5,0,0,0,.47-.33l1.58-4.2L17.45,22l1.08,6.49a.49.49,0,0,0,.49.41h.09a.51.51,0,0,0,.41-.58l-1.09-6.5,2.35-.43a.49.49,0,0,0,.4-.58A.5.5,0,0,0,20.6,20.39ZM14,21.6l2.36-6.3L17.29,21Z"></path>
+    <path fill="#fecc81" d="M21.94 16.42H21v-1a.5.5 0 00-.5-.5.5.5 0 00-.5.5v1H19a.51.51 0 00-.5.5.5.5 0 00.5.5h1v1a.5.5 0 00.5.5.5.5 0 00.5-.5v-1h1a.5.5 0 00.5-.5A.5.5 0 0021.94 16.42zM43.43 15.52h-14a.5.5 0 01-.5-.5.5.5 0 01.5-.5h14a.5.5 0 01.5.5A.5.5 0 0143.43 15.52zM36.43 18.52h-7a.5.5 0 01-.5-.5.5.5 0 01.5-.5h7a.5.5 0 01.5.5A.5.5 0 0136.43 18.52zM43.43 35.48h-23a.5.5 0 010-1h23a.5.5 0 010 1zM23.43 41.48h-3a.5.5 0 010-1h3a.5.5 0 010 1zM21.43 47.48h-1a.5.5 0 010-1h1a.5.5 0 010 1z"></path>
+    <path fill="#22184c" d="M20.05,20l-2.33.42L16.46,12.9a.14.14,0,0,0,0-.06.42.42,0,0,0,0-.1l0-.07-.08-.07-.08,0-.05,0h0l-.09,0h-.13l-.06,0-.09,0-.08.06-.07.06-.06.09s0,0,0,.05l-3.22,8.6-1.4.25a.5.5,0,0,0-.4.59.49.49,0,0,0,.49.41h.09l.81-.15L10.5,26.14a.5.5,0,0,0,.3.64.47.47,0,0,0,.17,0,.51.51,0,0,0,.47-.32L13,22.28l3.88-.7L18,28.06a.49.49,0,0,0,.49.42h.08A.48.48,0,0,0,19,27.9l-1.08-6.5L20.23,21a.5.5,0,0,0,.4-.58A.5.5,0,0,0,20.05,20Zm-6.62,1.2,2.35-6.29,1,5.69Z"></path>
+    <path fill="#22184c" d="M21.39 16h-1v-1a.5.5 0 00-1 0v1h-1a.5.5 0 00-.5.5.5.5 0 00.5.5h1v1a.5.5 0 001 0V17h1a.5.5 0 00.5-.5A.51.51 0 0021.39 16zM42.93 15h-14a.5.5 0 010-1h14a.5.5 0 010 1zM42.93 35h-23a.5.5 0 010-1h23a.5.5 0 010 1zM22.93 41h-3a.5.5 0 010-1h3a.5.5 0 010 1zM20.93 47h-1a.5.5 0 010-1h1a.5.5 0 010 1zM35.93 18h-7a.5.5 0 010-1h7a.5.5 0 010 1z"></path>
+    <circle cx="32.93" cy="46.48" r="10" fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round"></circle>
+    <circle cx="27.43" cy="43.98" r="1" fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round"></circle>
+    <polygon fill="#fff" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round" points="41.12 19.82 39.44 20.75 38.87 17.79 41.12 19.82"></polygon>
+    <circle cx="38.43" cy="43.98" r="1" fill="#fafbfb" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round"></circle>
+    <polygon fill="#bdbdbd" points="40.48 20.21 41.18 19.82 38.93 17.79 39.17 19.03 40.48 20.21"></polygon>
+    <path fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round" d="M29.93,47.81h6a1,1,0,0,1,1,1v.33a4,4,0,0,1-4,4h0a4,4,0,0,1-4-4v-.33a1,1,0,0,1,1-1Z"></path>
+    <polygon fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round" points="41.12 19.82 39.44 20.75 38.87 17.79 41.12 19.82"></polygon>
+    <rect width="4" height="4" x="12.93" y="32.48" fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round"></rect>
+    <rect width="4" height="4" x="12.93" y="38.48" fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round"></rect>
+    <rect width="4" height="4" x="12.93" y="44.48" fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round"></rect>
+    <path fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round" d="M57.83 47l-1.89 1v0L46.93 32l-4-7.08c.47-.26.1-.91.57-1.17s.84.39 1.31.13l2.12 3.75 9 15.92zM55.93 48v0l-1.88 1L46.93 36.44 41 26c.48-.26.11-.91.58-1.18s.84.4 1.32.13l4 7.08z"></path>
+    <path fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round" d="M44.8,23.92c-.47.26-.84-.39-1.31-.13s-.1.91-.57,1.17-.85-.39-1.32-.13-.1.92-.58,1.18l-.89-1.58-.7-3.68,1.68-.93,2.8,2.52Z"></path>
+    <polygon fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round" points="55.94 47.99 55.93 48 55.93 47.97 55.94 47.99"></polygon>
+    <polygon fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round" points="58.88 48.8 55.93 50.43 55.1 50.89 54.05 49.03 55.93 48 55.94 47.99 57.83 46.95 58.88 48.8"></polygon>
+    <path fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round" d="M59.16,52.34,58,53a1.5,1.5,0,0,1-2-.57l0,0-.83-1.47.83-.46,3-1.63.86,1.53A1.47,1.47,0,0,1,59.16,52.34Z"></path>
+    <line x1="14.92" x2="14.1" y1="35.31" y2="33.85" fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round"></line>
+    <line x1="17.43" x2="14.92" y1="31.98" y2="35.31" fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round"></line>
+    <line x1="14.92" x2="14.1" y1="41.31" y2="39.85" fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round"></line>
+    <line x1="17.43" x2="14.92" y1="37.98" y2="41.31" fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round"></line>
+    <line x1="14.92" x2="14.1" y1="47.31" y2="45.85" fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round"></line>
+    <line x1="17.43" x2="14.92" y1="43.98" y2="47.31" fill="none" stroke="#22184c" stroke-linecap="round" stroke-linejoin="round"></line>
+  </g>
+</svg>

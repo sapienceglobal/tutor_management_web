@@ -1,4 +1,4 @@
-import { Inter, Plus_Jakarta_Sans, Sora, Outfit, Kanit } from 'next/font/google';
+import { Inter, Plus_Jakarta_Sans, Sora, Outfit, Kanit, Nunito } from 'next/font/google';
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import ErrorBoundary from "@/components/providers/ErrorBoundary";
@@ -9,6 +9,7 @@ const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakart
 const sora = Sora({ subsets: ['latin'], variable: '--font-sora', display: 'swap' });
 const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit', display: 'swap' });
 const kanit = Kanit({ subsets: ['latin'], weight: ['400', '500', '600', '700', '900'], variable: '--font-kanit', display: 'swap' });
+const nunito = Nunito({ subsets: ['latin'], weight: ['400', '500', '600', '700', '900'], variable: '--font-nunito', display: 'swap' });
 
 export const metadata = {
   title: {
@@ -27,7 +28,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jakarta.variable} ${sora.variable} ${outfit.variable} ${kanit.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${jakarta.variable} ${sora.variable} ${outfit.variable} ${kanit.variable} ${nunito.variable}`} suppressHydrationWarning>
       <body suppressHydrationWarning={true} className="antialiased">
         <ErrorBoundary>
           <Toaster

@@ -11,11 +11,9 @@ import api from '@/lib/axios';
 import assignmentService from '@/services/assignmentService';
 import { resolveMediaUrl } from '@/lib/mediaUrl';
 import { C, T, S, R } from '@/constants/studentTokens';
+import StatCard from '@/components/StatCard';
 
 // ─── Theme ───────────────────────────────────────────────────────────────────
-const themeBg = '#dfdaf3';
-const outerCard = '#EAE8FA';
-const innerBox = '#E3DFF8';
 const PAGE_SIZE = 8;
 
 const onFocus = e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)'; };
@@ -59,11 +57,11 @@ function SubmissionDrawer({ row, onClose }) {
 
             {/* Drawer */}
             <div className="fixed right-0 top-0 bottom-0 z-50 flex flex-col w-full max-w-[520px] shadow-2xl overflow-hidden"
-                style={{ backgroundColor: outerCard, borderLeft: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily }}>
+                style={{ backgroundColor: C.outerCard, borderLeft: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily }}>
 
                 {/* Header */}
                 <div className="p-6 border-b flex items-start justify-between gap-4 shrink-0"
-                    style={{ borderColor: C.cardBorder, backgroundColor: innerBox }}>
+                    style={{ borderColor: C.cardBorder, backgroundColor: C.innerBox }}>
                     <div className="min-w-0 flex-1">
                         <p style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 4px 0' }}>
                             Submission Detail
@@ -98,7 +96,7 @@ function SubmissionDrawer({ row, onClose }) {
                     )}
                     {/* ── ASSIGNMENT INSTRUCTIONS & FILES (NEW) ── */}
                     {data && asgn && (
-                        <div className="rounded-2xl p-5 mb-6 border" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                        <div className="rounded-2xl p-5 mb-6 border" style={{ backgroundColor: C.innerBox, borderColor: C.cardBorder }}>
                             <h3 className="flex items-center gap-2" style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: '0 0 12px 0' }}>
                                 <FileText size={16} style={{ color: C.btnPrimary }} /> Assignment Details
                             </h3>
@@ -116,9 +114,9 @@ function SubmissionDrawer({ row, onClose }) {
                                         {asgn.attachments.map((file, idx) => (
                                             <a key={idx} href={resolveMediaUrl(file.url)} target="_blank" rel="noopener noreferrer"
                                                 className="flex items-center justify-between p-3 rounded-xl transition-all border text-decoration-none group"
-                                                style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}
+                                                style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder }}
                                                 onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.backgroundColor = '#fff'; }}
-                                                onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.backgroundColor = outerCard; }}>
+                                                onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.backgroundColor = C.outerCard; }}>
                                                 <div className="flex items-center gap-3 min-w-0">
                                                     <div className="p-2 rounded-lg bg-white shadow-sm shrink-0">
                                                         {String(file.type || '').toLowerCase().startsWith('image/')
@@ -199,7 +197,7 @@ function SubmissionDrawer({ row, onClose }) {
 
                             {/* Overall Feedback */}
                             {sub.feedback && (
-                                <div className="rounded-2xl p-5" style={{ backgroundColor: outerCard, border: `1px solid ${C.cardBorder}` }}>
+                                <div className="rounded-2xl p-5" style={{ backgroundColor: C.outerCard, border: `1px solid ${C.cardBorder}` }}>
                                     <div className="flex items-center gap-2 mb-3">
                                         <MessageSquare size={15} style={{ color: C.btnPrimary }} />
                                         <p style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.8px', margin: 0 }}>
@@ -215,7 +213,7 @@ function SubmissionDrawer({ row, onClose }) {
                             {/* Rubric Scores */}
                             {asgn.rubric?.length > 0 && (
                                 <div className="rounded-2xl overflow-hidden border" style={{ borderColor: C.cardBorder }}>
-                                    <div className="px-5 py-3.5 flex items-center gap-2 border-b" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                                    <div className="px-5 py-3.5 flex items-center gap-2 border-b" style={{ backgroundColor: C.innerBox, borderColor: C.cardBorder }}>
                                         <BarChart2 size={15} style={{ color: C.warning }} />
                                         <p style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.8px', margin: 0 }}>
                                             Rubric Breakdown
@@ -225,7 +223,7 @@ function SubmissionDrawer({ row, onClose }) {
                                         {asgn.rubric.map((criterion, i) => {
                                             const rs = sub.rubricScores?.find(r => r.criterionId?.toString() === criterion._id?.toString());
                                             return (
-                                                <div key={i} className="p-4" style={{ backgroundColor: rs ? 'rgba(16,185,129,0.04)' : outerCard }}>
+                                                <div key={i} className="p-4" style={{ backgroundColor: rs ? 'rgba(16,185,129,0.04)' : C.outerCard }}>
                                                     <div className="flex items-start justify-between gap-3 mb-1">
                                                         <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
                                                             {criterion.criterion}
@@ -233,7 +231,7 @@ function SubmissionDrawer({ row, onClose }) {
                                                         <span className="shrink-0 px-2.5 py-0.5 rounded-lg"
                                                             style={rs
                                                                 ? { backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontSize: '11px', fontWeight: T.weight.black }
-                                                                : { backgroundColor: innerBox, color: C.textMuted, border: `1px solid ${C.cardBorder}`, fontSize: '11px', fontWeight: T.weight.black }}>
+                                                                : { backgroundColor: C.innerBox, color: C.textMuted, border: `1px solid ${C.cardBorder}`, fontSize: '11px', fontWeight: T.weight.black }}>
                                                             {rs ? `${rs.points} / ` : '— / '}{criterion.points} pts
                                                         </span>
                                                     </div>
@@ -261,7 +259,7 @@ function SubmissionDrawer({ row, onClose }) {
                             {/* Submitted Files */}
                             {sub.attachments?.length > 0 && (
                                 <div className="rounded-2xl overflow-hidden border" style={{ borderColor: C.cardBorder }}>
-                                    <div className="px-5 py-3.5 border-b flex items-center gap-2" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                                    <div className="px-5 py-3.5 border-b flex items-center gap-2" style={{ backgroundColor: C.innerBox, borderColor: C.cardBorder }}>
                                         <FileText size={15} style={{ color: C.btnPrimary }} />
                                         <p style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.8px', margin: 0 }}>
                                             Submitted Files
@@ -271,11 +269,11 @@ function SubmissionDrawer({ row, onClose }) {
                                         {sub.attachments.map((file, i) => (
                                             <a key={i} href={resolveMediaUrl(file.url)} target="_blank" rel="noopener noreferrer"
                                                 className="flex items-center justify-between p-3.5 rounded-xl border transition-all group no-underline"
-                                                style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}
+                                                style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder }}
                                                 onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.backgroundColor = '#fff'; }}
-                                                onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.backgroundColor = outerCard; }}>
+                                                onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.backgroundColor = C.outerCard; }}>
                                                 <div className="flex items-center gap-3 min-w-0">
-                                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: innerBox }}>
+                                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: C.innerBox }}>
                                                         {String(file.type || '').toLowerCase().startsWith('image/')
                                                             ? <img src={resolveMediaUrl(file.url)} alt={file.name || 'attachment'} className="w-8 h-8 rounded-md object-cover" />
                                                             : <FileText size={14} style={{ color: C.btnPrimary }} />}
@@ -294,7 +292,7 @@ function SubmissionDrawer({ row, onClose }) {
                             {/* Text response */}
                             {sub.content && (
                                 <div className="rounded-2xl overflow-hidden border" style={{ borderColor: C.cardBorder }}>
-                                    <div className="px-5 py-3.5 border-b flex items-center gap-2" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                                    <div className="px-5 py-3.5 border-b flex items-center gap-2" style={{ backgroundColor: C.innerBox, borderColor: C.cardBorder }}>
                                         <BookOpen size={15} style={{ color: C.btnPrimary }} />
                                         <p style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.8px', margin: 0 }}>
                                             Your Written Answer
@@ -313,7 +311,7 @@ function SubmissionDrawer({ row, onClose }) {
                 </div>
 
                 {/* Footer */}
-                <div className="p-5 border-t shrink-0" style={{ borderColor: C.cardBorder, backgroundColor: innerBox }}>
+                <div className="p-5 border-t shrink-0" style={{ borderColor: C.cardBorder, backgroundColor: C.innerBox }}>
                     <Link href={`/student/courses/${row.courseId}/assignments/${row._id}`} className="no-underline block">
                         <button className="w-full py-3 rounded-xl text-white border-none cursor-pointer font-bold text-sm transition-opacity hover:opacity-90"
                             style={{ background: C.gradientBtn, fontFamily: T.fontFamily }}>
@@ -398,7 +396,7 @@ export default function StudentAssignmentsPage() {
     };
 
     if (loading) return (
-        <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily }}>
+        <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: C.pageBgAlt, fontFamily: T.fontFamily }}>
             <div className="w-12 h-12 rounded-full border-[3px] border-[#4F46E5]/30 border-t-[#4F46E5] animate-spin" />
             <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading assignments...</p>
         </div>
@@ -413,13 +411,13 @@ export default function StudentAssignmentsPage() {
     ];
 
     return (
-        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: C.pageBgAlt, fontFamily: T.fontFamily, color: C.text }}>
 
             {/* ── Header ─────────────────────────────────────────────── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5"
-                style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                style={{ backgroundColor: C.outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 flex items-center justify-center shrink-0" style={{ backgroundColor: innerBox, borderRadius: R.xl }}>
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0" style={{ backgroundColor: C.innerBox, borderRadius: R.xl }}>
                         <FileText size={24} color={C.btnPrimary} />
                     </div>
                     <div>
@@ -441,36 +439,29 @@ export default function StudentAssignmentsPage() {
                 </Link>
             </div>
 
-            {/* ── Stats Row ──────────────────────────────────────────── */}
+
+            {/* ── Stats Row — global dashboard-consistent StatCard ────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                    { label: 'Pending', value: pendingCount, bg: '#EEF2FF', color: C.btnPrimary, icon: Clock },
-                    { label: 'Submitted', value: submittedCount, bg: C.warningBg, color: C.warning, icon: CheckCircle },
-                    { label: 'Graded', value: gradedCount, bg: C.successBg, color: C.success, icon: Award },
-                    { label: 'Overdue', value: overdueCount, bg: C.dangerBg, color: C.danger, icon: AlertCircle },
-                ].map(({ label, value, bg, color, icon: Icon }) => (
-                    <div key={label} className="p-5 rounded-2xl border transition-transform hover:-translate-y-0.5 cursor-pointer"
-                        style={{ backgroundColor: outerCard, borderColor: C.cardBorder, boxShadow: S.card }}
-                        onClick={() => { setActiveTab(label); setCurrentPage(1); }}>
-                        <div className="flex items-center justify-between mb-3">
-                            <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: 0 }}>{label}</p>
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: bg }}>
-                                <Icon size={16} style={{ color }} />
-                            </div>
-                        </div>
-                        <p style={{ fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, margin: 0, lineHeight: 1 }}>
-                            {value}
-                        </p>
-                    </div>
-                ))}
+                <div onClick={() => { setActiveTab('Pending');   setCurrentPage(1); }} className="cursor-pointer">
+                    <StatCard label="Pending"   value={pendingCount}   icon={Clock}       iconBg="#EEF2FF"      iconColor={C.btnPrimary} />
+                </div>
+                <div onClick={() => { setActiveTab('Submitted'); setCurrentPage(1); }} className="cursor-pointer">
+                    <StatCard label="Submitted" value={submittedCount} icon={CheckCircle} iconBg={C.warningBg}  iconColor={C.warning} />
+                </div>
+                <div onClick={() => { setActiveTab('Graded');    setCurrentPage(1); }} className="cursor-pointer">
+                    <StatCard label="Graded"    value={gradedCount}    icon={Award}       iconBg={C.successBg}  iconColor={C.success} />
+                </div>
+                <div onClick={() => { setActiveTab('Overdue');   setCurrentPage(1); }} className="cursor-pointer">
+                    <StatCard label="Overdue"   value={overdueCount}   icon={AlertCircle} iconBg={C.dangerBg}   iconColor={C.danger} />
+                </div>
             </div>
 
             {/* ── Main Table Card ─────────────────────────────────────── */}
-            <div className="overflow-hidden flex flex-col" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+            <div className="overflow-hidden flex flex-col" style={{ backgroundColor: C.outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
 
                 {/* Filters */}
                 <div className="p-5 flex flex-col xl:flex-row items-center justify-between gap-4"
-                    style={{ backgroundColor: innerBox, borderBottom: `1px solid ${C.cardBorder}` }}>
+                    style={{ backgroundColor: C.innerBox, borderBottom: `1px solid ${C.cardBorder}` }}>
                     <div className="flex bg-white p-1 rounded-xl shadow-sm border overflow-x-auto w-full xl:w-auto custom-scrollbar" style={{ borderColor: C.cardBorder }}>
                         {TABS.map(tab => (
                             <button key={tab.key} onClick={() => { setActiveTab(tab.key); setCurrentPage(1); }}
@@ -495,7 +486,7 @@ export default function StudentAssignmentsPage() {
                 <div className="p-4 space-y-3 custom-scrollbar">
                     {pageRows.length === 0 ? (
                         <div className="text-center py-16 flex flex-col items-center">
-                            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: innerBox }}>
+                            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: C.innerBox }}>
                                 <FileText size={32} color={C.btnPrimary} style={{ opacity: 0.5 }} />
                             </div>
                             <p style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>No assignments found</p>
@@ -509,9 +500,9 @@ export default function StudentAssignmentsPage() {
 
                         return (
                             <div key={row._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl transition-all border"
-                                style={{ backgroundColor: innerBox, borderColor: C.cardBorder, borderLeft: `5px solid ${cfg.accent}` }}
+                                style={{ backgroundColor: C.innerBox, borderColor: C.cardBorder, borderLeft: `5px solid ${cfg.accent}` }}
                                 onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.surfaceWhite; }}
-                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = innerBox; }}>
+                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBox; }}>
 
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-3 flex-wrap mb-1.5">
@@ -560,7 +551,7 @@ export default function StudentAssignmentsPage() {
                                     <Link href={`/student/courses/${row.courseId}/assignments/${row._id}`} className="text-decoration-none">
                                         <button className="h-10 px-5 rounded-xl cursor-pointer border-none transition-opacity hover:opacity-90 shadow-sm font-bold"
                                             style={isSubmittedOrGraded
-                                                ? { backgroundColor: innerBox, color: C.heading, fontSize: T.size.xs, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }
+                                                ? { backgroundColor: C.innerBox, color: C.heading, fontSize: T.size.xs, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }
                                                 : { background: C.gradientBtn, color: '#fff', fontSize: T.size.xs, fontFamily: T.fontFamily }}>
                                             {isSubmittedOrGraded ? 'Open' : 'Upload Work'}
                                         </button>
@@ -573,7 +564,7 @@ export default function StudentAssignmentsPage() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-between px-6 py-4" style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: innerBox }}>
+                    <div className="flex items-center justify-between px-6 py-4" style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBox }}>
                         <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>
                             Page {currentPage} of {totalPages} · {filtered.length} assignments
                         </span>

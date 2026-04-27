@@ -131,7 +131,7 @@ export default function StudentWeakTopicsPage() {
                             </div>
 
                             {aiRecommendations.summary && (
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#475569', lineHeight: 1.65, marginBottom: 12 }}>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textSlate, lineHeight: 1.65, marginBottom: 12 }}>
                                     {aiRecommendations.summary}
                                 </p>
                             )}
@@ -143,7 +143,7 @@ export default function StudentWeakTopicsPage() {
                                             <ChevronRight className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: P.primary }} />
                                             <div>
                                                 <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: P.primary }}>{rec.topic}</p>
-                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#475569', marginTop: 2 }}>{rec.action}</p>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textSlate, marginTop: 2 }}>{rec.action}</p>
                                             </div>
                                         </div>
                                     ))}
@@ -159,7 +159,7 @@ export default function StudentWeakTopicsPage() {
                                     {aiRecommendations.studyTips.map((tip, i) => (
                                         <div key={i} className="flex items-start gap-2 mb-1 last:mb-0">
                                             <CheckCircle2 className="w-3 h-3 mt-0.5 flex-shrink-0" style={{ color: '#10B981' }} />
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#475569' }}>{tip}</p>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textSlate }}>{tip}</p>
                                         </div>
                                     ))}
                                 </div>

@@ -1,143 +1,195 @@
 // File: components/StatCard.jsx
+// Global StatCard — single source of truth for all student stat cards.
+// Uses ONLY tokens from studentTokens.js. Never hardcode colors here.
 'use client';
 
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Sparkles } from 'lucide-react';
-import { C, S, T } from '@/constants/studentTokens'; 
+import { MdArrowForward, MdAutoAwesome } from 'react-icons/md';
+import { C, S, T, R } from '@/constants/studentTokens';
 
-// ─── Global Icon Pill Component ───
-function IconPill({ icon: Icon, size = 24, bg, iconColor, customSizeClasses }) {
+// ─── Icon Pill ────────────────────────────────────────────────────────────────
+function IconPill({ icon: Icon, bg, iconColor }) {
   return (
     <div
-      className={`flex items-center justify-center shrink-0 ${customSizeClasses || 'rounded-xl'}`}
-      style={{ width: '48px', height: '48px', backgroundColor: bg }}
+      className="flex items-center justify-center shrink-0 rounded-xl"
+      style={{ width: 48, height: 48, backgroundColor: bg || C.iconBg }}
     >
-      {Icon && <Icon size={size} color={iconColor} strokeWidth={2.5} />}
+      {/* Removed strokeWidth, added exact size and explicit color */}
+      {Icon && <Icon size={24} style={{ color: iconColor || C.iconColor }} />}
     </div>
   );
 }
 
-// ─── Global StatCard Component ───
+// ─── StatCard ─────────────────────────────────────────────────────────────────
+// Props:
+//   icon       — Lucide icon component (required for normal cards)
+//   value      — Number or string to display prominently
+//   label      — Uppercase label text (e.g. "Enrolled Courses")
+//   href       — If provided, wraps card in <Link> and shows "View All" button
+//   isAI       — Boolean: renders the dark gradient AI variant
+//   subtext    — Small secondary text below value (e.g. "Overall Score")
+//   iconBg     — Icon pill background color (overrides C.iconBg)
+//   iconColor  — Icon color (overrides C.iconColor)
+//   bgSvgPath  — Decorative image path for bottom-right half-circle
 export default function StatCard({ icon: Icon, value, label, href, isAI, subtext, iconBg, iconColor, bgSvgPath }) {
-  const currentIconBg = iconBg || C.iconBg;
-  const currentIconColor = iconColor || C.iconColor;
+  const pillBg    = iconBg    || C.iconBg;
+  const pillColor = iconColor || C.iconColor;
 
   const cardContent = (
     <div
-      className={`relative rounded-[16px] p-5 overflow-hidden transition-all duration-300 cursor-pointer group ${
-        isAI ? "hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(99,102,241,0.3)]" : "hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.06)]"
+      className={`relative overflow-hidden transition-all duration-300 cursor-pointer group ${
+        isAI
+          ? 'hover:-translate-y-1'
+          : 'hover:-translate-y-1'
       }`}
       style={
         isAI
           ? {
-              background: "linear-gradient(135deg, #0B1021 0%, #17153B 50%, #2E236C 100%)",
-              border: `1px solid rgba(99, 102, 241, 0.4)`,
+              background: 'linear-gradient(135deg, #0B1021 0%, #17153B 50%, #2E236C 100%)',
+              border: '1px solid rgba(99,102,241,0.4)',
+              borderRadius: R.xl,
               minHeight: 130,
               boxShadow: S.card,
             }
           : {
-              backgroundColor: '#ffffff', 
-              border: `1px solid #E2E8F0`,
+              backgroundColor: C.cardBg,
+              border: `1px solid ${C.cardBorder}`,
+              borderRadius: R.xl,
               minHeight: 130,
               boxShadow: S.card,
             }
       }
+      onMouseEnter={e => {
+        e.currentTarget.style.boxShadow = isAI ? S.aiHover : S.statHover;
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.boxShadow = S.card;
+      }}
     >
-      {/* ─── AI CARD GLOW EFFECTS ─── */}
+      {/* ─── AI Card Glow Effects ─────────────────────────────────────── */}
       {isAI && (
         <>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[50px] opacity-30 pointer-events-none -translate-y-1/2 translate-x-1/2 transition-opacity group-hover:opacity-50"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500 rounded-full blur-[40px] opacity-20 pointer-events-none translate-y-1/2 -translate-x-1/2"></div>
-          <style> 
-            {`
-            @keyframes aiActive {
-                0%, 100% { transform: translateY(0px) scale(1); }
-                50% { transform: translateY(-3px) scale(1.05); }
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[50px]  pointer-events-none -translate-y-1/2 translate-x-1/2 transition-opacity group-hover:opacity-50" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500 rounded-full blur-[40px] pointer-events-none translate-y-1/2 -translate-x-1/2" />
+          <style>{`
+            @keyframes aiPulse {
+              0%, 100% { transform: translateY(0px) scale(1); }
+              50%       { transform: translateY(-3px) scale(1.05); }
             }
-            .ai-animated-icon {
-                animation: aiActive 3s ease-in-out infinite;
-            }
-            `}
-          </style>
+            .ai-icon-anim { animation: aiPulse 3s ease-in-out infinite; }
+          `}</style>
         </>
       )}
 
-      {/* ─── NORMAL CARD (BOTTOM-RIGHT HALF CIRCLE & HOVER IMAGE) ─── */}
+      {/* ─── Normal Card: decorative half-circle + hover image ─────────── */}
       {!isAI && bgSvgPath && (
-        <div 
-          // Ye div Bottom Right corner me half-circle banayega 
+        <div
           className="absolute -bottom-8 -right-8 w-32 h-32 rounded-full pointer-events-none z-0 transition-transform duration-500 group-hover:scale-[1.05]"
-          style={{ backgroundColor: currentIconBg }}
+          style={{ backgroundColor: pillBg }}
         >
-          {/* Image ko circle ke top-left side adjust kiya hai taaki sahi jagah dikhe */}
           <div className="absolute top-6 left-6 w-14 h-14 transition-transform duration-500 group-hover:scale-[1.15] group-hover:-translate-y-1">
             <Image
               src={bgSvgPath}
               alt={`${label} illustration`}
-              width={56}
-              height={56}
-              className="w-full h-full object-contain grayscale opacity-60 transition-all duration-500 group-hover:grayscale-0 group-hover:opacity-100"
+              width={50}
+              height={50}
+              className="w-full h-full object-contain grayscale transition-all duration-500 group-hover:grayscale-0 group-hover:opacity-100"
             />
           </div>
         </div>
       )}
 
-      {/* ─── CARD CONTENT LAYOUT ─── */}
-      <div className="relative z-10 flex flex-col h-full justify-between">
-        
-        {/* Top Row: Pill Icon (Left) + Text (Right) */}
+      {/* ─── Card Content ─────────────────────────────────────────────── */}
+      <div className="relative z-10 flex flex-col h-full justify-between p-5">
+
+        {/* Top: Icon + Label + Value */}
         <div className="flex items-start gap-3.5">
           {isAI ? (
             <div className="flex items-center justify-center shrink-0 w-12 h-12 bg-white/10 rounded-xl border border-white/20 backdrop-blur-sm">
-                <Sparkles className="w-6 h-6 text-indigo-300" />
+              <MdAutoAwesome className="w-6 h-6 text-indigo-300" />
             </div>
           ) : (
-            <IconPill
-              icon={Icon}
-              bg={currentIconBg}
-              iconColor={currentIconColor}
-            />
+            <IconPill icon={Icon} bg={pillBg} iconColor={pillColor} />
           )}
 
-          {/* Text wrapper se pr-10 hata diya kyunki ab image neeche hai */}
-          <div className="flex-1 min-w-0 flex flex-col justify-center pt-0.5"> 
-            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.bold, color: isAI ? '#A5B4FC' : '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <div className="flex-1 min-w-0 flex flex-col justify-center pt-0.5">
+            {/* Label */}
+            <p style={{
+              fontFamily:    T.fontFamily,
+              fontSize:      T.size.md,
+              fontWeight:    T.weight.semibold,
+              color:         isAI ? '#A5B4FC' : C.textSlate,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              margin: 0,
+            }}>
               {label}
             </p>
+
+            {/* Value + subtext */}
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <p style={{ fontFamily: T.fontFamily, fontSize: '26px', fontWeight: 900, color: isAI ? '#ffffff' : '#1E1B4B', lineHeight: 1 }}>
+              <p style={{
+                fontFamily: T.fontFamily,
+                fontSize:   T.size.stat,
+                fontWeight: T.weight.black,
+                color:      isAI ? '#ffffff' : C.headingDark,
+                lineHeight: 1,
+                margin: 0,
+              }}>
                 {value}
               </p>
               {subtext && (
-                <p style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.medium, color: isAI ? '#818CF8' : '#94A3B8' }}>
+                <p style={{
+                  fontFamily: T.fontFamily,
+                  fontSize:   T.size.xs,
+                  fontWeight: T.weight.medium,
+                  color:      isAI ? '#818CF8' : C.textFaint,
+                  margin: 0,
+                }}>
                   {subtext}
                 </p>
               )}
             </div>
           </div>
-          
-          {/* AI Card Big Image (Right Side Center) */}
+
+          {/* AI card: big decorative image */}
           {isAI && bgSvgPath && (
-             <div className="absolute right-0 top-22 -translate-y-1/2 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] pointer-events-none group-hover:scale-110 transition-transform duration-500">
-                <Image src={bgSvgPath} alt="AI Icon" width={80} height={80} className="ai-animated-icon w-15 h-15 object-contain" />
-             </div>
+            <div className="absolute right-4 top-25 -translate-y-1/2 pointer-events-none group-hover:scale-110 transition-transform duration-500 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+              <Image src={bgSvgPath} alt="AI Icon" width={60} height={60} className="ai-icon-anim object-contain" />
+            </div>
           )}
         </div>
 
-        {/* Bottom Row: Action Buttons */}
-        <div className="mt-5">
+        {/* Bottom: Action button */}
+        <div className="mt-4">
           {isAI ? (
-            <span className="inline-flex items-center justify-center py-2 px-3.5 text-white rounded-lg transition-transform active:scale-95"
-              style={{ backgroundColor: '#4F46E5', fontFamily: T.fontFamily, fontSize: '12px', fontWeight: T.weight.bold, boxShadow: `0 4px 14px rgba(79, 70, 229, 0.4)` }}>
-              <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Start AI Plan
+            <span
+              className="inline-flex items-center justify-center py-2 px-3.5 text-white rounded-lg transition-transform active:scale-95"
+              style={{
+                backgroundColor: '#4F46E5',
+                fontFamily: T.fontFamily,
+                fontSize:   T.size.sm,
+                fontWeight: T.weight.bold,
+                boxShadow:  S.aiBtn,
+              }}
+            >
+              <MdAutoAwesome className="w-3.5 h-3.5 mr-1.5" /> Start AI Plan
             </span>
           ) : (
             href && (
-              <span className="inline-flex items-center justify-center py-1.5 px-3 rounded-lg transition-colors"
-                style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, fontFamily: T.fontFamily, fontSize: '12px', fontWeight: T.weight.bold }}>
-                View All <ArrowRight className="w-3.5 h-3.5 ml-1" />
+              <span
+                className="inline-flex items-center justify-center py-1.5 px-3 rounded-lg transition-colors"
+                style={{
+                  backgroundColor: C.btnViewAllBg,
+                  color:           C.btnViewAllText,
+                  fontFamily:      T.fontFamily,
+                  fontSize:        T.size.sm,
+                  fontWeight:      T.weight.bold,
+                }}
+              >
+                View All <MdArrowForward className="w-3.5 h-3.5 ml-1" />
               </span>
             )
           )}

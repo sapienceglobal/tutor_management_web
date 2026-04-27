@@ -33,11 +33,11 @@ function NoteContent({ text }) {
                     return (
                         <div key={i} className="flex items-start gap-2">
                             <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: P.primary }} />
-                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#475569', lineHeight: 1.65 }}>{line.replace(/^[•\-]\s/, '')}</p>
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textSlate, lineHeight: 1.65 }}>{line.replace(/^[•\-]\s/, '')}</p>
                         </div>
                     );
                 }
-                return <p key={i} style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#475569', lineHeight: 1.65 }}>{line}</p>;
+                return <p key={i} style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textSlate, lineHeight: 1.65 }}>{line}</p>;
             })}
         </div>
     );

@@ -16,9 +16,6 @@ import { motion } from 'framer-motion';
 import { C, T, S, R } from '@/constants/studentTokens';
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
-const themeBg = '#dfdaf3';
-const outerCard = '#EAE8FA';
-const innerBox = '#E3DFF8';
 const PIE_COLORS = [C.success, C.btnPrimary, C.warning, C.danger];
 
 // ─── Custom Tooltips ──────────────────────────────────────────────────────────
@@ -26,7 +23,7 @@ const CustomBarTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
         <div className="rounded-xl px-4 py-3 shadow-xl"
-            style={{ backgroundColor: '#1E1B4B', border: '1px solid rgba(255,255,255,0.1)', fontFamily: T.fontFamily }}>
+            style={{ backgroundcolor: C.headingDark, border: '1px solid rgba(255,255,255,0.1)', fontFamily: T.fontFamily }}>
             <p style={{ fontSize: '11px', fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.6)', marginBottom: 2, textTransform: 'uppercase' }}>{label}</p>
             <p style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: '#fff' }}>{payload[0].value}% <span style={{ fontSize: '10px', fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.5)' }}>AVG</span></p>
         </div>
@@ -37,7 +34,7 @@ const CustomPieTooltip = ({ active, payload }) => {
     if (!active || !payload?.length) return null;
     return (
         <div className="rounded-xl px-4 py-3 shadow-xl"
-            style={{ backgroundColor: '#1E1B4B', border: '1px solid rgba(255,255,255,0.1)', fontFamily: T.fontFamily }}>
+            style={{ backgroundcolor: C.headingDark, border: '1px solid rgba(255,255,255,0.1)', fontFamily: T.fontFamily }}>
             <p style={{ fontSize: '11px', fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase' }}>{payload[0].name} Score</p>
             <p style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: payload[0].payload.fill, marginTop: 2 }}>{payload[0].value} Tests</p>
         </div>
@@ -48,7 +45,7 @@ const CustomPieTooltip = ({ active, payload }) => {
 function StatCard({ label, value, icon: Icon, iconBg, iconColor }) {
     return (
         <div className="rounded-2xl p-5 flex flex-col justify-between transition-transform hover:-translate-y-1 shadow-sm"
-            style={{ backgroundColor: outerCard, border: `1px solid ${C.cardBorder}` }}>
+            style={{ backgroundColor: C.outerCard, border: `1px solid ${C.cardBorder}` }}>
             <div className="flex items-center justify-between mb-4">
                 <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: T.tracking.wider, color: C.textMuted }}>
                     {label}
@@ -166,7 +163,7 @@ export default function ReportsAnalyticsPage() {
     };
 
     if (loading) return (
-        <div className="flex flex-col items-center justify-center min-h-screen gap-3" style={{ backgroundColor: themeBg }}>
+        <div className="flex flex-col items-center justify-center min-h-screen gap-3" style={{ backgroundColor: C.pageBgAlt }}>
             <div className="relative w-12 h-12">
                 <div className="w-12 h-12 rounded-full border-[3px] border-[#4F46E5]/30 border-t-[#4F46E5] animate-spin" />
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -180,7 +177,7 @@ export default function ReportsAnalyticsPage() {
     );
 
     return (
-        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: C.pageBgAlt, fontFamily: T.fontFamily, color: C.text }}>
 
             {/* Print Stylesheet (Hides everything except the report card when printing) */}
             <style jsx global>{`
@@ -193,9 +190,9 @@ export default function ReportsAnalyticsPage() {
             `}</style>
 
             {/* ── Header ─────────────────────────────────────────────────── */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-3xl no-print" style={{ backgroundColor: outerCard, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-3xl no-print" style={{ backgroundColor: C.outerCard, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: innerBox, borderRadius: R.xl }}>
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: C.innerBox, borderRadius: R.xl }}>
                         <LayoutList size={24} color={C.btnPrimary} />
                     </div>
                     <div>
@@ -206,7 +203,7 @@ export default function ReportsAnalyticsPage() {
                     </div>
                 </div>
 
-                <div className="flex p-1 rounded-xl shrink-0" style={{ backgroundColor: innerBox, border: `1px solid ${C.cardBorder}` }}>
+                <div className="flex p-1 rounded-xl shrink-0" style={{ backgroundColor: C.innerBox, border: `1px solid ${C.cardBorder}` }}>
                     {[
                         { id: 'analytics',  label: 'Analytics', icon: BarChart3 },
                         { id: 'reports',    label: 'Reports & Downloads', icon: FileText },
@@ -238,17 +235,17 @@ export default function ReportsAnalyticsPage() {
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
                         {/* Performance Trend */}
-                        <div className="rounded-3xl p-6 shadow-sm border flex flex-col" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                        <div className="rounded-3xl p-6 shadow-sm border flex flex-col" style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder }}>
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: innerBox }}>
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: C.innerBox }}>
                                         <BarChart3 size={16} color={C.btnPrimary} />
                                     </div>
                                     <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
                                         Performance Trend
                                     </h2>
                                 </div>
-                                <span className="px-3 py-1 rounded-lg" style={{ backgroundColor: innerBox, color: C.textMuted, fontSize: '10px', fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                <span className="px-3 py-1 rounded-lg" style={{ backgroundColor: C.innerBox, color: C.textMuted, fontSize: '10px', fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                     Monthly Avg
                                 </span>
                             </div>
@@ -278,7 +275,7 @@ export default function ReportsAnalyticsPage() {
                         </div>
 
                         {/* Score Distribution */}
-                        <div className="rounded-3xl p-6 shadow-sm border flex flex-col" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                        <div className="rounded-3xl p-6 shadow-sm border flex flex-col" style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder }}>
                             <div className="flex items-center gap-3 mb-6">
                                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: C.successBg }}>
                                     <Target size={16} color={C.success} />
@@ -311,7 +308,7 @@ export default function ReportsAnalyticsPage() {
                                                         <span style={{ fontSize: '11px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{range.name}</span>
                                                         <span style={{ fontSize: '11px', fontWeight: T.weight.black, color: PIE_COLORS[i % PIE_COLORS.length] }}>{range.count} Tests</span>
                                                     </div>
-                                                    <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: innerBox }}>
+                                                    <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: C.innerBox }}>
                                                         <motion.div initial={{ width: 0 }} animate={{ width: `${(range.count / attempts.length) * 100}%` }} transition={{ duration: 1 }} className="h-full rounded-full" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
                                                     </div>
                                                 </div>
@@ -330,8 +327,8 @@ export default function ReportsAnalyticsPage() {
 
                     {/* Recent attempts */}
                     {recentScores.length > 0 && (
-                        <div className="rounded-3xl shadow-sm border overflow-hidden" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
-                            <div className="px-6 py-5 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: innerBox }}>
+                        <div className="rounded-3xl shadow-sm border overflow-hidden" style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder }}>
+                            <div className="px-6 py-5 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBox }}>
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white shadow-sm">
                                         <Clock size={16} color={C.btnPrimary} />
@@ -354,7 +351,7 @@ export default function ReportsAnalyticsPage() {
                                     const passed = attempt.isPassed;
                                     return (
                                         <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 py-4 rounded-2xl transition-colors hover:bg-white/40"
-                                            style={{ backgroundColor: innerBox, border: `1px solid ${C.cardBorder}`, borderLeft: `4px solid ${passed ? C.success : C.danger}` }}>
+                                            style={{ backgroundColor: C.innerBox, border: `1px solid ${C.cardBorder}`, borderLeft: `4px solid ${passed ? C.success : C.danger}` }}>
                                             
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: passed ? C.successBg : C.dangerBg }}>
@@ -406,7 +403,7 @@ export default function ReportsAnalyticsPage() {
                             <Printer size={18} /> Print / Save as PDF
                         </button>
                         <button onClick={handleDownloadCSV} className="flex items-center gap-2 h-11 px-6 rounded-xl cursor-pointer transition-transform hover:-translate-y-0.5 shadow-sm"
-                            style={{ backgroundColor: outerCard, color: C.heading, border: `1px solid ${C.cardBorder}`, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
+                            style={{ backgroundColor: C.outerCard, color: C.heading, border: `1px solid ${C.cardBorder}`, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
                             <Download size={18} color={C.btnPrimary} /> Download CSV
                         </button>
                     </div>
@@ -417,11 +414,11 @@ export default function ReportsAnalyticsPage() {
                         {/* Report Header */}
                         <div className="flex items-center justify-between border-b pb-8 mb-8">
                             <div>
-                                <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#1E1B4B', margin: 0 }}>Official Student Report</h1>
+                                <h1 style={{ fontSize: '28px', fontWeight: 900, color: C.headingDark, margin: 0 }}>Official Student Report</h1>
                                 <p style={{ color: '#6B7280', fontSize: '14px', marginTop: '4px' }}>Generated on {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                             </div>
                             <div className="text-right">
-                                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1E1B4B', margin: 0 }}>{reportData?.student?.name || 'Student Name'}</h3>
+                                <h3 style={{ fontSize: '18px', fontWeight: 700, color: C.headingDark, margin: 0 }}>{reportData?.student?.name || 'Student Name'}</h3>
                                 <p style={{ color: '#6B7280', fontSize: '14px' }}>{reportData?.student?.email || 'Student Email'}</p>
                             </div>
                         </div>
@@ -436,13 +433,13 @@ export default function ReportsAnalyticsPage() {
                             ].map((stat, i) => (
                                 <div key={i} className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
                                     <p style={{ fontSize: '11px', color: '#6B7280', textTransform: 'uppercase', fontWeight: 700, margin: '0 0 4px 0' }}>{stat.label}</p>
-                                    <p style={{ fontSize: '24px', fontWeight: 900, color: '#1E1B4B', margin: 0 }}>{stat.val}</p>
+                                    <p style={{ fontSize: '24px', fontWeight: 900, color: C.headingDark, margin: 0 }}>{stat.val}</p>
                                 </div>
                             ))}
                         </div>
 
                         {/* Detailed Exam History */}
-                        <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1E1B4B', marginBottom: '16px' }}>Exam Performance History</h3>
+                        <h3 style={{ fontSize: '18px', fontWeight: 800, color: C.headingDark, marginBottom: '16px' }}>Exam Performance History</h3>
                         
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">

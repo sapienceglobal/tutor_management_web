@@ -1,5 +1,5 @@
 /**
- * studentTokens.js — Single Source of Truth for Student UI
+ * studentTokens.js — Single Source of Truth for ALL Student UI
  *
  * ─── HOW IT WORKS ────────────────────────────────────────────────────────────
  *
@@ -18,8 +18,10 @@
  *  When admin changes primary → btnPrimary, iconBg, gradientBtn all update ✅
  *  When admin changes font    → T.fontFamily updates → all pages update ✅
  *
- *  Design tokens (cardBg #EAE8FA, iconBg #6267E9 etc.) stay fixed unless
- *  you deliberately change them here.
+ *  ─── INDUSTRY RULE ───────────────────────────────────────────────────────────
+ *  NEVER hardcode colors, font sizes, border radii, or shadows in page files.
+ *  ALWAYS import { C, T, S, R, cx, pageStyle } from '@/constants/studentTokens'
+ *  and use these tokens. This file is the ONE place to change anything visual.
  *
  * ─── IMPORTS ─────────────────────────────────────────────────────────────────
  *  import { C, T, S, R, cx, pageStyle } from '@/constants/studentTokens';
@@ -29,49 +31,54 @@
 export const C = {
 
     // ── Admin-controlled — via ThemeContext CSS vars ───────────────────────
-    // These update automatically when admin changes theme settings.
+    btnPrimary:  '#7573E8',              // 'var(--theme-primary)' — hardcoded to avoid flash
+    darkCard:    'var(--theme-sidebar)', // #3D3B8E default — dark hero cards, AI section
+    chartLine:   'var(--theme-accent)',  // #5E9D9D default — chart lines, progress bars
 
-    pageBg:      '#f3f4f5',   // hardcoded — no CSS var flash on load
-     btnPrimary:  '#7573E8',   //  'var(--theme-primary)',         // #7573E8 default
-   
-    darkCard:    'var(--theme-sidebar)',         // #3D3B8E default — dark hero cards, AI section
-    chartLine:   'var(--theme-accent)',          // #5E9D9D default — chart lines
-
-    gradientBtn: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))',
-
+    gradientBtn:   'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))',
     btnPrimaryText: '#ffffff',
     darkCardText:   '#ffffff',
     darkCardMuted:  'rgba(255,255,255,0.50)',
 
-    // ── Design tokens — hardcoded (not brand colors, UI decisions) ─────────
-    // To change: edit these values here → all pages update immediately.
+    // ── Page Backgrounds ───────────────────────────────────────────────────
+    // Change ONE value here → every page that uses C.pageBg / C.outerCard etc. updates.
+    pageBg:     '#f3f4f5',   // overall page canvas (layout.js background)
+    pageBgAlt:  '#dfdaf3',   // deeper purple-tinted pages (exams, live-classes, assignments)
 
-    // Text
-    heading:    '#151656',   // headings: AI Recommendations, Performance Overview etc.
-    text:       '#28285E',   // all body text
-    statLabel:  '#373867',   // stat card labels: "Enrolled Courses", "Upcoming Exams"
-    statValue:  '#1D225E',   // stat card numbers from backend
+    // ── Surface / Card Backgrounds ─────────────────────────────────────────
+    // These three are the "layer cake" of the student panel design:
+    //   outerCard sits on pageBg/pageBgAlt
+    //   innerBox   sits inside outerCard
+    //   surfaceWhite is pure white for inputs, selected rows, etc.
+    cardBg:       '#ffffff',   // primary white card background (dashboard stat cards)
+    outerCard:    '#EAE8FA',   // off-white lavender card (exams header, form sections)
+    innerBox:     '#E3DFF8',   // deeper lavender inner surfaces (table headers, form inner)
+    surfaceWhite: '#ffffff',   // pure white (inputs, active state rows)
+    innerBg:      'rgba(220,215,246,0.55)', // translucent lavender (hover rows, progress tracks)
 
-    // Surfaces
-    cardBg:       '#ffff',  // stat cards, panels, performance card bg
-    surfaceWhite: '#ffffff',  // pure white inner surfaces
-    innerBg:      'rgba(220,215,246,0.55)', // inner rows, hover bg
-
-    // Borders
+    // ── Borders ───────────────────────────────────────────────────────────
     cardBorder: 'rgba(98,103,233,0.12)',
 
-    // Icon pills
-    iconBg:    '#6267E9',    // icon pill background
-    iconColor: '#ffffff',    // icon always white
+    // ── Text ──────────────────────────────────────────────────────────────
+    heading:    '#151656',   // main headings (H1, H2, section titles)
+    headingDark:'#1E1B4B',   // alternate dark heading (used in exam cards, labels on white)
+    text:       '#28285E',   // body text
+    textSlate:  '#475569',   // neutral slate (stat card labels — professional, not purple)
+    textMuted:  'rgba(40,40,94,0.55)', // muted body text
+    textFaint:  '#94A3B8',   // very muted / placeholder (Tailwind slate-400)
 
-    // Secondary button (View All, Previous/Next)
-    btnViewAllBg:   '#D3D3F1',  // view all button bg
-    btnViewAllText: '#171D74',  // view all button text
+    statLabel:  '#373867',   // stat card labels: "Enrolled Courses", "Upcoming Exams"
+    statValue:  '#1D225E',   // stat card big numbers
 
-    // Text aliases for convenience
-    textMuted:   'rgba(40,40,94,0.55)',
+    // ── Icon Pills ────────────────────────────────────────────────────────
+    iconBg:    '#6267E9',    // default icon pill background
+    iconColor: '#ffffff',    // icon always white inside pill
 
-    // Semantic — never change these
+    // ── Secondary Button (View All, Previous/Next) ────────────────────────
+    btnViewAllBg:   '#D3D3F1',
+    btnViewAllText: '#171D74',
+
+    // ── Semantic Colors — do NOT change ───────────────────────────────────
     success:       '#10B981',
     successBg:     'rgba(16,185,129,0.08)',
     successBorder: 'rgba(16,185,129,0.20)',
@@ -86,20 +93,21 @@ export const C = {
 // ─── T — Typography ───────────────────────────────────────────────────────────
 export const T = {
 
-    // Admin-controlled via --theme-font CSS var
-fontFamily: 'var(--font-kanit), sans-serif',
+    fontFamily:     'var(--font-nunito), sans-serif', // admin-controlled via CSS var
     fontFamilyMono: "'JetBrains Mono', monospace",
 
-    // Fixed design scale — change here → all pages update
+    // Type scale — change here → every page updates immediately
     size: {
-        xs:   '11px',
-        sm:   '12px',
-        base: '13px',
-        md:   '14px',
-        lg:   '16px',
-        xl:   '18px',
-        '2xl':'22px',
-        '3xl':'28px',
+        xs:    '11px',  // badges, tags, fine print
+        sm:    '12px',  // secondary labels, buttons, inputs
+        base:  '13px',  // body text default
+        md:    '14px',  // primary labels, card sub-text
+        lg:    '16px',  // card titles, section sub-headings
+        xl:    '18px',  // section headings (SectionHeader)
+        '2xl': '22px',  // page sub-headings, quick stat values
+        stat:  '26px',  // StatCard big number (dashboard + all pages)
+        '3xl': '28px',  // hero numbers (score, rank)
+        '4xl': '36px',  // very large display numbers
     },
 
     weight: {
@@ -107,7 +115,7 @@ fontFamily: 'var(--font-kanit), sans-serif',
         medium:   500,
         semibold: 600,
         bold:     700,
-        black:    900,
+        black:    900,  // used for all major numbers and headings
     },
 
     leading: {
@@ -121,46 +129,39 @@ fontFamily: 'var(--font-kanit), sans-serif',
         tight:  '-0.01em',
         normal: '0',
         wide:   '0.04em',
-        wider:  '0.08em',
+        wider:  '0.08em',  // used for uppercase labels
         widest: '0.14em',
     },
 };
 
 // ─── S — Shadows ──────────────────────────────────────────────────────────────
-// export const S = {
-//     card:      '0 2px 12px rgba(98,103,233,0.08)',
-//     cardHover: '0 4px 20px rgba(98,103,233,0.14)',
-//     btn:       '0 4px 14px rgba(117,115,232,0.30)',
-//     btnDark:   '0 4px 14px rgba(61,59,142,0.35)',
-//     active:    '0 2px 8px rgba(98,103,233,0.20)',
-// };
-// ─── S — Shadows ──────────────────────────────────────────────────────────────
 export const S = {
-  
-    card:      'rgba(149, 157, 165, 0.2) 0px 8px 24px',
-    
-    // Hover ke liye shadow ko thoda aur smooth/bada kar diya
-    cardHover: 'rgba(149, 157, 165, 0.3) 0px 12px 32px', 
-    
-    btn:       '0 4px 14px rgba(117,115,232,0.30)',
-    btnDark:   '0 4px 14px rgba(61,59,142,0.35)',
-    active:    '0 2px 8px rgba(98,103,233,0.20)',
+    card:       'rgba(149,157,165,0.18) 0px 8px 24px',    // standard card shadow
+    cardHover:  'rgba(149,157,165,0.28) 0px 12px 32px',   // elevated on hover
+    statHover:  '0 8px 20px rgba(0,0,0,0.06)',            // StatCard white card hover
+    aiHover:    '0 8px 30px rgba(99,102,241,0.30)',        // AI StatCard hover
+    btn:        '0 4px 14px rgba(117,115,232,0.30)',       // primary gradient button
+    btnDark:    '0 4px 14px rgba(61,59,142,0.35)',         // dark button
+    active:     '0 2px 8px rgba(98,103,233,0.20)',         // active/selected state
+    aiBtn:      '0 4px 14px rgba(79,70,229,0.40)',         // AI "Start Plan" button
 };
 
 // ─── R — Border Radius ────────────────────────────────────────────────────────
 export const R = {
-    sm:   '8px',
-    md:   '12px',
-    lg:   '16px',
-    xl:   '20px',
-    '2xl':'24px',
-    full: '9999px',
+    sm:   '8px',    // small tags, pills
+    md:   '12px',   // filter tabs, small cards
+    lg:   '16px',   // input fields, icon pills
+    xl:   '20px',   // standard card radius (StatCard)
+    '2xl':'24px',   // large cards, panels
+    '3xl':'32px',   // hero cards, course cards
+    full: '9999px', // fully rounded (badges, avatars)
 };
 
-// ─── cx — Style builder helpers ───────────────────────────────────────────────
+// ─── cx — Pre-built style objects (copy-paste ready) ─────────────────────────
+// Usage: style={cx.card()} or style={cx.card({ padding: '20px' })}
 export const cx = {
 
-    // Card container (stat cards, panels)
+    // Card container — white background stat cards, panels
     card: (extra = {}) => ({
         backgroundColor: C.cardBg,
         border: `1px solid ${C.cardBorder}`,
@@ -169,7 +170,23 @@ export const cx = {
         ...extra,
     }),
 
-    // White inner surface (inside cards)
+    // Outer card — lavender tinted section containers (#EAE8FA)
+    outerCard: (extra = {}) => ({
+        backgroundColor: C.outerCard,
+        border: `1px solid ${C.cardBorder}`,
+        boxShadow: S.card,
+        borderRadius: R['2xl'],
+        ...extra,
+    }),
+
+    // Inner box — deeper lavender inner surfaces (#E3DFF8)
+    innerBox: (extra = {}) => ({
+        backgroundColor: C.innerBox,
+        borderRadius: R.lg,
+        ...extra,
+    }),
+
+    // White inner surface (inputs, selected rows)
     surface: (extra = {}) => ({
         backgroundColor: C.surfaceWhite,
         border: `1px solid ${C.cardBorder}`,
@@ -178,14 +195,14 @@ export const cx = {
         ...extra,
     }),
 
-    // Inner row / hover area
+    // Inner row / translucent hover area
     inner: (extra = {}) => ({
         backgroundColor: C.innerBg,
         borderRadius: R.lg,
         ...extra,
     }),
 
-    // Primary gradient button (Start AI Study Plan, Attempt, Submit etc.)
+    // Primary gradient button
     btn: (extra = {}) => ({
         background: C.gradientBtn,
         color: '#ffffff',
@@ -194,11 +211,12 @@ export const cx = {
         fontWeight: T.weight.black,
         borderRadius: R.xl,
         boxShadow: S.btn,
+        border: 'none',
         cursor: 'pointer',
         ...extra,
     }),
 
-    // Secondary button (View All, Previous, Next)
+    // Secondary button (View All, Prev, Next)
     btnSecondary: (extra = {}) => ({
         backgroundColor: C.btnViewAllBg,
         color: C.btnViewAllText,
@@ -232,7 +250,9 @@ export const cx = {
         ...extra,
     }),
 
-    // Typography helpers
+    // ── Typography helpers ────────────────────────────────────────────────
+
+    // Page H1
     heading: (extra = {}) => ({
         color: C.heading,
         fontFamily: T.fontFamily,
@@ -242,6 +262,7 @@ export const cx = {
         ...extra,
     }),
 
+    // Section H2 / card title
     sectionTitle: (extra = {}) => ({
         color: C.heading,
         fontFamily: T.fontFamily,
@@ -251,6 +272,7 @@ export const cx = {
         ...extra,
     }),
 
+    // Standard body text
     body: (extra = {}) => ({
         color: C.text,
         fontFamily: T.fontFamily,
@@ -260,6 +282,7 @@ export const cx = {
         ...extra,
     }),
 
+    // Muted caption text
     caption: (extra = {}) => ({
         color: C.textMuted,
         fontFamily: T.fontFamily,
@@ -269,6 +292,7 @@ export const cx = {
         ...extra,
     }),
 
+    // UPPERCASE badge/label text (stat card labels, table headers)
     label: (extra = {}) => ({
         color: C.statLabel,
         fontFamily: T.fontFamily,
@@ -280,15 +304,17 @@ export const cx = {
         ...extra,
     }),
 
+    // StatCard value number (big number on top of label)
     statValue: (extra = {}) => ({
-        color: C.statValue,
+        color: C.headingDark,
         fontFamily: T.fontFamily,
-        fontSize: T.size['3xl'],
+        fontSize: T.size.stat,
         fontWeight: T.weight.black,
         lineHeight: T.leading.tight,
         ...extra,
     }),
 
+    // Input / select field
     input: (extra = {}) => ({
         backgroundColor: C.surfaceWhite,
         border: `1.5px solid ${C.cardBorder}`,
@@ -297,36 +323,44 @@ export const cx = {
         fontFamily: T.fontFamily,
         fontSize: T.size.base,
         fontWeight: T.weight.medium,
+        outline: 'none',
         ...extra,
     }),
 
+    // Input focus ring (apply inline on onFocus)
     inputFocus: {
-        borderColor: 'var(--theme-primary)',
+        borderColor: '#7573E8',
         boxShadow: '0 0 0 3px rgba(117,115,232,0.15)',
         outline: 'none',
     },
 
-    // Pagination
+    // Pagination active button
     pageActive: (extra = {}) => ({
         background: C.gradientBtn,
         color: '#ffffff',
         fontFamily: T.fontFamily,
         fontWeight: T.weight.black,
         borderRadius: R.lg,
+        border: 'none',
+        cursor: 'pointer',
         ...extra,
     }),
 
+    // Pagination inactive button
     pageInactive: (extra = {}) => ({
         backgroundColor: C.btnViewAllBg,
         color: C.btnViewAllText,
         fontFamily: T.fontFamily,
         fontWeight: T.weight.bold,
         borderRadius: R.lg,
+        border: `1px solid ${C.cardBorder}`,
+        cursor: 'pointer',
         ...extra,
     }),
 };
 
 // ─── pageStyle — apply to every page's outermost div ─────────────────────────
+// Usage: <div style={{ ...pageStyle, backgroundColor: C.pageBgAlt }}>
 export const pageStyle = {
     fontFamily: T.fontFamily,
     fontSize: T.size.base,

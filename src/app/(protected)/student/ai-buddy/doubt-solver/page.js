@@ -50,7 +50,7 @@ function AnswerBlock({ answer }) {
                     return (
                         <div key={i} className="flex items-start gap-2">
                             <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: P.primary }} />
-                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#475569', lineHeight: 1.65 }}>
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textSlate, lineHeight: 1.65 }}>
                                 {line.replace(/^[-•]\s/, '').replace(/\*\*(.*?)\*\*/g, '$1')}
                             </p>
                         </div>
@@ -58,7 +58,7 @@ function AnswerBlock({ answer }) {
                 }
                 const parts = line.split(/(\*\*.*?\*\*)/g);
                 return (
-                    <p key={i} style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#475569', lineHeight: 1.65 }}>
+                    <p key={i} style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textSlate, lineHeight: 1.65 }}>
                         {parts.map((part, j) =>
                             part.startsWith('**') && part.endsWith('**')
                                 ? <strong key={j} style={{ color: P.textPrimary, fontWeight: T.weight.bold }}>{part.slice(2, -2)}</strong>
@@ -500,7 +500,7 @@ export default function StudentDoubtSolverPage() {
                                             <button key={course._id}
                                                 onClick={() => { setSelectedCourse(course._id); setQuestion(`Explain the key concepts of ${course.title}`); }}
                                                 className="text-left px-4 py-3 rounded-xl transition-all hover:opacity-80 hover:-translate-y-0.5"
-                                                style={{ backgroundColor: '#fff', border: `1px solid ${P.border}`, boxShadow: `0 2px 8px ${P.primary}0A`, fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#475569' }}>
+                                                style={{ backgroundColor: '#fff', border: `1px solid ${P.border}`, boxShadow: `0 2px 8px ${P.primary}0A`, fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textSlate }}>
                                                 <div className="flex items-start gap-2">
                                                     <GraduationCap className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: P.primary }} />
                                                     <div>

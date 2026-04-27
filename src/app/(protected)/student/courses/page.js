@@ -12,6 +12,7 @@ import { toast } from 'react-hot-toast';
 import api from '@/lib/axios';
 import { getAudienceDisplay } from '@/lib/audienceDisplay';
 import { C, T, S, R } from '@/constants/studentTokens';
+import StatCard from '@/components/StatCard';
 
 const COURSES_PER_PAGE = 8;
 const progressColors = ['#4F46E5', '#059669', '#EA580C', '#DB2777'];
@@ -46,27 +47,6 @@ function FallbackImage({ src, alt, className }) {
     );
 }
 
-// ─── Stat card ────────────────────────────────────────────────────────────────
-function StatCard({ icon: Icon, label, value, href, iconBg, iconColor }) {
-    const inner = (
-        <div className="flex items-center gap-3 rounded-3xl p-4 transition-all hover:-translate-y-1 hover:shadow-lg"
-            style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: iconBg || C.iconBg }}>
-                <Icon className="w-6 h-6" style={{ color: iconColor || C.btnPrimary }} />
-            </div>
-            <div>
-                <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.text, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    {label}
-                </p>
-                <p style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, lineHeight: 1 }}>
-                    {value}
-                </p>
-            </div>
-        </div>
-    );
-    return href ? <Link href={href} className="block">{inner}</Link> : inner;
-}
 
 // ─── Enrolled course card ─────────────────────────────────────────────────────
 function EnrolledCourseCard({ enrollment, index }) {
@@ -347,11 +327,11 @@ export default function MyCoursesPage() {
                     {/* ENROLLMENTS tab */}
                     {mainTab === 'enrollments' && (
                         <>
-                            {/* Quick Stats Row */}
+                            {/* Quick Stats — uses global dashboard-consistent StatCard */}
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <StatCard icon={FolderOpen} label="Enrolled Courses" value={enrollments.length} iconBg="rgba(79, 70, 229, 0.1)" iconColor="#4F46E5" />
-                                <StatCard icon={FileCheck}  label="Upcoming Exams"   value={upcomingExamsCount} href="/student/exams" iconBg="rgba(245, 158, 11, 0.1)" iconColor="#F59E0B" />
-                                <StatCard icon={Video}      label="Live Classes"     value={liveClassesCount}   href="/student/live-classes" iconBg="rgba(16, 185, 129, 0.1)" iconColor="#10B981" />
+                                <StatCard icon={FolderOpen} label="Enrolled Courses" value={enrollments.length}   iconBg="rgba(79,70,229,0.1)"  iconColor="#4F46E5" />
+                                <StatCard icon={FileCheck}  label="Upcoming Exams"   value={upcomingExamsCount} href="/student/exams"         iconBg="rgba(245,158,11,0.1)" iconColor="#F59E0B" />
+                                <StatCard icon={Video}      label="Live Classes"     value={liveClassesCount}   href="/student/live-classes"  iconBg="rgba(16,185,129,0.1)" iconColor="#10B981" />
                             </div>
 
                             {/* Search & List Header */}

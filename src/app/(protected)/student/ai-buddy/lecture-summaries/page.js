@@ -38,11 +38,11 @@ function SummaryContent({ record }) {
                         return (
                             <div key={i} className="flex items-start gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: P.primary }} />
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#475569', lineHeight: 1.65 }}>{line.replace(/^[•\-]\s/, '')}</p>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textSlate, lineHeight: 1.65 }}>{line.replace(/^[•\-]\s/, '')}</p>
                             </div>
                         );
                     }
-                    return <p key={i} style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#475569', lineHeight: 1.65 }}>{line}</p>;
+                    return <p key={i} style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textSlate, lineHeight: 1.65 }}>{line}</p>;
                 })}
             </div>
 
@@ -57,7 +57,7 @@ function SummaryContent({ record }) {
                         {record.keyPoints.map((point, i) => (
                             <div key={i} className="flex items-start gap-2">
                                 <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#10B981' }} />
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#475569' }}>{point}</p>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textSlate }}>{point}</p>
                             </div>
                         ))}
                     </div>
@@ -75,7 +75,7 @@ function SummaryContent({ record }) {
                         {record.insights.map((insight, i) => (
                             <div key={i} className="flex items-start gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: '#F59E0B' }} />
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#475569' }}>{insight}</p>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textSlate }}>{insight}</p>
                             </div>
                         ))}
                     </div>
@@ -89,7 +89,7 @@ function SummaryContent({ record }) {
                         <BookOpen className="w-4 h-4" style={{ color: '#10B981' }} />
                         <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: P.textPrimary }}>Study Notes</p>
                     </div>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#475569', lineHeight: 1.65, whiteSpace: 'pre-line' }}>{record.studyNotes}</p>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textSlate, lineHeight: 1.65, whiteSpace: 'pre-line' }}>{record.studyNotes}</p>
                 </div>
             )}
         </div>

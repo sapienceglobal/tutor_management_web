@@ -13,9 +13,6 @@ import { C, T, S, R } from '@/constants/studentTokens';
 const ITEMS_PER_PAGE = 10;
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
-const themeBg = '#dfdaf3';
-const outerCard = '#EAE8FA';
-const innerBox = '#E3DFF8';
 
 const getGrade = (pct) => {
     if (pct >= 90) return { label: 'A+', color: C.success, bg: C.successBg };
@@ -60,17 +57,17 @@ export default function StudentTestsPage() {
     const paginatedData = activeData.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     if (loading) return (
-        <div className="flex flex-col items-center justify-center min-h-screen gap-3" style={{ backgroundColor: themeBg }}>
+        <div className="flex flex-col items-center justify-center min-h-screen gap-3" style={{ backgroundColor: C.pageBgAlt }}>
             <div className="w-12 h-12 rounded-full border-[3px] border-[#4F46E5]/30 border-t-[#4F46E5] animate-spin" />
             <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted }}>Loading your tests...</p>
         </div>
     );
 
     return (
-        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: C.pageBgAlt, fontFamily: T.fontFamily, color: C.text }}>
 
             {/* ── Top Bar ───────────────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl" style={{ backgroundColor: outerCard, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl" style={{ backgroundColor: C.outerCard, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <div>
                     <h1 style={{ fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, margin: '0 0 2px 0' }}>
                         Test History
@@ -94,10 +91,10 @@ export default function StudentTestsPage() {
             </div>
 
             {/* ── Main Area ────────────────────────────────────────────── */}
-            <div className="overflow-hidden flex flex-col" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+            <div className="overflow-hidden flex flex-col" style={{ backgroundColor: C.outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 
                 {/* Tabs Header */}
-                <div className="p-5 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ backgroundColor: innerBox, borderBottom: `1px solid ${C.cardBorder}` }}>
+                <div className="p-5 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ backgroundColor: C.innerBox, borderBottom: `1px solid ${C.cardBorder}` }}>
                     <div className="flex bg-white p-1 rounded-xl border" style={{ borderColor: C.cardBorder }}>
                         {[
                             { key: 'upcoming',  label: 'Upcoming' },
@@ -144,7 +141,7 @@ export default function StudentTestsPage() {
 
                                     return (
                                         <div key={item._id || idx} className="grid grid-cols-[40px_2.5fr_1.5fr_1fr_1fr_1fr_120px] gap-4 px-4 py-4 items-center rounded-xl transition-colors hover:bg-white/40"
-                                            style={{ backgroundColor: innerBox, border: `1px solid ${C.cardBorder}` }}>
+                                            style={{ backgroundColor: C.innerBox, border: `1px solid ${C.cardBorder}` }}>
                                             
                                             <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.btnPrimary }}>
                                                 {(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}
@@ -218,7 +215,7 @@ export default function StudentTestsPage() {
 
                 {/* Footer Pagination */}
                 {totalPages > 1 && activeData.length > 0 && (
-                    <div className="px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: innerBox }}>
+                    <div className="px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBox }}>
                         <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, margin: 0 }}>
                             Showing page {currentPage} of {totalPages}
                         </p>

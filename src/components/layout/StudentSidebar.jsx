@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronRight, X, GraduationCap } from 'lucide-react';
+import { MdChevronRight, MdClose, MdSchool } from 'react-icons/md';
 import { studentNavItems } from '@/config/studentNav';
 import { useSettings } from '@/components/providers/SettingsProvider';
 import useInstitute from '@/hooks/useInstitute';
@@ -63,19 +63,19 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
     const activeLinkStyle = {
         backgroundColor: SB.activeBg,
         color: SB.activeText,
-        borderRadius: '9999px', // Changed to fully rounded
+        borderRadius: '10px', 
         boxShadow: '0 4px 12px rgba(90,114,212,0.35)',
         fontFamily: T.fontFamily,
-        fontSize: T.size.sm,
+        fontSize: '15px', 
         fontWeight: T.weight.bold,
     };
     
     const inactiveLinkStyle = {
         backgroundColor: 'transparent',
         color: SB.inactiveText,
-        borderRadius: '9999px', // Changed to fully rounded
+        borderRadius: '10px', 
         fontFamily: T.fontFamily,
-        fontSize: T.size.sm,
+        fontSize: '15px', 
         fontWeight: T.weight.semibold,
         opacity: 0.85,
     };
@@ -83,9 +83,9 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
     const expandedBtnStyle = {
         backgroundColor: SB.hoverBg,
         color: SB.inactiveText,
-        borderRadius: '9999px', // Changed to fully rounded
+        borderRadius: '10px', 
         fontFamily: T.fontFamily,
-        fontSize: T.size.sm,
+        fontSize: '15px', 
         fontWeight: T.weight.bold,
     };
 
@@ -133,7 +133,8 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                             ) : (
                                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
                                     style={{ backgroundColor: SB.activeBg }}>
-                                    <GraduationCap className="w-5 h-5" style={{ color: '#ffffff' }} />
+                                
+                                    <MdSchool className="w-6 h-6" style={{ color: '#ffffff' }} />
                                 </div>
                             )}
                         </div>
@@ -168,31 +169,38 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                             style={{ color: 'rgba(36,38,97,0.5)' }}
                             onMouseEnter={e => { e.currentTarget.style.backgroundColor = SB.hoverBg; e.currentTarget.style.color = SB.inactiveText; }}
                             onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'rgba(36,38,97,0.5)'; }}>
-                            <X size={18} />
+                        
+                            <MdClose size={18} />
                         </button>
                     )}
                 </div>
 
                 {/* ── Navigation ────────────────────────────────────────── */}
                 <div className="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar">
-                    <nav className="space-y-6">
+                    <nav className="space-y-2">
 
                         {/* Direct links */}
                         <div className="space-y-1">
                             {studentNavItems.filter(item => item.type !== 'section').map((item) => {
                                 const isActive = activePath === item.href || activePath.startsWith(item.href + '/');
-                                const Icon = item.icon;
+                                const Icon = item.icon; // Ye tumhare studentNav config se aayega
                                 return (
-                                    <Link key={item.href} href={item.href}
-                                        onClick={() => setIsOpen(false)}
-                                        title={!showFull ? item.title : ''}
-                                        className={`group flex items-center gap-3.5 px-3 py-2.5 transition-all duration-150 ${!showFull ? 'justify-center' : ''}`}
-                                        style={isActive ? activeLinkStyle : inactiveLinkStyle}
-                                        onMouseEnter={e => { if (!isActive) onEnterInactive(e); }}
-                                        onMouseLeave={e => { if (!isActive) onLeaveInactive(e); }}>
-                                        <Icon className="w-5 h-5 shrink-0" style={{ color: isActive ? '#fff' : SB.inactiveText, opacity: isActive ? 1 : 0.8 }} />
-                                        {showFull && <span className="truncate">{item.title}</span>}
-                                    </Link>
+                                    <div key={item.href}>
+                                        <Link href={item.href}
+                                            onClick={() => setIsOpen(false)}
+                                            title={!showFull ? item.title : ''}
+                                            className={`group flex items-center gap-3.5 px-3 py-2.5 transition-all duration-150 ${!showFull ? 'justify-center' : ''}`}
+                                            style={isActive ? activeLinkStyle : inactiveLinkStyle}
+                                            onMouseEnter={e => { if (!isActive) onEnterInactive(e); }}
+                                            onMouseLeave={e => { if (!isActive) onLeaveInactive(e); }}>
+                                            
+                                            <Icon className="w-6 h-6 shrink-0" style={{ color: isActive ? '#fff' : 'rgb(98, 103, 233)', opacity: 1 }} />
+                                            {showFull && <span className="truncate">{item.title}</span>}
+                                        </Link>
+                                        
+                                        {/* Separator Line */}
+                                        <div style={{ height: '1px', backgroundColor: SB.divider, margin: '6px 12px' }} />
+                                    </div>
                                 );
                             })}
                         </div>
@@ -235,12 +243,15 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                         style={isActive ? activeLinkStyle : isExpanded ? expandedBtnStyle : inactiveLinkStyle}
                                                         onMouseEnter={e => { if (isActive) return; isExpanded ? onEnterExpanded(e) : onEnterInactive(e); }}
                                                         onMouseLeave={e => { if (isActive) return; isExpanded ? onLeaveExpanded(e) : onLeaveInactive(e); }}>
-                                                        <Icon className="w-5 h-5 shrink-0" style={{ color: isActive ? '#fff' : SB.inactiveText, opacity: isActive ? 1 : 0.8 }} />
+                                                        
+                                                        <Icon className="w-6 h-6 shrink-0" style={{ color: isActive ? '#fff' : 'rgb(98, 103, 233)', opacity: 1 }} />
+                                                        
                                                         {showFull && (
                                                             <>
                                                                 <span className="flex-1 text-left truncate">{child.title}</span>
-                                                                <ChevronRight
-                                                                    className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+                                                                {/* ✅ Material Icon Replace */}
+                                                                <MdChevronRight
+                                                                    className={`w-6 h-6 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
                                                                     style={{ color: isActive ? 'rgba(255,255,255,0.70)' : 'rgba(36,38,97,0.40)' }} />
                                                             </>
                                                         )}
@@ -253,14 +264,16 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                         style={isActive ? activeLinkStyle : inactiveLinkStyle}
                                                         onMouseEnter={e => { if (!isActive) onEnterInactive(e); }}
                                                         onMouseLeave={e => { if (!isActive) onLeaveInactive(e); }}>
-                                                        <Icon className="w-5 h-5 shrink-0" style={{ color: isActive ? '#fff' : SB.inactiveText, opacity: isActive ? 1 : 0.8 }} />
+                                                        
+                                                        <Icon className="w-6 h-6 shrink-0" style={{ color: isActive ? '#fff' : 'rgb(98, 103, 233)', opacity: 1 }} />
+                                                        
                                                         {showFull && <span className="truncate">{child.title}</span>}
                                                     </Link>
                                                 )}
 
                                                 {/* Submenu */}
                                                 <div className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
-                                                    ${hasSubmenu && isExpanded && showFull ? 'max-h-96 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
+                                                    ${hasSubmenu && isExpanded && showFull ? 'max-h-96 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
                                                     <div className="ml-[22px] space-y-1 pl-4"
                                                         style={{ borderLeft: `1.5px solid ${SB.divider}` }}>
                                                         {child.submenu?.map((sub) => {
@@ -268,18 +281,13 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                             return (
                                                                 <Link key={sub.title} href={sub.href}
                                                                     onClick={() => setIsOpen(false)}
-                                                                    // Changed rounded-xl to rounded-full here
                                                                     className="flex items-center gap-2.5 px-3 py-2 rounded-full transition-all duration-150 relative"
                                                                     style={subActive
-                                                                        ? { backgroundColor: SB.activeBg, color: SB.activeText, fontWeight: T.weight.bold, fontFamily: T.fontFamily, fontSize: T.size.sm, boxShadow: '0 2px 8px rgba(90,114,212,0.30)' }
-                                                                        : { color: SB.inactiveText, opacity: 0.75, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium }
+                                                                        ? { backgroundColor: SB.activeBg, color: SB.activeText, fontWeight: T.weight.bold, fontFamily: T.fontFamily, fontSize: '13px', boxShadow: '0 2px 8px rgba(90,114,212,0.30)' }
+                                                                        : { color: SB.inactiveText, opacity: 0.75, fontFamily: T.fontFamily, fontSize: '13px', fontWeight: T.weight.medium } 
                                                                     }
                                                                     onMouseEnter={e => { if (!subActive) { e.currentTarget.style.backgroundColor = SB.hoverBg; e.currentTarget.style.opacity = '1'; } }}
                                                                     onMouseLeave={e => { if (!subActive) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.opacity = '0.75'; } }}>
-                                                                    
-                                                                    {/* Simple Dot Indicator instead of heavy icon */}
-                                                                    <div className="w-1.5 h-1.5 rounded-full shrink-0" 
-                                                                         style={{ backgroundColor: subActive ? '#fff' : 'rgba(36,38,97,0.3)', transition: 'background-color 0.2s' }} />
                                                                     
                                                                     <span className="truncate">{sub.title}</span>
                                                                 </Link>
@@ -287,6 +295,9 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                         })}
                                                     </div>
                                                 </div>
+                                                
+                                                {/* Separator Line */}
+                                                <div style={{ height: '0.5px', backgroundColor: "[#dce9f5]", margin: '6px 12px' }} />
                                             </div>
                                         );
                                     })}

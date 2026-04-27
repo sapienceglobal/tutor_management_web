@@ -11,9 +11,6 @@ import AiTutorWidget from '@/components/AiTutorWidget';
 import { C, T, S, R } from '@/constants/studentTokens';
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
-const themeBg = '#dfdaf3';
-const outerCard = '#EAE8FA';
-const innerBox = '#E3DFF8';
 
 const MAX_SIZE_MB  = 20;
 const ALLOWED_EXT  = ['.pdf', '.doc', '.docx', '.txt', '.png', '.jpg', '.jpeg'];
@@ -30,7 +27,7 @@ const onBlurHandler = e => {
 
 // Base style for all inputs, selects, and textareas
 const baseInputStyle = {
-    backgroundColor: innerBox, // Updated to match theme instead of white
+    backgroundColor: C.innerBox, // Updated to match theme instead of white
     border: `1px solid ${C.cardBorder}`,
     borderRadius: R.xl,
     color: C.heading,
@@ -121,14 +118,14 @@ export default function UploadAssignmentPage() {
     };
 
     return (
-        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: C.pageBgAlt, fontFamily: T.fontFamily, color: C.text }}>
 
             {/* ── Header ───────────────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5" style={{ backgroundColor: outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5" style={{ backgroundColor: C.outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <div className="flex items-center gap-4">
                     <Link href="/student/assignments" className="text-decoration-none">
                         <button className="w-10 h-10 flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80 shrink-0 shadow-sm"
-                            style={{ backgroundColor: innerBox, borderRadius: R.full, border: `1px solid ${C.cardBorder}` }}>
+                            style={{ backgroundColor: C.innerBox, borderRadius: R.full, border: `1px solid ${C.cardBorder}` }}>
                             <ArrowLeft size={18} color={C.heading} />
                         </button>
                     </Link>
@@ -147,8 +144,8 @@ export default function UploadAssignmentPage() {
 
                 {/* ── Form Area ─────────────────────────────────────────────── */}
                 <div className="lg:col-span-2">
-                    <div className="rounded-3xl overflow-hidden shadow-sm" style={{ backgroundColor: outerCard, border: `1px solid ${C.cardBorder}` }}>
-                        <div className="px-6 py-5 border-b" style={{ borderColor: C.cardBorder, backgroundColor: innerBox }}>
+                    <div className="rounded-3xl overflow-hidden shadow-sm" style={{ backgroundColor: C.outerCard, border: `1px solid ${C.cardBorder}` }}>
+                        <div className="px-6 py-5 border-b" style={{ borderColor: C.cardBorder, backgroundColor: C.innerBox }}>
                             <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Submission Details</h2>
                         </div>
 
@@ -190,12 +187,12 @@ export default function UploadAssignmentPage() {
                                     className="rounded-2xl p-10 text-center transition-all border-2 border-dashed cursor-pointer"
                                     style={{
                                         borderColor: dragOver ? C.btnPrimary : C.cardBorder,
-                                        backgroundColor: dragOver ? `${C.btnPrimary}10` : innerBox,
+                                        backgroundColor: dragOver ? `${C.btnPrimary}10` : C.innerBox,
                                     }}
                                     onClick={() => document.getElementById('upload-files').click()}
                                 >
                                     <input type="file" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg" onChange={handleFileInput} className="hidden" id="upload-files" />
-                                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: outerCard, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: C.outerCard, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                                         <UploadIcon className="w-8 h-8" style={{ color: C.btnPrimary }} />
                                     </div>
                                     <p style={{ fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading }}>
@@ -214,9 +211,9 @@ export default function UploadAssignmentPage() {
                                     <div className="mt-4 space-y-2">
                                         {files.map((f, i) => (
                                             <div key={i} className="flex items-center justify-between p-3.5 rounded-xl border transition-colors"
-                                                style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                                                style={{ backgroundColor: C.innerBox, borderColor: C.cardBorder }}>
                                                 <div className="flex items-center gap-3 min-w-0">
-                                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: outerCard }}>
+                                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: C.outerCard }}>
                                                         <FileText size={16} color={C.btnPrimary} />
                                                     </div>
                                                     <span className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
@@ -252,7 +249,7 @@ export default function UploadAssignmentPage() {
                             <div className="flex justify-end gap-3 pt-6" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
                                 <Link href="/student/assignments" className="text-decoration-none">
                                     <button type="button" className="px-6 py-3 rounded-xl transition-all cursor-pointer border border-transparent"
-                                        style={{ backgroundColor: innerBox, color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}
+                                        style={{ backgroundColor: C.innerBox, color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}
                                         onMouseEnter={e => e.currentTarget.style.borderColor = C.cardBorder}
                                         onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
                                         Cancel
@@ -272,10 +269,10 @@ export default function UploadAssignmentPage() {
                 {/* ── AI Widget Sidebar (Themed) ─────────────────────────────────────────── */}
                 <div className="lg:col-span-1">
                     <div className="sticky top-6">
-                        <div className="rounded-3xl shadow-sm border overflow-hidden" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                        <div className="rounded-3xl shadow-sm border overflow-hidden" style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder }}>
                             {/* Inner Box Header */}
-                            <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: C.cardBorder, backgroundColor: innerBox }}>
-                                <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: outerCard }}>
+                            <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: C.cardBorder, backgroundColor: C.innerBox }}>
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: C.outerCard }}>
                                     <Sparkles className="w-5 h-5" style={{ color: C.btnPrimary }} />
                                 </div>
                                 <div>
@@ -287,7 +284,7 @@ export default function UploadAssignmentPage() {
                             {/* Widget Wrapper */}
                             <div className="p-4" style={{ minHeight: '300px' }}>
                                 {/* Note: Assuming AiTutorWidget adapts to its container. If it renders its own white box, 
-                                    it will sit cleanly inside this outerCard background. */}
+                                    it will sit cleanly inside this C.outerCard background. */}
                                 <AiTutorWidget
                                     context={{ pageType: 'assignment_upload', courseId: selectedCourseId, assignmentId: selectedAssignmentId }}
                                     recommendedTopics={[

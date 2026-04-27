@@ -2,24 +2,24 @@
 
 import { useEffect, useState } from "react";
 import {
-  BookOpen,
-  TrendingUp,
-  ArrowRight,
-  PlayCircle,
-  FileText,
-  Sparkles,
-  BarChart3,
-  Users,
-  Brain,
-  ChevronDown,
-  ChevronUp,
-  Award,
-  Video,
-  CheckCircle2,
-  Folder,
-  ClipboardList,
-  User,
-} from "lucide-react";
+  MdMenuBook,
+  MdTrendingUp,
+  MdArrowForward,
+  MdPlayCircleOutline,
+  MdArticle,
+  MdAutoAwesome,
+  MdBarChart,
+  MdPeople,
+  MdPsychology,
+  MdKeyboardArrowDown,
+  MdKeyboardArrowUp,
+  MdWorkspacePremium,
+  MdVideocam,
+  MdCheckCircleOutline,
+  MdFolder,
+  MdAssignment,
+  MdPerson,
+} from "react-icons/md";
 import Link from "next/link";
 import api from "@/lib/axios";
 import {
@@ -65,7 +65,7 @@ function FallbackImage({ src, alt, className }) {
       <div
         className={`flex items-center justify-center bg-slate-100 ${className}`}
       >
-        <BookOpen className="w-6 h-6 text-slate-400" />
+        <MdMenuBook className="w-6 h-6 text-slate-400" />
       </div>
     );
   }
@@ -133,10 +133,10 @@ function SectionHeader({
             color: C.btnViewAllText,
             fontFamily: T.fontFamily,
             fontSize: T.size.xs,
-            fontWeight: T.weight.bold,
+            fontWeight: T.weight.semibold,
           }}
         >
-          {linkLabel} <ArrowRight className="w-3 h-3" />
+          {linkLabel} <MdArrowForward className="w-3 h-3" />
         </Link>
       )}
     </div>
@@ -170,8 +170,8 @@ function SidePanel({ icon: Icon, title, open, onToggle, children }) {
           <span
             style={{
               fontFamily: T.fontFamily,
-              fontSize: T.size.sm,
-              fontWeight: T.weight.bold,
+              fontSize: T.size.lg,
+              fontWeight: T.weight.semibold,
               color: C.heading,
             }}
           >
@@ -179,14 +179,14 @@ function SidePanel({ icon: Icon, title, open, onToggle, children }) {
           </span>
         </div>
         {open ? (
-          <ChevronUp
+          <MdKeyboardArrowUp
             className="w-4 h-4"
-            style={{ color: C.text, opacity: 0.5 }}
+            style={{ color: C.text }}
           />
         ) : (
-          <ChevronDown
+          <MdKeyboardArrowDown
             className="w-4 h-4"
-            style={{ color: C.text, opacity: 0.5 }}
+            style={{ color: C.text }}
           />
         )}
       </button>
@@ -249,6 +249,7 @@ export default function StudentDashboard() {
   const [aiOpen, setAiOpen] = useState(true);
   const [announcementsOpen, setAnnouncementsOpen] = useState(true);
   const [batchPanelOpen, setBatchPanelOpen] = useState(true);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -386,14 +387,14 @@ export default function StudentDashboard() {
             </div>
             <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full" />
           </div>
-          <div>
+         <div>
             <p
+              suppressHydrationWarning={true} 
               style={{
                 fontFamily: T.fontFamily,
                 fontSize: T.size.xs,
                 fontWeight: T.weight.semibold,
                 color: C.text,
-                opacity: 0.55,
                 textTransform: "uppercase",
                 letterSpacing: T.tracking.wider,
                 marginBottom: 2,
@@ -423,9 +424,9 @@ export default function StudentDashboard() {
             <p
               style={{
                 fontFamily: T.fontFamily,
-                fontSize: T.size.sm,
+                fontSize: T.size.md,
+                fontWeight: T.weight.semibold,
                 color: C.text,
-                opacity: 0.65,
                 marginTop: 2,
               }}
             >
@@ -463,11 +464,11 @@ export default function StudentDashboard() {
                 className="flex-1 relative z-10 py-1.5 rounded-lg capitalize transition-colors duration-300"
                 style={{
                   fontFamily: T.fontFamily,
-                  fontSize: T.size.sm,
+                  fontSize: T.size.lg,
                   fontWeight:
-                    activeTab === tab ? T.weight.bold : T.weight.semibold,
+                    activeTab === tab ? T.weight.semibold : T.weight.semibold,
                   color: activeTab === tab ? "#ffffff" : C.text,
-                  opacity: activeTab === tab ? 1 : 0.5,
+               
                 }}
               >
                 {tab === "institute" ? "My Institute" : "Global"}
@@ -490,7 +491,7 @@ export default function StudentDashboard() {
                 }}
               />
               <div className="absolute inset-0 flex items-center justify-center">
-                <Sparkles
+                <MdAutoAwesome
                   className="w-4 h-4 animate-pulse"
                   style={{ color: C.btnPrimary }}
                 />
@@ -502,7 +503,7 @@ export default function StudentDashboard() {
                 fontSize: T.size.sm,
                 fontWeight: T.weight.medium,
                 color: C.text,
-                opacity: 0.55,
+              
               }}
             >
               Loading dashboard...
@@ -514,31 +515,31 @@ export default function StudentDashboard() {
           {/* Stat Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              icon={Folder}
+              icon={MdFolder}
               value={stats.enrolledCourses}
               label="Enrolled Courses"
               href="/student/courses"
               iconBg="#EEF2FF"
               iconColor="#4F46E5"
-              bgSvgPath="/icons/books.svg"
+              bgSvgPath="/enrolled-cours.svg"
             />
             <StatCard
-              icon={ClipboardList}
+              icon={MdAssignment}
               value={upcomingExams.length}
               label="Upcoming Exams"
               href="/student/exams"
               iconBg="#FFF7ED"
               iconColor="#F59E0B"
-              bgSvgPath="/icons/Upcoming Milestone.png"
+              bgSvgPath="/upcoming-exams.svg"
             />
             <StatCard
-              icon={Video}
+              icon={MdVideocam}
               value={liveClassCount}
               label="Live Classes"
               href="/student/live-classes"
               iconBg="#ECFDF5"
               iconColor="#10B981"
-              bgSvgPath="/icons/online-learning.png"
+              bgSvgPath="/live-class.svg"
             />
             <StatCard
               value={`${avgScore}%`}
@@ -554,7 +555,7 @@ export default function StudentDashboard() {
           {inProgressCourses.length > 0 && (
             <div>
               <SectionHeader
-                icon={PlayCircle}
+                icon={MdPlayCircleOutline}
                 title="Continue Learning"
                 linkHref="/student/courses"
               />
@@ -590,7 +591,7 @@ export default function StudentDashboard() {
                             style={{
                               fontFamily: T.fontFamily,
                               fontSize: T.size.md,
-                              fontWeight: T.weight.bold,
+                              fontWeight: T.weight.semibold,
                               color: C.heading,
                             }}
                           >
@@ -601,7 +602,7 @@ export default function StudentDashboard() {
                               fontFamily: T.fontFamily,
                               fontSize: "11px",
                               color: C.text,
-                              opacity: 0.55,
+                           
                               marginTop: 2,
                             }}
                           >
@@ -616,10 +617,10 @@ export default function StudentDashboard() {
                           <span
                             style={{
                               fontFamily: T.fontFamily,
-                              fontSize: "11px",
+                              fontSize: "12px",
                               fontWeight: T.weight.semibold,
                               color: C.text,
-                              opacity: 0.6,
+                            
                             }}
                           >
                             {pct}% complete
@@ -668,7 +669,7 @@ export default function StudentDashboard() {
                   boxShadow: S.card,
                 }}
               >
-                <SectionHeader icon={TrendingUp} title="Performance Overview" />
+                <SectionHeader icon={MdTrendingUp} title="Performance Overview" />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-2 h-52">
                     {activityData.length > 0 ? (
@@ -702,7 +703,7 @@ export default function StudentDashboard() {
                             tick={{
                               fontSize: 11,
                               fill: C.text,
-                              opacity: 0.5,
+                           
                               fontFamily: T.fontFamily,
                             }}
                             tickLine={false}
@@ -712,7 +713,7 @@ export default function StudentDashboard() {
                             tick={{
                               fontSize: 11,
                               fill: C.text,
-                              opacity: 0.5,
+                             
                               fontFamily: T.fontFamily,
                             }}
                             tickLine={false}
@@ -737,9 +738,9 @@ export default function StudentDashboard() {
                           className="w-14 h-14 rounded-lg flex items-center justify-center"
                           style={{ backgroundColor: C.innerBg }}
                         >
-                          <TrendingUp
+                          <MdTrendingUp
                             className="w-6 h-6"
-                            style={{ color: C.chartLine, opacity: 0.5 }}
+                            style={{ color: C.chartLine}}
                           />
                         </div>
                         <p
@@ -748,7 +749,7 @@ export default function StudentDashboard() {
                             fontSize: T.size.sm,
                             fontWeight: T.weight.semibold,
                             color: C.text,
-                            opacity: 0.5,
+                           
                           }}
                         >
                           No activity yet
@@ -758,7 +759,7 @@ export default function StudentDashboard() {
                             fontFamily: T.fontFamily,
                             fontSize: T.size.xs,
                             color: C.text,
-                            opacity: 0.35,
+                           
                             textAlign: "center",
                           }}
                         >
@@ -779,7 +780,7 @@ export default function StudentDashboard() {
                       className="w-12 h-12 rounded-full border-[3px] flex items-center justify-center mb-1"
                       style={{ borderColor: C.chartLine }}
                     >
-                      <CheckCircle2
+                      <MdCheckCircleOutline
                         className="w-6 h-6"
                         style={{ color: C.chartLine }}
                       />
@@ -791,7 +792,7 @@ export default function StudentDashboard() {
                           fontSize: T.size.sm,
                           fontWeight: T.weight.semibold,
                           color: C.text,
-                          opacity: 0.6,
+                        
                         }}
                       >
                         Score
@@ -815,7 +816,7 @@ export default function StudentDashboard() {
                           color: C.chartLine,
                         }}
                       >
-                        <TrendingUp className="w-3 h-3" /> This Month
+                        <MdTrendingUp className="w-3 h-3" /> This Month
                       </p>
                     </div>
                   </div>
@@ -832,7 +833,7 @@ export default function StudentDashboard() {
                 }}
               >
                 <SectionHeader
-                  icon={Users}
+                  icon={MdPeople}
                   title="Batch Details"
                   linkHref="/student/batches"
                 />
@@ -887,7 +888,7 @@ export default function StudentDashboard() {
                               fontFamily: T.fontFamily,
                               fontSize: T.size.sm,
                               color: C.text,
-                              opacity: 0.55,
+                             
                             }}
                           >
                             {batches[0]?.instructorName || ""}
@@ -964,7 +965,7 @@ export default function StudentDashboard() {
                             fontSize: T.size.sm,
                             fontStyle: "italic",
                             color: C.text,
-                            opacity: 0.45,
+                          
                           }}
                         >
                           No enrolled courses yet.
@@ -1010,7 +1011,7 @@ export default function StudentDashboard() {
                                 className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                                 style={{ backgroundColor: C.iconBg }}
                               >
-                                <FileText className="w-4 h-4 text-white" />
+                                <MdArticle className="w-4 h-4 text-white" />
                               </div>
                               <div className="min-w-0">
                                 <p
@@ -1029,7 +1030,7 @@ export default function StudentDashboard() {
                                     fontFamily: T.fontFamily,
                                     fontSize: "11px",
                                     color: C.text,
-                                    opacity: 0.5,
+                                  
                                     marginTop: 2,
                                   }}
                                 >
@@ -1060,10 +1061,10 @@ export default function StudentDashboard() {
                         <p
                           style={{
                             fontFamily: T.fontFamily,
-                            fontSize: T.size.sm,
+                            fontSize: T.size.base,
                             fontStyle: "italic",
                             color: C.text,
-                            opacity: 0.45,
+                           
                           }}
                         >
                           No upcoming exams.
@@ -1118,7 +1119,7 @@ export default function StudentDashboard() {
                 }}
               >
                 <SectionHeader
-                  icon={Award}
+                  icon={MdWorkspacePremium}
                   title="Recent Results"
                   linkHref="/student/history"
                 />
@@ -1154,8 +1155,8 @@ export default function StudentDashboard() {
                               style={{
                                 backgroundColor: passed ? C.success : C.danger,
                                 fontFamily: T.fontFamily,
-                                fontSize: T.size.xs,
-                                fontWeight: T.weight.black,
+                                fontSize: T.size.md,
+                                fontWeight: T.weight.semibold,
                               }}
                             >
                               {scorePct}%
@@ -1165,7 +1166,7 @@ export default function StudentDashboard() {
                                 className="truncate"
                                 style={{
                                   fontFamily: T.fontFamily,
-                                  fontSize: T.size.sm,
+                                  fontSize: T.size.md,
                                   fontWeight: T.weight.semibold,
                                   color: C.heading,
                                 }}
@@ -1175,9 +1176,9 @@ export default function StudentDashboard() {
                               <p
                                 style={{
                                   fontFamily: T.fontFamily,
-                                  fontSize: "11px",
+                                  fontSize: "12px",
                                   color: C.text,
-                                  opacity: 0.5,
+                                 
                                   marginTop: 2,
                                 }}
                               >
@@ -1218,9 +1219,9 @@ export default function StudentDashboard() {
                         className="w-12 h-12 rounded-lg flex items-center justify-center"
                         style={{ backgroundColor: C.innerBg }}
                       >
-                        <FileText
+                        <MdArticle
                           className="w-5 h-5"
-                          style={{ color: C.btnPrimary, opacity: 0.4 }}
+                          style={{ color: C.btnPrimary}}
                         />
                       </div>
                       <p
@@ -1228,7 +1229,7 @@ export default function StudentDashboard() {
                           fontFamily: T.fontFamily,
                           fontSize: T.size.sm,
                           color: C.text,
-                          opacity: 0.4,
+                        
                         }}
                       >
                         No exam results yet
@@ -1250,8 +1251,8 @@ export default function StudentDashboard() {
               >
                 <div className="space-y-2.5">
                   {[
-                    { icon: BookOpen, text: "Continue your enrolled courses" },
-                    { icon: FileText, text: "Practice upcoming exam topics" },
+                    { icon: MdMenuBook, text: "Continue your enrolled courses" },
+                    { icon: MdArticle, text: "Practice upcoming exam topics" },
                   ].map((rec, i) => (
                     <div
                       key={i}
@@ -1270,8 +1271,8 @@ export default function StudentDashboard() {
                       <span
                         style={{
                           fontFamily: T.fontFamily,
-                          fontSize: T.size.xs,
-                          fontWeight: T.weight.medium,
+                          fontSize: T.size.md,
+                          fontWeight: T.weight.semibold,
                           color: C.text,
                         }}
                       >
@@ -1290,7 +1291,7 @@ export default function StudentDashboard() {
                       boxShadow: `0 4px 14px ${C.btnPrimary}50`,
                     }}
                   >
-                    <Sparkles className="w-4 h-4" />
+                    <MdAutoAwesome className="w-4 h-4" />
                     Start AI Study Plan
                   </Link>
                 </div>
@@ -1298,7 +1299,7 @@ export default function StudentDashboard() {
 
               {/* Instructor Announcements */}
               <SidePanel
-                icon={Users}
+                icon={MdPeople}
                 title="Instructor Announcements"
                 open={announcementsOpen}
                 onToggle={() => setAnnouncementsOpen((v) => !v)}
@@ -1318,7 +1319,7 @@ export default function StudentDashboard() {
                           className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
                           style={{ backgroundColor: C.iconBg }}
                         >
-                          <FileText className="w-3.5 h-3.5 text-white" />
+                          <MdArticle className="w-3.5 h-3.5 text-white" />
                         </div>
                         <p
                           style={{
@@ -1358,10 +1359,10 @@ export default function StudentDashboard() {
                     <p
                       style={{
                         fontFamily: T.fontFamily,
-                        fontSize: T.size.xs,
+                        fontSize: T.size.base,
                         fontStyle: "italic",
                         color: C.text,
-                        opacity: 0.45,
+                       
                       }}
                     >
                       No announcements at this time.
@@ -1372,7 +1373,7 @@ export default function StudentDashboard() {
 
               {/* Batch Details quick links */}
               <SidePanel
-                icon={BarChart3}
+                icon={MdBarChart}
                 title="Batch Details"
                 open={batchPanelOpen}
                 onToggle={() => setBatchPanelOpen((v) => !v)}
@@ -1382,14 +1383,14 @@ export default function StudentDashboard() {
                     {
                       label: "My Batches",
                       href: "/student/batches",
-                      icon: Users,
+                      icon: MdPeople,
                     },
                     {
                       label: "Batch Reportrties",
                       href: "/student/history",
-                      icon: BarChart3,
+                      icon: MdBarChart,
                     },
-                    { label: "Profile", href: "/student/profile", icon: User },
+                    { label: "Profile", href: "/student/profile", icon: MdPerson },
                   ].map((link) => (
                     <Link
                       key={link.label}
@@ -1412,15 +1413,15 @@ export default function StudentDashboard() {
                       <span
                         style={{
                           fontFamily: T.fontFamily,
-                          fontSize: T.size.sm,
-                          fontWeight: T.weight.medium,
+                          fontSize: T.size.md,
+                          fontWeight: T.weight.semibold,
                         }}
                       >
                         {link.label}
                       </span>
-                      <ArrowRight
+                      <MdArrowForward
                         className="w-3 h-3 ml-auto"
-                        style={{ color: C.text, opacity: 0.3 }}
+                        style={{ color: C.text}}
                       />
                     </Link>
                   ))}

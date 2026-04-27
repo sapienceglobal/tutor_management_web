@@ -10,9 +10,6 @@ import api from '@/lib/axios';
 import { C, T, S, R } from '@/constants/studentTokens';
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
-const themeBg = '#dfdaf3';
-const outerCard = '#EAE8FA';
-const innerBox = '#E3DFF8';
 
 export default function UpcomingExamsPage() {
     const [exams, setExams]                 = useState([]);
@@ -90,7 +87,7 @@ export default function UpcomingExamsPage() {
             const weekEnd = new Date(now); weekEnd.setDate(weekEnd.getDate() + 7);
             return d > weekEnd;
         });
-        if (laterExams.length) groups.push({ label: 'Later', color: '#94a3b8', exams: laterExams });
+        if (laterExams.length) groups.push({ label: 'Later', color: C.textFaint, exams: laterExams });
 
         return groups;
     }, [exams]);
@@ -102,12 +99,12 @@ export default function UpcomingExamsPage() {
         if (days === 1) return { bg: C.warningBg, color: C.warning, border: C.warningBorder, label: 'Tomorrow' };
         if (days <= 3)  return { bg: C.dangerBg,  color: C.danger,  border: C.dangerBorder,  label: `${days}d` };
         return {
-            bg: innerBox, color: C.btnPrimary, border: C.btnPrimary, label: `${days}d`,
+            bg: C.innerBox, color: C.btnPrimary, border: C.btnPrimary, label: `${days}d`,
         };
     };
 
     if (loading) return (
-        <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: themeBg }}>
+        <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBgAlt }}>
             <div className="flex flex-col items-center gap-4">
                 <div className="w-12 h-12 rounded-full border-[3px] border-[#4F46E5]/30 border-t-[#4F46E5] animate-spin" />
                 <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted }}>
@@ -118,10 +115,10 @@ export default function UpcomingExamsPage() {
     );
 
     return (
-        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: C.pageBgAlt, fontFamily: T.fontFamily, color: C.text }}>
 
             {/* ── Header ──────────────────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl" style={{ backgroundColor: outerCard, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl" style={{ backgroundColor: C.outerCard, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <div>
                     <h1 style={{ fontSize: T.size['2xl'], fontWeight: T.weight.black, letterSpacing: T.tracking.tight, color: C.heading }}>
                         Upcoming Exams
@@ -141,13 +138,13 @@ export default function UpcomingExamsPage() {
             {/* ── Stat Cards ──────────────────────────────────────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: 'Upcoming',  value: stats.upcoming, icon: Calendar, color: C.btnPrimary, bg: innerBox },
+                    { label: 'Upcoming',  value: stats.upcoming, icon: Calendar, color: C.btnPrimary, bg: C.innerBox },
                     { label: 'Today',     value: stats.today,    icon: Zap,      color: C.warning, bg: C.warningBg },
                     { label: 'This Week', value: stats.thisWeek, icon: Target,   color: C.success, bg: C.successBg },
                     { label: 'Completed', value: completedCount, icon: CheckCircle, color: C.textMuted, bg: C.surfaceWhite },
                 ].map(stat => (
                     <div key={stat.label} className="rounded-2xl p-5 border flex flex-col gap-3 transition-transform hover:-translate-y-0.5"
-                        style={{ backgroundColor: outerCard, borderColor: C.cardBorder, boxShadow: S.card }}>
+                        style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder, boxShadow: S.card }}>
                         <div className="flex items-center justify-between">
                             <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>
                                 {stat.label}
@@ -180,8 +177,8 @@ export default function UpcomingExamsPage() {
                     </div>
 
                     {exams.length === 0 ? (
-                        <div className="rounded-3xl p-14 text-center border border-dashed" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
-                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: innerBox }}>
+                        <div className="rounded-3xl p-14 text-center border border-dashed" style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder }}>
+                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: C.innerBox }}>
                                 <Calendar className="w-7 h-7" style={{ color: C.btnPrimary, opacity: 0.5 }} />
                             </div>
                             <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading }}>No Upcoming Exams</h3>
@@ -193,11 +190,11 @@ export default function UpcomingExamsPage() {
                                 const badge = getUrgencyBadge(exam.startDate || exam.createdAt);
                                 return (
                                     <div key={exam._id} className="rounded-2xl p-5 border flex flex-col sm:flex-row sm:items-center gap-4 transition-all duration-200"
-                                        style={{ backgroundColor: outerCard, borderColor: C.cardBorder, boxShadow: S.card }}
+                                        style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder, boxShadow: S.card }}
                                         onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; }}
                                         onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; }}>
                                         
-                                        <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: innerBox }}>
+                                        <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: C.innerBox }}>
                                             <BookOpen className="w-6 h-6" style={{ color: C.btnPrimary }} />
                                         </div>
                                         
@@ -243,16 +240,16 @@ export default function UpcomingExamsPage() {
                 <div className="space-y-6">
 
                     {/* Calendar */}
-                    <div className="rounded-3xl p-6 border shadow-sm" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                    <div className="rounded-3xl p-6 border shadow-sm" style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder }}>
                         <div className="flex items-center justify-between mb-6">
                             <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading }}>{monthName}</h3>
                             <div className="flex items-center gap-1">
                                 {[{ dir: -1, Icon: ChevronLeft }, { dir: 1, Icon: ChevronRight }].map(({ dir, Icon }) => (
                                     <button key={dir} onClick={() => setCalendarDate(new Date(year, month + dir, 1))}
                                         className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer border-none"
-                                        style={{ backgroundColor: innerBox, color: C.heading }}
+                                        style={{ backgroundColor: C.innerBox, color: C.heading }}
                                         onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnPrimary; e.currentTarget.style.color = '#fff'; }}
-                                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = innerBox; e.currentTarget.style.color = C.heading; }}>
+                                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBox; e.currentTarget.style.color = C.heading; }}>
                                         <Icon size={16} />
                                     </button>
                                 ))}
@@ -277,7 +274,7 @@ export default function UpcomingExamsPage() {
                                             style={isToday
                                                 ? { backgroundColor: C.btnPrimary, color: 'white', fontSize: T.size.sm, fontWeight: T.weight.black }
                                                 : hasExam
-                                                ? { backgroundColor: innerBox, color: C.btnPrimary, fontSize: T.size.sm, fontWeight: T.weight.bold, border: `1px solid ${C.btnPrimary}` }
+                                                ? { backgroundColor: C.innerBox, color: C.btnPrimary, fontSize: T.size.sm, fontWeight: T.weight.bold, border: `1px solid ${C.btnPrimary}` }
                                                 : { color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>
                                             {day}
                                         </div>
@@ -291,7 +288,7 @@ export default function UpcomingExamsPage() {
                     </div>
 
                     {/* Timeline */}
-                    <div className="rounded-3xl p-6 border shadow-sm" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                    <div className="rounded-3xl p-6 border shadow-sm" style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder }}>
                         <h3 className="mb-5" style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading }}>Exam Timeline</h3>
                         {timeline.length === 0 ? (
                             <p className="text-center py-6" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted }}>No upcoming exams scheduled.</p>
@@ -307,7 +304,7 @@ export default function UpcomingExamsPage() {
                                         </div>
                                         <div className="ml-[5px] pl-5 space-y-4" style={{ borderLeft: `2px solid ${group.color}40` }}>
                                             {group.exams.slice(0, 3).map((exam, ei) => (
-                                                <div key={ei} className="p-3 rounded-xl border" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                                                <div key={ei} className="p-3 rounded-xl border" style={{ backgroundColor: C.innerBox, borderColor: C.cardBorder }}>
                                                     <p className="truncate mb-1" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>{exam.title}</p>
                                                     <p className="flex items-center gap-1.5" style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted }}>
                                                         <Clock size={12} />

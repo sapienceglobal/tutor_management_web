@@ -11,9 +11,6 @@ import { getAudienceDisplay } from '@/lib/audienceDisplay';
 import { C, T, S, R } from '@/constants/studentTokens';
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
-const themeBg = '#dfdaf3';
-const outerCard = '#EAE8FA';
-const innerBox = '#E3DFF8';
 
 const SCHEDULE_PAGE_SIZE = 4;
 
@@ -99,17 +96,17 @@ export default function LiveClassesPage() {
     }, [liveClasses, month, year]);
 
     if (loading) return (
-        <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily }}>
+        <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: C.pageBgAlt, fontFamily: T.fontFamily }}>
             <div className="w-12 h-12 rounded-full border-[3px] border-[#4F46E5]/30 border-t-[#4F46E5] animate-spin" />
             <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading Live Classes...</p>
         </div>
     );
 
     return (
-        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: C.pageBgAlt, fontFamily: T.fontFamily, color: C.text }}>
 
             {/* ── Banner ──────────────────────────────────────────────────── */}
-            <div className="rounded-3xl overflow-hidden shadow-sm" style={{ backgroundColor: outerCard, border: `1px solid ${C.cardBorder}` }}>
+            <div className="rounded-3xl overflow-hidden shadow-sm" style={{ backgroundColor: C.outerCard, border: `1px solid ${C.cardBorder}` }}>
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 p-6 lg:p-8">
                     <div className="space-y-2">
                         <h1 style={{ fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading }}>Live Classes</h1>
@@ -117,7 +114,7 @@ export default function LiveClassesPage() {
                             Join your live sessions, interact with instructors in real-time, and access past class recordings.
                         </p>
                     </div>
-                    <div className="hidden md:flex w-40 h-28 rounded-2xl items-center justify-center shadow-inner" style={{ backgroundColor: innerBox }}>
+                    <div className="hidden md:flex w-40 h-28 rounded-2xl items-center justify-center shadow-inner" style={{ backgroundColor: C.innerBox }}>
                         <Video className="w-12 h-12 opacity-60" style={{ color: C.btnPrimary }} />
                     </div>
                 </div>
@@ -129,22 +126,22 @@ export default function LiveClassesPage() {
                 <div className="xl:col-span-2 space-y-6">
 
                     {/* Today's Classes Container */}
-                    <div className="rounded-3xl overflow-hidden shadow-sm" style={{ backgroundColor: outerCard, border: `1px solid ${C.cardBorder}` }}>
+                    <div className="rounded-3xl overflow-hidden shadow-sm" style={{ backgroundColor: C.outerCard, border: `1px solid ${C.cardBorder}` }}>
                         {/* Date Navigator Header */}
-                        <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-b" style={{ borderColor: C.cardBorder, backgroundColor: innerBox }}>
+                        <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-b" style={{ borderColor: C.cardBorder, backgroundColor: C.innerBox }}>
                             <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading }}>
                                 Schedule for the Day
                             </h2>
                             <div className="flex items-center gap-2 bg-white rounded-xl shadow-sm p-1">
                                 <button type="button" onClick={() => shiftDate(-1)} className="p-1.5 rounded-lg transition-colors cursor-pointer border-none"
-                                    style={{ color: C.textMuted, backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = outerCard; e.currentTarget.style.color = C.heading; }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
+                                    style={{ color: C.textMuted, backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.outerCard; e.currentTarget.style.color = C.heading; }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
                                     <ChevronLeft className="w-5 h-5" />
                                 </button>
                                 <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, minWidth: 180, textAlign: 'center' }}>
                                     {formatDisplayDate(selectedDate)}
                                 </span>
                                 <button type="button" onClick={() => shiftDate(1)} className="p-1.5 rounded-lg transition-colors cursor-pointer border-none"
-                                    style={{ color: C.textMuted, backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = outerCard; e.currentTarget.style.color = C.heading; }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
+                                    style={{ color: C.textMuted, backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.outerCard; e.currentTarget.style.color = C.heading; }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
                                     <ChevronRight className="w-5 h-5" />
                                 </button>
                             </div>
@@ -156,7 +153,7 @@ export default function LiveClassesPage() {
                                 const classLive = isLive(c);
                                 return (
                                     <div key={c._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl transition-all border"
-                                        style={{ backgroundColor: innerBox, borderColor: classLive ? C.btnPrimary : C.cardBorder, boxShadow: classLive ? S.cardHover : 'none' }}
+                                        style={{ backgroundColor: C.innerBox, borderColor: classLive ? C.btnPrimary : C.cardBorder, boxShadow: classLive ? S.cardHover : 'none' }}
                                         onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; }}
                                         onMouseLeave={e => { e.currentTarget.style.borderColor = classLive ? C.btnPrimary : C.cardBorder; }}>
                                         <div className="flex-1">
@@ -191,7 +188,7 @@ export default function LiveClassesPage() {
                                 );
                             }) : (
                                 <div className="text-center py-12 flex flex-col items-center">
-                                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: innerBox }}>
+                                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: C.innerBox }}>
                                         <Calendar className="w-7 h-7" style={{ color: C.btnPrimary, opacity: 0.5 }} />
                                     </div>
                                     <p style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading }}>No classes scheduled</p>
@@ -202,15 +199,15 @@ export default function LiveClassesPage() {
                     </div>
 
                     {/* Schedule Table (Upcoming) */}
-                    <div className="rounded-3xl overflow-hidden shadow-sm" style={{ backgroundColor: outerCard, border: `1px solid ${C.cardBorder}` }}>
-                        <div className="px-6 py-5 border-b" style={{ borderColor: C.cardBorder, backgroundColor: innerBox }}>
+                    <div className="rounded-3xl overflow-hidden shadow-sm" style={{ backgroundColor: C.outerCard, border: `1px solid ${C.cardBorder}` }}>
+                        <div className="px-6 py-5 border-b" style={{ borderColor: C.cardBorder, backgroundColor: C.innerBox }}>
                             <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Full Schedule</h2>
                         </div>
                         
                         <div className="overflow-x-auto custom-scrollbar">
                             <table className="w-full text-left" style={{ borderCollapse: 'collapse' }}>
                                 <thead>
-                                    <tr style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: outerCard }}>
+                                    <tr style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.outerCard }}>
                                         {['Class Name', 'Instructor', 'Date & Time', 'Action'].map(h => (
                                             <th key={h} className="px-6 py-4" style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
                                         ))}
@@ -255,7 +252,7 @@ export default function LiveClassesPage() {
                         </div>
 
                         {scheduleTotalPages > 1 && (
-                            <div className="flex items-center justify-center gap-2 px-6 py-4" style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: innerBox }}>
+                            <div className="flex items-center justify-center gap-2 px-6 py-4" style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBox }}>
                                 <button disabled={schedulePage <= 1} onClick={() => setSchedulePage(p => p - 1)}
                                     className="w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer border-none transition-colors disabled:opacity-50"
                                     style={{ backgroundColor: C.surfaceWhite, color: C.heading }}>
@@ -277,7 +274,7 @@ export default function LiveClassesPage() {
                 <div className="space-y-6">
 
                     {/* Mini Calendar */}
-                    <div className="rounded-3xl p-6 shadow-sm border" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                    <div className="rounded-3xl p-6 shadow-sm border" style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder }}>
                         <div className="flex items-center justify-between mb-6">
                             <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading }}>{monthName}</h3>
                             <div className="flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm border border-slate-100">
@@ -321,7 +318,7 @@ export default function LiveClassesPage() {
                                             style={isSelected
                                                 ? { backgroundColor: C.btnPrimary, color: 'white', boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)' }
                                                 : isToday 
-                                                ? { backgroundColor: '#E3DFF8', color: C.btnPrimary, border: `1px solid ${C.btnPrimary}` }
+                                                ? { backgroundColor: C.innerBox, color: C.btnPrimary, border: `1px solid ${C.btnPrimary}` }
                                                 : { backgroundColor: 'transparent', color: C.heading }}>
                                             <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold }}>{day}</span>
                                             {hasExam && !isSelected && (
@@ -335,8 +332,8 @@ export default function LiveClassesPage() {
                     </div>
 
                     {/* Past Classes / Recordings */}
-                    <div className="rounded-3xl shadow-sm border overflow-hidden" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
-                        <div className="px-6 py-5 border-b" style={{ borderColor: C.cardBorder, backgroundColor: '#E3DFF8' }}>
+                    <div className="rounded-3xl shadow-sm border overflow-hidden" style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder }}>
+                        <div className="px-6 py-5 border-b" style={{ borderColor: C.cardBorder, backgroundColor: C.innerBox }}>
                             <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Past Recordings</h2>
                         </div>
                         <div className="p-4 space-y-3">
@@ -352,7 +349,7 @@ export default function LiveClassesPage() {
                                     {c.recordingLink ? (
                                         <button onClick={() => window.open(c.recordingLink, '_blank')}
                                             className="w-full flex items-center justify-center gap-1.5 h-9 rounded-xl border-none cursor-pointer transition-opacity hover:opacity-90 shadow-sm"
-                                            style={{ backgroundColor: innerBox, color: C.btnPrimary, fontSize: T.size.xs, fontWeight: T.weight.bold, border: `1px solid ${C.cardBorder}` }}>
+                                            style={{ backgroundColor: C.innerBox, color: C.btnPrimary, fontSize: T.size.xs, fontWeight: T.weight.bold, border: `1px solid ${C.cardBorder}` }}>
                                             <PlayCircle size={14} /> Watch Recording
                                         </button>
                                     ) : (

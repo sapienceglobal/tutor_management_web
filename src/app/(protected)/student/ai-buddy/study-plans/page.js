@@ -15,7 +15,7 @@ const P = {
     primary: '#7C3AED', light: '#8B5CF6',
     soft: 'rgba(124,58,237,0.08)', border: 'rgba(124,58,237,0.14)',
     gradient: 'linear-gradient(135deg,#5B21B6 0%,#7C3AED 60%,#8B5CF6 100%)',
-    pageBg: '#F5F3FF', cardBg: '#FFFFFF', innerBox: '#E3DFF8',
+    pageBg: '#F5F3FF', cardBg: '#FFFFFF', C.innerBox: '#E3DFF8',
     textPrimary: '#1E1B4B', textSecondary: '#6B7280', textMuted: '#9CA3AF',
 };
 
@@ -120,7 +120,7 @@ export default function StudentStudyPlansPage() {
 
                         {!aiPlan ? (
                             /* Empty State - Generate Button */
-                            <div className="rounded-[32px] overflow-hidden relative shadow-md border" style={{ backgroundColor: '#1E1B4B', borderColor: 'rgba(255,255,255,0.1)' }}>
+                            <div className="rounded-[32px] overflow-hidden relative shadow-md border" style={{ backgroundcolor: C.headingDark, borderColor: 'rgba(255,255,255,0.1)' }}>
                                 <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
                                 <div className="relative text-center py-16 px-6 flex flex-col items-center">
                                     <div className="w-16 h-16 rounded-[1.5rem] flex items-center justify-center mb-6 shadow-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}>

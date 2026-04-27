@@ -10,9 +10,6 @@ import api from '@/lib/axios';
 import { C, T, S, R } from '@/constants/studentTokens';
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
-const themeBg = '#dfdaf3';
-const outerCard = '#EAE8FA';
-const innerBox = '#E3DFF8';
 
 const RATE_OPTIONS = [
     { label: 'Any rate',       value: '' },
@@ -56,7 +53,7 @@ function Avatar({ src, name, size = 'lg' }) {
             border: `2px solid ${C.surfaceWhite}`,
             boxShadow: S.card,
             flexShrink: 0,
-            backgroundColor: innerBox,
+            backgroundColor: C.innerBox,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
             {src ? (
@@ -92,7 +89,7 @@ function TabBtn({ active, onClick, children }) {
 function TutorCard({ tutor }) {
     return (
         <div className="flex flex-col group transition-all duration-300 rounded-3xl border shadow-sm"
-            style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}
+            style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder }}
             onMouseEnter={e => { e.currentTarget.style.boxShadow = S.cardHover; e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.transform = 'translateY(-2px)'; }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow = S.card; e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.transform = 'none'; }}>
 
@@ -118,7 +115,7 @@ function TutorCard({ tutor }) {
                             </span>
                             {tutor.instituteId && (
                                 <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase"
-                                    style={{ backgroundColor: innerBox, color: C.textMuted, border: `1px solid ${C.cardBorder}`, letterSpacing: '0.5px', fontFamily: T.fontFamily }}>
+                                    style={{ backgroundColor: C.innerBox, color: C.textMuted, border: `1px solid ${C.cardBorder}`, letterSpacing: '0.5px', fontFamily: T.fontFamily }}>
                                     {tutor.instituteId.name || 'Institute'}
                                 </span>
                             )}
@@ -149,15 +146,15 @@ function TutorCard({ tutor }) {
                 {/* Meta pills */}
                 <div className="flex flex-wrap gap-2 mb-5">
                     <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold"
-                        style={{ backgroundColor: innerBox, color: C.heading, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily }}>
+                        style={{ backgroundColor: C.innerBox, color: C.heading, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily }}>
                         <Award className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} /> {tutor.experience || 0} yrs exp
                     </span>
                     <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold"
-                        style={{ backgroundColor: innerBox, color: C.heading, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily }}>
+                        style={{ backgroundColor: C.innerBox, color: C.heading, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily }}>
                         <Users className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} /> {tutor.studentsCount || 0} students
                     </span>
                     <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold"
-                        style={{ backgroundColor: innerBox, color: C.heading, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily }}>
+                        style={{ backgroundColor: C.innerBox, color: C.heading, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily }}>
                         <MapPin className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} /> Live Online
                     </span>
                 </div>
@@ -237,12 +234,12 @@ export default function FindTutorsPage() {
     const activeFilterCount = [categoryId, maxRate].filter(Boolean).length;
 
     return (
-        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: C.pageBgAlt, fontFamily: T.fontFamily, color: C.text }}>
 
             {/* ── Header & Tabs ───────────────────────────────────────────────── */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-3xl" style={{ backgroundColor: outerCard, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-3xl" style={{ backgroundColor: C.outerCard, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: innerBox, borderRadius: R.xl }}>
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: C.innerBox, borderRadius: R.xl }}>
                         <User size={24} color={C.btnPrimary} />
                     </div>
                     <div>
@@ -254,7 +251,7 @@ export default function FindTutorsPage() {
                 </div>
 
                 {myInstitutes.length > 0 && (
-                    <div className="flex p-1 rounded-xl shrink-0" style={{ backgroundColor: innerBox, border: `1px solid ${C.cardBorder}` }}>
+                    <div className="flex p-1 rounded-xl shrink-0" style={{ backgroundColor: C.innerBox, border: `1px solid ${C.cardBorder}` }}>
                         <TabBtn active={activeTab === 'institute'} onClick={() => setActiveTab('institute')}>
                             My Institute
                         </TabBtn>
@@ -266,7 +263,7 @@ export default function FindTutorsPage() {
             </div>
 
             {/* ── Search + Filter card ──────────────────────────────────── */}
-            <div className="p-5 rounded-3xl shadow-sm" style={{ backgroundColor: outerCard, border: `1px solid ${C.cardBorder}` }}>
+            <div className="p-5 rounded-3xl shadow-sm" style={{ backgroundColor: C.outerCard, border: `1px solid ${C.cardBorder}` }}>
                 <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: C.textMuted }} />
@@ -287,7 +284,7 @@ export default function FindTutorsPage() {
                         <button type="button" onClick={() => setShowFilters(!showFilters)}
                             className="flex items-center justify-center gap-2 px-5 h-12 text-sm rounded-xl transition-all cursor-pointer border"
                             style={showFilters || activeFilterCount > 0
-                                ? { backgroundColor: innerBox, color: C.btnPrimary, borderColor: C.btnPrimary, fontFamily: T.fontFamily, fontWeight: T.weight.bold }
+                                ? { backgroundColor: C.innerBox, color: C.btnPrimary, borderColor: C.btnPrimary, fontFamily: T.fontFamily, fontWeight: T.weight.bold }
                                 : { backgroundColor: C.surfaceWhite, color: C.heading, borderColor: C.cardBorder, fontFamily: T.fontFamily, fontWeight: T.weight.bold }}>
                             <Filter className="w-4 h-4" />
                             Filters
@@ -344,7 +341,7 @@ export default function FindTutorsPage() {
                     <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, fontWeight: T.weight.bold, margin: 0 }}>
                         Found <span style={{ color: C.btnPrimary, fontWeight: T.weight.black }}>{tutors.length}</span> tutor{tutors.length !== 1 ? 's' : ''}
                     </p>
-                    <p className="px-3 py-1 rounded-lg border" style={{ backgroundColor: innerBox, borderColor: C.cardBorder, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: 0 }}>
+                    <p className="px-3 py-1 rounded-lg border" style={{ backgroundColor: C.innerBox, borderColor: C.cardBorder, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: 0 }}>
                         {activeTab === 'institute' ? '📍 My Institute' : '🌐 Global'}
                     </p>
                 </div>
@@ -365,7 +362,7 @@ export default function FindTutorsPage() {
             ) : (
                 /* Empty state */
                 <div className="rounded-3xl overflow-hidden relative shadow-lg"
-                    style={{ backgroundColor: '#1E1B4B' }}>
+                    style={{ backgroundcolor: C.headingDark }}>
                     <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
                         style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '18px 18px' }} />
                     <div className="relative text-center py-20 px-6">
