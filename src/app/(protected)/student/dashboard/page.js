@@ -132,11 +132,11 @@ function SectionHeader({
             backgroundColor: C.btnViewAllBg,
             color: C.btnViewAllText,
             fontFamily: T.fontFamily,
-            fontSize: T.size.xs,
+            fontSize: T.size.sm,
             fontWeight: T.weight.semibold,
           }}
         >
-          {linkLabel} <MdArrowForward className="w-3 h-3" />
+          {linkLabel} <MdArrowForward className="w-4 h-4" />
         </Link>
       )}
     </div>
@@ -179,15 +179,9 @@ function SidePanel({ icon: Icon, title, open, onToggle, children }) {
           </span>
         </div>
         {open ? (
-          <MdKeyboardArrowUp
-            className="w-4 h-4"
-            style={{ color: C.text }}
-          />
+          <MdKeyboardArrowUp className="w-5 h-5" style={{ color: C.text }} />
         ) : (
-          <MdKeyboardArrowDown
-            className="w-4 h-4"
-            style={{ color: C.text }}
-          />
+          <MdKeyboardArrowDown className="w-5 h-5" style={{ color: C.text }} />
         )}
       </button>
       {open && <div className="px-4 pb-4">{children}</div>}
@@ -387,9 +381,9 @@ export default function StudentDashboard() {
             </div>
             <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full" />
           </div>
-         <div>
+          <div>
             <p
-              suppressHydrationWarning={true} 
+              suppressHydrationWarning={true}
               style={{
                 fontFamily: T.fontFamily,
                 fontSize: T.size.xs,
@@ -468,7 +462,6 @@ export default function StudentDashboard() {
                   fontWeight:
                     activeTab === tab ? T.weight.semibold : T.weight.semibold,
                   color: activeTab === tab ? "#ffffff" : C.text,
-               
                 }}
               >
                 {tab === "institute" ? "My Institute" : "Global"}
@@ -492,7 +485,7 @@ export default function StudentDashboard() {
               />
               <div className="absolute inset-0 flex items-center justify-center">
                 <MdAutoAwesome
-                  className="w-4 h-4 animate-pulse"
+                  className="w-5 h-5 animate-pulse"
                   style={{ color: C.btnPrimary }}
                 />
               </div>
@@ -503,7 +496,6 @@ export default function StudentDashboard() {
                 fontSize: T.size.sm,
                 fontWeight: T.weight.medium,
                 color: C.text,
-              
               }}
             >
               Loading dashboard...
@@ -521,7 +513,6 @@ export default function StudentDashboard() {
               href="/student/courses"
               iconBg="#EEF2FF"
               iconColor="#4F46E5"
-              bgSvgPath="/enrolled-cours.svg"
             />
             <StatCard
               icon={MdAssignment}
@@ -530,7 +521,6 @@ export default function StudentDashboard() {
               href="/student/exams"
               iconBg="#FFF7ED"
               iconColor="#F59E0B"
-              bgSvgPath="/upcoming-exams.svg"
             />
             <StatCard
               icon={MdVideocam}
@@ -539,7 +529,6 @@ export default function StudentDashboard() {
               href="/student/live-classes"
               iconBg="#ECFDF5"
               iconColor="#10B981"
-              bgSvgPath="/live-class.svg"
             />
             <StatCard
               value={`${avgScore}%`}
@@ -602,7 +591,7 @@ export default function StudentDashboard() {
                               fontFamily: T.fontFamily,
                               fontSize: "11px",
                               color: C.text,
-                           
+
                               marginTop: 2,
                             }}
                           >
@@ -620,7 +609,6 @@ export default function StudentDashboard() {
                               fontSize: "12px",
                               fontWeight: T.weight.semibold,
                               color: C.text,
-                            
                             }}
                           >
                             {pct}% complete
@@ -628,7 +616,7 @@ export default function StudentDashboard() {
                           <span
                             style={{
                               fontFamily: T.fontFamily,
-                              fontSize: "11px",
+                              fontSize: "12px",
                               fontWeight: T.weight.semibold,
                               color: barColor,
                             }}
@@ -669,7 +657,10 @@ export default function StudentDashboard() {
                   boxShadow: S.card,
                 }}
               >
-                <SectionHeader icon={MdTrendingUp} title="Performance Overview" />
+                <SectionHeader
+                  icon={MdTrendingUp}
+                  title="Performance Overview"
+                />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-2 h-52">
                     {activityData.length > 0 ? (
@@ -703,7 +694,7 @@ export default function StudentDashboard() {
                             tick={{
                               fontSize: 11,
                               fill: C.text,
-                           
+
                               fontFamily: T.fontFamily,
                             }}
                             tickLine={false}
@@ -713,7 +704,7 @@ export default function StudentDashboard() {
                             tick={{
                               fontSize: 11,
                               fill: C.text,
-                             
+
                               fontFamily: T.fontFamily,
                             }}
                             tickLine={false}
@@ -740,7 +731,7 @@ export default function StudentDashboard() {
                         >
                           <MdTrendingUp
                             className="w-6 h-6"
-                            style={{ color: C.chartLine}}
+                            style={{ color: C.chartLine }}
                           />
                         </div>
                         <p
@@ -749,7 +740,6 @@ export default function StudentDashboard() {
                             fontSize: T.size.sm,
                             fontWeight: T.weight.semibold,
                             color: C.text,
-                           
                           }}
                         >
                           No activity yet
@@ -759,7 +749,7 @@ export default function StudentDashboard() {
                             fontFamily: T.fontFamily,
                             fontSize: T.size.xs,
                             color: C.text,
-                           
+
                             textAlign: "center",
                           }}
                         >
@@ -792,7 +782,6 @@ export default function StudentDashboard() {
                           fontSize: T.size.sm,
                           fontWeight: T.weight.semibold,
                           color: C.text,
-                        
                         }}
                       >
                         Score
@@ -816,7 +805,7 @@ export default function StudentDashboard() {
                           color: C.chartLine,
                         }}
                       >
-                        <MdTrendingUp className="w-3 h-3" /> This Month
+                        <MdTrendingUp className="w-4 h-4" /> This Month
                       </p>
                     </div>
                   </div>
@@ -888,7 +877,6 @@ export default function StudentDashboard() {
                               fontFamily: T.fontFamily,
                               fontSize: T.size.sm,
                               color: C.text,
-                             
                             }}
                           >
                             {batches[0]?.instructorName || ""}
@@ -965,7 +953,6 @@ export default function StudentDashboard() {
                             fontSize: T.size.sm,
                             fontStyle: "italic",
                             color: C.text,
-                          
                           }}
                         >
                           No enrolled courses yet.
@@ -1011,7 +998,7 @@ export default function StudentDashboard() {
                                 className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                                 style={{ backgroundColor: C.iconBg }}
                               >
-                                <MdArticle className="w-4 h-4 text-white" />
+                                <MdArticle className="w-5 h-5 text-white" />
                               </div>
                               <div className="min-w-0">
                                 <p
@@ -1030,7 +1017,7 @@ export default function StudentDashboard() {
                                     fontFamily: T.fontFamily,
                                     fontSize: "11px",
                                     color: C.text,
-                                  
+
                                     marginTop: 2,
                                   }}
                                 >
@@ -1064,7 +1051,6 @@ export default function StudentDashboard() {
                             fontSize: T.size.base,
                             fontStyle: "italic",
                             color: C.text,
-                           
                           }}
                         >
                           No upcoming exams.
@@ -1178,7 +1164,7 @@ export default function StudentDashboard() {
                                   fontFamily: T.fontFamily,
                                   fontSize: "12px",
                                   color: C.text,
-                                 
+
                                   marginTop: 2,
                                 }}
                               >
@@ -1221,7 +1207,7 @@ export default function StudentDashboard() {
                       >
                         <MdArticle
                           className="w-5 h-5"
-                          style={{ color: C.btnPrimary}}
+                          style={{ color: C.btnPrimary }}
                         />
                       </div>
                       <p
@@ -1229,7 +1215,6 @@ export default function StudentDashboard() {
                           fontFamily: T.fontFamily,
                           fontSize: T.size.sm,
                           color: C.text,
-                        
                         }}
                       >
                         No exam results yet
@@ -1251,7 +1236,10 @@ export default function StudentDashboard() {
               >
                 <div className="space-y-2.5">
                   {[
-                    { icon: MdMenuBook, text: "Continue your enrolled courses" },
+                    {
+                      icon: MdMenuBook,
+                      text: "Continue your enrolled courses",
+                    },
                     { icon: MdArticle, text: "Practice upcoming exam topics" },
                   ].map((rec, i) => (
                     <div
@@ -1291,7 +1279,7 @@ export default function StudentDashboard() {
                       boxShadow: `0 4px 14px ${C.btnPrimary}50`,
                     }}
                   >
-                    <MdAutoAwesome className="w-4 h-4" />
+                    <MdAutoAwesome className="w-5 h-5" />
                     Start AI Study Plan
                   </Link>
                 </div>
@@ -1362,7 +1350,6 @@ export default function StudentDashboard() {
                         fontSize: T.size.base,
                         fontStyle: "italic",
                         color: C.text,
-                       
                       }}
                     >
                       No announcements at this time.
@@ -1390,7 +1377,11 @@ export default function StudentDashboard() {
                       href: "/student/history",
                       icon: MdBarChart,
                     },
-                    { label: "Profile", href: "/student/profile", icon: MdPerson },
+                    {
+                      label: "Profile",
+                      href: "/student/profile",
+                      icon: MdPerson,
+                    },
                   ].map((link) => (
                     <Link
                       key={link.label}
@@ -1420,8 +1411,8 @@ export default function StudentDashboard() {
                         {link.label}
                       </span>
                       <MdArrowForward
-                        className="w-3 h-3 ml-auto"
-                        style={{ color: C.text}}
+                        className="w-4 h-4 ml-auto"
+                        style={{ color: C.text }}
                       />
                     </Link>
                   ))}

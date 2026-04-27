@@ -11,13 +11,13 @@ import { C, T, R } from '@/constants/studentTokens';
 
 // ─── Sidebar-specific color constants ────────────────────────────────────────
 const SB = {
-    bg:           '#e7f3ff',          // darker lavender — creates contrast vs page #DCD7F6
-    activeBg:     '#5A72D4',          // active item background
-    activeText:   '#ffffff',          // active item text + icon
+    bg: '#e7f3ff',          // darker lavender — creates contrast vs page #DCD7F6
+    activeBg: '#5A72D4',          // active item background
+    activeText: '#ffffff',          // active item text + icon
     inactiveText: '#242661',          // inactive item text
-    hoverBg:      'rgba(90,114,212,0.12)', // Subtle hover for inactive
+    hoverBg: 'rgba(90,114,212,0.12)', // Subtle hover for inactive
     sectionLabel: 'rgba(36,38,97,0.45)',
-    divider:      'rgba(71,72,170,0.15)',
+    divider: 'rgba(71,72,170,0.15)',
 };
 
 function truncateName(name, maxLen = 18) {
@@ -31,19 +31,19 @@ function truncateName(name, maxLen = 18) {
 export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
     const pathname = usePathname();
     const [expandedMenu, setExpandedMenu] = useState(null);
-    const [isHovering, setIsHovering]     = useState(false);
-    const [mounted, setMounted]           = useState(false);
-    const { settings }                    = useSettings();
-    const { institute }                   = useInstitute();
+    const [isHovering, setIsHovering] = useState(false);
+    const [mounted, setMounted] = useState(false);
+    const { settings } = useSettings();
+    const { institute } = useInstitute();
 
     useEffect(() => { setMounted(true); }, []);
 
     const toggleSubmenu = (title) => setExpandedMenu(expandedMenu === title ? null : title);
     const showFull = !isCollapsed || isHovering;
 
-    const activePath    = mounted ? pathname : '';
-    const rawName       = mounted ? (institute?.name || settings?.siteName || 'SapienceLMS') : 'SapienceLMS';
-    const displayName   = mounted ? truncateName(rawName, 20) : 'SapienceLMS';
+    const activePath = mounted ? pathname : '';
+    const rawName = mounted ? (institute?.name || settings?.siteName || 'SapienceLMS') : 'SapienceLMS';
+    const displayName = mounted ? truncateName(rawName, 20) : 'SapienceLMS';
     const instituteLogo = mounted ? institute?.logo : null;
 
     useEffect(() => {
@@ -63,29 +63,29 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
     const activeLinkStyle = {
         backgroundColor: SB.activeBg,
         color: SB.activeText,
-        borderRadius: '10px', 
+        borderRadius: '10px',
         boxShadow: '0 4px 12px rgba(90,114,212,0.35)',
         fontFamily: T.fontFamily,
-        fontSize: '15px', 
+        fontSize: '15px',
         fontWeight: T.weight.bold,
     };
-    
+
     const inactiveLinkStyle = {
         backgroundColor: 'transparent',
         color: SB.inactiveText,
-        borderRadius: '10px', 
+        borderRadius: '10px',
         fontFamily: T.fontFamily,
-        fontSize: '15px', 
+        fontSize: '15px',
         fontWeight: T.weight.semibold,
         opacity: 0.85,
     };
-    
+
     const expandedBtnStyle = {
         backgroundColor: SB.hoverBg,
         color: SB.inactiveText,
-        borderRadius: '10px', 
+        borderRadius: '10px',
         fontFamily: T.fontFamily,
-        fontSize: '15px', 
+        fontSize: '15px',
         fontWeight: T.weight.bold,
     };
 
@@ -133,7 +133,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                             ) : (
                                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
                                     style={{ backgroundColor: SB.activeBg }}>
-                                
+
                                     <MdSchool className="w-6 h-6" style={{ color: '#ffffff' }} />
                                 </div>
                             )}
@@ -169,7 +169,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                             style={{ color: 'rgba(36,38,97,0.5)' }}
                             onMouseEnter={e => { e.currentTarget.style.backgroundColor = SB.hoverBg; e.currentTarget.style.color = SB.inactiveText; }}
                             onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'rgba(36,38,97,0.5)'; }}>
-                        
+
                             <MdClose size={18} />
                         </button>
                     )}
@@ -193,11 +193,11 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                             style={isActive ? activeLinkStyle : inactiveLinkStyle}
                                             onMouseEnter={e => { if (!isActive) onEnterInactive(e); }}
                                             onMouseLeave={e => { if (!isActive) onLeaveInactive(e); }}>
-                                            
+
                                             <Icon className="w-6 h-6 shrink-0" style={{ color: isActive ? '#fff' : 'rgb(98, 103, 233)', opacity: 1 }} />
                                             {showFull && <span className="truncate">{item.title}</span>}
                                         </Link>
-                                        
+
                                         {/* Separator Line */}
                                         <div style={{ height: '1px', backgroundColor: SB.divider, margin: '6px 12px' }} />
                                     </div>
@@ -227,8 +227,8 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                 <div className="space-y-1">
                                     {section.children.map((child) => {
                                         const Icon = child.icon;
-                                        const hasSubmenu      = child.submenu?.length > 0;
-                                        const isExpanded      = expandedMenu === child.title;
+                                        const hasSubmenu = child.submenu?.length > 0;
+                                        const isExpanded = expandedMenu === child.title;
                                         const isSubmenuActive = hasSubmenu && child.submenu.some(sub =>
                                             activePath === sub.href || activePath.startsWith(sub.href + '/'));
                                         const isActive = (activePath === child.href || activePath.startsWith(child.href + '/')) || isSubmenuActive;
@@ -243,9 +243,9 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                         style={isActive ? activeLinkStyle : isExpanded ? expandedBtnStyle : inactiveLinkStyle}
                                                         onMouseEnter={e => { if (isActive) return; isExpanded ? onEnterExpanded(e) : onEnterInactive(e); }}
                                                         onMouseLeave={e => { if (isActive) return; isExpanded ? onLeaveExpanded(e) : onLeaveInactive(e); }}>
-                                                        
+
                                                         <Icon className="w-6 h-6 shrink-0" style={{ color: isActive ? '#fff' : 'rgb(98, 103, 233)', opacity: 1 }} />
-                                                        
+
                                                         {showFull && (
                                                             <>
                                                                 <span className="flex-1 text-left truncate">{child.title}</span>
@@ -264,38 +264,62 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                         style={isActive ? activeLinkStyle : inactiveLinkStyle}
                                                         onMouseEnter={e => { if (!isActive) onEnterInactive(e); }}
                                                         onMouseLeave={e => { if (!isActive) onLeaveInactive(e); }}>
-                                                        
+
                                                         <Icon className="w-6 h-6 shrink-0" style={{ color: isActive ? '#fff' : 'rgb(98, 103, 233)', opacity: 1 }} />
-                                                        
+
                                                         {showFull && <span className="truncate">{child.title}</span>}
                                                     </Link>
                                                 )}
 
                                                 {/* Submenu */}
                                                 <div className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
-                                                    ${hasSubmenu && isExpanded && showFull ? 'max-h-96 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
+    ${hasSubmenu && isExpanded && showFull ? 'max-h-96 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
                                                     <div className="ml-[22px] space-y-1 pl-4"
-                                                      style={{ borderLeft: '1.5px solid #cde6ff' }}>
+                                                        style={{ borderLeft: '1px solid #cde6ff' }}>
                                                         {child.submenu?.map((sub) => {
                                                             const subActive = activePath === sub.href || activePath.startsWith(sub.href + '/');
                                                             return (
                                                                 <Link key={sub.title} href={sub.href}
                                                                     onClick={() => setIsOpen(false)}
-                                                                    className="flex items-center gap-2.5 px-3 py-2 rounded-full transition-all duration-150 relative"
+                                                                    className="flex items-center gap-2.5 px-3 py-2 transition-all duration-150 relative"
                                                                     style={subActive
-                                                                        ? { backgroundColor: SB.activeBg, color: SB.activeText, fontWeight: T.weight.bold, fontFamily: T.fontFamily, fontSize: '13px', boxShadow: '0 2px 8px rgba(90,114,212,0.30)' }
-                                                                        : { color: SB.inactiveText, opacity: 0.75, fontFamily: T.fontFamily, fontSize: '13px', fontWeight: T.weight.medium } 
+                                                                        ? {
+                                                                            backgroundColor: 'transparent',
+                                                                            color: SB.activeBg, fontWeight: T.weight.bold,
+                                                                            fontFamily: T.fontFamily,
+                                                                            fontSize: '13px',
+                                                                            boxShadow: 'none'
+                                                                        }
+                                                                        : {
+                                                                            backgroundColor: 'transparent',
+                                                                            color: SB.inactiveText,
+                                                                            opacity: 0.75,
+                                                                            fontFamily: T.fontFamily,
+                                                                            fontSize: '13px',
+                                                                            fontWeight: T.weight.medium
+                                                                        }
                                                                     }
-                                                                    onMouseEnter={e => { if (!subActive) { e.currentTarget.style.backgroundColor = SB.hoverBg; e.currentTarget.style.opacity = '1'; } }}
-                                                                    onMouseLeave={e => { if (!subActive) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.opacity = '0.75'; } }}>
-                                                                    
+                                                                    onMouseEnter={e => {
+                                                                        if (!subActive) {
+                                                                            e.currentTarget.style.backgroundColor = 'transparent';
+                                                                            e.currentTarget.style.color = SB.activeBg;
+                                                                            e.currentTarget.style.opacity = '1';
+                                                                        }
+                                                                    }}
+                                                                    onMouseLeave={e => {
+                                                                        if (!subActive) {
+                                                                            e.currentTarget.style.backgroundColor = 'transparent';
+                                                                            e.currentTarget.style.color = SB.inactiveText;  
+                                                                            e.currentTarget.style.opacity = '0.75';
+                                                                        }
+                                                                    }}>
                                                                     <span className="truncate">{sub.title}</span>
                                                                 </Link>
                                                             );
                                                         })}
                                                     </div>
                                                 </div>
-                                                
+
                                                 {/* Separator Line */}
                                                 <div style={{ height: '1px', backgroundColor: "#cde6ff", margin: '6px 12px' }} />
                                             </div>
