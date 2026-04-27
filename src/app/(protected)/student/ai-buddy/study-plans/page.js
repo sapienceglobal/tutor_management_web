@@ -15,7 +15,7 @@ const P = {
     primary: '#7C3AED', light: '#8B5CF6',
     soft: 'rgba(124,58,237,0.08)', border: 'rgba(124,58,237,0.14)',
     gradient: 'linear-gradient(135deg,#5B21B6 0%,#7C3AED 60%,#8B5CF6 100%)',
-    pageBg: '#F5F3FF', cardBg: '#FFFFFF', C.innerBox: '#E3DFF8',
+    pageBg: '#F5F3FF', cardBg: '#FFFFFF', innerBox: '#E3DFF8', 
     textPrimary: '#1E1B4B', textSecondary: '#6B7280', textMuted: '#9CA3AF',
 };
 

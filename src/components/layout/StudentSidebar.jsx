@@ -297,7 +297,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                 </div>
                                                 
                                                 {/* Separator Line */}
-                                                <div style={{ height: '0.5px', backgroundColor: "[#dce9f5]", margin: '6px 12px' }} />
+                                                <div style={{ height: '1px', backgroundColor: "#cde6ff", margin: '6px 12px' }} />
                                             </div>
                                         );
                                     })}
