@@ -11,7 +11,7 @@ import { C, T, R } from '@/constants/studentTokens';
 
 // ─── Sidebar-specific color constants ────────────────────────────────────────
 const SB = {
-    bg: 'rgb(253,252,255',          // darker lavender — creates contrast vs page #DCD7F6
+    bg: 'rgb(253,252,255)',          // darker lavender — creates contrast vs page #DCD7F6
     activeBg: '#5A72D4',          // active item background
     activeText: '#ffffff',          // active item text + icon
     inactiveText: '#242661',          // inactive item text
