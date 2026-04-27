@@ -42,7 +42,7 @@ export const C = {
 
     // ── Page Backgrounds ───────────────────────────────────────────────────
     // Change ONE value here → every page that uses C.pageBg / C.outerCard etc. updates.
-    pageBg:     '#f3f4f5',   // overall page canvas (layout.js background)
+    pageBg:     '#f2eeff',   // overall page canvas (layout.js background)
     pageBgAlt:  '#dfdaf3',   // deeper purple-tinted pages (exams, live-classes, assignments)
 
     // ── Surface / Card Backgrounds ─────────────────────────────────────────
