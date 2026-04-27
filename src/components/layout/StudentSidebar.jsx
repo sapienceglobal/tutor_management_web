@@ -239,7 +239,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                     <button
                                                         onClick={() => showFull && toggleSubmenu(child.title)}
                                                         title={!showFull ? child.title : ''}
-                                                        className={`group flex items-center gap-3.5 w-full px-3 py-2.5 transition-all duration-150 ${!showFull ? 'justify-center' : ''}`}
+                                                        className={`group flex items-center gap-3.5 w-full px-3 py-1 transition-all duration-150 ${!showFull ? 'justify-center' : ''}`}
                                                         style={isActive ? activeLinkStyle : isExpanded ? expandedBtnStyle : inactiveLinkStyle}
                                                         onMouseEnter={e => { if (isActive) return; isExpanded ? onEnterExpanded(e) : onEnterInactive(e); }}
                                                         onMouseLeave={e => { if (isActive) return; isExpanded ? onLeaveExpanded(e) : onLeaveInactive(e); }}>
@@ -321,7 +321,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                 </div>
 
                                                 {/* Separator Line */}
-                                                <div style={{ height: '1px', backgroundColor: "#cccccc", margin: '6px 12px' }} />
+                                                <div style={{ height: '1px', backgroundColor: "#ececec", margin: '6px 12px' }} />
                                             </div>
                                         );
                                     })}
