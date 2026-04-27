@@ -47,7 +47,7 @@ export default function StatCard({ icon: Icon, value, label, href, isAI, subtext
       style={
         isAI
           ? {
-              background: 'linear-gradient(135deg, #0B1021 0%, #17153B 50%, #2E236C 100%)',
+             background: 'linear-gradient(to top, #4A00E0, #8E2DE2)',
               border: '1px solid rgba(99,102,241,0.4)',
               borderRadius: R.xl,
               minHeight: 130,

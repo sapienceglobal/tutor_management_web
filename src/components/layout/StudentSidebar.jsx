@@ -275,7 +275,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                 <div className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
                                                     ${hasSubmenu && isExpanded && showFull ? 'max-h-96 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
                                                     <div className="ml-[22px] space-y-1 pl-4"
-                                                        style={{ borderLeft: `1.5px solid ${SB.divider}` }}>
+                                                      style={{ borderLeft: '1.5px solid #cde6ff' }}>
                                                         {child.submenu?.map((sub) => {
                                                             const subActive = activePath === sub.href || activePath.startsWith(sub.href + '/');
                                                             return (
