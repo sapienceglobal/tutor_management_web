@@ -11,7 +11,7 @@ import { C, T, R } from '@/constants/studentTokens';
 
 // ─── Sidebar-specific color constants ────────────────────────────────────────
 const SB = {
-    bg: '#e7f3ff',          // darker lavender — creates contrast vs page #DCD7F6
+    bg: 'rgb(253,252,255',          // darker lavender — creates contrast vs page #DCD7F6
     activeBg: '#5A72D4',          // active item background
     activeText: '#ffffff',          // active item text + icon
     inactiveText: '#242661',          // inactive item text
@@ -321,7 +321,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                 </div>
 
                                                 {/* Separator Line */}
-                                                <div style={{ height: '1px', backgroundColor: "#cde6ff", margin: '6px 12px' }} />
+                                                <div style={{ height: '1px', backgroundColor: "#cccccc", margin: '6px 12px' }} />
                                             </div>
                                         );
                                     })}
