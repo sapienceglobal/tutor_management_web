@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
-import { useTheme } from '@/contexts/ThemeContext';
+// Future ke liye comment kiya gaya hai
+// import { useTheme } from '@/contexts/ThemeContext';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const FONTS = [
@@ -190,7 +191,9 @@ function ThemeTab({ active, onClick, icon: Icon, iconBg, label, sublabel }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function GlobalSettingsPage() {
-    const { refreshGlobalTheme } = useTheme();
+    // Future ke liye comment kiya gaya hai
+    // const { refreshGlobalTheme } = useTheme();
+    
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [activeThemeTab, setActiveThemeTab] = useState('global');
@@ -261,7 +264,10 @@ export default function GlobalSettingsPage() {
                     tutorTheme: settings.tutorTheme, allowInstituteBranding: settings.allowInstituteBranding,
                     enforceGlobalTheme: settings.enforceGlobalTheme, enableDarkMode: settings.enableDarkMode,
                 }));
-                refreshGlobalTheme();
+                
+                // Future ke liye comment kiya gaya hai
+                // refreshGlobalTheme();
+                
                 toast.success('Global settings saved successfully!');
             }
         } catch { toast.error('Failed to save settings'); } 

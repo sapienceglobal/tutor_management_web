@@ -2,12 +2,18 @@
 
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Save, Edit, Database } from 'lucide-react';
+import { 
+    MdArrowBack, 
+    MdHourglassEmpty, 
+    MdSave, 
+    MdEdit, 
+    MdStorage 
+} from 'react-icons/md';
 import Link from 'next/link';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { QuestionFormFields } from '@/components/shared/QuestionFormFields';
-import { C, T, S, R } from '@/constants/tutorTokens';
+import { C, T, S, R } from '@/constants/studentTokens';
 
 export default function EditQuestionPage({ params }) {
     const { id } = use(params);
@@ -77,48 +83,60 @@ export default function EditQuestionPage({ params }) {
 
     if (fetching) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
-                <Loader2 className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
-                <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading question...</p>
+            <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-12 h-12">
+                        <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                            style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                    </div>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                        Loading question...
+                    </p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="w-full min-h-screen p-6 flex flex-col items-center" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen p-6 flex flex-col items-center" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
             
             <div className="w-full max-w-3xl space-y-6">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                     <div className="flex items-center gap-4">
                         <Link href="/tutor/questions" className="text-decoration-none">
-                            <button className="w-10 h-10 flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80 shrink-0"
-                                style={{ backgroundColor: '#E3DFF8', borderRadius: R.full }}>
-                                <ArrowLeft size={18} color={C.heading} />
+                            <button className="flex items-center justify-center cursor-pointer transition-opacity hover:opacity-80 shrink-0"
+                                style={{ width: 40, height: 40, backgroundColor: C.btnViewAllBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                                <MdArrowBack style={{ width: 18, height: 18, color: C.btnViewAllText }} />
                             </button>
                         </Link>
-                        <div>
-                            <h1 className="flex items-center gap-2" style={{ color: C.heading, fontSize: T.size.xl, fontWeight: T.weight.black, margin: '0 0 4px 0' }}>
-                                <Edit size={20} color={C.btnPrimary} /> Edit Question
-                            </h1>
-                            <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, margin: 0 }}>
-                                Update the question details below
-                            </p>
+                        <div className="flex items-center gap-2.5">
+                            <div className="flex items-center justify-center shrink-0" style={{ width: 40, height: 40, backgroundColor: C.iconBg, borderRadius: '10px' }}>
+                                <MdEdit style={{ width: 16, height: 16, color: C.iconColor }} />
+                            </div>
+                            <div>
+                                <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.semibold, color: C.heading, margin: '0 0 2px 0' }}>
+                                    Edit Question
+                                </h2>
+                                <p style={{ color: C.textMuted, fontSize: T.size.base, fontWeight: T.weight.semibold, margin: 0, fontFamily: T.fontFamily }}>
+                                    Update the question details below
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Form Wrapper */}
-                <div className="p-6 space-y-6" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                <div className="p-6 space-y-6" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Note: Assuming QuestionFormFields handles its own theme context or relies on global styles */}
-                        <div className="p-5" style={{ backgroundColor: C.surfaceWhite, borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                        <div className="p-5" style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
                             <QuestionFormFields formData={formData} setFormData={setFormData} topics={topics} skills={skills} />
                         </div>
                         
-                        <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 h-12 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md"
-                            style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
-                            {loading && <Loader2 size={16} className="animate-spin" />} <Save size={16} /> Update Question
+                        <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 h-12 cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50"
+                            style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: '10px', fontSize: T.size.base, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: 'none', boxShadow: S.btn }}>
+                            {loading && <MdHourglassEmpty style={{ width: 16, height: 16 }} className="animate-spin" />} <MdSave style={{ width: 16, height: 16 }} /> Update Question
                         </button>
                     </form>
                 </div>

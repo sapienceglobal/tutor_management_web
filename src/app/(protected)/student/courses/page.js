@@ -339,7 +339,7 @@ function DiscoverCourseCard({ course, isWishlisted, onWishlistToggle }) {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-function MyCoursesPage() {
+function MyCoursesPageContent() {
   const [enrollments, setEnrollments] = useState([]);
   const [upcomingExamsCount, setUpcomingExamsCount] = useState(0);
   const [liveClassesCount, setLiveClassesCount] = useState(0);
@@ -1243,6 +1243,15 @@ function MyCoursesPage() {
   );
 }
 
-<Suspense fallback={<div className="loader">Loading Course Details...</div>}>
-  <MyCoursesPage />
-</Suspense>;
+export default function MyCoursesPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="animate-spin" /> 
+        <span>Loading...</span>
+      </div>
+    }>
+      <MyCoursesPageContent />
+    </Suspense>
+  );
+}

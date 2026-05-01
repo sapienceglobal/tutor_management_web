@@ -6,7 +6,7 @@ import { ArrowLeft, Loader2, Sparkles, Save, BrainCircuit, CheckCircle2, AlertCi
 import Link from 'next/link';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
-import { C, T, S, R } from '@/constants/tutorTokens';
+import { C, T, S, R } from '@/constants/studentTokens';
 
 // Focus Handlers
 const onFocusHandler = e => {
