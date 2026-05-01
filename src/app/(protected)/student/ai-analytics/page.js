@@ -18,6 +18,7 @@ import {
   LayoutList,
 } from "lucide-react";
 import api from "@/lib/axios";
+import { Suspense } from "react";
 import {
   BarChart,
   Bar,
@@ -121,7 +122,7 @@ const CustomPieTooltip = ({ active, payload }) => {
 };
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function ReportsAnalyticsPage() {
+function AIAnalyticsContent() {
   const [attempts, setAttempts] = useState([]);
   const [allExams, setAllExams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1015,5 +1016,18 @@ export default function ReportsAnalyticsPage() {
         </div>
       )}
     </div>
+  );
+}
+export default function ReportsAnalyticsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <p>Loading analytics...</p>
+        </div>
+      }
+    >
+      <AIAnalyticsContent />
+    </Suspense>
   );
 }
