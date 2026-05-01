@@ -8,6 +8,7 @@ import api from "@/lib/axios";
 import Cookies from "js-cookie";
 import useInstitute from "@/hooks/useInstitute";
 import { C, T } from "@/constants/studentTokens";
+import { Suspense } from "react";
 
 export default function StudentLayout({ children }) {
   const router = useRouter();
@@ -50,14 +51,18 @@ export default function StudentLayout({ children }) {
       className="min-h-screen"
       style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}
     >
-      <StudentSidebar
-        isOpen={sidebarOpen}
-        setIsOpen={setSidebarOpen}
-        isCollapsed={sidebarCollapsed}
-        setIsCollapsed={setSidebarCollapsed}
-      />
+      <Suspense fallback={null}>
+        <StudentSidebar
+          isOpen={sidebarOpen}
+          setIsOpen={setSidebarOpen}
+          isCollapsed={sidebarCollapsed}
+          setIsCollapsed={setSidebarCollapsed}
+        />
+      </Suspense>
       {/* isHydrated hone par hi transition aayega, taaki load par jhatka na lage */}
-     <div className={`${isHydrated ? 'transition-all duration-300' : ''} ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[256px]'}`}>
+      <div
+        className={`${isHydrated ? "transition-all duration-300" : ""} ${sidebarCollapsed ? "lg:ml-[72px]" : "lg:ml-[256px]"}`}
+      >
         <StudentHeader
           user={user}
           institute={institute}
