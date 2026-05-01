@@ -1,22 +1,19 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
-  BarChart3,
-  CheckCircle,
-  Clock,
-  TrendingUp,
-  Sparkles,
-  Brain,
-  Target,
-  Award,
-  XCircle,
-  FileText,
-  Download,
-  Printer,
-  LayoutList,
-} from "lucide-react";
+  MdBarChart,
+  MdCheckCircle,
+  MdAccessTime,
+  MdTrendingUp,
+  MdTrackChanges,
+  MdCancel,
+  MdArticle,
+  MdDownload,
+  MdPrint,
+  MdViewList
+} from "react-icons/md";
 import api from "@/lib/axios";
 import {
   BarChart,
@@ -35,7 +32,6 @@ import { motion } from "framer-motion";
 import { C, T, S, R } from "@/constants/studentTokens";
 
 import StatCard from "@/components/StatCard";
-import { MdTrendingUp, MdCheckCircle, MdAccessTime } from "react-icons/md";
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
 const PIE_COLORS = [C.success, C.btnPrimary, C.warning, C.danger];
@@ -47,14 +43,15 @@ const CustomBarTooltip = ({ active, payload, label }) => {
     <div
       className="rounded-xl px-4 py-3 shadow-xl"
       style={{
-        backgroundcolor: C.headingDark,
+        backgroundColor: C.headingDark,
         border: "1px solid rgba(255,255,255,0.1)",
         fontFamily: T.fontFamily,
+        borderRadius: '10px'
       }}
     >
       <p
         style={{
-          fontSize: "11px",
+          fontSize: T.size.xs,
           fontWeight: T.weight.bold,
           color: "rgba(255,255,255,0.6)",
           marginBottom: 2,
@@ -66,14 +63,14 @@ const CustomBarTooltip = ({ active, payload, label }) => {
       <p
         style={{
           fontSize: T.size.lg,
-          fontWeight: T.weight.black,
+          fontWeight: T.weight.bold,
           color: "#fff",
         }}
       >
         {payload[0].value}%{" "}
         <span
           style={{
-            fontSize: "10px",
+            fontSize: T.size.xs,
             fontWeight: T.weight.bold,
             color: "rgba(255,255,255,0.5)",
           }}
@@ -91,14 +88,15 @@ const CustomPieTooltip = ({ active, payload }) => {
     <div
       className="rounded-xl px-4 py-3 shadow-xl"
       style={{
-        backgroundcolor: C.headingDark,
+        backgroundColor: C.headingDark,
         border: "1px solid rgba(255,255,255,0.1)",
         fontFamily: T.fontFamily,
+        borderRadius: '10px'
       }}
     >
       <p
         style={{
-          fontSize: "11px",
+          fontSize: T.size.xs,
           fontWeight: T.weight.bold,
           color: "rgba(255,255,255,0.6)",
           textTransform: "uppercase",
@@ -109,7 +107,7 @@ const CustomPieTooltip = ({ active, payload }) => {
       <p
         style={{
           fontSize: T.size.md,
-          fontWeight: T.weight.black,
+          fontWeight: T.weight.bold,
           color: payload[0].payload.fill,
           marginTop: 2,
         }}
@@ -246,41 +244,32 @@ export default function ReportsAnalyticsPage() {
     toast.success("CSV Downloaded Successfully");
   };
 
-  if (loading)
+  if (loading) {
     return (
-      <div
-        className="flex flex-col items-center justify-center min-h-screen gap-3"
-        style={{ backgroundColor: C.pageBgAlt }}
-      >
-        <div className="relative w-12 h-12">
-          <div className="w-12 h-12 rounded-full border-[3px] border-[#4F46E5]/30 border-t-[#4F46E5] animate-spin" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <BarChart3 className="w-4 h-4 text-[#4F46E5] animate-pulse" />
+      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative w-12 h-12">
+            <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+              style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
           </div>
+          <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+            Loading Reports & Analytics...
+          </p>
         </div>
-        <p
-          style={{
-            fontFamily: T.fontFamily,
-            fontSize: T.size.sm,
-            fontWeight: T.weight.bold,
-            color: C.textMuted,
-          }}
-        >
-          Loading Reports & Analytics...
-        </p>
       </div>
     );
+  }
 
   return (
     <div
       className="w-full min-h-screen p-6 space-y-6"
       style={{
-        backgroundColor: C.pageBgAlt,
+        backgroundColor: C.pageBg,
         fontFamily: T.fontFamily,
         color: C.text,
       }}
     >
-      {/* Print Stylesheet (Hides everything except the report card when printing) */}
+      {/* Print Stylesheet */}
       <style jsx global>{`
         @media print {
           body * {
@@ -306,25 +295,27 @@ export default function ReportsAnalyticsPage() {
 
       {/* ── Header ─────────────────────────────────────────────────── */}
       <div
-        className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-3xl no-print"
+        className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 p-5 no-print"
         style={{
-          backgroundColor: C.outerCard,
+          backgroundColor: C.cardBg,
           border: `1px solid ${C.cardBorder}`,
           boxShadow: S.card,
+          borderRadius: R['2xl']
         }}
       >
         <div className="flex items-center gap-4">
           <div
-            className="w-12 h-12 flex items-center justify-center shrink-0 shadow-sm"
-            style={{ backgroundColor: C.innerBox, borderRadius: R.xl }}
+            className="flex items-center justify-center shrink-0"
+            style={{ width: 48, height: 48, backgroundColor: C.iconBg, borderRadius: '10px' }}
           >
-            <LayoutList size={24} color={C.btnPrimary} />
+            <MdViewList style={{ width: 24, height: 24, color: C.iconColor }} />
           </div>
           <div>
             <h1
               style={{
-                fontSize: T.size.xl,
-                fontWeight: T.weight.black,
+                fontFamily: T.fontFamily, 
+                fontSize: T.size['2xl'],
+                fontWeight: T.weight.bold,
                 color: C.heading,
                 margin: "0 0 2px 0",
               }}
@@ -333,8 +324,8 @@ export default function ReportsAnalyticsPage() {
             </h1>
             <p
               style={{
-                fontSize: T.size.sm,
-                fontWeight: T.weight.medium,
+                fontSize: T.size.base,
+                fontWeight: T.weight.semibold,
                 color: C.textMuted,
                 margin: 0,
               }}
@@ -344,40 +335,30 @@ export default function ReportsAnalyticsPage() {
           </div>
         </div>
 
-        <div
-          className="flex p-1 rounded-xl shrink-0"
-          style={{
-            backgroundColor: C.innerBox,
-            border: `1px solid ${C.cardBorder}`,
-          }}
-        >
-          {[
-            { id: "analytics", label: "Analytics", icon: BarChart3 },
-            { id: "reports", label: "Reports & Downloads", icon: FileText },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all duration-200 cursor-pointer border-none"
-              style={
-                activeTab === tab.id
-                  ? {
-                      backgroundColor: C.btnPrimary,
-                      color: "#ffffff",
-                      fontSize: T.size.sm,
-                      fontWeight: T.weight.bold,
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                    }
-                  : {
-                      backgroundColor: "transparent",
-                      color: C.textMuted,
-                      fontSize: T.size.sm,
-                      fontWeight: T.weight.bold,
-                    }
-              }
-            >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
+        {/* Tab Switcher Pattern */}
+        <div className="relative flex items-center p-1 self-start xl:self-auto no-print"
+          style={{ width: '100%', maxWidth: '380px', backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px' }}>
+          <div className="absolute top-1 bottom-1 w-[calc(50%-4px)] transition-transform duration-300 ease-in-out z-0"
+            style={{ 
+              backgroundColor: C.btnPrimary, 
+              transform: activeTab === 'analytics' ? 'translateX(0)' : 'translateX(100%)',
+              boxShadow: `0 2px 10px ${C.btnPrimary}40`,
+              borderRadius: '10px'
+            }} />
+          {[{ id: 'analytics', label: 'Analytics', icon: MdBarChart }, { id: 'reports', label: 'Reports & Downloads', icon: MdArticle }].map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className="flex-1 relative z-10 px-3 py-2 transition-colors duration-300 border-none cursor-pointer flex items-center justify-center gap-2"
+              style={{ 
+                fontFamily: T.fontFamily, 
+                fontSize: T.size.base, 
+                fontWeight: T.weight.bold,
+                color: activeTab === tab.id ? '#ffffff' : C.text, 
+                background: 'transparent', 
+                borderRadius: '10px' 
+              }}>
+              <tab.icon style={{ width: 16, height: 16 }} />
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sm:hidden">{tab.id === 'analytics' ? 'Stats' : 'Reports'}</span>
             </button>
           ))}
         </div>
@@ -385,15 +366,15 @@ export default function ReportsAnalyticsPage() {
 
       {/* ══ ANALYTICS TAB ═══════════════════════════════════════════ */}
       {activeTab === "analytics" && (
-        <div className="space-y-6 no-print">
+        <div className="space-y-6 no-print animate-in fade-in duration-500">
           {/* Stat cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <StatCard
               label="Average Score"
               value={`${insights.avgScore}%`}
               icon={MdTrendingUp}
-              iconBg={C.innerBox}
-              iconColor={C.btnPrimary}
+              iconBg={C.iconBg}
+              iconColor={C.iconColor}
             />
             <StatCard
               label="Completed Tests"
@@ -415,40 +396,33 @@ export default function ReportsAnalyticsPage() {
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {/* Performance Trend */}
             <div
-              className="rounded-3xl p-6 shadow-sm border flex flex-col"
+              className="p-6 shadow-sm flex flex-col"
               style={{
-                backgroundColor: C.outerCard,
-                borderColor: C.cardBorder,
+                backgroundColor: C.cardBg,
+                border: `1px solid ${C.cardBorder}`,
+                borderRadius: R['2xl']
               }}
             >
               <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: C.innerBox }}
-                  >
-                    <BarChart3 size={16} color={C.btnPrimary} />
+                <div className="flex items-center gap-2.5">
+                  <div className="flex items-center justify-center shrink-0"
+                    style={{ width: 40, height: 40, backgroundColor: C.iconBg, borderRadius: '10px' }}>
+                    <MdBarChart style={{ width: 16, height: 16, color: C.iconColor }} />
                   </div>
-                  <h2
-                    style={{
-                      fontSize: T.size.md,
-                      fontWeight: T.weight.black,
-                      color: C.heading,
-                      margin: 0,
-                    }}
-                  >
+                  <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.semibold, color: C.heading }}>
                     Performance Trend
                   </h2>
                 </div>
                 <span
-                  className="px-3 py-1 rounded-lg"
+                  className="px-3 py-1"
                   style={{
-                    backgroundColor: C.innerBox,
+                    backgroundColor: C.innerBg,
                     color: C.textMuted,
-                    fontSize: "10px",
+                    fontSize: T.size.xs,
                     fontWeight: T.weight.bold,
                     textTransform: "uppercase",
-                    letterSpacing: "0.5px",
+                    letterSpacing: T.tracking.wider,
+                    borderRadius: '10px'
                   }}
                 >
                   Monthly Avg
@@ -465,24 +439,26 @@ export default function ReportsAnalyticsPage() {
                     >
                       <CartesianGrid
                         strokeDasharray="3 3"
-                        stroke="rgba(0,0,0,0.05)"
+                        stroke={C.cardBorder}
                         vertical={false}
                       />
                       <XAxis
                         dataKey="name"
                         tick={{
-                          fontSize: 10,
+                          fontSize: 12,
                           fill: C.textMuted,
-                          fontWeight: 700,
+                          fontWeight: 600,
+                          fontFamily: T.fontFamily
                         }}
                         axisLine={false}
                         tickLine={false}
                       />
                       <YAxis
                         tick={{
-                          fontSize: 10,
+                          fontSize: 12,
                           fill: C.textMuted,
-                          fontWeight: 700,
+                          fontWeight: 600,
+                          fontFamily: T.fontFamily
                         }}
                         axisLine={false}
                         tickLine={false}
@@ -490,7 +466,7 @@ export default function ReportsAnalyticsPage() {
                       />
                       <RechartsTooltip
                         content={<CustomBarTooltip />}
-                        cursor={{ fill: "rgba(0,0,0,0.02)" }}
+                        cursor={{ fill: C.innerBg }}
                       />
                       <Bar dataKey="avg" radius={[6, 6, 0, 0]} maxBarSize={40}>
                         {performanceTrend.map((_, i) => (
@@ -499,8 +475,9 @@ export default function ReportsAnalyticsPage() {
                             fill={
                               i === performanceTrend.length - 1
                                 ? C.btnPrimary
-                                : "#C5BFEA"
+                                : C.chartLine
                             }
+                            opacity={i === performanceTrend.length - 1 ? 1 : 0.6}
                           />
                         ))}
                       </Bar>
@@ -508,44 +485,33 @@ export default function ReportsAnalyticsPage() {
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center gap-2 opacity-50 py-10">
-                  <BarChart3 size={32} color={C.textMuted} />
-                  <p
-                    style={{
-                      fontSize: T.size.sm,
-                      fontWeight: T.weight.bold,
-                      color: C.textMuted,
-                    }}
-                  >
-                    No data to show
-                  </p>
+                <div className="p-14 text-center border border-dashed flex-1"
+                  style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: '10px' }}>
+                  <div className="flex items-center justify-center mx-auto mb-4"
+                    style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                    <MdBarChart style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
+                  </div>
+                  <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>No data to show</h3>
+                  <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, marginTop: 4 }}>Complete tests to see your trend</p>
                 </div>
               )}
             </div>
 
             {/* Score Distribution */}
             <div
-              className="rounded-3xl p-6 shadow-sm border flex flex-col"
+              className="p-6 shadow-sm flex flex-col"
               style={{
-                backgroundColor: C.outerCard,
-                borderColor: C.cardBorder,
+                backgroundColor: C.cardBg,
+                border: `1px solid ${C.cardBorder}`,
+                borderRadius: R['2xl']
               }}
             >
-              <div className="flex items-center gap-3 mb-6">
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: C.successBg }}
-                >
-                  <Target size={16} color={C.success} />
+              <div className="flex items-center gap-2.5 mb-6">
+                <div className="flex items-center justify-center shrink-0"
+                  style={{ width: 40, height: 40, backgroundColor: C.iconBg, borderRadius: '10px' }}>
+                  <MdTrackChanges style={{ width: 16, height: 16, color: C.iconColor }} />
                 </div>
-                <h2
-                  style={{
-                    fontSize: T.size.md,
-                    fontWeight: T.weight.black,
-                    color: C.heading,
-                    margin: 0,
-                  }}
-                >
+                <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.semibold, color: C.heading }}>
                   Score Distribution
                 </h2>
               </div>
@@ -589,19 +555,19 @@ export default function ReportsAnalyticsPage() {
                           <div className="flex justify-between mb-1.5">
                             <span
                               style={{
-                                fontSize: "11px",
+                                fontSize: T.size.xs,
                                 fontWeight: T.weight.bold,
                                 color: C.textMuted,
                                 textTransform: "uppercase",
-                                letterSpacing: "0.5px",
+                                letterSpacing: T.tracking.wider,
                               }}
                             >
                               {range.name}
                             </span>
                             <span
                               style={{
-                                fontSize: "11px",
-                                fontWeight: T.weight.black,
+                                fontSize: T.size.xs,
+                                fontWeight: T.weight.bold,
                                 color: PIE_COLORS[i % PIE_COLORS.length],
                               }}
                             >
@@ -610,7 +576,7 @@ export default function ReportsAnalyticsPage() {
                           </div>
                           <div
                             className="h-1.5 rounded-full overflow-hidden"
-                            style={{ backgroundColor: C.innerBox }}
+                            style={{ backgroundColor: C.innerBg }}
                           >
                             <motion.div
                               initial={{ width: 0 }}
@@ -631,17 +597,14 @@ export default function ReportsAnalyticsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center gap-2 opacity-50 py-10">
-                  <Target size={32} color={C.textMuted} />
-                  <p
-                    style={{
-                      fontSize: T.size.sm,
-                      fontWeight: T.weight.bold,
-                      color: C.textMuted,
-                    }}
-                  >
-                    Complete tests to see distribution
-                  </p>
+                <div className="p-14 text-center border border-dashed flex-1"
+                  style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: '10px' }}>
+                  <div className="flex items-center justify-center mx-auto mb-4"
+                    style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                    <MdTrackChanges style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
+                  </div>
+                  <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>No data to show</h3>
+                  <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, marginTop: 4 }}>Complete tests to see distribution</p>
                 </div>
               )}
             </div>
@@ -650,50 +613,41 @@ export default function ReportsAnalyticsPage() {
           {/* Recent attempts */}
           {recentScores.length > 0 && (
             <div
-              className="rounded-3xl shadow-sm border overflow-hidden"
+              className="p-6 shadow-sm border flex flex-col"
               style={{
-                backgroundColor: C.outerCard,
+                backgroundColor: C.cardBg,
                 borderColor: C.cardBorder,
+                borderRadius: R['2xl']
               }}
             >
-              <div
-                className="px-6 py-5 flex items-center justify-between"
-                style={{
-                  borderBottom: `1px solid ${C.cardBorder}`,
-                  backgroundColor: C.innerBox,
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white shadow-sm">
-                    <Clock size={16} color={C.btnPrimary} />
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex items-center justify-center shrink-0"
+                    style={{ width: 40, height: 40, backgroundColor: C.iconBg, borderRadius: '10px' }}>
+                    <MdAccessTime style={{ width: 16, height: 16, color: C.iconColor }} />
                   </div>
-                  <h2
-                    style={{
-                      fontSize: T.size.md,
-                      fontWeight: T.weight.black,
-                      color: C.heading,
-                      margin: 0,
-                    }}
-                  >
+                  <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.semibold, color: C.heading }}>
                     Recent Attempts
                   </h2>
                 </div>
-                <Link href="/student/history" className="text-decoration-none">
-                  <button
-                    className="flex items-center gap-1 h-8 px-3 rounded-lg border-none cursor-pointer transition-colors hover:bg-slate-200"
-                    style={{
-                      backgroundColor: C.surfaceWhite,
-                      color: C.btnPrimary,
-                      fontSize: "11px",
-                      fontWeight: T.weight.bold,
-                    }}
-                  >
-                    View all
-                  </button>
+                <Link
+                  href="/student/history"
+                  className="inline-flex items-center gap-1 px-4 py-2 transition-colors hover:opacity-80 text-decoration-none"
+                  style={{
+                    backgroundColor: C.btnViewAllBg,
+                    color: C.btnViewAllText,
+                    fontFamily: T.fontFamily,
+                    fontSize: T.size.base,
+                    fontWeight: T.weight.bold,
+                    borderRadius: '10px',
+                    border: `1px solid ${C.cardBorder}`,
+                  }}
+                >
+                  View All
                 </Link>
               </div>
 
-              <div className="flex flex-col p-3 gap-2">
+              <div className="flex flex-col gap-3">
                 {recentScores.map((attempt, i) => {
                   const pct =
                     attempt.totalMarks > 0
@@ -703,31 +657,35 @@ export default function ReportsAnalyticsPage() {
                   return (
                     <div
                       key={i}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 py-4 rounded-2xl transition-colors hover:bg-white/40"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 py-4 transition-colors"
                       style={{
-                        backgroundColor: C.innerBox,
+                        // backgroundColor: C.innerBg,
                         border: `1px solid ${C.cardBorder}`,
                         borderLeft: `4px solid ${passed ? C.success : C.danger}`,
+                        borderRadius: '10px'
                       }}
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 min-w-0">
                         <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                          className="flex items-center justify-center shrink-0"
                           style={{
+                            width: 40,
+                            height: 40,
                             backgroundColor: passed ? C.successBg : C.dangerBg,
+                            borderRadius: '10px'
                           }}
                         >
                           {passed ? (
-                            <CheckCircle size={18} color={C.success} />
+                            <MdCheckCircle style={{ width: 20, height: 20, color: C.success }} />
                           ) : (
-                            <XCircle size={18} color={C.danger} />
+                            <MdCancel style={{ width: 20, height: 20, color: C.danger }} />
                           )}
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <p
-                            className="truncate max-w-[250px] md:max-w-md"
+                            className="truncate"
                             style={{
-                              fontSize: T.size.sm,
+                              fontSize: T.size.base,
                               fontWeight: T.weight.bold,
                               color: C.heading,
                               margin: "0 0 2px 0",
@@ -737,8 +695,8 @@ export default function ReportsAnalyticsPage() {
                           </p>
                           <p
                             style={{
-                              fontSize: "11px",
-                              fontWeight: T.weight.bold,
+                              fontSize: T.size.xs,
+                              fontWeight: T.weight.semibold,
                               color: C.textMuted,
                               margin: 0,
                             }}
@@ -758,8 +716,8 @@ export default function ReportsAnalyticsPage() {
                         <div className="text-right">
                           <p
                             style={{
-                              fontSize: T.size.md,
-                              fontWeight: T.weight.black,
+                              fontSize: T.size.lg,
+                              fontWeight: T.weight.bold,
                               color: passed ? C.success : C.danger,
                               margin: "0 0 2px 0",
                               lineHeight: 1,
@@ -769,8 +727,8 @@ export default function ReportsAnalyticsPage() {
                           </p>
                           <p
                             style={{
-                              fontSize: "10px",
-                              fontWeight: T.weight.bold,
+                              fontSize: T.size.xs,
+                              fontWeight: T.weight.semibold,
                               color: C.textMuted,
                               margin: 0,
                             }}
@@ -783,13 +741,14 @@ export default function ReportsAnalyticsPage() {
                           className="text-decoration-none"
                         >
                           <button
-                            className="h-9 px-4 rounded-xl border-none cursor-pointer transition-opacity hover:opacity-80 shadow-sm"
+                            className="px-4 py-2 border-none cursor-pointer transition-opacity hover:opacity-80"
                             style={{
                               backgroundColor: C.surfaceWhite,
                               color: C.btnPrimary,
-                              fontSize: "11px",
+                              fontSize: T.size.sm,
                               fontWeight: T.weight.bold,
                               border: `1px solid ${C.cardBorder}`,
+                              borderRadius: '10px'
                             }}
                           >
                             View Details
@@ -807,50 +766,60 @@ export default function ReportsAnalyticsPage() {
 
       {/* ══ REPORTS & DOWNLOADS TAB ═════════════════════════════════════ */}
       {activeTab === "reports" && (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-in fade-in duration-500">
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-4 no-print">
             <button
               onClick={handlePrintPDF}
-              className="flex items-center gap-2 h-11 px-6 rounded-xl border-none cursor-pointer transition-transform hover:-translate-y-0.5 shadow-md"
+              className="flex items-center justify-center gap-2 h-11 px-6 border-none cursor-pointer transition-transform hover:-translate-y-0.5"
               style={{
-                backgroundColor: C.btnPrimary,
-                color: "white",
-                fontSize: T.size.sm,
+                background: C.gradientBtn,
+                color: "#ffffff",
+                fontSize: T.size.base,
                 fontWeight: T.weight.bold,
+                borderRadius: '10px',
+                boxShadow: S.btn
               }}
             >
-              <Printer size={18} /> Print / Save as PDF
+              <MdPrint style={{ width: 18, height: 18 }} /> Print / Save as PDF
             </button>
             <button
               onClick={handleDownloadCSV}
-              className="flex items-center gap-2 h-11 px-6 rounded-xl cursor-pointer transition-transform hover:-translate-y-0.5 shadow-sm"
+              className="flex items-center justify-center gap-2 h-11 px-6 cursor-pointer transition-transform hover:-translate-y-0.5"
               style={{
-                backgroundColor: C.outerCard,
-                color: C.heading,
+                backgroundColor: C.btnViewAllBg,
+                color: C.btnViewAllText,
                 border: `1px solid ${C.cardBorder}`,
-                fontSize: T.size.sm,
+                fontSize: T.size.base,
                 fontWeight: T.weight.bold,
+                borderRadius: '10px'
               }}
             >
-              <Download size={18} color={C.btnPrimary} /> Download CSV
+              <MdDownload style={{ width: 18, height: 18 }} /> Download CSV
             </button>
           </div>
 
           {/* Official Report Card (This section is printable) */}
           <div
             id="printable-report"
-            className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-gray-200"
-            style={{ maxWidth: "900px", margin: "0 auto" }}
+            className="p-8 md:p-12"
+            style={{ 
+              maxWidth: "900px", 
+              margin: "0 auto",
+              backgroundColor: C.surfaceWhite,
+              border: `1px solid ${C.cardBorder}`,
+              borderRadius: R['2xl'],
+              boxShadow: S.card
+            }}
           >
             {/* Report Header */}
-            <div className="flex items-center justify-between border-b pb-8 mb-8">
+            <div className="flex items-center justify-between border-b pb-8 mb-8" style={{ borderColor: C.cardBorder }}>
               <div>
                 <h1
                   style={{
-                    fontSize: "28px",
-                    fontWeight: 900,
-                    color: C.headingDark,
+                    fontSize: T.size['3xl'],
+                    fontWeight: T.weight.bold,
+                    color: C.heading,
                     margin: 0,
                   }}
                 >
@@ -858,8 +827,9 @@ export default function ReportsAnalyticsPage() {
                 </h1>
                 <p
                   style={{
-                    color: "#6B7280",
-                    fontSize: "14px",
+                    color: C.textMuted,
+                    fontSize: T.size.sm,
+                    fontWeight: T.weight.semibold,
                     marginTop: "4px",
                   }}
                 >
@@ -874,15 +844,15 @@ export default function ReportsAnalyticsPage() {
               <div className="text-right">
                 <h3
                   style={{
-                    fontSize: "18px",
-                    fontWeight: 700,
-                    color: C.headingDark,
+                    fontSize: T.size.xl,
+                    fontWeight: T.weight.bold,
+                    color: C.heading,
                     margin: 0,
                   }}
                 >
                   {reportData?.student?.name || "Student Name"}
                 </h3>
-                <p style={{ color: "#6B7280", fontSize: "14px" }}>
+                <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>
                   {reportData?.student?.email || "Student Email"}
                 </p>
               </div>
@@ -910,14 +880,20 @@ export default function ReportsAnalyticsPage() {
               ].map((stat, i) => (
                 <div
                   key={i}
-                  className="bg-gray-50 rounded-2xl p-4 border border-gray-100"
+                  className="p-4"
+                  style={{
+                    backgroundColor: C.innerBg,
+                    border: `1px solid ${C.cardBorder}`,
+                    borderRadius: '10px'
+                  }}
                 >
                   <p
                     style={{
-                      fontSize: "11px",
-                      color: "#6B7280",
+                      fontSize: T.size.xs,
+                      color: C.textMuted,
                       textTransform: "uppercase",
-                      fontWeight: 700,
+                      fontWeight: T.weight.bold,
+                      letterSpacing: T.tracking.wider,
                       margin: "0 0 4px 0",
                     }}
                   >
@@ -925,9 +901,9 @@ export default function ReportsAnalyticsPage() {
                   </p>
                   <p
                     style={{
-                      fontSize: "24px",
-                      fontWeight: 900,
-                      color: C.headingDark,
+                      fontSize: T.size['2xl'],
+                      fontWeight: T.weight.bold,
+                      color: C.heading,
                       margin: 0,
                     }}
                   >
@@ -940,9 +916,9 @@ export default function ReportsAnalyticsPage() {
             {/* Detailed Exam History */}
             <h3
               style={{
-                fontSize: "18px",
-                fontWeight: 800,
-                color: C.headingDark,
+                fontSize: T.size.lg,
+                fontWeight: T.weight.bold,
+                color: C.heading,
                 marginBottom: "16px",
               }}
             >
@@ -952,20 +928,20 @@ export default function ReportsAnalyticsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b-2 border-gray-200">
-                    <th className="py-3 px-4 font-bold text-gray-600 text-sm uppercase tracking-wider">
+                  <tr style={{ borderBottom: `2px solid ${C.cardBorder}` }}>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider" style={{ color: C.textMuted, fontSize: T.size.xs }}>
                       Exam Title
                     </th>
-                    <th className="py-3 px-4 font-bold text-gray-600 text-sm uppercase tracking-wider">
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider" style={{ color: C.textMuted, fontSize: T.size.xs }}>
                       Date
                     </th>
-                    <th className="py-3 px-4 font-bold text-gray-600 text-sm uppercase tracking-wider text-center">
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider text-center" style={{ color: C.textMuted, fontSize: T.size.xs }}>
                       Score
                     </th>
-                    <th className="py-3 px-4 font-bold text-gray-600 text-sm uppercase tracking-wider text-center">
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider text-center" style={{ color: C.textMuted, fontSize: T.size.xs }}>
                       Percentage
                     </th>
-                    <th className="py-3 px-4 font-bold text-gray-600 text-sm uppercase tracking-wider text-right">
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider text-right" style={{ color: C.textMuted, fontSize: T.size.xs }}>
                       Status
                     </th>
                   </tr>
@@ -975,23 +951,32 @@ export default function ReportsAnalyticsPage() {
                     reportData.examAttempts.map((exam, idx) => (
                       <tr
                         key={idx}
-                        className="border-b border-gray-100 hover:bg-gray-50"
+                        className="transition-colors hover:bg-black/5"
+                        style={{ borderBottom: `1px solid ${C.cardBorder}` }}
                       >
-                        <td className="py-4 px-4 font-semibold text-gray-900">
+                        <td className="py-4 px-4 font-semibold" style={{ color: C.heading, fontSize: T.size.base }}>
                           {exam.examTitle}
                         </td>
-                        <td className="py-4 px-4 text-gray-500 text-sm">
+                        <td className="py-4 px-4" style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>
                           {new Date(exam.date).toLocaleDateString()}
                         </td>
-                        <td className="py-4 px-4 text-center text-gray-700">
+                        <td className="py-4 px-4 text-center" style={{ color: C.text, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>
                           {exam.score} / {exam.totalMarks}
                         </td>
-                        <td className="py-4 px-4 text-center font-bold text-gray-900">
+                        <td className="py-4 px-4 text-center font-bold" style={{ color: C.heading, fontSize: T.size.base }}>
                           {exam.pct}%
                         </td>
                         <td className="py-4 px-4 text-right">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${exam.isPassed ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                            className="px-3 py-1 uppercase tracking-wider"
+                            style={{
+                              backgroundColor: exam.isPassed ? C.successBg : C.dangerBg,
+                              color: exam.isPassed ? C.success : C.danger,
+                              border: `1px solid ${exam.isPassed ? C.successBorder : C.dangerBorder}`,
+                              borderRadius: '10px',
+                              fontSize: T.size.xs,
+                              fontWeight: T.weight.bold
+                            }}
                           >
                             {exam.isPassed ? "Passed" : "Failed"}
                           </span>
@@ -1002,7 +987,8 @@ export default function ReportsAnalyticsPage() {
                     <tr>
                       <td
                         colSpan="5"
-                        className="py-8 text-center text-gray-500"
+                        className="py-8 text-center"
+                        style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.semibold }}
                       >
                         No exam history available.
                       </td>

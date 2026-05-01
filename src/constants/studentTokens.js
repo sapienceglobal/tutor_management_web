@@ -35,7 +35,7 @@ export const C = {
     darkCard:    'var(--theme-sidebar)', // #3D3B8E default — dark hero cards, AI section
     chartLine:   'var(--theme-accent)',  // #5E9D9D default — chart lines, progress bars
 
-    gradientBtn:   'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))',
+    gradientBtn:   'linear-gradient(to left, #a044ff, #6a3093)',
     btnPrimaryText: '#ffffff',
     darkCardText:   '#ffffff',
     darkCardMuted:  'rgba(255,255,255,0.50)',
@@ -50,11 +50,11 @@ export const C = {
     //   outerCard sits on pageBg/pageBgAlt
     //   innerBox   sits inside outerCard
     //   surfaceWhite is pure white for inputs, selected rows, etc.
-    cardBg:       '#ffffff',   // primary white card background (dashboard stat cards)
-    outerCard:    '#EAE8FA',   // off-white lavender card (exams header, form sections)
-    innerBox:     '#E3DFF8',   // deeper lavender inner surfaces (table headers, form inner)
+    cardBg:       'white',   // primary white card background (dashboard stat cards)
+    outerCard:    '#ffffff',   // off-white lavender card (exams header, form sections)
+    innerBox:     '#ffffff',   // deeper lavender inner surfaces (table headers, form inner)
     surfaceWhite: '#ffffff',   // pure white (inputs, active state rows)
-    innerBg:      'rgba(220,215,246,0.55)', // translucent lavender (hover rows, progress tracks)
+    innerBg:      '#f5f5f5', // translucent lavender (hover rows, progress tracks)
 
     // ── Borders ───────────────────────────────────────────────────────────
     cardBorder: 'rgba(98,103,233,0.12)',
@@ -75,7 +75,7 @@ export const C = {
     iconColor: '#ffffff',    // icon always white inside pill
 
     // ── Secondary Button (View All, Previous/Next) ────────────────────────
-    btnViewAllBg:   '#D3D3F1',
+    btnViewAllBg:   '#f8f8f8',
     btnViewAllText: '#171D74',
 
     // ── Semantic Colors — do NOT change ───────────────────────────────────
@@ -152,7 +152,7 @@ export const R = {
     md:   '12px',   // filter tabs, small cards
     lg:   '16px',   // input fields, icon pills
     xl:   '20px',   // standard card radius (StatCard)
-    '2xl':'24px',   // large cards, panels
+    '2xl':'10px',   // large cards, panels
     '3xl':'32px',   // hero cards, course cards
     full: '9999px', // fully rounded (badges, avatars)
 };

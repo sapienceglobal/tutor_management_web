@@ -175,7 +175,7 @@ export default function StudentExamsPage() {
 
   return (
     <div
-      className="w-full min-h-screen p-6 space-y-6"
+      className="w-full min-h-screen space-y-6"
       style={{
         backgroundColor: C.pageBg,
         fontFamily: T.fontFamily,

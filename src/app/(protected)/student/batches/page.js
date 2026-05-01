@@ -122,7 +122,7 @@ export default function StudentBatchesPage() {
         </div>
     );
 
-    return (
+  return (
         <div className="space-y-5 pb-8" style={{ ...pageStyle, backgroundColor: C.pageBg }}>
 
             {/* ── Header ─────────────────────────────────────────────── */}
@@ -262,24 +262,31 @@ export default function StudentBatchesPage() {
                                         </div>
                                     </div>
 
-                                    {/* Date + Schedule */}
-                                    <div className="grid grid-cols-2 divide-x"
-                                        style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg, borderColor: C.cardBorder }}>
-                                        {[
-                                            { icon: MdCalendarMonth, label: 'Start Date', value: new Date(batch.startDate).toLocaleDateString() },
-                                            { icon: MdAccessTime, label: 'Schedule', value: batch.scheduleDescription || 'Flexible' },
-                                        ].map(({ icon: Icon, label, value }) => (
-                                            <div key={label} className="p-4 flex flex-col gap-1" style={{ borderColor: C.cardBorder }}>
-                                                <div className="flex items-center gap-1.5"
-                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                                    <Icon style={{ width: 14, height: 14 }} /> {label}
+                                    {/* Date + Schedule (FIXED ALIGNMENT) */}
+                                    <div className="px-5 pt-5">
+                                        <div className="grid grid-cols-2 divide-x"
+                                            style={{ 
+                                                backgroundColor: C.innerBg, 
+                                                border: `1px solid ${C.cardBorder}`, 
+                                                borderRadius: '10px',
+                                                borderColor: C.cardBorder 
+                                            }}>
+                                            {[
+                                                { icon: MdCalendarMonth, label: 'Start Date', value: new Date(batch.startDate).toLocaleDateString() },
+                                                { icon: MdAccessTime, label: 'Schedule', value: batch.scheduleDescription || 'Flexible' },
+                                            ].map(({ icon: Icon, label, value }) => (
+                                                <div key={label} className="p-4 flex flex-col gap-1" style={{ borderColor: C.cardBorder }}>
+                                                    <div className="flex items-center gap-1.5"
+                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                        <Icon style={{ width: 14, height: 14 }} /> {label}
+                                                    </div>
+                                                    <span className="truncate"
+                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}>
+                                                        {value}
+                                                    </span>
                                                 </div>
-                                                <span className="truncate"
-                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}>
-                                                    {value}
-                                                </span>
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
                                     </div>
 
                                     {/* Attendance */}
@@ -467,24 +474,31 @@ export default function StudentBatchesPage() {
                                         </div>
                                     </div>
 
-                                    {/* Date + Schedule */}
-                                    <div className="grid grid-cols-2 divide-x"
-                                        style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg, borderColor: C.cardBorder }}>
-                                        {[
-                                            { icon: MdCalendarMonth, label: 'Start Date', value: batch.startDate ? new Date(batch.startDate).toLocaleDateString() : '—' },
-                                            { icon: MdAccessTime, label: 'Schedule', value: batch.scheduleDescription || 'Flexible' },
-                                        ].map(({ icon: Icon, label, value }) => (
-                                            <div key={label} className="p-4 flex flex-col gap-1" style={{ borderColor: C.cardBorder }}>
-                                                <div className="flex items-center gap-1.5"
-                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                                    <Icon style={{ width: 14, height: 14 }} /> {label}
+                                    {/* Date + Schedule (FIXED ALIGNMENT) */}
+                                    <div className="px-5 pt-5">
+                                        <div className="grid grid-cols-2 divide-x"
+                                            style={{ 
+                                                backgroundColor: C.innerBg, 
+                                                border: `1px solid ${C.cardBorder}`, 
+                                                borderRadius: '10px',
+                                                borderColor: C.cardBorder 
+                                            }}>
+                                            {[
+                                                { icon: MdCalendarMonth, label: 'Start Date', value: batch.startDate ? new Date(batch.startDate).toLocaleDateString() : '—' },
+                                                { icon: MdAccessTime, label: 'Schedule', value: batch.scheduleDescription || 'Flexible' },
+                                            ].map(({ icon: Icon, label, value }) => (
+                                                <div key={label} className="p-4 flex flex-col gap-1" style={{ borderColor: C.cardBorder }}>
+                                                    <div className="flex items-center gap-1.5"
+                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                        <Icon style={{ width: 14, height: 14 }} /> {label}
+                                                    </div>
+                                                    <span className="truncate"
+                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}>
+                                                        {value}
+                                                    </span>
                                                 </div>
-                                                <span className="truncate"
-                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}>
-                                                    {value}
-                                                </span>
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
                                     </div>
 
                                     {/* Instructor + Join */}

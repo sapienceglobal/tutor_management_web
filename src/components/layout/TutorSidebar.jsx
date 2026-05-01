@@ -248,7 +248,7 @@ export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed })
                                                 onMouseEnter={e => { if (isActive) return; isExpanded ? onEnterExpanded(e) : onEnterInactive(e); }}
                                                 onMouseLeave={e => { if (isActive) return; isExpanded ? onLeaveExpanded(e) : onLeaveInactive(e); }}>
 
-                                                <Icon className="w-6 h-6 shrink-0" style={{ color: isActive ? '#fff' : 'rgb(98, 103, 233)', opacity: 1 }} />
+                                                <Icon style={{ width: 24, height: 24, flexShrink: 0, color: isActive ? '#ffffff' : 'rgb(98, 103, 233)', opacity: 1 }} />
 
                                                 {showFull && (
                                                     <div className="flex items-center justify-between flex-1 truncate">
@@ -257,8 +257,8 @@ export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed })
                                                             <span className="ml-2 text-[9px] font-bold tracking-widest uppercase bg-gradient-to-r from-purple-400 to-pink-500 text-white px-1.5 py-0.5 rounded-md shadow-sm">Pro</span>
                                                         )}
                                                         <MdChevronRight
-                                                            className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
-                                                            style={{ color: isActive ? 'rgba(255,255,255,0.70)' : 'rgba(36,38,97,0.40)' }} />
+                                                            className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+                                                            style={{ width: 20, height: 20, flexShrink: 0, color: isActive ? 'rgba(255,255,255,0.70)' : 'rgba(36,38,97,0.40)' }} />
                                                     </div>
                                                 )}
                                             </button>
@@ -271,7 +271,7 @@ export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed })
                                                 onMouseEnter={e => { if (!isActive) onEnterInactive(e); }}
                                                 onMouseLeave={e => { if (!isActive) onLeaveInactive(e); }}>
 
-                                                <Icon className="w-6 h-6 shrink-0" style={{ color: isActive ? '#fff' : 'rgb(98, 103, 233)', opacity: 1 }} />
+                                                <Icon style={{ width: 24, height: 24, flexShrink: 0, color: isActive ? '#ffffff' : 'rgb(98, 103, 233)', opacity: 1 }} />
                                                 
                                                 {showFull && (
                                                     <div className="flex items-center justify-between flex-1 truncate">
@@ -308,13 +308,17 @@ export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed })
                                                                         style={subActive
                                                                             ? {
                                                                                 backgroundColor: 'transparent',
-                                                                                color: SB.activeBg, fontWeight: T.weight.bold,
-                                                                                fontFamily: T.fontFamily, fontSize: '13px'
+                                                                                color: SB.activeBg, 
+                                                                                fontWeight: T.weight.bold,
+                                                                                fontFamily: T.fontFamily, 
+                                                                                fontSize: T.size.base
                                                                             }
                                                                             : {
                                                                                 backgroundColor: 'transparent',
-                                                                                color: SB.inactiveText, opacity: 0.75,
-                                                                                fontFamily: T.fontFamily, fontSize: '13px',
+                                                                                color: SB.inactiveText, 
+                                                                                opacity: 0.75,
+                                                                                fontFamily: T.fontFamily, 
+                                                                                fontSize: T.size.base,
                                                                                 fontWeight: T.weight.semibold
                                                                             }}
                                                                         onMouseEnter={e => {
@@ -337,8 +341,10 @@ export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed })
                                                             })}
                                                         </div>
                                                     </div>
-                                                    
                                                 )}
+                                                
+                                                {/* Separator Line Added Here */}
+                                                <div style={{ height: '1px', backgroundColor: "#ececec", margin: '6px 12px' }} />
                                             </div>
                                         );
                                     })}

@@ -126,7 +126,7 @@ export const studentNavItems = [
             {
                 title: "Certificates",
                 icon: MdWorkspacePremium,
-                href: "/student/profile/certificates",
+                href: "/student/certificates",
                 type: "link"
             },
             {
@@ -138,7 +138,7 @@ export const studentNavItems = [
             {
                 title: "Settings",
                 icon: MdSettings,
-                href: "/student/profile/settings",
+                href: "/student/settings",
                 type: "link"
             },
         ]

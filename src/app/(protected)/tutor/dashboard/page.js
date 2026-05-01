@@ -672,9 +672,9 @@ export default function TutorDashboard() {
           </div>
         </div>
         <div>
-          <div style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], padding: 24, boxShadow: S.card, height: '100%' }}>
+         
             <TopItemsWidget title="Top Performing Courses" data={stats?.topCourses} isTutor={true} />
-          </div>
+     
         </div>
       </div>
 

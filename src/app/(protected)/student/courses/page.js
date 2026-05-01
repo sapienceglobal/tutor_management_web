@@ -1042,6 +1042,7 @@ function MyCoursesPageContent() {
             value="Smart Plans"
             subtext="Get personalized recommendations"
             href="/student/ai-analytics"
+            bgSvgPath="/icons/robot-assistant.png"
           />
 
           {/* Announcements */}
@@ -1245,12 +1246,14 @@ function MyCoursesPageContent() {
 
 export default function MyCoursesPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="animate-spin" /> 
-        <span>Loading...</span>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="animate-spin" />
+          <span>Loading...</span>
+        </div>
+      }
+    >
       <MyCoursesPageContent />
     </Suspense>
   );

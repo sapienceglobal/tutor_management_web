@@ -143,7 +143,7 @@ function ExamResultPageClient() {
     const filteredQuestions = allResults.filter(q => qFilter === 'all' || getStatus(q) === qFilter);
 
     return (
-        <div className="min-h-screen p-4 sm:p-6 lg:p-8" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}>
+        <div className="min-h-screen" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}>
             <div className="w-full space-y-5">
 
                 {/* ── Breadcrumb & Actions ──────────────────────────────────────────────── */}

@@ -2,29 +2,29 @@
 
 import { useState, useEffect, useRef } from 'react';
 import {
-    X, Bell, CheckCheck, BookOpen, FileQuestion, Megaphone,
-    AlertCircle, GraduationCap, Loader2, ExternalLink, Clock, MessageSquare
-} from 'lucide-react';
+    MdClose, MdNotifications, MdDoneAll, MdMenuBook, MdHelpOutline, MdCampaign,
+    MdErrorOutline, MdSchool, MdHourglassEmpty, MdOpenInNew, MdAccessTime, MdMessage
+} from 'react-icons/md';
 import api from '@/lib/axios';
 import { useRouter } from 'next/navigation';
-
-const dg = { background: 'linear-gradient(135deg, var(--theme-sidebar), var(--theme-primary))' };
+import { C, T, S, R } from '@/constants/studentTokens';
 
 const CATEGORY_META = {
-    exam:         { icon: FileQuestion, color: '#f59e0b', bg: 'bg-amber-500/15',  label: 'Exam' },
-    course:       { icon: BookOpen,     color: 'var(--theme-primary)', bg: 'bg-[var(--theme-primary)]/15', label: 'Course' },
-    announcement: { icon: Megaphone,    color: '#10b981', bg: 'bg-emerald-500/15',label: 'Announcement' },
-    result:       { icon: GraduationCap,color: '#8b5cf6', bg: 'bg-[var(--theme-accent)]/15', label: 'Result' },
-    alert:        { icon: AlertCircle,  color: '#ef4444', bg: 'bg-red-500/15',    label: 'Alert' },
-    direct_message: { icon: MessageSquare, color: '#6366f1', bg: 'bg-indigo-500/15', label: 'Message' },
+    exam:           { icon: MdHelpOutline,  color: C.warning,    bg: C.warningBg,    label: 'Exam' },
+    course:         { icon: MdMenuBook,     color: C.btnPrimary, bg: C.btnViewAllBg, label: 'Course' },
+    announcement:   { icon: MdCampaign,     color: C.success,    bg: C.successBg,    label: 'Announcement' },
+    result:         { icon: MdSchool,       color: C.chartLine,  bg: C.innerBox,     label: 'Result' },
+    alert:          { icon: MdErrorOutline, color: C.danger,     bg: C.dangerBg,     label: 'Alert' },
+    direct_message: { icon: MdMessage,      color: C.btnPrimary, bg: C.btnViewAllBg, label: 'Message' },
 };
 
 function NotifIcon({ type }) {
     const meta = CATEGORY_META[type] || CATEGORY_META.announcement;
     const Icon = meta.icon;
     return (
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${meta.bg}`}>
-            <Icon className="w-4 h-4" style={{ color: meta.color }} />
+        <div className="flex items-center justify-center shrink-0" 
+            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: meta.bg }}>
+            <Icon style={{ width: 16, height: 16, color: meta.color }} />
         </div>
     );
 }
@@ -39,6 +39,7 @@ export default function NotificationPanel({ onClose }) {
     const [markingAll, setMarkingAll]       = useState(false);
 
     const filters = ['all', 'exam', 'course', 'announcement', 'result'];
+    
     const normalizeNotification = (item) => {
         const readState = Boolean(item?.isRead ?? item?.read);
         return {
@@ -47,7 +48,9 @@ export default function NotificationPanel({ onClose }) {
             read: readState,
         };
     };
+    
     const isNotificationRead = (item) => Boolean(item?.isRead ?? item?.read);
+    
     const resolveNotificationLink = (item) => {
         if (item?.link) return item.link;
         if (item?.type === 'direct_message') return '/student/messages';
@@ -66,7 +69,6 @@ export default function NotificationPanel({ onClose }) {
 
     useEffect(() => {
         fetchNotifications();
-        // Close on outside click
         const handler = (e) => { if (panelRef.current && !panelRef.current.contains(e.target)) onClose?.(); };
         setTimeout(() => document.addEventListener('mousedown', handler), 100);
         return () => document.removeEventListener('mousedown', handler);
@@ -80,7 +82,6 @@ export default function NotificationPanel({ onClose }) {
                 setNotifications((res.data.notifications || []).map(normalizeNotification));
             }
         } catch (_) {
-            // fallback demo
             setNotifications([]);
         } finally { setLoading(false); }
     };
@@ -130,90 +131,131 @@ export default function NotificationPanel({ onClose }) {
     return (
         <>
             {/* Backdrop */}
-            <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+            <div className="fixed inset-0 z-40" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }} onClick={onClose} />
 
             {/* Panel */}
             <div ref={panelRef}
-                className="fixed top-14 right-4 z-50 w-96 max-h-[85vh] flex flex-col rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
-                style={{ fontFamily: "var(--theme-font, 'DM Sans', sans-serif)", background: 'var(--theme-muted)' }}>
+                className="fixed top-14 right-4 z-50 flex flex-col overflow-hidden"
+                style={{ 
+                    width: '384px',
+                    maxHeight: '85vh',
+                    backgroundColor: C.cardBg,
+                    border: `1px solid ${C.cardBorder}`,
+                    borderRadius: R['2xl'],
+                    boxShadow: S.cardHover,
+                    fontFamily: T.fontFamily
+                }}>
 
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/8 shrink-0" style={dg}>
+                <div className="flex items-center justify-between px-4 py-3.5 shrink-0" style={{ background: C.gradientBtn, borderBottom: `1px solid ${C.cardBorder}` }}>
                     <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 bg-white/15 rounded-xl flex items-center justify-center">
-                            <Bell className="w-3.5 h-3.5 text-white" />
+                        <div className="flex items-center justify-center shrink-0" style={{ width: 28, height: 28, backgroundColor: C.surfaceWhite, borderRadius: '10px' }}>
+                            <MdNotifications style={{ width: 14, height: 14, color: C.btnPrimary }} />
                         </div>
                         <div>
-                            <p className="text-sm font-black text-white">Notifications</p>
-                            {unreadCount > 0 && <p className="text-[10px] text-white/60 font-medium">{unreadCount} unread</p>}
+                            <p style={{ fontSize: T.size.base, fontWeight: T.weight.black, color: '#ffffff', margin: 0, lineHeight: 1 }}>Notifications</p>
+                            {unreadCount > 0 && <p style={{ fontSize: T.size.xs, fontWeight: T.weight.semibold, color: '#ffffff', margin: '4px 0 0 0' }}>{unreadCount} unread</p>}
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         {unreadCount > 0 && (
                             <button onClick={markAllRead} disabled={markingAll}
-                                className="flex items-center gap-1 px-2.5 py-1 bg-white/15 hover:bg-white/25 rounded-xl text-[11px] font-black text-white transition-colors">
-                                {markingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3" />}
+                                className="flex items-center gap-1 px-2.5 py-1.5 transition-colors cursor-pointer border-none"
+                                style={{ backgroundColor: C.surfaceWhite, borderRadius: '10px', color: C.btnPrimary, fontSize: T.size.xs, fontWeight: T.weight.black, fontFamily: T.fontFamily }}>
+                                {markingAll ? <MdHourglassEmpty className="animate-spin" style={{ width: 12, height: 12 }} /> : <MdDoneAll style={{ width: 12, height: 12 }} />}
                                 Mark all read
                             </button>
                         )}
-                        <button onClick={onClose} className="w-7 h-7 bg-white/15 hover:bg-white/25 rounded-xl flex items-center justify-center transition-colors">
-                            <X className="w-3.5 h-3.5 text-white" />
+                        <button onClick={onClose} className="flex items-center justify-center cursor-pointer transition-colors border-none" style={{ width: 28, height: 28, backgroundColor: C.surfaceWhite, borderRadius: '10px' }}>
+                            <MdClose style={{ width: 14, height: 14, color: C.btnPrimary }} />
                         </button>
                     </div>
                 </div>
 
                 {/* Filter tabs */}
-                <div className="flex gap-1 px-3 py-2 border-b border-white/8 overflow-x-auto shrink-0 scrollbar-hide" style={{ background: 'var(--theme-background)' }}>
+                <div className="flex gap-1 px-3 py-2 overflow-x-auto shrink-0 custom-scrollbar" style={{ backgroundColor: C.innerBg, borderBottom: `1px solid ${C.cardBorder}` }}>
                     {filters.map(f => (
                         <button key={f} onClick={() => setActiveFilter(f)}
-                            className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-[0.05em] whitespace-nowrap transition-all
-                                ${activeFilter === f
-                                    ? 'text-white'
-                                    : 'text-slate-500 hover:text-slate-300 bg-white/4 hover:bg-white/8'}`}
-                            style={activeFilter === f ? dg : {}}>
+                            className="px-3 py-1.5 cursor-pointer transition-all border-none flex items-center shrink-0"
+                            style={{
+                                backgroundColor: activeFilter === f ? C.btnPrimary : 'transparent',
+                                color: activeFilter === f ? '#ffffff' : C.textSlate,
+                                borderRadius: '10px',
+                                fontSize: T.size.xs,
+                                fontWeight: T.weight.bold,
+                                textTransform: 'uppercase',
+                                letterSpacing: T.tracking.wider,
+                                fontFamily: T.fontFamily
+                            }}>
                             {f}
                             {f === 'all' && unreadCount > 0 && (
-                                <span className="ml-1.5 px-1 py-0.5 bg-white/20 rounded-full text-[9px]">{unreadCount}</span>
+                                <span style={{ 
+                                    marginLeft: 6, 
+                                    padding: '2px 6px', 
+                                    backgroundColor: activeFilter === f ? C.surfaceWhite : C.btnPrimary, 
+                                    color: activeFilter === f ? C.btnPrimary : '#ffffff', 
+                                    borderRadius: R.full, 
+                                    fontSize: '9px',
+                                    fontWeight: T.weight.black 
+                                }}>
+                                    {unreadCount}
+                                </span>
                             )}
                         </button>
                     ))}
                 </div>
 
                 {/* List */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                <div className="flex-1 overflow-y-auto custom-scrollbar" style={{ backgroundColor: C.cardBg }}>
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
-                            <Loader2 className="w-6 h-6 animate-spin text-[var(--theme-accent)]" />
+                            <MdHourglassEmpty className="animate-spin" style={{ width: 24, height: 24, color: C.btnPrimary }} />
                         </div>
                     ) : filtered.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 px-6">
-                            <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center mb-3">
-                                <Bell className="w-7 h-7 text-slate-600" />
+                            <div className="flex items-center justify-center mb-3" style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                                <MdNotifications style={{ width: 28, height: 28, color: C.textMuted }} />
                             </div>
-                            <p className="text-slate-400 text-sm font-bold text-center">No notifications yet</p>
-                            <p className="text-slate-600 text-xs text-center mt-1">We'll notify you when something happens</p>
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, textAlign: 'center', margin: 0 }}>No notifications yet</p>
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, textAlign: 'center', margin: '4px 0 0 0' }}>We'll notify you when something happens</p>
                         </div>
                     ) : (
-                        <div className="divide-y divide-white/5">
+                        <div className="flex flex-col">
                             {filtered.map(n => (
                                 <button key={n._id} onClick={() => handleClick(n)}
-                                    className={`w-full flex items-start gap-3 px-4 py-3.5 text-left transition-all hover:bg-white/5
-                                        ${!isNotificationRead(n) ? 'bg-[var(--theme-accent)]/5' : ''}`}>
+                                    className="w-full flex items-start gap-3 px-4 py-3.5 text-left transition-colors border-none cursor-pointer"
+                                    style={{ 
+                                        backgroundColor: !isNotificationRead(n) ? C.btnViewAllBg : 'transparent',
+                                        borderBottom: `1px solid ${C.cardBorder}`
+                                    }}
+                                    onMouseEnter={(e) => { if (isNotificationRead(n)) e.currentTarget.style.backgroundColor = C.innerBg; }}
+                                    onMouseLeave={(e) => { if (isNotificationRead(n)) e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                                    
                                     <NotifIcon type={n.type} />
+                                    
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-start justify-between gap-2">
-                                            <p className={`text-xs leading-snug ${!isNotificationRead(n) ? 'font-black text-white' : 'font-bold text-slate-300'}`}>
+                                            <p style={{ 
+                                                fontFamily: T.fontFamily, 
+                                                fontSize: T.size.sm, 
+                                                fontWeight: !isNotificationRead(n) ? T.weight.bold : T.weight.semibold, 
+                                                color: !isNotificationRead(n) ? C.heading : C.textSlate, 
+                                                margin: 0,
+                                                lineHeight: T.leading.snug
+                                            }}>
                                                 {n.title}
                                             </p>
-                                            {!isNotificationRead(n) && <span className="w-2 h-2 rounded-full shrink-0 mt-1" style={{ background: 'var(--theme-accent)' }} />}
+                                            {!isNotificationRead(n) && <span className="shrink-0 mt-1" style={{ width: 8, height: 8, borderRadius: R.full, backgroundColor: C.btnPrimary }} />}
                                         </div>
                                         {n.message && (
-                                            <p className="text-[11px] text-slate-500 font-medium mt-0.5 line-clamp-2">{n.message}</p>
+                                            <p className="line-clamp-2" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: '4px 0 0 0' }}>
+                                                {n.message}
+                                            </p>
                                         )}
-                                        <div className="flex items-center gap-2 mt-1.5">
-                                            <Clock className="w-3 h-3 text-slate-600" />
-                                            <span className="text-[10px] text-slate-600 font-medium">{fmtTime(n.createdAt)}</span>
-                                            {resolveNotificationLink(n) && <ExternalLink className="w-3 h-3 text-slate-600 ml-auto" />}
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <MdAccessTime style={{ width: 12, height: 12, color: C.textMuted }} />
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>{fmtTime(n.createdAt)}</span>
+                                            {resolveNotificationLink(n) && <MdOpenInNew style={{ width: 12, height: 12, color: C.textMuted, marginLeft: 'auto' }} />}
                                         </div>
                                     </div>
                                 </button>
@@ -223,9 +265,19 @@ export default function NotificationPanel({ onClose }) {
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 py-2.5 border-t border-white/8 shrink-0" style={{ background: 'var(--theme-background)' }}>
+                <div className="px-4 py-3 shrink-0" style={{ backgroundColor: C.innerBg, borderTop: `1px solid ${C.cardBorder}` }}>
                     <button onClick={() => { router.push('/student/profile/notifications'); onClose?.(); }}
-                        className="w-full py-2 rounded-xl text-[11px] font-black text-[var(--theme-accent)] hover:bg-[var(--theme-accent)]/10 transition-colors">
+                        className="w-full py-2 cursor-pointer transition-colors border-none"
+                        style={{
+                            backgroundColor: 'transparent',
+                            color: C.btnPrimary,
+                            fontSize: T.size.sm,
+                            fontWeight: T.weight.bold,
+                            fontFamily: T.fontFamily,
+                            borderRadius: '10px'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = C.btnViewAllBg}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                         View all notifications →
                     </button>
                 </div>

@@ -998,7 +998,7 @@ export default function TakeExamPage({ params }) {
     // SCREEN 3 — PREMIUM UI EXAM PLAYER (Matching Exactly with Image)
     // ════════════════════════════════════════════════════════════════════
     if (isExamRunning) {
-        const currentQ = exam.questions[currentQuestionIndex];
+        const currentQ = exam?.questions?.[currentQuestionIndex] || {};
         const currentSel = selections[currentQuestionIndex] || {};
         const counts = getStatusCounts();
         const totalMarksObtainable = exam.totalMarks || exam.questions.length;
@@ -1074,7 +1074,7 @@ export default function TakeExamPage({ params }) {
                                     </h2>
                                     <span className="text-slate-300 text-lg font-light">|</span>
                                     <span className="text-[15px] font-medium text-[#8B95A5] uppercase tracking-wide">
-                                        {currentQ.section || exam.title.toUpperCase() || 'GENERAL'}
+                                        {currentQ?.section || exam?.title?.toUpperCase() || 'GENERAL'}
                                     </span>
                                 </div>
 

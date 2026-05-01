@@ -19,6 +19,7 @@ import {
   MdFolder,
   MdAssignment,
   MdPerson,
+  MdFlashOn,
 } from "react-icons/md";
 import Link from "next/link";
 import api from "@/lib/axios";
@@ -163,12 +164,6 @@ function SidePanel({ icon: Icon, title, open, onToggle, children }) {
         onClick={onToggle}
         className="w-full flex items-center justify-between px-5 py-4 transition-colors"
         style={{ background: "transparent", border: "none", cursor: "pointer" }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = C.innerBg;
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "transparent";
-        }}
       >
         <div className="flex items-center gap-2.5">
           <IconPill icon={Icon} size={16} />
@@ -183,15 +178,33 @@ function SidePanel({ icon: Icon, title, open, onToggle, children }) {
             {title}
           </span>
         </div>
-        {open ? (
-          <MdKeyboardArrowUp style={{ width: 20, height: 20, color: C.text }} />
-        ) : (
-          <MdKeyboardArrowDown
-            style={{ width: 20, height: 20, color: C.text }}
-          />
-        )}
+        
+        {/* Arrow ab smoothly rotate hoga jhatke se change nahi hoga */}
+        <MdKeyboardArrowDown
+          style={{ 
+            width: 20, 
+            height: 20, 
+            color: C.text,
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 300ms ease-in-out'
+          }}
+        />
       </button>
-      {open && <div className="px-5 pb-5">{children}</div>}
+
+      {/* Smooth Accordion Transition Wrapper */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateRows: open ? '1fr' : '0fr',
+          transition: 'grid-template-rows 300ms ease-in-out',
+        }}
+      >
+        <div style={{ overflow: 'hidden' }}>
+          <div className="px-5 pb-5">
+            {children}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1633,7 +1646,7 @@ const resolveImageUrl = (path) => {
             <div className="xl:col-span-1 space-y-6">
               {/* AI Recommendations */}
               <SidePanel
-                icon={CustomAIIcon}
+                icon={MdAutoAwesome}
                 title="AI Recommendations"
                 open={aiOpen}
                 onToggle={() => setAiOpen((v) => !v)}

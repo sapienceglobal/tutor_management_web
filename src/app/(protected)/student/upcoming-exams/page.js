@@ -333,8 +333,7 @@ export default function UpcomingExamsPage() {
                                             boxShadow: S.card,
                                             borderRadius: '10px',
                                         }}
-                                        onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; }}
-                                        onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; }}
+                                     
                                     >
                                         {/* Icon */}
                                         <div

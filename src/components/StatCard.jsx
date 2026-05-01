@@ -1,6 +1,4 @@
 // File: components/StatCard.jsx
-// Global StatCard — single source of truth for all student stat cards.
-// Uses ONLY tokens from studentTokens.js. Never hardcode colors here.
 'use client';
 
 import React from 'react';
@@ -13,10 +11,10 @@ import { C, S, T, R } from '@/constants/studentTokens';
 function IconPill({ icon: Icon, bg, iconColor }) {
   return (
     <div
-      className="flex items-center justify-center shrink-0 rounded-xl"
-      style={{ width: 48, height: 48, backgroundColor: bg || C.iconBg }}
+      className="flex items-center justify-center shrink-0"
+      style={{ width: 48, height: 48, backgroundColor: bg || C.iconBg, borderRadius: '10px' }}
     >
-      {Icon && <Icon size={24} style={{ color: iconColor || C.iconColor }} />}
+      {Icon && <Icon style={{ width: 24, height: 24, color: iconColor || C.iconColor }} />}
     </div>
   );
 }
@@ -40,60 +38,52 @@ function DecorB({ color }) {
 }
 
 // ─── StatCard ─────────────────────────────────────────────────────────────────
-// Props:
-//   icon       — Lucide icon component (required for normal cards)
-//   value      — Number or string to display prominently
-//   label      — Uppercase label text (e.g. "Enrolled Courses")
-//   href       — If provided, wraps card in <Link> and shows "View All" button
-//   isAI       — Boolean: renders the dark gradient AI variant
-//   subtext    — Small secondary text below value (e.g. "Overall Score")
-//   iconBg     — Icon pill background color (overrides C.iconBg)
-//   iconColor  — Icon color (overrides C.iconColor)
-//   bgSvgPath  — Decorative image path (AI card only)
 export default function StatCard({ icon: Icon, value, label, href, isAI, subtext, iconBg, iconColor, bgSvgPath }) {
   const pillBg    = iconBg    || C.iconBg;
   const pillColor = iconColor || C.iconColor;
 
+  // BUG FIX: Agar icon white hai, toh arc ko background color (pillBg) de do. 
+  // Varna arc white-on-white invisible ho jayega.
+  const decorColor = pillColor === C.iconColor || pillColor === '#ffffff' || pillColor === '#fff' ? pillBg : pillColor;
+
   const cardContent = (
     <div
-      className={`relative overflow-hidden transition-all duration-300 cursor-pointer group ${
-        isAI
-          ? 'hover:-translate-y-1'
-          : 'hover:-translate-y-1'
-      }`}
+      className="relative overflow-hidden transition-all duration-300 cursor-pointer group"
       style={
         isAI
           ? {
-              background: 'linear-gradient(to top, #4A00E0, #8E2DE2)',
+              background: 'linear-gradient(to bottom, #4A00E0, #8E2DE2)',
               border: '1px solid rgba(99,102,241,0.4)',
-              borderRadius: R.xl,
+              borderRadius: R['2xl'],
               minHeight: 130,
               boxShadow: S.card,
             }
           : {
               backgroundColor: C.cardBg,
               border: `1px solid ${C.cardBorder}`,
-              borderRadius: R.xl,
+              borderRadius: R['2xl'],
               minHeight: 130,
               boxShadow: S.card,
             }
       }
       onMouseEnter={e => {
-        e.currentTarget.style.boxShadow = isAI ? S.aiHover : S.statHover;
+        e.currentTarget.style.boxShadow = isAI ? S.aiHover : S.cardHover;
+        e.currentTarget.style.transform = 'translateY(-4px)';
       }}
       onMouseLeave={e => {
         e.currentTarget.style.boxShadow = S.card;
+        e.currentTarget.style.transform = 'translateY(0)';
       }}
     >
       {/* ─── AI Card Glow Effects ─────────────────────────────────────── */}
       {isAI && (
         <>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[50px] pointer-events-none -translate-y-1/2 translate-x-1/2 transition-opacity group-hover:opacity-50" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500 rounded-full blur-[40px] pointer-events-none translate-y-1/2 -translate-x-1/2" />
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-[50px] pointer-events-none -translate-y-1/2 translate-x-1/2 transition-opacity group-hover:opacity-50" style={{ backgroundColor: '#6366f1' }} />
+          <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full blur-[40px] pointer-events-none translate-y-1/2 -translate-x-1/2" style={{ backgroundColor: '#a855f7' }} />
           <style>{`
             @keyframes aiPulse {
               0%, 100% { transform: translateY(0px) scale(1); }
-              50%       { transform: translateY(-3px) scale(1.05); }
+              50%      { transform: translateY(-3px) scale(1.05); }
             }
             .ai-icon-anim { animation: aiPulse 3s ease-in-out infinite; }
           `}</style>
@@ -101,7 +91,7 @@ export default function StatCard({ icon: Icon, value, label, href, isAI, subtext
       )}
 
       {/* ─── Normal Card: Corner Arc Decor ────────────────────────────── */}
-      {!isAI && <DecorB color={pillColor} />}
+      {!isAI && <DecorB color={decorColor} />}
 
       {/* ─── Card Content ─────────────────────────────────────────────── */}
       <div className="relative z-10 flex flex-col h-full justify-between p-5">
@@ -109,8 +99,8 @@ export default function StatCard({ icon: Icon, value, label, href, isAI, subtext
         {/* Top: Icon + Label + Value */}
         <div className="flex items-start gap-3.5">
           {isAI ? (
-            <div className="flex items-center justify-center shrink-0 w-12 h-12 bg-white/10 rounded-xl border border-white/20 backdrop-blur-sm">
-              <MdAutoAwesome className="w-6 h-6 text-white" />
+            <div className="flex items-center justify-center shrink-0 w-12 h-12 border backdrop-blur-sm" style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.2)', borderRadius: '10px' }}>
+              <MdAutoAwesome style={{ width: 24, height: 24, color: '#ffffff' }} />
             </div>
           ) : (
             <IconPill icon={Icon} bg={pillBg} iconColor={pillColor} />
@@ -121,8 +111,8 @@ export default function StatCard({ icon: Icon, value, label, href, isAI, subtext
             <p style={{
               fontFamily:    T.fontFamily,
               fontSize:      T.size.md,
-              fontWeight:    T.weight.semibold,
-              color:         isAI ? 'white' : C.textSlate,
+              fontWeight:    T.weight.bold,
+              color:         isAI ? '#ffffff' : C.textSlate,
               textTransform: 'uppercase',
               letterSpacing: '0.5px',
               margin: 0,
@@ -135,8 +125,8 @@ export default function StatCard({ icon: Icon, value, label, href, isAI, subtext
               <p style={{
                 fontFamily: T.fontFamily,
                 fontSize:   T.size.stat,
-                fontWeight: T.weight.black,
-                color:      isAI ? 'white' : C.headingDark,
+                fontWeight: T.weight.bold,
+                color:      isAI ? '#ffffff' : C.headingDark,
                 lineHeight: 1,
                 margin: 0,
               }}>
@@ -147,7 +137,7 @@ export default function StatCard({ icon: Icon, value, label, href, isAI, subtext
                   fontFamily: T.fontFamily,
                   fontSize:   T.size.xs,
                   fontWeight: T.weight.medium,
-                  color:      isAI ? 'white' : C.textFaint,
+                  color:      isAI ? 'rgba(255,255,255,0.7)' : C.textFaint,
                   margin: 0,
                 }}>
                   {subtext}
@@ -156,9 +146,9 @@ export default function StatCard({ icon: Icon, value, label, href, isAI, subtext
             </div>
           </div>
 
-          {/* AI card: big decorative image — UNCHANGED */}
+          {/* AI card: decorative image */}
           {isAI && bgSvgPath && (
-            <div className="absolute right-4 top-25 -translate-y-1/2 pointer-events-none group-hover:scale-110 transition-transform duration-500 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+            <div className="absolute right-4 top-25 -translate-y-1/2 pointer-events-none transition-transform duration-500" style={{ filter: 'drop-shadow(0 0 15px rgba(255,255,255,0.2))' }}>
               <Image src={bgSvgPath} alt="AI Icon" width={60} height={60} className="ai-icon-anim object-contain" />
             </div>
           )}
@@ -168,30 +158,36 @@ export default function StatCard({ icon: Icon, value, label, href, isAI, subtext
         <div className="mt-4">
           {isAI ? (
             <span
-              className="inline-flex items-center justify-center py-2 px-3.5 text-white rounded-lg transition-transform active:scale-95"
+              className="inline-flex items-center justify-center py-2 px-3.5 transition-transform"
               style={{
                 backgroundColor: '#4F46E5',
+                color: '#ffffff',
                 fontFamily: T.fontFamily,
-                fontSize:   T.size.sm,
+                fontSize:   T.size.base,
                 fontWeight: T.weight.bold,
                 boxShadow:  S.aiBtn,
+                borderRadius: '10px'
               }}
+              onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
+              onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
             >
-              <MdAutoAwesome className="w-3.5 h-3.5 mr-1.5" /> Start AI Plan
+              <MdAutoAwesome style={{ width: 16, height: 16, marginRight: 6 }} /> Start AI Plan
             </span>
           ) : (
             href && (
               <span
-                className="inline-flex items-center justify-center py-1.5 px-3 rounded-lg transition-colors"
+                className="inline-flex items-center justify-center py-1.5 px-3 transition-colors"
                 style={{
                   backgroundColor: C.btnViewAllBg,
                   color:           C.btnViewAllText,
                   fontFamily:      T.fontFamily,
-                  fontSize:        T.size.sm,
+                  fontSize:        T.size.base,
                   fontWeight:      T.weight.bold,
+                  border:          `1px solid ${C.cardBorder}`,
+                  borderRadius:    '10px'
                 }}
               >
-                View All <MdArrowForward className="w-3.5 h-3.5 ml-1" />
+                View All <MdArrowForward style={{ width: 16, height: 16, marginLeft: 4 }} />
               </span>
             )
           )}
@@ -201,5 +197,5 @@ export default function StatCard({ icon: Icon, value, label, href, isAI, subtext
     </div>
   );
 
-  return href ? <Link href={href} className="block">{cardContent}</Link> : cardContent;
+  return href ? <Link href={href} className="block text-decoration-none">{cardContent}</Link> : cardContent;
 }

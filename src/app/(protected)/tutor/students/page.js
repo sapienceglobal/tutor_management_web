@@ -9,7 +9,7 @@ import {
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
-import { C, T, S, R } from '@/constants/tutorTokens';
+import { C, T, S, R } from '@/constants/studentTokens';
 import StatCard from '@/components/StatCard';
 
 const onFocusHandler = e => {
