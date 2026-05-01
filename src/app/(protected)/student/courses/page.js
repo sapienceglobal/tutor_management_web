@@ -1061,7 +1061,7 @@ function MyCoursesPageContent() {
                 style={{ backgroundColor: C.innerBg, borderRadius: R.sm }}
               >
                 <MdCampaign
-                  className="w-4 h-4"
+                  className="w-5 h-5"
                   style={{ color: C.btnPrimary }}
                 />
               </div>
@@ -1160,7 +1160,7 @@ function MyCoursesPageContent() {
                 className="w-8 h-8 flex items-center justify-center shrink-0"
                 style={{ backgroundColor: C.innerBg, borderRadius: R.sm }}
               >
-                <MdSchool className="w-4 h-4" style={{ color: C.btnPrimary }} />
+                <MdSchool className="w-5 h-5" style={{ color: C.btnPrimary }} />
               </div>
               <h2
                 style={{

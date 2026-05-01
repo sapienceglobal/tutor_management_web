@@ -35,7 +35,7 @@ export const C = {
     darkCard:    'var(--theme-sidebar)', // #3D3B8E default — dark hero cards, AI section
     chartLine:   'var(--theme-accent)',  // #5E9D9D default — chart lines, progress bars
 
-    gradientBtn:   'linear-gradient(to left, #a044ff, #6a3093)',
+    gradientBtn:   'rgb(79, 70, 229)',
     btnPrimaryText: '#ffffff',
     darkCardText:   '#ffffff',
     darkCardMuted:  'rgba(255,255,255,0.50)',
