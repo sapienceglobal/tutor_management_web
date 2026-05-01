@@ -1,8 +1,7 @@
-import { Search, Bell, Mail, Grid, Maximize, Moon, Sun, User, LogOut, Menu, PanelLeftClose, PanelLeftOpen, ChevronDown, Settings } from 'lucide-react';
+import { Search, Bell, Mail, Grid, Maximize, User, LogOut, Menu, PanelLeftClose, PanelLeftOpen, ChevronDown, Settings } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
-import { useTheme } from '@/contexts/ThemeContext';
 
 export function Header({ onMenuClick, onSidebarCollapse, isSidebarCollapsed, institute }) {
     const router = useRouter();
@@ -10,7 +9,6 @@ export function Header({ onMenuClick, onSidebarCollapse, isSidebarCollapsed, ins
     const [userRole, setUserRole] = useState('');
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const { toggleMode, isDarkMode, isDarkModeAllowed } = useTheme();
     const [searchTerm, setSearchTerm] = useState('');
     const dropdownRef = useRef(null);
 
@@ -104,14 +102,6 @@ export function Header({ onMenuClick, onSidebarCollapse, isSidebarCollapsed, ins
                     <img src="https://flagcdn.com/w20/us.png" alt="English" className="w-4 h-3 object-cover rounded-sm" />
                     <span className="text-[13px] font-medium">EN</span>
                 </button>
-
-                {mounted && isDarkModeAllowed && (
-                    <button onClick={toggleMode}
-                        title={isDarkMode ? 'Light mode' : 'Dark mode'}
-                        className="flex items-center justify-center w-9 h-9 text-slate-500 hover:bg-slate-100 hover:text-slate-700 rounded-lg transition-colors">
-                        {isDarkMode ? <Sun className="w-[17px] h-[17px]" /> : <Moon className="w-[17px] h-[17px]" />}
-                    </button>
-                )}
 
                 {/* Mail */}
                 <div className="relative hidden sm:block">

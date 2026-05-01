@@ -337,6 +337,7 @@ export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed })
                                                             })}
                                                         </div>
                                                     </div>
+                                                    
                                                 )}
                                             </div>
                                         );

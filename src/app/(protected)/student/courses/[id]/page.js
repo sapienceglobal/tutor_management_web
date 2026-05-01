@@ -23,7 +23,6 @@ import {
     MdCalendarMonth,
     MdClose,
     MdAutoAwesome,
-    MdTrophy,
     MdLanguage,
     MdShieldMoon,
     MdVisibility,
@@ -1345,7 +1344,7 @@ export default function CourseDetailPage({ params }) {
                                             { icon: <MdPlayCircle style={{ width: 16, height: 16, color: C.btnPrimary }} />,    label: `${totalLessons} video lessons` },
                                             { icon: <MdAccessTime  style={{ width: 16, height: 16, color: C.chartLine }} />,    label: `${Math.round(totalDuration / 3600)} hours on-demand video` },
                                             { icon: <MdDownload    style={{ width: 16, height: 16, color: C.success }} />,      label: 'Downloadable study resources' },
-                                            { icon: <MdTrophy      style={{ width: 16, height: 16, color: C.warning }} />,      label: 'Certificate of completion' },
+                                            { icon: <MdEmojiEvents      style={{ width: 16, height: 16, color: C.warning }} />,      label: 'Certificate of completion' },
                                             { icon: <MdLanguage    style={{ width: 16, height: 16, color: '#3B82F6' }} />,      label: 'Full lifetime access' },
                                         ].map((item, i) => (
                                             <div

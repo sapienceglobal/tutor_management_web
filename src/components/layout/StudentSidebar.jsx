@@ -290,11 +290,11 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                     <div className="ml-[22px] space-y-1 pl-4" style={{ borderLeft: '1px solid #cde6ff' }}>
                                                         {child.submenu?.map((sub) => {
                                                             // Detailed match for Submenu
-                                                         const subActive = sub.href.includes('?') 
-    ? currentUrl === sub.href 
-    : (activePath === sub.href && !searchParams.get('tab')) || 
-      (sub.href !== '/student/courses' && activePath.startsWith(sub.href + '/')) ||
-      (sub.href === '/student/courses' && activePath.startsWith('/student/courses/'));
+                                                            const subActive = sub.href.includes('?')
+                                                                ? currentUrl === sub.href
+                                                                : (activePath === sub.href && !searchParams.get('tab')) ||
+                                                                (sub.href !== '/student/courses' && activePath.startsWith(sub.href + '/')) ||
+                                                                (sub.href === '/student/courses' && activePath.startsWith('/student/courses/'));
 
                                                             return (
                                                                 <Link key={sub.title} href={sub.href}

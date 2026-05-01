@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import useInstitute from '@/hooks/useInstitute';
-// ✅ ThemeProvider removed — root layout already wraps everything in ThemeProvider
+
 
 export default function AdminLayout({ children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
