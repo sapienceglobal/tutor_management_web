@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   MdSearch,
@@ -339,7 +339,7 @@ function DiscoverCourseCard({ course, isWishlisted, onWishlistToggle }) {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function MyCoursesPage() {
+function MyCoursesPage() {
   const [enrollments, setEnrollments] = useState([]);
   const [upcomingExamsCount, setUpcomingExamsCount] = useState(0);
   const [liveClassesCount, setLiveClassesCount] = useState(0);
@@ -349,7 +349,6 @@ export default function MyCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-
 
   const [scopeTab, setScopeTab] = useState("institute");
 
@@ -363,7 +362,7 @@ export default function MyCoursesPage() {
   const searchParams = useSearchParams();
 
   const currentTab = searchParams.get("tab");
-    // Tabs state
+  // Tabs state
   const [mainTab, setMainTab] = useState(
     searchParams.get("tab") === "discover" ? "discover" : "enrollments",
   );
@@ -1243,3 +1242,7 @@ export default function MyCoursesPage() {
     </div>
   );
 }
+
+<Suspense fallback={<div className="loader">Loading Course Details...</div>}>
+  <MyCoursesPage />
+</Suspense>;

@@ -14,7 +14,7 @@ import Link from 'next/link';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { QuestionFormFields } from '@/components/shared/QuestionFormFields';
-import { C, T, S, R } from '@/constants/studentTokens';
+import { C, T, S, R } from '@/constants/tutorTokens';
 
 // Focus Handlers
 const onFocusHandler = e => {
