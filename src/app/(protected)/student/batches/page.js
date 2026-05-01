@@ -2,12 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import {
-    BookOpen, Calendar, Clock, CheckCircle2, XCircle, AlertCircle,
-    Globe, Building2, Search, Users, Plus, Loader2, LogIn
-} from 'lucide-react';
+    MdMenuBook,
+    MdCalendarMonth,
+    MdAccessTime,
+    MdCheckCircle,
+    MdCancel,
+    MdWarning,
+    MdLanguage,
+    MdBusiness,
+    MdSearch,
+    MdPeople,
+    MdLogin,
+    MdHourglassEmpty,
+} from 'react-icons/md';
 import { toast } from 'react-hot-toast';
 import api from '@/lib/axios';
-import { C, T, S, pageStyle } from '@/constants/studentTokens';
+import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
 
 export default function StudentBatchesPage() {
     const [myBatches, setMyBatches]               = useState([]);
@@ -15,7 +25,7 @@ export default function StudentBatchesPage() {
     const [loading, setLoading]                   = useState(true);
     const [loadingAvail, setLoadingAvail]         = useState(false);
     const [joiningId, setJoiningId]               = useState(null);
-    const [activeTab, setActiveTab]               = useState('my');    // 'my' | 'discover'
+    const [activeTab, setActiveTab]               = useState('my');
     const [discoverSearch, setDiscoverSearch]     = useState('');
 
     useEffect(() => { fetchMyBatches(); }, []);
@@ -68,7 +78,6 @@ export default function StudentBatchesPage() {
             const res = await api.post(`/batches/${batchId}/join`);
             if (res.data.success) {
                 toast.success('Successfully joined the batch!');
-                // Move batch from available to my batches
                 const joined = availableBatches.find(b => b._id === batchId);
                 if (joined) {
                     setMyBatches(prev => [{ ...joined, attendanceStats: null, recentLogs: [] }, ...prev]);
@@ -84,9 +93,9 @@ export default function StudentBatchesPage() {
     };
 
     const getStatusIcon = (status) => {
-        if (status === 'present') return <CheckCircle2 className="w-4 h-4" style={{ color: C.success }} />;
-        if (status === 'absent')  return <XCircle      className="w-4 h-4" style={{ color: C.danger }} />;
-        if (status === 'late')    return <AlertCircle  className="w-4 h-4" style={{ color: C.warning }} />;
+        if (status === 'present') return <MdCheckCircle style={{ width: 16, height: 16, color: C.success }} />;
+        if (status === 'absent')  return <MdCancel      style={{ width: 16, height: 16, color: C.danger }} />;
+        if (status === 'late')    return <MdWarning     style={{ width: 16, height: 16, color: C.warning }} />;
         return null;
     };
 
@@ -102,42 +111,60 @@ export default function StudentBatchesPage() {
     });
 
     if (loading) return (
-        <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: C.pageBg }}>
             <div className="flex flex-col items-center gap-3">
-                <div className="w-11 h-11 rounded-full border-[3px] animate-spin"
+                <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
                     style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
-                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, opacity: 0.55 }}>Loading batches…</p>
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                    Loading batches…
+                </p>
             </div>
         </div>
     );
 
     return (
-        <div className="space-y-5 pb-8" style={pageStyle}>
+        <div className="space-y-5 pb-8" style={{ ...pageStyle, backgroundColor: C.pageBg }}>
 
             {/* ── Header ─────────────────────────────────────────────── */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading }}>
+                    <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.bold, color: C.heading }}>
                         Batches
                     </h1>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, opacity: 0.55, marginTop: 2 }}>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, marginTop: 2 }}>
                         Track your enrolled cohorts or join new ones.
                     </p>
                 </div>
 
-                {/* Tab switcher */}
-                <div className="flex p-1 rounded-2xl self-start"
-                    style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}` }}>
+                {/* Tab switcher — exact animated pill pattern */}
+                <div className="relative flex items-center p-1 self-start"
+                    style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px' }}>
+                    <div
+                        className="absolute top-1 bottom-1 w-[calc(50%-4px)] transition-transform duration-300 ease-in-out z-0"
+                        style={{
+                            backgroundColor: C.btnPrimary,
+                            transform: activeTab === 'my' ? 'translateX(0)' : 'translateX(100%)',
+                            boxShadow: `0 2px 10px ${C.btnPrimary}40`,
+                            borderRadius: '10px',
+                        }}
+                    />
                     {[
-                        { key: 'my',       label: 'My Batches',      Icon: BookOpen },
-                        { key: 'discover', label: 'Discover Batches', Icon: Globe },
+                        { key: 'my',       label: 'My Batches',       Icon: MdMenuBook },
+                        { key: 'discover', label: 'Discover Batches', Icon: MdLanguage },
                     ].map(({ key, label, Icon }) => (
                         <button key={key} onClick={() => setActiveTab(key)}
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm transition-all"
-                            style={activeTab === key
-                                ? { backgroundColor: C.btnPrimary, color: '#ffffff', fontFamily: T.fontFamily, fontWeight: T.weight.bold }
-                                : { color: C.text, opacity: 0.7, fontFamily: T.fontFamily, fontWeight: T.weight.semibold }}>
-                            <Icon className="w-4 h-4" /> {label}
+                            className="flex items-center gap-2 px-4 py-2 flex-1 relative z-10 transition-colors duration-300"
+                            style={{
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.base,
+                                fontWeight: T.weight.semibold,
+                                color: activeTab === key ? '#ffffff' : C.text,
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                borderRadius: '10px',
+                            }}>
+                            <Icon style={{ width: 16, height: 16 }} /> {label}
                         </button>
                     ))}
                 </div>
@@ -146,21 +173,32 @@ export default function StudentBatchesPage() {
             {/* ══ MY BATCHES TAB ══════════════════════════════════════════ */}
             {activeTab === 'my' && (
                 myBatches.length === 0 ? (
-                    <div className="rounded-2xl p-16 text-center"
-                        style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                            style={{ backgroundColor: C.innerBg }}>
-                            <BookOpen className="w-8 h-8" style={{ color: C.cardBorder }} />
+                    <div className="p-14 text-center border border-dashed"
+                        style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
+                        <div className="flex items-center justify-center mx-auto mb-4"
+                            style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                            <MdMenuBook style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
                         </div>
                         <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>
                             No Batches Yet
                         </h3>
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, marginTop: 8, maxWidth: 380, margin: '8px auto 0' }}>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, marginTop: 8, maxWidth: 380, margin: '8px auto 0' }}>
                             You haven't joined any batches. Explore available batches or wait for your instructor to add you.
                         </p>
                         <button onClick={() => setActiveTab('discover')}
-                            className="mt-6 px-6 py-3 rounded-xl text-white text-sm font-bold border-none cursor-pointer hover:opacity-90 transition-opacity"
-                            style={{ background: C.gradientBtn }}>
+                            className="mt-6 cursor-pointer hover:opacity-90 transition-opacity"
+                            style={{
+                                background: C.gradientBtn,
+                                color: '#ffffff',
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.base,
+                                fontWeight: T.weight.bold,
+                                padding: '12px 24px',
+                                borderRadius: '10px',
+                                border: 'none',
+                                boxShadow: S.btn,
+                                marginTop: 24,
+                            }}>
                             Discover Batches
                         </button>
                     </div>
@@ -171,14 +209,28 @@ export default function StudentBatchesPage() {
                             const attColor = getAttColor(pct);
 
                             return (
-                                <div key={batch._id} className="rounded-2xl overflow-hidden flex flex-col transition-all hover:shadow-lg"
-                                    style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-
+                                <div key={batch._id} className="flex flex-col transition-all"
+                                    style={{
+                                        backgroundColor: C.cardBg,
+                                        border: `1px solid ${C.cardBorder}`,
+                                        boxShadow: S.card,
+                                        borderRadius: R['2xl'],
+                                        overflow: 'hidden',
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.boxShadow = S.cardHover}
+                                    onMouseLeave={e => e.currentTarget.style.boxShadow = S.card}
+                                >
                                     {/* Header */}
-                                    <div className="p-5 flex items-start gap-4" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
-                                        <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
-                                            style={{ backgroundColor: `${C.btnPrimary}15`, border: `1px solid ${C.btnPrimary}25` }}>
-                                            <BookOpen className="w-7 h-7" style={{ color: C.btnPrimary }} />
+                                    <div className="p-5 flex items-start gap-4"
+                                        style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                                        <div className="flex items-center justify-center shrink-0"
+                                            style={{
+                                                width: 56,
+                                                height: 56,
+                                                borderRadius: '10px',
+                                                backgroundColor: C.iconBg,
+                                            }}>
+                                            <MdMenuBook style={{ width: 28, height: 28, color: C.iconColor }} />
                                         </div>
 
                                         <div className="flex-1 min-w-0">
@@ -187,22 +239,23 @@ export default function StudentBatchesPage() {
                                                     style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>
                                                     {batch.name}
                                                 </h2>
-                                                <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shrink-0"
+                                                <span
                                                     style={batch.status === 'active'
-                                                        ? { backgroundColor: C.successBg, color: C.success, fontFamily: T.fontFamily }
-                                                        : { backgroundColor: `${C.btnPrimary}15`, color: C.btnPrimary, fontFamily: T.fontFamily }}>
+                                                        ? { backgroundColor: C.successBg, color: C.success, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '4px 10px', borderRadius: '10px', border: `1px solid ${C.successBorder}`, flexShrink: 0 }
+                                                        : { backgroundColor: C.btnViewAllBg, color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '4px 10px', borderRadius: '10px', border: `1px solid ${C.cardBorder}`, flexShrink: 0 }}>
                                                     {batch.status}
                                                 </span>
                                             </div>
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, marginTop: 2 }}>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, marginTop: 2 }}>
                                                 {batch.courseId?.title}
                                             </p>
                                             <div className="flex items-center gap-2 mt-2">
                                                 <img
                                                     src={batch.tutorId?.userId?.profileImage || `https://ui-avatars.com/api/?name=${batch.tutorId?.userId?.name}`}
-                                                    alt="" className="w-5 h-5 rounded-full"
+                                                    alt=""
+                                                    style={{ width: 20, height: 20, borderRadius: R.full }}
                                                 />
-                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, fontWeight: T.weight.medium }}>
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, fontWeight: T.weight.semibold }}>
                                                     {batch.tutorId?.userId?.name}
                                                 </span>
                                             </div>
@@ -211,18 +264,18 @@ export default function StudentBatchesPage() {
 
                                     {/* Date + Schedule */}
                                     <div className="grid grid-cols-2 divide-x"
-                                        style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
+                                        style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg, borderColor: C.cardBorder }}>
                                         {[
-                                            { icon: Calendar, label: 'Start Date', value: new Date(batch.startDate).toLocaleDateString() },
-                                            { icon: Clock, label: 'Schedule', value: batch.scheduleDescription || 'Flexible' },
+                                            { icon: MdCalendarMonth, label: 'Start Date', value: new Date(batch.startDate).toLocaleDateString() },
+                                            { icon: MdAccessTime, label: 'Schedule', value: batch.scheduleDescription || 'Flexible' },
                                         ].map(({ icon: Icon, label, value }) => (
                                             <div key={label} className="p-4 flex flex-col gap-1" style={{ borderColor: C.cardBorder }}>
                                                 <div className="flex items-center gap-1.5"
-                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase' }}>
-                                                    <Icon className="w-3.5 h-3.5" /> {label}
+                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                    <Icon style={{ width: 14, height: 14 }} /> {label}
                                                 </div>
                                                 <span className="truncate"
-                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading }}>
+                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}>
                                                     {value}
                                                 </span>
                                             </div>
@@ -236,18 +289,19 @@ export default function StudentBatchesPage() {
                                                 <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
                                                     Your Attendance
                                                 </h3>
-                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, marginTop: 2 }}>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, marginTop: 2 }}>
                                                     Overall presence rate
                                                 </p>
                                             </div>
-                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: attColor }}>
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.bold, color: attColor }}>
                                                 {pct}%
                                             </span>
                                         </div>
 
-                                        <div className="w-full h-2 rounded-full overflow-hidden mb-5" style={{ backgroundColor: C.innerBg }}>
-                                            <div className="h-full rounded-full transition-all duration-700"
-                                                style={{ width: `${pct}%`, backgroundColor: attColor }} />
+                                        <div className="w-full overflow-hidden mb-5"
+                                            style={{ height: 8, borderRadius: '10px', backgroundColor: C.innerBg }}>
+                                            <div className="h-full transition-all duration-700"
+                                                style={{ width: `${pct}%`, backgroundColor: attColor, borderRadius: '10px' }} />
                                         </div>
 
                                         <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
@@ -255,43 +309,47 @@ export default function StudentBatchesPage() {
                                         </p>
                                         <div className="space-y-2.5">
                                             {batch.recentLogs?.length > 0 ? batch.recentLogs.map(log => (
-                                                <div key={log._id} className="flex items-center justify-between p-3 rounded-xl"
-                                                    style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
+                                                <div key={log._id} className="flex items-center justify-between"
+                                                    style={{
+                                                        backgroundColor: C.innerBg,
+                                                        border: `1px solid ${C.cardBorder}`,
+                                                        borderRadius: '10px',
+                                                        padding: 12,
+                                                    }}>
                                                     <div className="flex items-center gap-3">
-                                                        <div className="p-1.5 rounded-lg"
-                                                            style={{
-                                                                backgroundColor: log.status === 'present' ? C.successBg :
-                                                                                 log.status === 'absent'  ? C.dangerBg  : C.warningBg,
-                                                            }}>
+                                                        <div style={{
+                                                            padding: 6,
+                                                            borderRadius: '10px',
+                                                            backgroundColor: log.status === 'present' ? C.successBg :
+                                                                             log.status === 'absent'  ? C.dangerBg  : C.warningBg,
+                                                        }}>
                                                             {getStatusIcon(log.status)}
                                                         </div>
                                                         <div>
                                                             <span className="block capitalize"
-                                                                style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading }}>
+                                                                style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}>
                                                                 {log.status}
                                                             </span>
                                                             <span className="block"
-                                                                style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+                                                                style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
                                                                 {new Date(log.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                                                             </span>
                                                         </div>
                                                     </div>
                                                     {log.remarks && (
                                                         <span className="truncate max-w-[140px] italic"
-                                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}
+                                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}
                                                             title={log.remarks}>
                                                             "{log.remarks}"
                                                         </span>
                                                     )}
                                                 </div>
                                             )) : (
-                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, fontStyle: 'italic' }}>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, fontStyle: 'italic' }}>
                                                     No attendance records yet.
                                                 </p>
                                             )}
                                         </div>
-
-
                                     </div>
                                 </div>
                             );
@@ -305,14 +363,30 @@ export default function StudentBatchesPage() {
                 <div className="space-y-5">
                     {/* Search */}
                     <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: C.text, opacity: 0.4 }} />
+                        <MdSearch
+                            style={{ width: 16, height: 16, color: C.text, opacity: 0.5 }}
+                            className="absolute left-4 top-1/2 -translate-y-1/2"
+                        />
                         <input
                             type="text"
                             placeholder="Search batches by name or course…"
                             value={discoverSearch}
                             onChange={e => setDiscoverSearch(e.target.value)}
-                            className="w-full pl-11 pr-4 py-3 rounded-xl focus:outline-none transition-all"
-                            style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, color: C.heading, fontSize: T.size.sm, fontFamily: T.fontFamily, boxShadow: S.card }}
+                            className="w-full focus:outline-none transition-all"
+                            style={{
+                                backgroundColor: C.cardBg,
+                                border: `1px solid ${C.cardBorder}`,
+                                borderRadius: '10px',
+                                color: C.heading,
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.base,
+                                fontWeight: T.weight.semibold,
+                                outline: 'none',
+                                width: '100%',
+                                padding: '12px 16px 12px 44px',
+                                boxShadow: S.card,
+                                transition: 'all 0.2s ease',
+                            }}
                             onFocus={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
                             onBlur={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.boxShadow = S.card; }}
                         />
@@ -320,31 +394,43 @@ export default function StudentBatchesPage() {
 
                     {loadingAvail ? (
                         <div className="flex justify-center py-20">
-                            <div className="w-10 h-10 rounded-full border-[3px] animate-spin"
+                            <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
                                 style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
                         </div>
                     ) : filteredAvailable.length === 0 ? (
-                        <div className="rounded-2xl p-16 text-center"
-                            style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                            <Globe className="w-12 h-12 mx-auto mb-4" style={{ color: C.cardBorder }} />
+                        <div className="p-14 text-center border border-dashed"
+                            style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
+                            <div className="flex items-center justify-center mx-auto mb-4"
+                                style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                                <MdLanguage style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
+                            </div>
                             <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>
                                 {discoverSearch ? 'No batches match your search' : 'No Available Batches'}
                             </h3>
-                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, marginTop: 8 }}>
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, marginTop: 8 }}>
                                 {discoverSearch ? 'Try a different search term.' : 'Check back later — new batches are added regularly.'}
                             </p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                             {filteredAvailable.map(batch => (
-                                <div key={batch._id} className="rounded-2xl overflow-hidden flex flex-col transition-all hover:shadow-lg"
-                                    style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-
+                                <div key={batch._id} className="flex flex-col transition-all"
+                                    style={{
+                                        backgroundColor: C.cardBg,
+                                        border: `1px solid ${C.cardBorder}`,
+                                        boxShadow: S.card,
+                                        borderRadius: R['2xl'],
+                                        overflow: 'hidden',
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.boxShadow = S.cardHover}
+                                    onMouseLeave={e => e.currentTarget.style.boxShadow = S.card}
+                                >
                                     {/* Header */}
-                                    <div className="p-5 flex items-start gap-4" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
-                                        <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                                            style={{ backgroundColor: `${C.btnPrimary}15` }}>
-                                            <BookOpen className="w-6 h-6" style={{ color: C.btnPrimary }} />
+                                    <div className="p-5 flex items-start gap-4"
+                                        style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                                        <div className="flex items-center justify-center shrink-0"
+                                            style={{ width: 48, height: 48, borderRadius: '10px', backgroundColor: C.iconBg }}>
+                                            <MdMenuBook style={{ width: 24, height: 24, color: C.iconColor }} />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-start justify-between gap-2">
@@ -353,24 +439,29 @@ export default function StudentBatchesPage() {
                                                     {batch.name}
                                                 </h2>
                                                 {/* Institute vs Global badge */}
-                                                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full shrink-0 text-[10px] font-bold"
+                                                <span className="flex items-center gap-1 shrink-0"
                                                     style={batch.instituteId
-                                                        ? { backgroundColor: `${C.btnPrimary}10`, color: C.btnPrimary }
-                                                        : { backgroundColor: '#EFF6FF', color: '#2563EB' }}>
-                                                    {batch.instituteId ? <Building2 className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
+                                                        ? { backgroundColor: C.btnViewAllBg, color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, padding: '4px 10px', borderRadius: '10px', border: `1px solid ${C.cardBorder}` }
+                                                        : { backgroundColor: '#EFF6FF', color: '#2563EB', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, padding: '4px 10px', borderRadius: '10px' }}>
+                                                    {batch.instituteId
+                                                        ? <MdBusiness style={{ width: 12, height: 12 }} />
+                                                        : <MdLanguage style={{ width: 12, height: 12 }} />}
                                                     {batch.instituteId ? 'Institute' : 'Global'}
                                                 </span>
                                             </div>
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, marginTop: 2 }}>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, marginTop: 2 }}>
                                                 {batch.courseId?.title || 'Course'}
                                             </p>
                                             <div className="flex items-center gap-4 mt-2">
-                                                <span className="flex items-center gap-1" style={{ fontSize: T.size.xs, color: C.textMuted }}>
-                                                    <Users className="w-3 h-3" />
+                                                <span className="flex items-center gap-1"
+                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
+                                                    <MdPeople style={{ width: 14, height: 14 }} />
                                                     {batch.students?.length || 0} students
                                                 </span>
                                                 {batch.grade && (
-                                                    <span style={{ fontSize: T.size.xs, color: C.textMuted }}>Grade: {batch.grade}</span>
+                                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
+                                                        Grade: {batch.grade}
+                                                    </span>
                                                 )}
                                             </div>
                                         </div>
@@ -378,18 +469,18 @@ export default function StudentBatchesPage() {
 
                                     {/* Date + Schedule */}
                                     <div className="grid grid-cols-2 divide-x"
-                                        style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
+                                        style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg, borderColor: C.cardBorder }}>
                                         {[
-                                            { icon: Calendar, label: 'Start Date', value: batch.startDate ? new Date(batch.startDate).toLocaleDateString() : '—' },
-                                            { icon: Clock, label: 'Schedule', value: batch.scheduleDescription || 'Flexible' },
+                                            { icon: MdCalendarMonth, label: 'Start Date', value: batch.startDate ? new Date(batch.startDate).toLocaleDateString() : '—' },
+                                            { icon: MdAccessTime, label: 'Schedule', value: batch.scheduleDescription || 'Flexible' },
                                         ].map(({ icon: Icon, label, value }) => (
-                                            <div key={label} className="p-4 flex flex-col gap-1">
+                                            <div key={label} className="p-4 flex flex-col gap-1" style={{ borderColor: C.cardBorder }}>
                                                 <div className="flex items-center gap-1.5"
-                                                    style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase' }}>
-                                                    <Icon className="w-3.5 h-3.5" /> {label}
+                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                    <Icon style={{ width: 14, height: 14 }} /> {label}
                                                 </div>
                                                 <span className="truncate"
-                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading }}>
+                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}>
                                                     {value}
                                                 </span>
                                             </div>
@@ -401,23 +492,37 @@ export default function StudentBatchesPage() {
                                         <div className="flex items-center gap-2 min-w-0">
                                             <img
                                                 src={batch.tutorId?.userId?.profileImage || `https://ui-avatars.com/api/?name=${batch.tutorId?.userId?.name || 'T'}`}
-                                                alt="" className="w-8 h-8 rounded-full shrink-0"
+                                                alt=""
+                                                style={{ width: 32, height: 32, borderRadius: R.full, flexShrink: 0 }}
                                             />
                                             <div className="min-w-0">
-                                                <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                                                <p className="truncate"
+                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
                                                     {batch.tutorId?.userId?.name || 'Instructor'}
                                                 </p>
-                                                <p style={{ fontSize: T.size.xs, color: C.textMuted }}>Instructor</p>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
+                                                    Instructor
+                                                </p>
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => handleJoin(batch._id)}
                                             disabled={joiningId === batch._id}
-                                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold border-none cursor-pointer hover:opacity-90 disabled:opacity-60 transition-opacity shrink-0 shadow-md"
-                                            style={{ background: C.gradientBtn, fontFamily: T.fontFamily }}>
+                                            className="flex items-center gap-2 shrink-0 hover:opacity-90 disabled:opacity-60 transition-opacity cursor-pointer"
+                                            style={{
+                                                background: C.gradientBtn,
+                                                color: '#ffffff',
+                                                fontFamily: T.fontFamily,
+                                                fontSize: T.size.base,
+                                                fontWeight: T.weight.bold,
+                                                padding: '10px 20px',
+                                                borderRadius: '10px',
+                                                border: 'none',
+                                                boxShadow: S.btn,
+                                            }}>
                                             {joiningId === batch._id
-                                                ? <><Loader2 className="w-4 h-4 animate-spin" /> Joining…</>
-                                                : <><LogIn className="w-4 h-4" /> Join Batch</>
+                                                ? <><MdHourglassEmpty style={{ width: 16, height: 16 }} className="animate-spin" /> Joining…</>
+                                                : <><MdLogin style={{ width: 16, height: 16 }} /> Join Batch</>
                                             }
                                         </button>
                                     </div>

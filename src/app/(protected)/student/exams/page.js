@@ -3,21 +3,21 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
-  FileText,
-  Timer,
-  CheckCircle,
-  ArrowRight,
-  Clock,
-  Search,
-  Filter,
-  Sparkles,
-  Calendar,
-  BookOpen,
-  PlayCircle,
-  ChevronLeft,
-  ChevronRight,
-  Zap,
-} from "lucide-react";
+  MdArticle,
+  MdTimer,
+  MdCheckCircle,
+  MdArrowForward,
+  MdAccessTime,
+  MdSearch,
+  MdFilterList,
+  MdAutoAwesome,
+  MdCalendarToday,
+  MdMenuBook,
+  MdPlayCircleOutline,
+  MdChevronLeft,
+  MdChevronRight,
+  MdFlashOn,
+} from "react-icons/md";
 import api from "@/lib/axios";
 import { getAudienceDisplay } from "@/lib/audienceDisplay";
 import { C, T, S, R, FX } from "@/constants/studentTokens";
@@ -26,7 +26,7 @@ import StatCard from "@/components/StatCard";
 // Focus Handlers
 const onFocusHandler = (e) => {
   e.target.style.borderColor = C.btnPrimary;
-  e.target.style.boxShadow = "0 0 0 3px rgba(117,115,232,0.10)";
+  e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`;
 };
 const onBlurHandler = (e) => {
   e.target.style.borderColor = "transparent";
@@ -36,11 +36,11 @@ const onBlurHandler = (e) => {
 const baseInputStyle = {
   backgroundColor: C.surfaceWhite,
   border: "1.5px solid transparent",
-  borderRadius: R.xl,
+  borderRadius: "10px",
   color: C.heading,
   fontFamily: T.fontFamily,
-  fontSize: T.size.sm,
-  fontWeight: T.weight.medium,
+  fontSize: T.size.base, // Updated from sm to base
+  fontWeight: T.weight.semibold,
   outline: "none",
   width: "100%",
   padding: "10px 16px",
@@ -130,7 +130,7 @@ export default function StudentExamsPage() {
       label: "Completed",
       bg: C.btnViewAllBg,
       text: C.btnPrimary,
-      border: C.btnPrimary,
+      border: C.btnViewAllBg, // Avoided strong border for completed
     },
     expired: {
       label: "Expired",
@@ -156,7 +156,7 @@ export default function StudentExamsPage() {
         <p
           style={{
             color: C.textMuted,
-            fontSize: T.size.sm,
+            fontSize: T.size.base, // Updated from sm to base
             fontWeight: T.weight.bold,
           }}
         >
@@ -177,7 +177,7 @@ export default function StudentExamsPage() {
     <div
       className="w-full min-h-screen p-6 space-y-6"
       style={{
-        backgroundColor: C.pageBgAlt,
+        backgroundColor: C.pageBg,
         fontFamily: T.fontFamily,
         color: C.text,
       }}
@@ -195,16 +195,16 @@ export default function StudentExamsPage() {
         <div className="flex items-center gap-4">
           <div
             className="w-12 h-12 flex items-center justify-center shrink-0"
-            style={{ backgroundColor: C.innerBox, borderRadius: R.xl }}
+            style={{ backgroundColor: C.innerBox, borderRadius: "10px" }}
           >
-            <FileText size={24} color={C.btnPrimary} />
+            <MdArticle size={24} color={C.btnPrimary} />
           </div>
           <div>
             <h1
               style={{
                 color: C.heading,
                 fontSize: T.size.xl,
-                fontWeight: T.weight.black,
+                fontWeight: T.weight.bold, // Updated from black to bold
                 margin: "0 0 4px 0",
               }}
             >
@@ -213,8 +213,8 @@ export default function StudentExamsPage() {
             <p
               style={{
                 color: C.textMuted,
-                fontSize: T.size.sm,
-                fontWeight: T.weight.medium,
+                fontSize: T.size.base, // Updated from sm to base
+                fontWeight: T.weight.semibold,
                 margin: 0,
               }}
             >
@@ -229,28 +229,28 @@ export default function StudentExamsPage() {
         <StatCard
           label="Total Exams"
           value={stats.all}
-          icon={FileText}
+          icon={MdArticle}
           iconBg="#E3DFF8"
           iconColor={C.btnPrimary}
         />
         <StatCard
           label="Available Now"
           value={stats.available}
-          icon={PlayCircle}
+          icon={MdPlayCircleOutline}
           iconBg={C.successBg}
           iconColor={C.success}
         />
         <StatCard
           label="Upcoming"
           value={stats.upcoming}
-          icon={Calendar}
+          icon={MdCalendarToday}
           iconBg={C.warningBg}
           iconColor={C.warning}
         />
         <StatCard
           label="Completed"
           value={stats.completed}
-          icon={CheckCircle}
+          icon={MdCheckCircle}
           iconBg="rgba(79,70,229,0.1)"
           iconColor="#4F46E5"
         />
@@ -259,11 +259,12 @@ export default function StudentExamsPage() {
       {/* ── Today's Exams Carousel ─────────────────────────────── */}
       {todayExams.length > 0 && (
         <div
-          className="rounded-3xl p-6 relative overflow-hidden"
+          className="p-6 relative overflow-hidden"
           style={{
-            background: "linear-gradient(135deg, #1E1B4B 0%, #4338CA 100%)",
+            background: "linear-gradient(to top, #4A00E0, #8E2DE2)", // Consistent Neon Glow Gradient
             border: "1px solid rgba(255,255,255,0.1)",
             boxShadow: S.card,
+            borderRadius: R["2xl"],
           }}
         >
           {/* dot grid bg */}
@@ -280,19 +281,20 @@ export default function StudentExamsPage() {
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  className="w-10 h-10 flex items-center justify-center"
                   style={{
                     backgroundColor: "rgba(255,255,255,0.15)",
                     border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: "10px",
                   }}
                 >
-                  <Zap size={18} className="text-amber-300" />
+                  <MdFlashOn size={18} className="text-amber-300" />
                 </div>
                 <div>
                   <h2
                     style={{
                       fontSize: T.size.md,
-                      fontWeight: T.weight.black,
+                      fontWeight: T.weight.bold, // Updated from black to bold
                       color: "#ffffff",
                       margin: 0,
                     }}
@@ -321,10 +323,11 @@ export default function StudentExamsPage() {
                         (i) => (i - 1 + todayExams.length) % todayExams.length,
                       )
                     }
-                    className="w-9 h-9 rounded-xl flex items-center justify-center border-none cursor-pointer transition-colors"
+                    className="w-9 h-9 flex items-center justify-center border-none cursor-pointer transition-colors"
                     style={{
                       backgroundColor: "rgba(255,255,255,0.15)",
                       color: "#fff",
+                      borderRadius: "8px",
                     }}
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.backgroundColor =
@@ -335,7 +338,7 @@ export default function StudentExamsPage() {
                         "rgba(255,255,255,0.15)")
                     }
                   >
-                    <ChevronLeft size={18} />
+                    <MdChevronLeft size={18} />
                   </button>
                   <span
                     style={{
@@ -350,10 +353,11 @@ export default function StudentExamsPage() {
                     onClick={() =>
                       setTodayCarouselIdx((i) => (i + 1) % todayExams.length)
                     }
-                    className="w-9 h-9 rounded-xl flex items-center justify-center border-none cursor-pointer transition-colors"
+                    className="w-9 h-9 flex items-center justify-center border-none cursor-pointer transition-colors"
                     style={{
                       backgroundColor: "rgba(255,255,255,0.15)",
                       color: "#fff",
+                      borderRadius: "8px",
                     }}
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.backgroundColor =
@@ -364,7 +368,7 @@ export default function StudentExamsPage() {
                         "rgba(255,255,255,0.15)")
                     }
                   >
-                    <ChevronRight size={18} />
+                    <MdChevronRight size={18} />
                   </button>
                 </div>
               )}
@@ -376,26 +380,27 @@ export default function StudentExamsPage() {
               if (!exam) return null;
               return (
                 <div
-                  className="rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-5"
+                  className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-5"
                   style={{
                     backgroundColor: "rgba(255,255,255,0.1)",
                     border: "1px solid rgba(255,255,255,0.15)",
                     backdropFilter: "blur(8px)",
+                    borderRadius: "10px",
                   }}
                 >
                   <div className="flex items-start gap-4 flex-1 min-w-0">
                     <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+                      className="w-12 h-12 flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: "10px" }}
                     >
-                      <FileText size={22} className="text-white" />
+                      <MdArticle size={22} className="text-white" />
                     </div>
                     <div className="min-w-0">
                       <h3
                         className="truncate"
                         style={{
                           fontSize: T.size.lg,
-                          fontWeight: T.weight.black,
+                          fontWeight: T.weight.bold, // Updated from black to bold
                           color: "#ffffff",
                           margin: "0 0 4px 0",
                         }}
@@ -422,7 +427,7 @@ export default function StudentExamsPage() {
                             color: "rgba(255,255,255,0.8)",
                           }}
                         >
-                          <Timer size={13} className="text-amber-300" />
+                          <MdTimer size={13} className="text-amber-300" />
                           {exam.duration} mins
                         </span>
                         <span
@@ -433,7 +438,7 @@ export default function StudentExamsPage() {
                             color: "rgba(255,255,255,0.8)",
                           }}
                         >
-                          <BookOpen size={13} className="text-sky-300" />
+                          <MdMenuBook size={13} className="text-sky-300" />
                           {exam.totalQuestions ||
                             exam.questions?.length ||
                             "—"}{" "}
@@ -448,7 +453,7 @@ export default function StudentExamsPage() {
                               color: "rgba(255,255,255,0.8)",
                             }}
                           >
-                            <Clock size={13} className="text-red-300" />
+                            <MdAccessTime size={13} className="text-red-300" />
                             Ends{" "}
                             {new Date(exam.endDate).toLocaleTimeString(
                               "en-US",
@@ -462,17 +467,20 @@ export default function StudentExamsPage() {
 
                   <Link
                     href={`/student/exams/${exam._id}/take`}
-                    className="shrink-0"
+                    className="shrink-0 text-decoration-none"
                   >
                     <button
-                      className="flex items-center gap-2 px-7 py-3.5 rounded-xl border-none cursor-pointer font-black text-sm transition-transform hover:scale-105 shadow-lg"
+                      className="flex items-center gap-2 px-7 py-3.5 border-none cursor-pointer transition-transform hover:scale-105 shadow-lg"
                       style={{
-                        background: "linear-gradient(135deg,#F59E0B,#EF4444)",
-                        color: "#fff",
+                        background: C.surfaceWhite, // Changed from gradient to keep it clean
+                        color: C.btnPrimary,
                         fontFamily: T.fontFamily,
+                        fontSize: T.size.base, // Updated from sm to base
+                        fontWeight: T.weight.bold, // Updated from black to bold
+                        borderRadius: "10px",
                       }}
                     >
-                      <PlayCircle size={16} className="fill-white" /> Take Exam
+                      <MdPlayCircleOutline size={16} /> Take Exam
                     </button>
                   </Link>
                 </div>
@@ -533,11 +541,11 @@ export default function StudentExamsPage() {
                     style={{
                       backgroundColor: isActive ? C.btnPrimary : C.surfaceWhite,
                       color: isActive ? "#fff" : C.textMuted,
-                      borderRadius: R.lg,
-                      fontSize: T.size.sm,
-                      fontWeight: T.weight.bold,
+                      borderRadius: "8px",
+                      fontSize: T.size.base, // Updated from sm to base
+                      fontWeight: isActive ? T.weight.bold : T.weight.semibold,
                       fontFamily: T.fontFamily,
-                      boxShadow: isActive ? S.card : "none",
+                      boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.1)' : "none",
                       border: isActive ? "none" : `1px solid ${C.cardBorder}`,
                     }}
                   >
@@ -549,7 +557,7 @@ export default function StudentExamsPage() {
 
             {/* Search */}
             <div className="relative w-full lg:w-72 shrink-0">
-              <Search
+              <MdSearch
                 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
                 style={{ color: C.textMuted }}
               />
@@ -590,7 +598,7 @@ export default function StudentExamsPage() {
                   className={i === 5 ? "text-right" : ""}
                   style={{
                     fontSize: "10px",
-                    fontWeight: T.weight.bold,
+                    fontWeight: T.weight.bold, // Updated from black to bold
                     color: C.textMuted,
                     textTransform: "uppercase",
                     letterSpacing: "0.5px",
@@ -622,7 +630,7 @@ export default function StudentExamsPage() {
                     >
                       <span
                         style={{
-                          fontSize: T.size.sm,
+                          fontSize: T.size.base, // Updated from sm to base
                           fontWeight: T.weight.bold,
                           color: C.textMuted,
                         }}
@@ -636,7 +644,7 @@ export default function StudentExamsPage() {
                             className="truncate"
                             style={{
                               fontSize: T.size.md,
-                              fontWeight: T.weight.black,
+                              fontWeight: T.weight.bold, // Updated from black to bold
                               color: C.heading,
                               margin: 0,
                             }}
@@ -644,12 +652,13 @@ export default function StudentExamsPage() {
                             {exam.title}
                           </p>
                           <span
-                            className={`shrink-0 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${audienceInfo.badgeClass}`}
+                            className={`shrink-0 px-2 py-0.5 rounded-md text-[9px] uppercase tracking-wider ${audienceInfo.badgeClass}`}
+                            style={{ fontWeight: T.weight.bold }} // Updated from black to bold
                           >
                             {audienceInfo.label}
                           </span>
                           {exam.isFree && (
-                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black rounded-md uppercase tracking-wider border border-emerald-200">
+                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-bold rounded-md uppercase tracking-wider border border-emerald-200">
                               Free
                             </span>
                           )}
@@ -683,18 +692,18 @@ export default function StudentExamsPage() {
                       <div
                         className="flex items-center gap-1.5"
                         style={{
-                          fontSize: T.size.sm,
+                          fontSize: T.size.base, // Updated from sm to base
                           fontWeight: T.weight.bold,
                           color: C.heading,
                         }}
                       >
-                        <Timer size={14} color={C.textMuted} /> {exam.duration}{" "}
+                        <MdTimer size={14} color={C.textMuted} /> {exam.duration}{" "}
                         mins
                       </div>
 
                       <div
                         style={{
-                          fontSize: T.size.sm,
+                          fontSize: T.size.base, // Updated from sm to base
                           fontWeight: T.weight.bold,
                           color: C.heading,
                         }}
@@ -707,7 +716,7 @@ export default function StudentExamsPage() {
                         <span
                           style={{
                             fontSize: "10px",
-                            fontWeight: T.weight.black,
+                            fontWeight: T.weight.bold, // Updated from black to bold
                             padding: "4px 10px",
                             borderRadius: R.full,
                             textTransform: "uppercase",
@@ -727,13 +736,14 @@ export default function StudentExamsPage() {
                             className="text-decoration-none"
                           >
                             <button
-                              className="h-9 w-full rounded-xl cursor-pointer border-none transition-opacity hover:opacity-90 shadow-sm"
+                              className="h-9 w-full cursor-pointer border-none transition-opacity hover:opacity-90 shadow-sm"
                               style={{
                                 background: C.gradientBtn,
                                 color: "#fff",
                                 fontSize: T.size.xs,
                                 fontWeight: T.weight.bold,
                                 fontFamily: T.fontFamily,
+                                borderRadius: "10px",
                               }}
                             >
                               Start Exam
@@ -745,14 +755,15 @@ export default function StudentExamsPage() {
                             className="text-decoration-none"
                           >
                             <button
-                              className="h-9 w-full rounded-xl cursor-pointer transition-colors hover:bg-slate-50 shadow-sm"
+                              className="h-9 w-full cursor-pointer transition-colors hover:bg-slate-50 shadow-sm border"
                               style={{
                                 backgroundColor: C.surfaceWhite,
-                                border: `1px solid ${C.cardBorder}`,
+                                borderColor: C.cardBorder,
                                 color: C.btnPrimary,
                                 fontSize: T.size.xs,
                                 fontWeight: T.weight.bold,
                                 fontFamily: T.fontFamily,
+                                borderRadius: "10px",
                               }}
                             >
                               View Result
@@ -768,7 +779,7 @@ export default function StudentExamsPage() {
                               textAlign: "center",
                               backgroundColor: C.innerBox,
                               padding: "6px",
-                              borderRadius: R.md,
+                              borderRadius: "8px",
                             }}
                           >
                             {new Date(exam.startDate).toLocaleDateString(
@@ -786,7 +797,7 @@ export default function StudentExamsPage() {
                               textAlign: "center",
                               backgroundColor: C.dangerBg,
                               padding: "6px",
-                              borderRadius: R.md,
+                              borderRadius: "8px",
                               border: `1px solid ${C.dangerBorder}`,
                             }}
                           >
@@ -803,7 +814,7 @@ export default function StudentExamsPage() {
                 className="text-center py-20 flex flex-col items-center"
                 style={{ backgroundColor: C.outerCard }}
               >
-                <FileText
+                <MdArticle
                   size={48}
                   color={C.textMuted}
                   style={{ opacity: 0.3, marginBottom: "16px" }}
@@ -820,8 +831,8 @@ export default function StudentExamsPage() {
                 </p>
                 <p
                   style={{
-                    fontSize: T.size.sm,
-                    fontWeight: T.weight.medium,
+                    fontSize: T.size.base, // Updated from sm to base
+                    fontWeight: T.weight.semibold,
                     color: C.textMuted,
                     margin: 0,
                   }}

@@ -3,17 +3,26 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-    Plus, Edit, Eye, EyeOff, Trash2, FileQuestion, Sparkles, Loader2, FileText
-} from 'lucide-react';
+    MdHelpOutline,
+    MdAutoAwesome,
+    MdHourglassEmpty,
+    MdArticle,
+    MdVisibility,
+    MdVisibilityOff,
+    MdEdit,
+    MdDelete,
+    MdAdd,
+    MdQuiz,
+} from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
-import { C, T, S, R } from '@/constants/tutorTokens';
+import { C, T, S, R } from '@/constants/studentTokens';
 
 export default function ExamDashboard() {
-    const [exams, setExams] = useState([]);
+    const [exams, setExams]     = useState([]);
     const [loading, setLoading] = useState(true);
-    const { confirmDialog } = useConfirm();
+    const { confirmDialog }     = useConfirm();
 
     useEffect(() => {
         const fetchExams = async () => {
@@ -33,12 +42,11 @@ export default function ExamDashboard() {
 
     const handleDelete = async (id) => {
         const isConfirmed = await confirmDialog(
-            "Delete Exam", 
-            "Are you sure you want to delete this exam? This action cannot be undone.", 
+            'Delete Exam',
+            'Are you sure you want to delete this exam? This action cannot be undone.',
             { variant: 'destructive' }
         );
         if (!isConfirmed) return;
-        
         try {
             const res = await api.delete(`/exams/${id}`);
             if (res?.data?.success) {
@@ -66,253 +74,337 @@ export default function ExamDashboard() {
     };
 
     return (
-        <div className="space-y-6 w-full" style={{ fontFamily: T.fontFamily }}>
-            {/* Page Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <div className="flex items-center gap-2.5 mb-1">
-                        <div 
-                            className="w-8 h-8 flex items-center justify-center shrink-0"
-                            style={{ 
-                                backgroundColor: C.iconBg, 
-                                borderRadius: R.md 
+        <div
+            className="space-y-5 w-full min-h-screen pb-8"
+            style={{ fontFamily: T.fontFamily, backgroundColor: C.pageBg, color: C.text }}
+        >
+            {/* ── Page Header ─────────────────────────────────────────────── */}
+            <div
+                className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-5"
+                style={{
+                    backgroundColor: C.cardBg,
+                    border:          `1px solid ${C.cardBorder}`,
+                    boxShadow:       S.card,
+                    borderRadius:    R['2xl'],
+                }}
+            >
+                <div className="flex items-center gap-3">
+                    {/* Icon Pill */}
+                    <div
+                        className="flex items-center justify-center rounded-lg shrink-0"
+                        style={{ width: 40, height: 40, backgroundColor: C.iconBg }}
+                    >
+                        <MdQuiz style={{ width: 20, height: 20, color: C.iconColor }} />
+                    </div>
+                    <div>
+                        <h1
+                            style={{
+                                fontFamily:  T.fontFamily,
+                                color:       C.heading,
+                                fontSize:    T.size['2xl'],
+                                fontWeight:  T.weight.bold,
+                                margin:      '0 0 2px 0',
+                                lineHeight:  T.leading.tight,
                             }}
                         >
-                            <FileQuestion size={18} color={C.iconColor} />
-                        </div>
-                        <h1 style={{ 
-                            color: C.heading, 
-                            fontSize: T.size['2xl'], 
-                            fontWeight: T.weight.black 
-                        }}>
                             Exams & Quizzes
                         </h1>
+                        <p
+                            style={{
+                                fontFamily:  T.fontFamily,
+                                color:       C.text,
+                                fontSize:    T.size.base,
+                                fontWeight:  T.weight.medium,
+                                margin:      0,
+                            }}
+                        >
+                            Create and manage assessments for your students.
+                        </p>
                     </div>
-                    <p style={{ 
-                        color: C.textMuted, 
-                        fontSize: T.size.sm, 
-                        fontWeight: T.weight.medium,
-                        paddingLeft: '2px' 
-                    }}>
-                        Create and manage assessments for your students.
-                    </p>
                 </div>
+
+                {/* Create AI Exam CTA */}
                 <Link href="/tutor/quizzes/create" className="shrink-0">
-                    <button 
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 transition-opacity hover:opacity-90"
+                    <button
+                        className="flex items-center justify-center gap-2 px-5 py-2.5 transition-opacity hover:opacity-90"
                         style={{
-                            background: C.gradientBtn,
-                            color: '#ffffff',
-                            borderRadius: R.xl,
-                            boxShadow: S.btn,
-                            fontSize: T.size.sm,
-                            fontWeight: T.weight.bold,
-                            fontFamily: T.fontFamily,
-                            border: 'none',
-                            cursor: 'pointer'
+                            background:   C.gradientBtn,
+                            color:        '#ffffff',
+                            borderRadius: '10px',
+                            boxShadow:    S.btn,
+                            fontFamily:   T.fontFamily,
+                            fontSize:     T.size.base,
+                            fontWeight:   T.weight.bold,
+                            border:       'none',
+                            cursor:       'pointer',
                         }}
                     >
-                        <Sparkles size={16} color="#ffffff" />
+                        <MdAutoAwesome style={{ width: 16, height: 16, color: '#ffffff' }} />
                         Create AI Exam
                     </button>
                 </Link>
             </div>
 
+            {/* ── Loading ─────────────────────────────────────────────────── */}
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3">
-                    <Loader2 className="w-7 h-7 animate-spin" style={{ color: C.btnPrimary }} />
-                    <p style={{ color: C.textMuted, fontSize: T.size.sm, fontFamily: T.fontFamily }}>
+                    <div className="relative w-12 h-12">
+                        <div
+                            className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                            style={{
+                                borderColor:    `${C.btnPrimary}30`,
+                                borderTopColor: C.btnPrimary,
+                            }}
+                        />
+                    </div>
+                    <p
+                        style={{
+                            fontFamily:  T.fontFamily,
+                            color:       C.text,
+                            fontSize:    T.size.base,
+                            fontWeight:  T.weight.medium,
+                        }}
+                    >
                         Loading exams...
                     </p>
                 </div>
+
+            /* ── Empty State ──────────────────────────────────────────────── */
             ) : exams.length === 0 ? (
-                <div 
-                    className="p-14 flex flex-col items-center justify-center text-center"
+                <div
+                    className="p-14 flex flex-col items-center justify-center text-center border border-dashed"
                     style={{
-                        backgroundColor: C.cardBg, // Outer Card
-                        border: `1px solid ${C.cardBorder}`,
-                        borderRadius: R['2xl'],
-                        boxShadow: S.card
+                        backgroundColor: C.cardBg,
+                        borderColor:     C.cardBorder,
+                        borderRadius:    R['2xl'],
+                        boxShadow:       S.card,
                     }}
                 >
-                    <div 
-                        className="w-16 h-16 flex items-center justify-center mb-5"
+                    <div
+                        className="flex items-center justify-center mb-5"
                         style={{
-                            backgroundColor: '#E3DFF8', // Inner Box
-                            border: `1px solid ${C.cardBorder}`,
-                            borderRadius: R['2xl']
+                            width:           56,
+                            height:          56,
+                            backgroundColor: C.innerBg,
+                            borderRadius:    R.lg,
                         }}
                     >
-                        <FileQuestion size={32} color={C.btnPrimary} />
+                        <MdHelpOutline
+                            style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.6 }}
+                        />
                     </div>
-                    <h2 style={{ 
-                        color: C.heading, 
-                        fontSize: T.size.lg, 
-                        fontWeight: T.weight.bold,
-                        marginBottom: '4px' 
-                    }}>
+                    <h2
+                        style={{
+                            fontFamily:   T.fontFamily,
+                            color:        C.heading,
+                            fontSize:     T.size.lg,
+                            fontWeight:   T.weight.bold,
+                            marginBottom: 6,
+                        }}
+                    >
                         No Exams Created
                     </h2>
-                    <p 
-                        className="max-w-sm mx-auto mb-7"
-                        style={{ 
-                            color: C.textMuted, 
-                            fontSize: T.size.sm,
-                            lineHeight: T.leading.relaxed 
+                    <p
+                        className="max-w-sm mx-auto mb-6"
+                        style={{
+                            fontFamily:  T.fontFamily,
+                            color:       C.text,
+                            fontSize:    T.size.base,
+                            lineHeight:  T.leading.relaxed,
                         }}
                     >
                         You haven't created any exams yet. Start by generating one with AI!
                     </p>
                     <Link href="/tutor/quizzes/create">
-                        <button 
+                        <button
                             className="flex items-center justify-center gap-2 px-5 py-2.5 transition-opacity hover:opacity-90"
                             style={{
-                                background: C.gradientBtn,
-                                color: '#ffffff',
-                                borderRadius: R.xl,
-                                boxShadow: S.btn,
-                                fontSize: T.size.sm,
-                                fontWeight: T.weight.bold,
-                                fontFamily: T.fontFamily,
-                                border: 'none',
-                                cursor: 'pointer'
+                                background:   C.gradientBtn,
+                                color:        '#ffffff',
+                                borderRadius: '10px',
+                                boxShadow:    S.btn,
+                                fontFamily:   T.fontFamily,
+                                fontSize:     T.size.base,
+                                fontWeight:   T.weight.bold,
+                                border:       'none',
+                                cursor:       'pointer',
                             }}
                         >
-                            <Plus size={16} color="#ffffff" /> 
+                            <MdAdd style={{ width: 18, height: 18, color: '#ffffff' }} />
                             Create New Exam
                         </button>
                     </Link>
                 </div>
+
+            /* ── Exam List ────────────────────────────────────────────────── */
             ) : (
                 <div className="grid gap-3">
-                    {exams.map((exam) => (
+                    {exams.map(exam => (
                         <div
                             key={exam?._id}
-                            className="px-5 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-transform hover:-translate-y-0.5"
+                            className="px-5 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all duration-200 hover:-translate-y-0.5"
                             style={{
-                                backgroundColor: C.cardBg, // Outer Card Wrapper
-                                border: `1px solid ${C.cardBorder}`,
-                                borderRadius: R.xl,
-                                boxShadow: S.card
+                                backgroundColor: C.cardBg,
+                                border:          `1px solid ${C.cardBorder}`,
+                                borderRadius:    '10px',
+                                boxShadow:       S.card,
                             }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; }}
                         >
-                            {/* Left: info */}
-                            <div className="flex items-start gap-4 flex-1 min-w-0">
-                                <div 
-                                    className="w-10 h-10 flex items-center justify-center shrink-0 mt-0.5"
+                            {/* ── Left: Info ──────────────────────────────── */}
+                            <div className="flex items-start gap-3 flex-1 min-w-0">
+                                {/* Icon */}
+                                <div
+                                    className="flex items-center justify-center shrink-0 mt-0.5"
                                     style={{
-                                        backgroundColor: '#E3DFF8', // Inner Box/Icon Wrapper
-                                        borderRadius: R.xl
+                                        width:           40,
+                                        height:          40,
+                                        backgroundColor: C.innerBg,
+                                        borderRadius:    '10px',
                                     }}
                                 >
-                                    <FileText size={20} color={C.btnPrimary} />
+                                    <MdArticle style={{ width: 20, height: 20, color: C.btnPrimary }} />
                                 </div>
+
+                                {/* Title + Meta */}
                                 <div className="min-w-0 flex flex-col gap-1.5">
                                     <div className="flex items-center gap-2.5 flex-wrap">
-                                        <h3 
+                                        <h3
                                             className="truncate"
-                                            style={{ 
-                                                color: C.heading, 
-                                                fontSize: T.size.md, 
-                                                fontWeight: T.weight.bold 
+                                            style={{
+                                                fontFamily:  T.fontFamily,
+                                                color:       C.heading,
+                                                fontSize:    T.size.md,
+                                                fontWeight:  T.weight.semibold,
                                             }}
                                         >
                                             {exam?.title ?? 'Untitled Exam'}
                                         </h3>
-                                        <span 
-                                            className="inline-flex items-center px-2.5 py-0.5 uppercase tracking-wide"
+
+                                        {/* Status Badge */}
+                                        <span
+                                            className="inline-flex items-center px-2.5 py-0.5 uppercase"
                                             style={{
-                                                fontSize: T.size.xs,
-                                                fontWeight: T.weight.bold,
-                                                borderRadius: R.full,
-                                                backgroundColor: exam?.status === 'published' ? C.successBg : '#D3D3F1',
-                                                color: exam?.status === 'published' ? C.success : C.btnViewAllText,
-                                                border: `1px solid ${exam?.status === 'published' ? C.successBorder : C.cardBorder}`
+                                                fontFamily:      T.fontFamily,
+                                                fontSize:        T.size.xs,
+                                                fontWeight:      T.weight.bold,
+                                                letterSpacing:   T.tracking.wider,
+                                                borderRadius:    '10px',
+                                                backgroundColor: exam?.status === 'published' ? C.successBg    : C.innerBg,
+                                                color:           exam?.status === 'published' ? C.success       : C.text,
+                                                border:          `1px solid ${exam?.status === 'published' ? C.successBorder : C.cardBorder}`,
                                             }}
                                         >
                                             {exam?.status ?? 'draft'}
                                         </span>
                                     </div>
-                                    <div 
+
+                                    {/* Meta row */}
+                                    <div
                                         className="flex items-center gap-2 flex-wrap"
-                                        style={{ 
-                                            color: C.textMuted, 
-                                            fontSize: T.size.xs,
-                                            fontWeight: T.weight.medium 
+                                        style={{
+                                            fontFamily:  T.fontFamily,
+                                            color:       C.text,
+                                            fontSize:    T.size.xs,
+                                            fontWeight:  T.weight.medium,
                                         }}
                                     >
-                                        <span style={{ color: C.btnPrimary, fontWeight: T.weight.semibold }}>
+                                        <span
+                                            style={{
+                                                color:      C.btnPrimary,
+                                                fontWeight: T.weight.semibold,
+                                            }}
+                                        >
                                             {exam?.courseTitle ?? 'Unknown Course'}
                                         </span>
-                                        <span>·</span>
-                                        <span>{exam?.createdAt ? new Date(exam.createdAt).toLocaleDateString() : 'N/A'}</span>
-                                        <span>·</span>
+                                        <span style={{ color: C.cardBorder }}>·</span>
+                                        <span>
+                                            {exam?.createdAt
+                                                ? new Date(exam.createdAt).toLocaleDateString()
+                                                : 'N/A'
+                                            }
+                                        </span>
+                                        <span style={{ color: C.cardBorder }}>·</span>
                                         <span>{exam?.attemptCount ?? 0} Attempts</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Right: actions */}
-                            <div className="flex items-center gap-2 w-full md:w-auto shrink-0 mt-2 md:mt-0">
+                            {/* ── Right: Actions ──────────────────────────── */}
+                            <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+                                {/* View Results */}
                                 <Link href={`/tutor/quizzes/${exam?._id}/results`}>
-                                    <button 
-                                        className="px-3 py-1.5 flex items-center justify-center transition-opacity hover:opacity-70"
+                                    <button
+                                        className="px-3 py-1.5 flex items-center justify-center transition-opacity hover:opacity-75"
                                         style={{
-                                            backgroundColor: '#E3DFF8', // Inner box style for nested button
-                                            border: `1px solid ${C.cardBorder}`,
-                                            color: C.btnViewAllText,
-                                            borderRadius: R.lg,
-                                            fontSize: T.size.xs,
-                                            fontWeight: T.weight.bold,
-                                            fontFamily: T.fontFamily,
-                                            cursor: 'pointer'
+                                            backgroundColor: C.btnViewAllBg,
+                                            border:          `1px solid ${C.cardBorder}`,
+                                            color:           C.btnViewAllText,
+                                            borderRadius:    '10px',
+                                            fontFamily:      T.fontFamily,
+                                            fontSize:        T.size.xs,
+                                            fontWeight:      T.weight.bold,
+                                            cursor:          'pointer',
                                         }}
                                     >
                                         View Results
                                     </button>
                                 </Link>
-                                
-                                <div className="flex items-center gap-1 ml-2">
+
+                                {/* Icon Action Buttons */}
+                                <div className="flex items-center gap-0.5 ml-1">
+                                    {/* Toggle Publish */}
                                     <button
                                         onClick={() => toggleStatus(exam?._id, exam?.status)}
                                         title={exam?.status === 'published' ? 'Unpublish' : 'Publish'}
-                                        className="w-8 h-8 flex items-center justify-center transition-opacity hover:opacity-70"
+                                        className="flex items-center justify-center transition-colors cursor-pointer border-none"
                                         style={{
+                                            width:           32,
+                                            height:          32,
                                             backgroundColor: 'transparent',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            borderRadius: R.md
+                                            borderRadius:    '10px',
                                         }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = C.innerBg}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                                     >
                                         {exam?.status === 'published'
-                                            ? <Eye size={18} color={C.success} />
-                                            : <EyeOff size={18} color={C.textMuted} />
+                                            ? <MdVisibility    style={{ width: 18, height: 18, color: C.success }} />
+                                            : <MdVisibilityOff style={{ width: 18, height: 18, color: C.text }} />
                                         }
                                     </button>
+
+                                    {/* Edit */}
                                     <Link href={`/tutor/quizzes/${exam?._id}/edit`}>
-                                        <button 
-                                            className="w-8 h-8 flex items-center justify-center transition-opacity hover:opacity-70"
+                                        <button
+                                            className="flex items-center justify-center transition-colors cursor-pointer border-none"
                                             style={{
+                                                width:           32,
+                                                height:          32,
                                                 backgroundColor: 'transparent',
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                                borderRadius: R.md
+                                                borderRadius:    '10px',
                                             }}
+                                            onMouseEnter={e => e.currentTarget.style.backgroundColor = C.innerBg}
+                                            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                                         >
-                                            <Edit size={16} color={C.textMuted} />
+                                            <MdEdit style={{ width: 16, height: 16, color: C.text }} />
                                         </button>
                                     </Link>
+
+                                    {/* Delete */}
                                     <button
                                         onClick={() => handleDelete(exam?._id)}
-                                        className="w-8 h-8 flex items-center justify-center transition-opacity hover:opacity-70"
+                                        className="flex items-center justify-center transition-colors cursor-pointer border-none"
                                         style={{
+                                            width:           32,
+                                            height:          32,
                                             backgroundColor: 'transparent',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            borderRadius: R.md
+                                            borderRadius:    '10px',
                                         }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = C.dangerBg}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                                     >
-                                        <Trash2 size={16} color={C.danger} />
+                                        <MdDelete style={{ width: 16, height: 16, color: C.danger }} />
                                     </button>
                                 </div>
                             </div>

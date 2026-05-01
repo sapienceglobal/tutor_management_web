@@ -3,35 +3,55 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-    Plus, Search, Edit, Trash2, Eye, TrendingUp,
-    Users, PlayCircle, BookOpen, Settings, Grid, List,
-    Star, Loader2, Flame, Sparkles, Hammer, Filter, MoreHorizontal, ChevronLeft, ChevronRight
-} from 'lucide-react';
+    MdAdd,
+    MdSearch,
+    MdEdit,
+    MdDelete,
+    MdVisibility,
+    MdTrendingUp,
+    MdPeople,
+    MdPlayCircle,
+    MdMenuBook,
+    MdSettings,
+    MdGridView,
+    MdList,
+    MdStar,
+    MdStarBorder,
+    MdHourglassEmpty,
+    MdLocalFireDepartment,
+    MdAutoAwesome,
+    MdFilterList,
+    MdMoreHoriz,
+    MdChevronLeft,
+    MdChevronRight,
+} from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
-import { C, T, S, R, FX, cx, pageStyle } from '@/constants/tutorTokens';
+import { C, T, S, R, FX, cx, pageStyle } from '@/constants/studentTokens';
 
 const ITEMS_PER_PAGE = 6;
 
 // ─── Status Badge ──────────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
     const map = {
-        published: { label: 'Published', bg: C.success,    text: '#fff' },
-        pending:   { label: 'In Review', bg: C.warning,    text: '#fff' },
-        rejected:  { label: 'Rejected',  bg: C.danger,     text: '#fff' },
-        suspended: { label: 'Suspended', bg: C.textMuted,  text: '#fff' },
+        published: { label: 'Published', bg: C.successBg,  text: C.success,  border: C.successBorder },
+        pending:   { label: 'In Review', bg: C.warningBg,  text: C.warning,  border: C.warningBorder },
+        rejected:  { label: 'Rejected',  bg: C.dangerBg,   text: C.danger,   border: C.dangerBorder  },
+        suspended: { label: 'Suspended', bg: C.innerBg,    text: C.text,     border: C.cardBorder    },
     };
-    const s = map[status] || { label: 'Draft', bg: '#F59E0B', text: '#fff' };
+    const s = map[status] || { label: 'Draft', bg: C.warningBg, text: C.warning, border: C.warningBorder };
     return (
         <span style={{
             backgroundColor: s.bg,
             color: s.text,
+            border: `1px solid ${s.border}`,
             fontFamily: T.fontFamily,
-            fontSize: '11px',
+            fontSize: T.size.xs,
             fontWeight: T.weight.bold,
             padding: '3px 10px',
-            borderRadius: R.full,
+            borderRadius: '10px',
+            whiteSpace: 'nowrap',
         }}>
             {s.label}
         </span>
@@ -42,26 +62,31 @@ function StatusBadge({ status }) {
 function StarRating({ rating = 0 }) {
     return (
         <div className="flex items-center gap-0.5">
-            {[1,2,3,4,5].map(i => (
-                <Star key={i} className="w-3.5 h-3.5"
-                    style={{ color: C.warning, fill: i <= Math.round(rating) ? C.warning : 'transparent' }} />
+            {[1, 2, 3, 4, 5].map(i => (
+                i <= Math.round(rating)
+                    ? <MdStar     key={i} style={{ width: 14, height: 14, color: C.warning }} />
+                    : <MdStarBorder key={i} style={{ width: 14, height: 14, color: C.warning }} />
             ))}
         </div>
     );
 }
 
-// ─── Course Card (Image Layout) ────────────────────────────────────────────────
+// ─── Course Grid Card ──────────────────────────────────────────────────────────
 function CourseGridCard({ course, onDelete }) {
     const isDraft = !['published', 'pending', 'rejected', 'suspended'].includes(course.status);
 
     return (
-        <div className="rounded-2xl overflow-hidden flex flex-col group transition-all duration-300 hover:-translate-y-1"
+        <div
+            className="flex flex-col group transition-all duration-300 hover:-translate-y-1 overflow-hidden"
             style={{
-                backgroundColor: C.surfaceWhite,
+                backgroundColor: C.cardBg,
                 border: `1px solid ${C.cardBorder}`,
                 boxShadow: S.card,
-            }}>
-
+                borderRadius: R['2xl'],
+            }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow = S.cardHover}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = S.card}
+        >
             {/* ── Thumbnail ── */}
             <div className="relative overflow-hidden flex-shrink-0" style={{ aspectRatio: '16/9', backgroundColor: C.innerBg }}>
                 <img
@@ -73,13 +98,13 @@ function CourseGridCard({ course, onDelete }) {
                 {/* Price — top right */}
                 <div className="absolute top-3 right-3">
                     <span style={{
-                        backgroundColor: C.surfaceWhite,
+                        backgroundColor: C.cardBg,
                         color: C.heading,
                         fontFamily: T.fontFamily,
-                        fontSize: T.size.sm,
-                        fontWeight: T.weight.black,
+                        fontSize: T.size.xs,
+                        fontWeight: T.weight.bold,
                         padding: '4px 10px',
-                        borderRadius: R.full,
+                        borderRadius: '10px',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
                     }}>
                         {course.price ? `₹${course.price.toLocaleString()}` : 'Free'}
@@ -90,34 +115,35 @@ function CourseGridCard({ course, onDelete }) {
                 {isDraft && (
                     <div className="absolute top-3 left-3">
                         <span style={{
-                            backgroundColor: '#F59E0B',
-                            color: '#fff',
+                            backgroundColor: C.warningBg,
+                            color: C.warning,
+                            border: `1px solid ${C.warningBorder}`,
                             fontFamily: T.fontFamily,
-                            fontSize: '11px',
+                            fontSize: T.size.xs,
                             fontWeight: T.weight.bold,
                             padding: '3px 10px',
-                            borderRadius: R.full,
+                            borderRadius: '10px',
                         }}>Draft</span>
                     </div>
                 )}
 
-                {/* AI + Hot badges — bottom right of thumbnail */}
+                {/* AI + Hot badges — bottom left of thumbnail */}
                 <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
                     {course.isAIGenerated && (
                         <span style={{
                             backgroundColor: 'rgba(124,58,237,0.85)',
                             color: '#fff',
                             fontFamily: T.fontFamily,
-                            fontSize: '10px',
+                            fontSize: T.size.xs,
                             fontWeight: T.weight.bold,
                             padding: '3px 8px',
-                            borderRadius: R.full,
+                            borderRadius: '10px',
                             backdropFilter: 'blur(4px)',
                             display: 'flex',
                             alignItems: 'center',
                             gap: 4,
                         }}>
-                            <Sparkles className="w-2.5 h-2.5" /> AI
+                            <MdAutoAwesome style={{ width: 10, height: 10 }} /> AI
                         </span>
                     )}
                     {course.enrolledCount > 50 && (
@@ -125,15 +151,15 @@ function CourseGridCard({ course, onDelete }) {
                             backgroundColor: C.danger,
                             color: '#fff',
                             fontFamily: T.fontFamily,
-                            fontSize: '10px',
+                            fontSize: T.size.xs,
                             fontWeight: T.weight.bold,
                             padding: '3px 8px',
-                            borderRadius: R.full,
+                            borderRadius: '10px',
                             display: 'flex',
                             alignItems: 'center',
                             gap: 4,
                         }}>
-                            <Flame className="w-2.5 h-2.5" /> Hot
+                            <MdLocalFireDepartment style={{ width: 10, height: 10 }} /> Hot
                         </span>
                     )}
                 </div>
@@ -154,18 +180,18 @@ function CourseGridCard({ course, onDelete }) {
                 </h3>
 
                 {/* Students count */}
-                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text }}>
-                    <span style={{ fontWeight: T.weight.black }}>{(course.enrolledCount || 0).toLocaleString()}</span> Students
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.text }}>
+                    <span style={{ fontWeight: T.weight.bold }}>{(course.enrolledCount || 0).toLocaleString()}</span> Students
                 </p>
 
-                {/* Rating row + completion % + status */}
+                {/* Rating + completion + status */}
                 <div className="flex items-center gap-2 flex-wrap">
                     <StarRating rating={course.rating || 0} />
-                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, fontWeight: T.weight.medium }}>
+                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, fontWeight: T.weight.medium }}>
                         {course.rating?.toFixed(1) || '0.0'}
                     </span>
                     {course.enrolledCount > 0 && (
-                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, fontWeight: T.weight.medium }}>
+                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, fontWeight: T.weight.medium }}>
                             · {course.completionRate || 0}%
                         </span>
                     )}
@@ -176,64 +202,79 @@ function CourseGridCard({ course, onDelete }) {
 
                 {/* Completion bar */}
                 {course.enrolledCount > 0 && (
-                    <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: C.innerBg }}>
-                        <div className="h-full rounded-full transition-all"
-                            style={{ width: `${course.completionRate || 0}%`, background: C.gradientBtn }} />
+                    <div className="overflow-hidden" style={{ height: 6, borderRadius: '10px', backgroundColor: C.innerBg }}>
+                        <div className="h-full transition-all"
+                            style={{ width: `${course.completionRate || 0}%`, background: C.gradientBtn, borderRadius: '10px' }} />
                     </div>
                 )}
 
                 {/* ── Actions ── */}
                 <div className="flex gap-2 mt-auto pt-1">
                     <Link href={`/student/courses/${course._id}`} className="flex-1">
-                        <button className="w-full h-9 rounded-xl flex items-center justify-center gap-1.5 transition-all hover:opacity-90"
+                        <button
+                            className="w-full flex items-center justify-center gap-1.5 transition-all hover:opacity-90"
                             style={{
+                                height: 36,
                                 backgroundColor: C.btnViewAllBg,
                                 color: C.btnViewAllText,
                                 fontFamily: T.fontFamily,
                                 fontSize: T.size.xs,
                                 fontWeight: T.weight.bold,
                                 border: `1px solid ${C.cardBorder}`,
+                                borderRadius: '10px',
                             }}>
-                            <Eye className="w-3.5 h-3.5" /> View
+                            <MdVisibility style={{ width: 14, height: 14 }} /> View
                         </button>
                     </Link>
 
                     {!isDraft ? (
                         <Link href={`/tutor/courses/${course._id}`} className="flex-1">
-                            <button className="w-full h-9 rounded-xl flex items-center justify-center gap-1.5 transition-all hover:opacity-90"
+                            <button
+                                className="w-full flex items-center justify-center gap-1.5 transition-all hover:opacity-90"
                                 style={{
+                                    height: 36,
                                     backgroundColor: C.btnViewAllBg,
                                     color: C.btnViewAllText,
                                     fontFamily: T.fontFamily,
                                     fontSize: T.size.xs,
                                     fontWeight: T.weight.bold,
                                     border: `1px solid ${C.cardBorder}`,
+                                    borderRadius: '10px',
                                 }}>
-                                <Edit className="w-3.5 h-3.5" /> Edit
+                                <MdEdit style={{ width: 14, height: 14 }} /> Edit
                             </button>
                         </Link>
                     ) : (
-                        <button onClick={() => onDelete(course._id)}
-                            className="flex-1 h-9 rounded-xl flex items-center justify-center gap-1.5 transition-all hover:opacity-80"
+                        <button
+                            onClick={() => onDelete(course._id)}
+                            className="flex-1 flex items-center justify-center gap-1.5 transition-all hover:opacity-80"
                             style={{
+                                height: 36,
                                 backgroundColor: C.dangerBg,
                                 color: C.danger,
                                 fontFamily: T.fontFamily,
                                 fontSize: T.size.xs,
                                 fontWeight: T.weight.bold,
                                 border: `1px solid ${C.dangerBorder}`,
+                                borderRadius: '10px',
+                                cursor: 'pointer',
                             }}>
-                            <Trash2 className="w-3.5 h-3.5" /> Delete
+                            <MdDelete style={{ width: 14, height: 14 }} /> Delete
                         </button>
                     )}
 
-                    <button className="h-9 px-3 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
+                    <button
+                        className="flex items-center justify-center transition-all hover:opacity-80"
                         style={{
+                            width: 36,
+                            height: 36,
                             backgroundColor: C.btnViewAllBg,
                             color: C.btnViewAllText,
                             border: `1px solid ${C.cardBorder}`,
+                            borderRadius: '10px',
+                            cursor: 'pointer',
                         }}>
-                        <MoreHorizontal className="w-3.5 h-3.5" />
+                        <MdMoreHoriz style={{ width: 14, height: 14 }} />
                     </button>
                 </div>
             </div>
@@ -245,25 +286,48 @@ function CourseGridCard({ course, onDelete }) {
 function CourseListRow({ course, onDelete }) {
     const isDraft = !['published', 'pending', 'rejected', 'suspended'].includes(course.status);
     return (
-        <div className="rounded-2xl p-4 flex gap-4 hover:shadow-md transition-all group"
-            style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}` }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = FX.primary25; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; }}>
-
+        <div
+            className="flex gap-4 hover:shadow-md transition-all group"
+            style={{
+                backgroundColor: C.cardBg,
+                border: `1px solid ${C.cardBorder}`,
+                borderRadius: '10px',
+                padding: 16,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.boxShadow = S.cardHover; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.boxShadow = 'none'; }}
+        >
             {/* Thumbnail */}
-            <div className="relative w-40 h-[90px] flex-shrink-0 rounded-xl overflow-hidden" style={{ backgroundColor: C.innerBg }}>
-                <img src={course.thumbnail || 'https://via.placeholder.com/320x180'} alt={course.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <div
+                className="relative flex-shrink-0 overflow-hidden"
+                style={{ width: 160, height: 90, borderRadius: '10px', backgroundColor: C.innerBg }}
+            >
+                <img
+                    src={course.thumbnail || 'https://via.placeholder.com/320x180'}
+                    alt={course.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <p className="absolute bottom-2 left-2.5 leading-none"
-                    style={{ color: C.surfaceWhite, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black }}>
+                <p
+                    className="absolute bottom-2 left-2.5 leading-none"
+                    style={{ color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}
+                >
                     {course.price ? `₹${course.price.toLocaleString()}` : 'Free'}
                 </p>
                 {course.isAIGenerated && (
                     <div className="absolute top-2 right-2">
-                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
-                            style={{ backgroundColor: 'rgba(124,58,237,0.85)', color: '#fff', fontFamily: T.fontFamily, fontSize: '9px', fontWeight: T.weight.bold }}>
-                            <Sparkles className="w-2 h-2" /> AI
+                        <span
+                            className="flex items-center gap-1"
+                            style={{
+                                backgroundColor: 'rgba(124,58,237,0.85)',
+                                color: '#fff',
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.xs,
+                                fontWeight: T.weight.bold,
+                                padding: '2px 6px',
+                                borderRadius: '10px',
+                            }}>
+                            <MdAutoAwesome style={{ width: 10, height: 10 }} /> AI
                         </span>
                     </div>
                 )}
@@ -272,27 +336,37 @@ function CourseListRow({ course, onDelete }) {
             {/* Info */}
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                    <h3 className="flex-1 line-clamp-1 min-w-0"
-                        style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                    <h3
+                        className="flex-1 line-clamp-1 min-w-0"
+                        style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}
+                    >
                         {course.title}
                     </h3>
                     <StatusBadge status={course.status} />
                 </div>
-                <p className="line-clamp-1 mb-2.5"
-                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+                <p
+                    className="line-clamp-1 mb-2.5"
+                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}
+                >
                     {course.description}
                 </p>
-                <div className="flex items-center gap-3.5"
-                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, fontWeight: T.weight.medium }}>
+                <div
+                    className="flex items-center gap-3.5"
+                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, fontWeight: T.weight.medium }}
+                >
                     <div className="flex items-center gap-1">
                         <StarRating rating={course.rating || 0} />
-                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>{course.rating?.toFixed(1) || '0.0'}</span>
+                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
+                            {course.rating?.toFixed(1) || '0.0'}
+                        </span>
                     </div>
                     <span className="flex items-center gap-1">
-                        <Users className="w-3 h-3" />{(course.enrolledCount || 0).toLocaleString()} students
+                        <MdPeople style={{ width: 12, height: 12 }} />
+                        {(course.enrolledCount || 0).toLocaleString()} students
                     </span>
                     <span className="flex items-center gap-1">
-                        <BookOpen className="w-3 h-3" />{course.modules?.length || 0} modules
+                        <MdMenuBook style={{ width: 12, height: 12 }} />
+                        {course.modules?.length || 0} modules
                     </span>
                     {course.enrolledCount > 0 && (
                         <span>{course.completionRate || 0}% completion</span>
@@ -303,25 +377,68 @@ function CourseListRow({ course, onDelete }) {
             {/* Actions */}
             <div className="flex items-center gap-2 flex-shrink-0 self-center">
                 <Link href={`/student/courses/${course._id}`}>
-                    <button className="h-9 px-4 rounded-xl flex items-center gap-1.5 transition-all hover:opacity-80"
-                        style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, border: `1px solid ${C.cardBorder}` }}>
-                        <Eye className="w-3.5 h-3.5" /> View
+                    <button
+                        className="flex items-center gap-1.5 transition-all hover:opacity-80"
+                        style={{
+                            height: 36,
+                            padding: '0 16px',
+                            backgroundColor: C.btnViewAllBg,
+                            color: C.btnViewAllText,
+                            fontFamily: T.fontFamily,
+                            fontSize: T.size.xs,
+                            fontWeight: T.weight.bold,
+                            border: `1px solid ${C.cardBorder}`,
+                            borderRadius: '10px',
+                            cursor: 'pointer',
+                        }}>
+                        <MdVisibility style={{ width: 14, height: 14 }} /> View
                     </button>
                 </Link>
                 <Link href={`/tutor/courses/${course._id}`}>
-                    <button className="h-9 px-4 rounded-xl flex items-center gap-1.5 transition-all hover:opacity-90"
-                        style={{ backgroundColor: C.btnPrimary, color: C.surfaceWhite, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
-                        <Edit className="w-3.5 h-3.5" /> Edit
+                    <button
+                        className="flex items-center gap-1.5 transition-all hover:opacity-90"
+                        style={{
+                            height: 36,
+                            padding: '0 16px',
+                            background: C.gradientBtn,
+                            color: '#ffffff',
+                            fontFamily: T.fontFamily,
+                            fontSize: T.size.xs,
+                            fontWeight: T.weight.bold,
+                            border: 'none',
+                            borderRadius: '10px',
+                            boxShadow: S.btn,
+                            cursor: 'pointer',
+                        }}>
+                        <MdEdit style={{ width: 14, height: 14 }} /> Edit
                     </button>
                 </Link>
-                <button onClick={() => onDelete(course._id)}
-                    className="h-9 px-3 rounded-xl border transition-all hover:opacity-80"
-                    style={{ borderColor: C.dangerBorder, color: C.danger, backgroundColor: C.dangerBg }}>
-                    <Trash2 className="w-3.5 h-3.5" />
+                <button
+                    onClick={() => onDelete(course._id)}
+                    className="flex items-center justify-center transition-all hover:opacity-80"
+                    style={{
+                        height: 36,
+                        width: 36,
+                        borderRadius: '10px',
+                        border: `1px solid ${C.dangerBorder}`,
+                        color: C.danger,
+                        backgroundColor: C.dangerBg,
+                        cursor: 'pointer',
+                    }}>
+                    <MdDelete style={{ width: 14, height: 14 }} />
                 </button>
-                <button className="h-9 px-3 rounded-xl border transition-all hover:opacity-80"
-                    style={{ borderColor: C.cardBorder, color: C.textMuted, backgroundColor: C.innerBg }}>
-                    <MoreHorizontal className="w-3.5 h-3.5" />
+                <button
+                    className="flex items-center justify-center transition-all hover:opacity-80"
+                    style={{
+                        height: 36,
+                        width: 36,
+                        borderRadius: '10px',
+                        border: `1px solid ${C.cardBorder}`,
+                        color: C.text,
+                        backgroundColor: C.innerBg,
+                        cursor: 'pointer',
+                    }}>
+                    <MdMoreHoriz style={{ width: 14, height: 14 }} />
                 </button>
             </div>
         </div>
@@ -335,8 +452,8 @@ export default function MyCoursesPage() {
     const [searchQuery, setSearchQuery]   = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
     const [viewMode, setViewMode]         = useState('grid');
-    const [currentPage, setCurrentPage]  = useState(1);
-    const { confirmDialog }              = useConfirm();
+    const [currentPage, setCurrentPage]   = useState(1);
+    const { confirmDialog }               = useConfirm();
 
     useEffect(() => { fetchMyCourses(); }, []);
 
@@ -362,7 +479,6 @@ export default function MyCoursesPage() {
         } catch { toast.error('Failed to delete course'); }
     };
 
-    // ── Derived stats ──────────────────────────────────────────────────
     const stats = {
         total:         courses.length,
         published:     courses.filter(c => c.status === 'published').length,
@@ -372,16 +488,14 @@ export default function MyCoursesPage() {
         totalStudents: courses.reduce((acc, c) => acc + (c.enrolledCount || 0), 0),
     };
 
-    // ── Filter tabs ────────────────────────────────────────────────────
     const filterTabs = [
         { key: 'all',       label: 'All',          count: stats.total       },
         { key: 'draft',     label: 'Draft',        count: stats.draft       },
         { key: 'published', label: 'Published',    count: stats.published   },
         { key: 'pending',   label: 'In Review',    count: stats.pending     },
-        { key: 'ai',        label: 'AI Generated', count: stats.aiGenerated, icon: Sparkles },
+        { key: 'ai',        label: 'AI Generated', count: stats.aiGenerated, icon: MdAutoAwesome },
     ];
 
-    // ── Filtering logic ────────────────────────────────────────────────
     const filteredCourses = courses.filter(course => {
         const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStatus =
@@ -394,7 +508,6 @@ export default function MyCoursesPage() {
         return matchesSearch && matchesStatus;
     });
 
-    // ── Pagination ─────────────────────────────────────────────────────
     const totalPages = Math.max(1, Math.ceil(filteredCourses.length / ITEMS_PER_PAGE));
     const paginatedCourses = filteredCourses.slice(
         (currentPage - 1) * ITEMS_PER_PAGE,
@@ -403,28 +516,38 @@ export default function MyCoursesPage() {
     const startItem = filteredCourses.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
     const endItem   = Math.min(currentPage * ITEMS_PER_PAGE, filteredCourses.length);
 
-    // Reset page on filter/search change
     useEffect(() => { setCurrentPage(1); }, [filterStatus, searchQuery]);
 
-    // ── Loading ────────────────────────────────────────────────────────
     if (loading) return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: C.iconBg }}>
-                <Loader2 className="w-5 h-5 animate-spin" style={{ color: C.iconColor }} />
+        <div className="flex items-center justify-center min-h-[60vh]" style={{ backgroundColor: C.pageBg }}>
+            <div className="flex flex-col items-center gap-3">
+                <div
+                    className="rounded-full border-[3px] animate-spin"
+                    style={{ width: 48, height: 48, borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }}
+                />
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                    Loading your courses…
+                </p>
             </div>
-            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted }}>
-                Loading your courses…
-            </p>
         </div>
     );
 
     return (
-        <div className="space-y-5 pb-8" style={{ ...pageStyle, backgroundColor: C.pageBg, minHeight: '100vh', padding: '24px' }}>
+        <div
+            className="space-y-5 pb-8"
+            style={{ ...pageStyle, backgroundColor: C.pageBg, minHeight: '100vh', padding: 24 }}
+        >
 
-            {/* ── Header ───────────────────────────────────────────────── */}
+            {/* ── Header ── */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['3xl'], fontWeight: T.weight.black, color: C.heading, lineHeight: T.leading.tight }}>
+                    <h1 style={{
+                        fontFamily: T.fontFamily,
+                        fontSize: T.size['2xl'],
+                        fontWeight: T.weight.bold,
+                        color: C.heading,
+                        lineHeight: T.leading.tight,
+                    }}>
                         Course List
                     </h1>
                     {stats.aiGenerated > 0 && (
@@ -437,33 +560,45 @@ export default function MyCoursesPage() {
                 <div className="flex items-center gap-2">
                     {/* AI Builder shortcut */}
                     <Link href="/tutor/ai-buddy/course-builder">
-                        <button className="h-11 px-4 rounded-xl flex items-center gap-2 transition-all hover:opacity-90"
+                        <button
+                            className="flex items-center gap-2 transition-all hover:opacity-90"
                             style={{
+                                height: 44,
+                                padding: '0 16px',
                                 backgroundColor: 'rgba(124,58,237,0.10)',
                                 color: '#7C3AED',
                                 border: '1px solid rgba(124,58,237,0.20)',
                                 fontFamily: T.fontFamily,
-                                fontSize: T.size.xs,
+                                fontSize: T.size.base,
                                 fontWeight: T.weight.bold,
+                                borderRadius: '10px',
+                                cursor: 'pointer',
                             }}>
-                            <Sparkles className="w-3.5 h-3.5" /> AI Builder
+                            <MdAutoAwesome style={{ width: 14, height: 14 }} /> AI Builder
                         </button>
                     </Link>
 
                     {/* Create Course */}
                     <Link href="/tutor/courses/create">
-                        <button className="h-11 px-6 rounded-xl flex items-center gap-2 transition-all hover:opacity-90 active:scale-95"
+                        <button
+                            className="flex items-center gap-2 transition-all hover:opacity-90 active:scale-95"
                             style={{
+                                height: 44,
+                                padding: '0 24px',
                                 background: C.gradientBtn,
-                                color: '#fff',
+                                color: '#ffffff',
                                 fontFamily: T.fontFamily,
-                                fontSize: T.size.sm,
+                                fontSize: T.size.base,
                                 fontWeight: T.weight.bold,
+                                border: 'none',
+                                borderRadius: '10px',
                                 boxShadow: S.btn,
+                                cursor: 'pointer',
                             }}>
-                            <div className="w-6 h-6 rounded-lg flex items-center justify-center"
-                                style={{ backgroundColor: 'rgba(255,255,255,0.20)' }}>
-                                <Plus className="w-3.5 h-3.5" />
+                            <div
+                                className="flex items-center justify-center"
+                                style={{ width: 24, height: 24, borderRadius: '10px', backgroundColor: 'rgba(255,255,255,0.20)' }}>
+                                <MdAdd style={{ width: 14, height: 14 }} />
                             </div>
                             Create Course
                         </button>
@@ -471,41 +606,58 @@ export default function MyCoursesPage() {
                 </div>
             </div>
 
-            {/* ── Filter + Search Bar ───────────────────────────────────── */}
-            <div className="flex items-center gap-2 flex-wrap"
-                style={{ backgroundColor: C.surfaceWhite, borderRadius: R.xl, padding: '10px 12px', border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-
+            {/* ── Filter + Search Bar ── */}
+            <div
+                className="flex items-center gap-2 flex-wrap"
+                style={{
+                    backgroundColor: C.cardBg,
+                    border: `1px solid ${C.cardBorder}`,
+                    boxShadow: S.card,
+                    borderRadius: '10px',
+                    padding: '10px 12px',
+                }}
+            >
                 {/* Filter tabs */}
                 <div className="flex gap-1 overflow-x-auto flex-shrink-0">
                     {filterTabs.map(({ key, label, count, icon: Icon }) => {
                         const isActive = filterStatus === key;
                         const isAI = key === 'ai';
                         return (
-                            <button key={key} onClick={() => setFilterStatus(key)}
-                                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all"
+                            <button
+                                key={key}
+                                onClick={() => setFilterStatus(key)}
+                                className="flex items-center gap-1.5 transition-all"
                                 style={isActive
                                     ? {
                                         background: isAI ? '#7C3AED' : C.gradientBtn,
-                                        color: '#fff',
+                                        color: '#ffffff',
                                         fontFamily: T.fontFamily,
                                         fontSize: T.size.xs,
                                         fontWeight: T.weight.bold,
                                         whiteSpace: 'nowrap',
                                         boxShadow: S.active,
+                                        padding: '8px 14px',
+                                        borderRadius: '10px',
+                                        border: 'none',
+                                        cursor: 'pointer',
                                     }
                                     : {
-                                        color: C.textMuted,
+                                        color: C.text,
                                         fontFamily: T.fontFamily,
                                         fontSize: T.size.xs,
                                         fontWeight: T.weight.bold,
                                         whiteSpace: 'nowrap',
+                                        padding: '8px 14px',
+                                        borderRadius: '10px',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        background: 'transparent',
                                     }}>
-                                {Icon && <Icon className="w-3 h-3" />}
+                                {Icon && <Icon style={{ width: 12, height: 12 }} />}
                                 {label}
-                                <span className="px-1.5 py-0.5 rounded-md"
-                                    style={isActive
-                                        ? { backgroundColor: 'rgba(255,255,255,0.25)', color: '#fff', fontSize: '10px', fontWeight: T.weight.black }
-                                        : { backgroundColor: C.innerBg, color: C.textMuted, fontSize: '10px', fontWeight: T.weight.black }}>
+                                <span style={isActive
+                                    ? { backgroundColor: 'rgba(255,255,255,0.25)', color: '#ffffff', fontSize: T.size.xs, fontWeight: T.weight.bold, padding: '2px 6px', borderRadius: '10px' }
+                                    : { backgroundColor: C.innerBg, color: C.text, fontSize: T.size.xs, fontWeight: T.weight.bold, padding: '2px 6px', borderRadius: '10px' }}>
                                     {count}
                                 </span>
                             </button>
@@ -516,55 +668,116 @@ export default function MyCoursesPage() {
                 <div className="hidden lg:block w-px h-6 mx-1 flex-shrink-0" style={{ backgroundColor: C.cardBorder }} />
 
                 {/* Search */}
-                <div className="relative flex-1 min-w-[180px]">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: C.textMuted }} />
+                <div className="relative flex-1" style={{ minWidth: 180 }}>
+                    <MdSearch
+                        className="absolute left-3 top-1/2 -translate-y-1/2"
+                        style={{ width: 14, height: 14, color: C.text }}
+                    />
                     <input
                         type="text"
                         placeholder="Search"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        style={{ ...cx.input(), width: '100%', height: 36, paddingLeft: 34, paddingRight: 12 }}
-                        onFocus={e => Object.assign(e.target.style, cx.inputFocus)}
+                        style={{
+                            backgroundColor: C.cardBg,
+                            border: `1px solid ${C.cardBorder}`,
+                            borderRadius: '10px',
+                            color: C.heading,
+                            fontFamily: T.fontFamily,
+                            fontSize: T.size.base,
+                            fontWeight: T.weight.semibold,
+                            outline: 'none',
+                            width: '100%',
+                            height: 36,
+                            paddingLeft: 34,
+                            paddingRight: 12,
+                            transition: 'all 0.2s ease',
+                        }}
+                        onFocus={e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
                         onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
                     />
                 </div>
 
                 {/* Filter icon */}
-                <button className="h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:opacity-80"
-                    style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, border: `1px solid ${C.cardBorder}` }}>
-                    <Filter className="w-3.5 h-3.5" />
+                <button
+                    className="flex items-center justify-center flex-shrink-0 transition-all hover:opacity-80"
+                    style={{
+                        width: 36,
+                        height: 36,
+                        backgroundColor: C.btnViewAllBg,
+                        color: C.btnViewAllText,
+                        border: `1px solid ${C.cardBorder}`,
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                    }}>
+                    <MdFilterList style={{ width: 14, height: 14 }} />
                 </button>
 
                 {/* View toggle */}
-                <div className="hidden sm:flex p-1 rounded-xl gap-0.5 flex-shrink-0"
-                    style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
-                    {[['grid', Grid], ['list', List]].map(([mode, Icon]) => (
-                        <button key={mode} onClick={() => setViewMode(mode)}
-                            className="w-8 h-7 rounded-lg flex items-center justify-center transition-all"
+                <div
+                    className="hidden sm:flex gap-0.5 flex-shrink-0"
+                    style={{
+                        backgroundColor: C.innerBg,
+                        border: `1px solid ${C.cardBorder}`,
+                        borderRadius: '10px',
+                        padding: 4,
+                    }}>
+                    {[['grid', MdGridView], ['list', MdList]].map(([mode, Icon]) => (
+                        <button
+                            key={mode}
+                            onClick={() => setViewMode(mode)}
+                            className="flex items-center justify-center transition-all"
                             style={viewMode === mode
-                                ? { backgroundColor: C.surfaceWhite, color: C.btnPrimary, boxShadow: S.active }
-                                : { color: C.textMuted }}>
-                            <Icon className="w-3.5 h-3.5" />
+                                ? {
+                                    width: 32,
+                                    height: 28,
+                                    backgroundColor: C.cardBg,
+                                    color: C.btnPrimary,
+                                    borderRadius: '10px',
+                                    boxShadow: S.active,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                }
+                                : {
+                                    width: 32,
+                                    height: 28,
+                                    color: C.text,
+                                    borderRadius: '10px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    background: 'transparent',
+                                }}>
+                            <Icon style={{ width: 14, height: 14 }} />
                         </button>
                     ))}
                 </div>
             </div>
 
-            {/* ── Course Display ────────────────────────────────────────── */}
+            {/* ── Course Display ── */}
             {filteredCourses.length === 0 ? (
-                <div className="rounded-2xl border-2 border-dashed py-16 flex flex-col items-center text-center px-6"
-                    style={{ borderColor: C.cardBorder, backgroundColor: C.cardBg }}>
-                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: C.iconBg }}>
+                <div
+                    className="border-2 border-dashed flex flex-col items-center text-center"
+                    style={{
+                        borderColor: C.cardBorder,
+                        backgroundColor: C.cardBg,
+                        borderRadius: R['2xl'],
+                        padding: '64px 24px',
+                    }}
+                >
+                    <div
+                        className="flex items-center justify-center mb-4"
+                        style={{ width: 56, height: 56, borderRadius: '10px', backgroundColor: C.iconBg }}
+                    >
                         {filterStatus === 'ai'
-                            ? <Sparkles className="w-7 h-7" style={{ color: '#7C3AED' }} />
-                            : <BookOpen className="w-7 h-7" style={{ color: C.iconColor }} />}
+                            ? <MdAutoAwesome style={{ width: 28, height: 28, color: '#7C3AED' }} />
+                            : <MdMenuBook    style={{ width: 28, height: 28, color: C.iconColor }} />}
                     </div>
                     <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, marginBottom: 4 }}>
                         {searchQuery ? 'No courses match your search'
                             : filterStatus === 'ai' ? 'No AI generated courses yet'
                             : 'No courses yet'}
                     </h3>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, maxWidth: 300, marginBottom: 20 }}>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, maxWidth: 300, marginBottom: 20 }}>
                         {searchQuery
                             ? `No results for "${searchQuery}". Try different keywords.`
                             : filterStatus === 'ai'
@@ -575,23 +788,60 @@ export default function MyCoursesPage() {
                         <div className="flex items-center gap-3">
                             {filterStatus === 'ai' ? (
                                 <Link href="/tutor/ai-buddy/course-builder">
-                                    <button className="h-10 px-5 rounded-xl flex items-center gap-2 hover:opacity-90 transition-all"
-                                        style={{ backgroundColor: '#7C3AED', color: '#fff', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
-                                        <Sparkles className="w-4 h-4" /> Try AI Builder
+                                    <button
+                                        className="flex items-center gap-2 hover:opacity-90 transition-all"
+                                        style={{
+                                            height: 40,
+                                            padding: '0 20px',
+                                            backgroundColor: '#7C3AED',
+                                            color: '#ffffff',
+                                            fontFamily: T.fontFamily,
+                                            fontSize: T.size.base,
+                                            fontWeight: T.weight.bold,
+                                            border: 'none',
+                                            borderRadius: '10px',
+                                            cursor: 'pointer',
+                                        }}>
+                                        <MdAutoAwesome style={{ width: 16, height: 16 }} /> Try AI Builder
                                     </button>
                                 </Link>
                             ) : (
                                 <>
                                     <Link href="/tutor/courses/create">
-                                        <button className="h-10 px-5 rounded-xl flex items-center gap-2 hover:opacity-90 transition-all"
-                                            style={{ background: C.gradientBtn, color: '#fff', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
-                                            <Plus className="w-4 h-4" /> Create Manually
+                                        <button
+                                            className="flex items-center gap-2 hover:opacity-90 transition-all"
+                                            style={{
+                                                height: 40,
+                                                padding: '0 20px',
+                                                background: C.gradientBtn,
+                                                color: '#ffffff',
+                                                fontFamily: T.fontFamily,
+                                                fontSize: T.size.base,
+                                                fontWeight: T.weight.bold,
+                                                border: 'none',
+                                                borderRadius: '10px',
+                                                boxShadow: S.btn,
+                                                cursor: 'pointer',
+                                            }}>
+                                            <MdAdd style={{ width: 16, height: 16 }} /> Create Manually
                                         </button>
                                     </Link>
                                     <Link href="/tutor/ai-buddy/course-builder">
-                                        <button className="h-10 px-5 rounded-xl flex items-center gap-2 hover:opacity-90 transition-all"
-                                            style={{ backgroundColor: 'rgba(124,58,237,0.10)', color: '#7C3AED', border: '1px solid rgba(124,58,237,0.20)', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
-                                            <Sparkles className="w-4 h-4" /> Use AI Builder
+                                        <button
+                                            className="flex items-center gap-2 hover:opacity-90 transition-all"
+                                            style={{
+                                                height: 40,
+                                                padding: '0 20px',
+                                                backgroundColor: 'rgba(124,58,237,0.10)',
+                                                color: '#7C3AED',
+                                                border: '1px solid rgba(124,58,237,0.20)',
+                                                fontFamily: T.fontFamily,
+                                                fontSize: T.size.base,
+                                                fontWeight: T.weight.bold,
+                                                borderRadius: '10px',
+                                                cursor: 'pointer',
+                                            }}>
+                                            <MdAutoAwesome style={{ width: 16, height: 16 }} /> Use AI Builder
                                         </button>
                                     </Link>
                                 </>
@@ -613,10 +863,10 @@ export default function MyCoursesPage() {
                 </div>
             )}
 
-            {/* ── Pagination ────────────────────────────────────────────── */}
+            {/* ── Pagination ── */}
             {filteredCourses.length > 0 && (
                 <div className="flex items-center justify-between pt-2">
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, fontWeight: T.weight.medium }}>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, fontWeight: T.weight.medium }}>
                         Showing {startItem} to {endItem} of {filteredCourses.length}
                     </p>
 
@@ -625,18 +875,51 @@ export default function MyCoursesPage() {
                         <button
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
-                            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:opacity-80 disabled:opacity-40"
-                            style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, border: `1px solid ${C.cardBorder}` }}>
-                            <ChevronLeft className="w-4 h-4" />
+                            className="flex items-center justify-center transition-all hover:opacity-80 disabled:opacity-40"
+                            style={{
+                                width: 36,
+                                height: 36,
+                                backgroundColor: C.btnViewAllBg,
+                                color: C.btnViewAllText,
+                                border: `1px solid ${C.cardBorder}`,
+                                borderRadius: '10px',
+                                cursor: 'pointer',
+                            }}>
+                            <MdChevronLeft style={{ width: 16, height: 16 }} />
                         </button>
 
                         {/* Page numbers */}
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                            <button key={page} onClick={() => setCurrentPage(page)}
-                                className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
+                            <button
+                                key={page}
+                                onClick={() => setCurrentPage(page)}
+                                className="flex items-center justify-center transition-all"
                                 style={currentPage === page
-                                    ? { background: C.gradientBtn, color: '#fff', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, boxShadow: S.btn }
-                                    : { backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, border: `1px solid ${C.cardBorder}` }}>
+                                    ? {
+                                        width: 36,
+                                        height: 36,
+                                        background: C.gradientBtn,
+                                        color: '#ffffff',
+                                        fontFamily: T.fontFamily,
+                                        fontSize: T.size.xs,
+                                        fontWeight: T.weight.bold,
+                                        borderRadius: '10px',
+                                        border: 'none',
+                                        boxShadow: S.btn,
+                                        cursor: 'pointer',
+                                    }
+                                    : {
+                                        width: 36,
+                                        height: 36,
+                                        backgroundColor: C.btnViewAllBg,
+                                        color: C.btnViewAllText,
+                                        fontFamily: T.fontFamily,
+                                        fontSize: T.size.xs,
+                                        fontWeight: T.weight.bold,
+                                        border: `1px solid ${C.cardBorder}`,
+                                        borderRadius: '10px',
+                                        cursor: 'pointer',
+                                    }}>
                                 {page}
                             </button>
                         ))}
@@ -645,9 +928,17 @@ export default function MyCoursesPage() {
                         <button
                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                             disabled={currentPage === totalPages}
-                            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:opacity-80 disabled:opacity-40"
-                            style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, border: `1px solid ${C.cardBorder}` }}>
-                            <ChevronRight className="w-4 h-4" />
+                            className="flex items-center justify-center transition-all hover:opacity-80 disabled:opacity-40"
+                            style={{
+                                width: 36,
+                                height: 36,
+                                backgroundColor: C.btnViewAllBg,
+                                color: C.btnViewAllText,
+                                border: `1px solid ${C.cardBorder}`,
+                                borderRadius: '10px',
+                                cursor: 'pointer',
+                            }}>
+                            <MdChevronRight style={{ width: 16, height: 16 }} />
                         </button>
                     </div>
                 </div>

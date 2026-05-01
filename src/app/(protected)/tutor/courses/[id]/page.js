@@ -3,28 +3,58 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-    ArrowLeft, Plus, Loader2, Video, FileText, MoreVertical, GripVertical,
-    Eye, Settings, Trash2, Edit3, Clock, PlayCircle, Lock, Check, X, Save,
-    Sparkles, Globe, EyeOff, ClipboardList, Megaphone, BellRing, Award,
-    ExternalLink, Users, Upload, AlertCircle
-} from 'lucide-react';
+    MdArrowBack,
+    MdAdd,
+    MdVideocam,
+    MdArticle,
+    MdMoreVert,
+    MdDragIndicator,
+    MdVisibility,
+    MdSettings,
+    MdDelete,
+    MdEdit,
+    MdAccessTime,
+    MdPlayCircle,
+    MdLock,
+    MdCheckCircle,
+    MdClose,
+    MdSave,
+    MdAutoAwesome,
+    MdLanguage,
+    MdVisibilityOff,
+    MdAssignment,
+    MdCampaign,
+    MdNotificationsActive,
+    MdEmojiEvents,
+    MdPeople,
+    MdUpload,
+    MdWarning,
+} from 'react-icons/md';
 import Link from 'next/link';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
-import { C, T, S, R, FX, cx, pageStyle } from '@/constants/tutorTokens';
+import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
     const map = {
-        published: { label: '● Published',        bg: C.successBg,  color: C.success, border: C.successBorder },
-        pending:   { label: '● Pending Approval',  bg: C.warningBg,  color: C.warning, border: C.warningBorder },
-        rejected:  { label: '● Rejected',          bg: C.dangerBg,   color: C.danger,  border: C.dangerBorder },
+        published: { label: '● Published',        bg: C.successBg,  color: C.success,    border: C.successBorder },
+        pending:   { label: '● Pending Approval',  bg: C.warningBg,  color: C.warning,    border: C.warningBorder },
+        rejected:  { label: '● Rejected',          bg: C.dangerBg,   color: C.danger,     border: C.dangerBorder  },
     };
-    const s = map[status] || { label: '● Draft', bg: FX.primary12, color: C.btnPrimary, border: FX.primary20 };
+    const s = map[status] || { label: '● Draft', bg: C.btnViewAllBg, color: C.btnPrimary, border: C.cardBorder };
     return (
-        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold border"
-            style={{ backgroundColor: s.bg, color: s.color, borderColor: s.border, fontFamily: T.fontFamily }}>
+        <span style={{
+            backgroundColor: s.bg,
+            color: s.color,
+            border: `1px solid ${s.border}`,
+            fontFamily: T.fontFamily,
+            fontSize: T.size.xs,
+            fontWeight: T.weight.bold,
+            padding: '3px 10px',
+            borderRadius: '10px',
+        }}>
             {s.label}
         </span>
     );
@@ -33,7 +63,16 @@ function StatusBadge({ status }) {
 // ─── Modal section label ───────────────────────────────────────────────────────
 function ModalLabel({ children }) {
     return (
-        <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 6 }}>
+        <label style={{
+            display: 'block',
+            fontFamily: T.fontFamily,
+            fontSize: T.size.xs,
+            fontWeight: T.weight.bold,
+            color: C.statLabel,
+            textTransform: 'uppercase',
+            letterSpacing: T.tracking.wider,
+            marginBottom: 6,
+        }}>
             {children}
         </label>
     );
@@ -52,36 +91,47 @@ export default function ManageCoursePage({ params }) {
     const [isLessonModalOpen,   setIsLessonModalOpen]   = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
-    const [activeTab, setActiveTab]         = useState('curriculum');
+    const [activeTab, setActiveTab]               = useState('curriculum');
     const [announcementForm, setAnnouncementForm] = useState({ title: '', message: '' });
 
     const [settingsForm, setSettingsForm] = useState({
         title: '', description: '', visibility: 'institute', price: 0,
         level: 'beginner', language: 'English',
-        whatYouWillLearn: [''], requirements: ['']
+        whatYouWillLearn: [''], requirements: [''],
     });
 
-    const [currentModuleId,      setCurrentModuleId]      = useState(null);
-    const [moduleTitle,          setModuleTitle]          = useState('');
+    const [currentModuleId,     setCurrentModuleId]     = useState(null);
+    const [moduleTitle,         setModuleTitle]         = useState('');
     const [lessonForm, setLessonForm] = useState({
         title: '', description: '', videoUrl: '', duration: '', isFree: false,
         type: 'video', attachments: [], documents: [],
-        quiz: { passingScore: 70, timeLimit: '', questions: [] }
+        quiz: { passingScore: 70, timeLimit: '', questions: [] },
     });
 
-    const [submitting,          setSubmitting]          = useState(false);
-    const [editingModuleId,     setEditingModuleId]     = useState(null);
-    const [editingModuleTitle,  setEditingModuleTitle]  = useState('');
-    const [editingLessonId,     setEditingLessonId]     = useState(null);
-    const [publishing,          setPublishing]          = useState(false);
-    const [isUploadingVideo,    setIsUploadingVideo]    = useState(false);
-    const { confirmDialog }                             = useConfirm();
+    const [submitting,         setSubmitting]         = useState(false);
+    const [editingModuleId,    setEditingModuleId]    = useState(null);
+    const [editingModuleTitle, setEditingModuleTitle] = useState('');
+    const [editingLessonId,    setEditingLessonId]    = useState(null);
+    const [publishing,         setPublishing]         = useState(false);
+    const [isUploadingVideo,   setIsUploadingVideo]   = useState(false);
+    const { confirmDialog }                           = useConfirm();
 
     // ── Shared modal input style ────────────────────────────────────────────
-    const inp = { ...cx.input(), width: '100%', padding: '10px 14px' };
-    const inpFocus = cx.inputFocus;
+    const inp = {
+        backgroundColor: C.cardBg,
+        border: `1px solid ${C.cardBorder}`,
+        borderRadius: '10px',
+        color: C.heading,
+        fontFamily: T.fontFamily,
+        fontSize: T.size.base,
+        fontWeight: T.weight.semibold,
+        outline: 'none',
+        width: '100%',
+        padding: '10px 14px',
+        transition: 'all 0.2s ease',
+    };
 
-    const applyFocus = (e) => Object.assign(e.target.style, inpFocus);
+    const applyFocus  = (e) => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; };
     const removeFocus = (e) => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; };
 
     // ── Data ────────────────────────────────────────────────────────────────
@@ -90,7 +140,7 @@ export default function ManageCoursePage({ params }) {
             setLoading(true);
             const [courseRes, lessonsRes] = await Promise.all([
                 api.get(`/courses/${id}`),
-                api.get(`/lessons/course/${id}`)
+                api.get(`/lessons/course/${id}`),
             ]);
             if (courseRes.data.success)  setCourse(courseRes.data.course);
             if (lessonsRes.data.success) setLessons(lessonsRes.data.lessons);
@@ -129,7 +179,7 @@ export default function ManageCoursePage({ params }) {
             visibility: course.visibility || 'institute', price: course.price || 0,
             level: course.level || 'beginner', language: course.language || 'English',
             whatYouWillLearn: course.whatYouWillLearn?.length ? [...course.whatYouWillLearn] : [''],
-            requirements: course.requirements?.length ? [...course.requirements] : ['']
+            requirements: course.requirements?.length ? [...course.requirements] : [''],
         });
         setIsSettingsModalOpen(true);
     };
@@ -142,7 +192,7 @@ export default function ManageCoursePage({ params }) {
                 visibility: settingsForm.visibility, price: Number(settingsForm.price),
                 level: settingsForm.level, language: settingsForm.language,
                 whatYouWillLearn: settingsForm.whatYouWillLearn.filter(i => i.trim()),
-                requirements: settingsForm.requirements.filter(i => i.trim())
+                requirements: settingsForm.requirements.filter(i => i.trim()),
             });
             if (res.data.success) { setCourse(res.data.course); toast.success('Course settings updated'); setIsSettingsModalOpen(false); }
         } catch { toast.error('Failed to update settings'); }
@@ -212,7 +262,7 @@ export default function ManageCoursePage({ params }) {
                 duration: Math.round((lesson.content?.duration || 0) / 60).toString(),
                 documents: lesson.content?.documents || [],
                 quiz: lesson.content?.quiz || { passingScore: 70, timeLimit: '', questions: [] },
-                isFree: lesson.isFree, attachments: lesson.content?.attachments || []
+                isFree: lesson.isFree, attachments: lesson.content?.attachments || [],
             });
         } else {
             setEditingLessonId(null);
@@ -308,10 +358,14 @@ export default function ManageCoursePage({ params }) {
 
     // ── Loading ──────────────────────────────────────────────────────────────
     if (loading) return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-            <div className="w-11 h-11 rounded-full border-[3px] animate-spin"
-                style={{ borderColor: FX.primary25Transparent, borderTopColor: C.btnPrimary }} />
-            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted }}>Loading course…</p>
+        <div className="flex items-center justify-center min-h-[60vh]" style={{ backgroundColor: C.pageBg }}>
+            <div className="flex flex-col items-center gap-3">
+                <div className="rounded-full border-[3px] animate-spin"
+                    style={{ width: 48, height: 48, borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                    Loading course…
+                </p>
+            </div>
         </div>
     );
     if (!course) return null;
@@ -320,115 +374,159 @@ export default function ManageCoursePage({ params }) {
     const totalDuration = lessons.reduce((a, l) => a + (l.duration || 0), 0);
 
     const TABS = [
-        { key: 'curriculum',    icon: FileText,  label: 'Curriculum' },
-        { key: 'exams',         icon: Award,     label: `Exams (${courseExams.length})` },
-        { key: 'announcements', icon: Megaphone, label: 'Announcements' },
+        { key: 'curriculum',    icon: MdArticle,           label: 'Curriculum' },
+        { key: 'exams',         icon: MdEmojiEvents,       label: `Exams (${courseExams.length})` },
+        { key: 'announcements', icon: MdCampaign,          label: 'Announcements' },
     ];
 
     // ── Reusable modal cancel button ─────────────────────────────────────────
     const CancelBtn = ({ onClick }) => (
         <button type="button" onClick={onClick}
-            className="flex-1 py-2.5 rounded-xl text-sm transition-all hover:opacity-80"
-            style={cx.btnSecondary()}>
+            className="flex-1 transition-all hover:opacity-80"
+            style={{
+                padding: '10px 0',
+                backgroundColor: C.btnViewAllBg,
+                color: C.btnViewAllText,
+                fontFamily: T.fontFamily,
+                fontSize: T.size.base,
+                fontWeight: T.weight.bold,
+                border: `1px solid ${C.cardBorder}`,
+                borderRadius: '10px',
+                cursor: 'pointer',
+            }}>
             Cancel
         </button>
     );
 
     return (
-        <div className="space-y-5" style={pageStyle}>
+        <div className="space-y-5" style={{ ...pageStyle, backgroundColor: C.pageBg }}>
 
-            {/* ── Page Header ───────────────────────────────────────────── */}
-            <div className="rounded-2xl p-5"
-                style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+            {/* ── Page Header ── */}
+            <div style={{
+                backgroundColor: C.cardBg,
+                border: `1px solid ${C.cardBorder}`,
+                boxShadow: S.card,
+                borderRadius: R['2xl'],
+                padding: 20,
+            }}>
                 <div className="flex items-start gap-3">
                     <button onClick={() => router.push('/tutor/courses')}
-                        className="mt-0.5 w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:opacity-80"
-                        style={{ backgroundColor: C.innerBg, color: C.textMuted }}>
-                        <ArrowLeft className="w-4 h-4" />
+                        className="flex items-center justify-center flex-shrink-0 transition-all hover:opacity-80"
+                        style={{
+                            marginTop: 2,
+                            width: 32,
+                            height: 32,
+                            borderRadius: '10px',
+                            backgroundColor: C.innerBg,
+                            color: C.text,
+                            border: 'none',
+                            cursor: 'pointer',
+                        }}>
+                        <MdArrowBack style={{ width: 16, height: 16 }} />
                     </button>
 
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
-                            <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }} className="truncate">
+                            <h1 className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>
                                 {course.title}
                             </h1>
                             <StatusBadge status={course.status} />
                         </div>
                         <div className="flex items-center gap-4 flex-wrap"
-                            style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
-                            <span className="flex items-center gap-1"><PlayCircle className="w-3.5 h-3.5" /> {totalLessons} lessons</span>
-                            <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {Math.round(totalDuration / 3600)} hrs</span>
-                            <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5" /> {course.modules?.length || 0} modules</span>
+                            style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
+                            <span className="flex items-center gap-1">
+                                <MdPlayCircle style={{ width: 14, height: 14 }} /> {totalLessons} lessons
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <MdAccessTime style={{ width: 14, height: 14 }} /> {Math.round(totalDuration / 3600)} hrs
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <MdArticle style={{ width: 14, height: 14 }} /> {course.modules?.length || 0} modules
+                            </span>
                         </div>
                     </div>
 
                     {/* Actions */}
                     <div className="flex gap-2 flex-wrap flex-shrink-0">
                         <button onClick={handlePublishToggle} disabled={publishing}
-                            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl border transition-all hover:opacity-80"
+                            className="flex items-center gap-1.5 transition-all hover:opacity-80"
                             style={course.status === 'published' || course.status === 'pending'
-                                ? { backgroundColor: C.warningBg, color: C.warning, borderColor: C.warningBorder }
-                                : { backgroundColor: C.successBg, color: C.success, borderColor: C.successBorder }}>
-                            {publishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ? { backgroundColor: C.warningBg, color: C.warning, border: `1px solid ${C.warningBorder}`, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, padding: '6px 14px', borderRadius: '10px', cursor: 'pointer' }
+                                : { backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, padding: '6px 14px', borderRadius: '10px', cursor: 'pointer' }}>
+                            {publishing
+                                ? <div className="rounded-full border-2 animate-spin" style={{ width: 14, height: 14, borderColor: 'transparent', borderTopColor: 'currentColor' }} />
                                 : course.status === 'published' || course.status === 'pending'
-                                    ? <EyeOff className="w-3.5 h-3.5" />
-                                    : <Globe className="w-3.5 h-3.5" />}
+                                    ? <MdVisibilityOff style={{ width: 14, height: 14 }} />
+                                    : <MdLanguage style={{ width: 14, height: 14 }} />}
                             {course.status === 'published' || course.status === 'pending' ? 'Unpublish' : course.status === 'rejected' ? 'Resubmit' : 'Publish'}
                         </button>
                         <button onClick={() => router.push(`/tutor/courses/${id}/assignments`)}
-                            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl border transition-all hover:opacity-80"
-                            style={cx.btnSecondary()}>
-                            <ClipboardList className="w-3.5 h-3.5" /> Assignments
+                            className="flex items-center gap-1.5 transition-all hover:opacity-80"
+                            style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, padding: '6px 14px', borderRadius: '10px', cursor: 'pointer' }}>
+                            <MdAssignment style={{ width: 14, height: 14 }} /> Assignments
                         </button>
                         <button onClick={openSettingsModal}
-                            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl border transition-all hover:opacity-80"
-                            style={cx.btnSecondary()}>
-                            <Settings className="w-3.5 h-3.5" /> Settings
+                            className="flex items-center gap-1.5 transition-all hover:opacity-80"
+                            style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, padding: '6px 14px', borderRadius: '10px', cursor: 'pointer' }}>
+                            <MdSettings style={{ width: 14, height: 14 }} /> Settings
                         </button>
-                        <button className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl text-white transition-all hover:opacity-90"
-                            style={{ backgroundColor: C.btnPrimary }}>
-                            <Eye className="w-3.5 h-3.5" /> Preview
+                        <button
+                            className="flex items-center gap-1.5 transition-all hover:opacity-90"
+                            style={{ background: C.gradientBtn, color: '#ffffff', border: 'none', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, padding: '6px 14px', borderRadius: '10px', boxShadow: S.btn, cursor: 'pointer' }}>
+                            <MdVisibility style={{ width: 14, height: 14 }} /> Preview
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* ── Tabs ──────────────────────────────────────────────────── */}
-            <div className="flex px-2 rounded-t-2xl"
-                style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.surfaceWhite }}>
+            {/* ── Tabs ── */}
+            <div
+                className="flex px-2"
+                style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.cardBg, borderRadius: `${R['2xl']} ${R['2xl']} 0 0` }}
+            >
                 {TABS.map(({ key, icon: Icon, label }) => (
                     <button key={key} onClick={() => setActiveTab(key)}
-                        className="flex items-center gap-1.5 px-5 py-3.5 text-sm font-semibold border-b-2 transition-all"
-                        style={activeTab === key
-                            ? { borderBottomColor: C.btnPrimary, color: C.btnPrimary, fontFamily: T.fontFamily }
-                            : { borderBottomColor: 'transparent', color: C.textMuted, fontFamily: T.fontFamily }}>
-                        <Icon className="w-4 h-4" /> {label}
+                        className="flex items-center gap-1.5 transition-all"
+                        style={{
+                            padding: '14px 20px',
+                            fontFamily: T.fontFamily,
+                            fontSize: T.size.base,
+                            fontWeight: T.weight.semibold,
+                            borderBottom: activeTab === key ? `2px solid ${C.btnPrimary}` : '2px solid transparent',
+                            color: activeTab === key ? C.btnPrimary : C.text,
+                            background: 'transparent',
+                            border: 'none',
+                            borderBottom: activeTab === key ? `2px solid ${C.btnPrimary}` : '2px solid transparent',
+                            cursor: 'pointer',
+                        }}>
+                        <Icon style={{ width: 16, height: 16 }} /> {label}
                     </button>
                 ))}
             </div>
 
-            {/* ── Curriculum Tab ────────────────────────────────────────── */}
+            {/* ── Curriculum Tab ── */}
             {activeTab === 'curriculum' && (
-                <div className="rounded-b-2xl rounded-tr-2xl overflow-hidden -mt-px"
-                    style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}` }}>
-
+                <div
+                    className="overflow-hidden -mt-px"
+                    style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: `0 0 ${R['2xl']} ${R['2xl']}` }}
+                >
                     {/* Curriculum header */}
                     <div className="px-6 py-4 flex items-center justify-between"
-                        style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: FX.primary05 }}>
+                        style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
                         <div>
                             <h2 className="flex items-center gap-2"
-                                style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
-                                <Sparkles className="w-4 h-4" style={{ color: C.btnPrimary }} />
+                                style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
+                                <MdAutoAwesome style={{ width: 16, height: 16, color: C.btnPrimary }} />
                                 Course Curriculum
                             </h2>
-                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, marginTop: 2 }}>
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, marginTop: 2 }}>
                                 Organize your lessons into modules
                             </p>
                         </div>
                         <button onClick={() => setIsModuleModalOpen(true)}
-                            className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:opacity-90"
-                            style={{ backgroundColor: C.btnPrimary, color: C.surfaceWhite, fontFamily: T.fontFamily }}>
-                            <Plus className="w-4 h-4" /> Add Module
+                            className="flex items-center gap-1.5 transition-all hover:opacity-90"
+                            style={{ background: C.gradientBtn, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, padding: '8px 16px', borderRadius: '10px', border: 'none', boxShadow: S.btn, cursor: 'pointer' }}>
+                            <MdAdd style={{ width: 16, height: 16 }} /> Add Module
                         </button>
                     </div>
 
@@ -442,16 +540,19 @@ export default function ManageCoursePage({ params }) {
 
                                     return (
                                         <div key={module._id}
-                                            className="group rounded-2xl transition-all duration-200 hover:shadow-md"
-                                            style={{ border: `1px solid ${C.cardBorder}` }}>
-
+                                            className="group transition-all duration-200"
+                                            style={{ border: `1px solid ${C.cardBorder}`, borderRadius: '10px' }}
+                                            onMouseEnter={e => e.currentTarget.style.boxShadow = S.cardHover}
+                                            onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+                                        >
                                             {/* Module header */}
-                                            <div className="px-5 py-4 rounded-t-2xl"
-                                                style={{ backgroundColor: C.innerBg, borderBottom: `1px solid ${C.cardBorder}` }}>
+                                            <div className="px-5 py-4"
+                                                style={{ backgroundColor: C.innerBg, borderBottom: `1px solid ${C.cardBorder}`, borderRadius: '10px 10px 0 0' }}>
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                        <button className="cursor-move opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                                                            <GripVertical className="w-4 h-4" style={{ color: C.textMuted }} />
+                                                        <button className="cursor-move opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                                            style={{ background: 'none', border: 'none' }}>
+                                                            <MdDragIndicator style={{ width: 16, height: 16, color: C.text }} />
                                                         </button>
                                                         {isEditing ? (
                                                             <div className="flex items-center gap-2 flex-1">
@@ -461,29 +562,29 @@ export default function ManageCoursePage({ params }) {
                                                                     onFocus={applyFocus} onBlur={removeFocus}
                                                                     autoFocus />
                                                                 <button onClick={saveModuleEdit}
-                                                                    className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-                                                                    style={{ backgroundColor: C.successBg }}>
-                                                                    <Check className="w-4 h-4" style={{ color: C.success }} />
+                                                                    className="flex items-center justify-center transition-all hover:opacity-80"
+                                                                    style={{ width: 32, height: 32, borderRadius: '10px', backgroundColor: C.successBg, border: 'none', cursor: 'pointer' }}>
+                                                                    <MdCheckCircle style={{ width: 16, height: 16, color: C.success }} />
                                                                 </button>
                                                                 <button onClick={() => setEditingModuleId(null)}
-                                                                    className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-                                                                    style={{ backgroundColor: C.innerBg }}>
-                                                                    <X className="w-4 h-4" style={{ color: C.textMuted }} />
+                                                                    className="flex items-center justify-center transition-all hover:opacity-80"
+                                                                    style={{ width: 32, height: 32, borderRadius: '10px', backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, cursor: 'pointer' }}>
+                                                                    <MdClose style={{ width: 16, height: 16, color: C.text }} />
                                                                 </button>
                                                             </div>
                                                         ) : (
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-center gap-2.5">
-                                                                    <span className="w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center flex-shrink-0"
-                                                                        style={{ backgroundColor: C.btnPrimary, color: C.surfaceWhite }}>
+                                                                    <span className="flex items-center justify-center flex-shrink-0"
+                                                                        style={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: C.btnPrimary, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
                                                                         {index + 1}
                                                                     </span>
-                                                                    <span className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                                                                    <span className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
                                                                         {module.title}
                                                                     </span>
                                                                 </div>
                                                                 <div className="flex items-center gap-2 mt-0.5 pl-7"
-                                                                    style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.textMuted }}>
+                                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
                                                                     <span>{moduleLessons.length} lessons</span>
                                                                     <span>·</span>
                                                                     <span>{Math.round(moduleDuration / 60)} mins</span>
@@ -494,27 +595,27 @@ export default function ManageCoursePage({ params }) {
                                                     {!isEditing && (
                                                         <div className="flex items-center gap-2 flex-shrink-0">
                                                             <button onClick={() => openLessonModal(module._id)}
-                                                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all hover:opacity-80"
-                                                                style={{ color: C.btnPrimary, borderColor: FX.primary25, backgroundColor: FX.primary08 }}>
-                                                                <Plus className="w-3 h-3" /> Lesson
+                                                                className="flex items-center gap-1.5 transition-all hover:opacity-80"
+                                                                style={{ color: C.btnPrimary, border: `1px solid ${C.cardBorder}`, backgroundColor: C.btnViewAllBg, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, padding: '6px 12px', borderRadius: '10px', cursor: 'pointer' }}>
+                                                                <MdAdd style={{ width: 12, height: 12 }} /> Lesson
                                                             </button>
                                                             {/* Module menu */}
                                                             <div className="relative group/menu">
-                                                                <button className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-                                                                    style={{ backgroundColor: C.innerBg }}>
-                                                                    <MoreVertical className="w-4 h-4" style={{ color: C.textMuted }} />
+                                                                <button className="flex items-center justify-center transition-all hover:opacity-80"
+                                                                    style={{ width: 32, height: 32, borderRadius: '10px', backgroundColor: C.btnViewAllBg, border: `1px solid ${C.cardBorder}`, cursor: 'pointer' }}>
+                                                                    <MdMoreVert style={{ width: 16, height: 16, color: C.text }} />
                                                                 </button>
-                                                                <div className="absolute right-0 mt-1 w-40 rounded-2xl shadow-lg py-1 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-10"
-                                                                    style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.cardHover }}>
+                                                                <div className="absolute right-0 mt-1 w-40 py-1 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-10"
+                                                                    style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.cardHover, borderRadius: '10px' }}>
                                                                     <button onClick={() => { setEditingModuleId(module._id); setEditingModuleTitle(module.title); }}
-                                                                        className="w-full px-3.5 py-2 text-sm text-left flex items-center gap-2 hover:opacity-70 transition-all"
-                                                                        style={{ fontFamily: T.fontFamily, color: C.text }}>
-                                                                        <Edit3 className="w-3.5 h-3.5" /> Edit
+                                                                        className="w-full flex items-center gap-2 transition-all hover:opacity-70"
+                                                                        style={{ padding: '8px 14px', fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                                                                        <MdEdit style={{ width: 14, height: 14 }} /> Edit
                                                                     </button>
                                                                     <button onClick={() => deleteModule(module._id)}
-                                                                        className="w-full px-3.5 py-2 text-sm text-left flex items-center gap-2 hover:opacity-70 transition-all"
-                                                                        style={{ fontFamily: T.fontFamily, color: C.danger }}>
-                                                                        <Trash2 className="w-3.5 h-3.5" /> Delete
+                                                                        className="w-full flex items-center gap-2 transition-all hover:opacity-70"
+                                                                        style={{ padding: '8px 14px', fontFamily: T.fontFamily, fontSize: T.size.base, color: C.danger, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                                                                        <MdDelete style={{ width: 14, height: 14 }} /> Delete
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -529,33 +630,35 @@ export default function ManageCoursePage({ params }) {
                                                     <div className="space-y-1.5">
                                                         {moduleLessons.map((lesson, idx) => (
                                                             <div key={lesson._id}
-                                                                className="group/lesson flex items-center gap-3 px-4 py-3 rounded-xl border border-transparent transition-all"
+                                                                className="group/lesson flex items-center gap-3 transition-all"
+                                                                style={{ padding: '10px 16px', borderRadius: '10px', border: '1px solid transparent' }}
                                                                 onMouseEnter={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.backgroundColor = C.innerBg; }}
                                                                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                                                                <div className="w-8 h-8 rounded-xl text-white flex items-center justify-center text-xs font-bold flex-shrink-0"
-                                                                    style={{ background: C.gradientBtn }}>
+                                                                <div className="flex items-center justify-center text-white flex-shrink-0"
+                                                                    style={{ width: 32, height: 32, borderRadius: '10px', background: C.gradientBtn, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
                                                                     {idx + 1}
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="flex items-center gap-2 mb-0.5">
-                                                                        <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading }}>
+                                                                        <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}>
                                                                             {lesson.title}
                                                                         </p>
                                                                         {lesson.isFree && (
-                                                                            <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full border uppercase tracking-wide flex-shrink-0"
-                                                                                style={{ backgroundColor: C.successBg, color: C.success, borderColor: C.successBorder, fontFamily: T.fontFamily }}>
+                                                                            <span style={{ backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, padding: '2px 6px', borderRadius: '10px', flexShrink: 0, textTransform: 'uppercase' }}>
                                                                                 FREE
                                                                             </span>
                                                                         )}
                                                                     </div>
                                                                     <div className="flex items-center gap-2"
-                                                                        style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.textMuted }}>
-                                                                        {lesson.type === 'document' ? <FileText className="w-3 h-3" style={{ color: C.warning }} />
-                                                                            : lesson.type === 'quiz' ? <AlertCircle className="w-3 h-3" style={{ color: C.btnPrimary }} />
-                                                                            : <Video className="w-3 h-3" style={{ color: C.chartLine }} />}
+                                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
+                                                                        {lesson.type === 'document'
+                                                                            ? <MdArticle  style={{ width: 12, height: 12, color: C.warning }} />
+                                                                            : lesson.type === 'quiz'
+                                                                                ? <MdWarning  style={{ width: 12, height: 12, color: C.btnPrimary }} />
+                                                                                : <MdVideocam style={{ width: 12, height: 12, color: C.chartLine }} />}
                                                                         <span className="capitalize">{lesson.type || 'video'}</span>
                                                                         <span>·</span>
-                                                                        <Clock className="w-3 h-3" />
+                                                                        <MdAccessTime style={{ width: 12, height: 12 }} />
                                                                         <span>{lesson.type === 'quiz'
                                                                             ? (lesson.content?.quiz?.timeLimit ? `${lesson.content.quiz.timeLimit} mins` : 'No Limit')
                                                                             : `${Math.round((lesson.content?.duration || 0) / 60)} mins`}</span>
@@ -565,43 +668,43 @@ export default function ManageCoursePage({ params }) {
                                                                 <div className="flex items-center gap-1 opacity-0 group-hover/lesson:opacity-100 transition-opacity flex-shrink-0">
                                                                     {lesson.type === 'quiz' && (
                                                                         <button onClick={() => router.push(`/tutor/courses/${id}/modules/${module._id}/lessons/${lesson._id}/quiz`)}
-                                                                            className="w-7 h-7 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-                                                                            style={{ backgroundColor: FX.primary12, border: `1px solid ${FX.primary25}` }}
+                                                                            className="flex items-center justify-center transition-all hover:opacity-80"
+                                                                            style={{ width: 28, height: 28, borderRadius: '10px', backgroundColor: C.btnViewAllBg, border: `1px solid ${C.cardBorder}`, cursor: 'pointer' }}
                                                                             title="Manage Quiz Questions">
-                                                                            <FileText className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
+                                                                            <MdArticle style={{ width: 14, height: 14, color: C.btnPrimary }} />
                                                                         </button>
                                                                     )}
                                                                     <button onClick={() => openLessonModal(module._id, lesson)}
-                                                                        className="w-7 h-7 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-                                                                        style={{ backgroundColor: C.innerBg }}>
-                                                                        <Edit3 className="w-3.5 h-3.5" style={{ color: C.textMuted }} />
+                                                                        className="flex items-center justify-center transition-all hover:opacity-80"
+                                                                        style={{ width: 28, height: 28, borderRadius: '10px', backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, cursor: 'pointer' }}>
+                                                                        <MdEdit style={{ width: 14, height: 14, color: C.text }} />
                                                                     </button>
                                                                     <button onClick={() => deleteLesson(lesson._id)}
-                                                                        className="w-7 h-7 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-                                                                        style={{ backgroundColor: C.dangerBg }}>
-                                                                        <Trash2 className="w-3.5 h-3.5" style={{ color: C.danger }} />
+                                                                        className="flex items-center justify-center transition-all hover:opacity-80"
+                                                                        style={{ width: 28, height: 28, borderRadius: '10px', backgroundColor: C.dangerBg, border: `1px solid ${C.dangerBorder}`, cursor: 'pointer' }}>
+                                                                        <MdDelete style={{ width: 14, height: 14, color: C.danger }} />
                                                                     </button>
                                                                 </div>
                                                             </div>
                                                         ))}
                                                     </div>
                                                 ) : (
-                                                    <div className="text-center py-10 rounded-2xl border-2 border-dashed"
-                                                        style={{ borderColor: C.cardBorder, backgroundColor: FX.primary04 }}>
-                                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2"
-                                                            style={{ backgroundColor: FX.primary10 }}>
-                                                            <Video className="w-5 h-5" style={{ color: C.btnPrimary }} />
+                                                    <div className="text-center border-2 border-dashed"
+                                                        style={{ padding: '40px 24px', borderColor: C.cardBorder, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                                                        <div className="flex items-center justify-center mx-auto mb-2"
+                                                            style={{ width: 40, height: 40, borderRadius: '10px', backgroundColor: C.iconBg }}>
+                                                            <MdVideocam style={{ width: 20, height: 20, color: C.iconColor }} />
                                                         </div>
-                                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, marginBottom: 4 }}>
+                                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text, marginBottom: 4 }}>
                                                             No lessons yet
                                                         </p>
-                                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, marginBottom: 12 }}>
+                                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, marginBottom: 12 }}>
                                                             Add your first lesson to this module
                                                         </p>
                                                         <button onClick={() => openLessonModal(module._id)}
-                                                            className="px-4 py-2 text-xs font-semibold rounded-xl transition-all hover:opacity-80"
-                                                            style={{ backgroundColor: FX.primary12, color: C.btnPrimary, fontFamily: T.fontFamily }}>
-                                                            <Plus className="w-3.5 h-3.5 inline mr-1" /> Add Lesson
+                                                            className="flex items-center gap-1.5 mx-auto transition-all hover:opacity-80"
+                                                            style={{ backgroundColor: C.btnViewAllBg, color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, padding: '8px 16px', borderRadius: '10px', border: `1px solid ${C.cardBorder}`, cursor: 'pointer' }}>
+                                                            <MdAdd style={{ width: 14, height: 14 }} /> Add Lesson
                                                         </button>
                                                     </div>
                                                 )}
@@ -611,21 +714,21 @@ export default function ManageCoursePage({ params }) {
                                 })}
                             </div>
                         ) : (
-                            <div className="text-center py-20">
-                                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                                    style={{ backgroundColor: FX.primary10, border: `1px solid ${FX.primary20}` }}>
-                                    <FileText className="w-7 h-7" style={{ color: C.btnPrimary }} />
+                            <div className="text-center" style={{ padding: '80px 24px' }}>
+                                <div className="flex items-center justify-center mx-auto mb-4"
+                                    style={{ width: 56, height: 56, borderRadius: '10px', backgroundColor: C.iconBg }}>
+                                    <MdArticle style={{ width: 28, height: 28, color: C.iconColor }} />
                                 </div>
                                 <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, marginBottom: 4 }}>
                                     Start Building Your Course
                                 </h3>
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, maxWidth: 320, margin: '0 auto 20px' }}>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, maxWidth: 320, margin: '0 auto 20px' }}>
                                     Create your first module to organize your lessons.
                                 </p>
                                 <button onClick={() => setIsModuleModalOpen(true)}
-                                    className="px-5 py-2.5 text-sm font-semibold rounded-xl inline-flex items-center gap-2 hover:opacity-90"
-                                    style={{ backgroundColor: C.btnPrimary, color: C.surfaceWhite, fontFamily: T.fontFamily }}>
-                                    <Plus className="w-4 h-4" /> Create First Module
+                                    className="inline-flex items-center gap-2 hover:opacity-90 transition-all"
+                                    style={{ background: C.gradientBtn, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, padding: '10px 20px', borderRadius: '10px', border: 'none', boxShadow: S.btn, cursor: 'pointer' }}>
+                                    <MdAdd style={{ width: 16, height: 16 }} /> Create First Module
                                 </button>
                             </div>
                         )}
@@ -633,16 +736,15 @@ export default function ManageCoursePage({ params }) {
                 </div>
             )}
 
-            {/* ── Announcements Tab ─────────────────────────────────────── */}
+            {/* ── Announcements Tab ── */}
             {activeTab === 'announcements' && (
                 <div className="space-y-4 -mt-px">
-                    <div className="rounded-2xl p-6 max-w-2xl"
-                        style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card, borderRadius: R['2xl'], padding: 24, maxWidth: 672 }}>
                         <h3 className="flex items-center gap-2 mb-4"
-                            style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
-                            <div className="w-6 h-6 rounded-xl flex items-center justify-center"
-                                style={{ backgroundColor: FX.primary12 }}>
-                                <BellRing className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
+                            style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
+                            <div className="flex items-center justify-center"
+                                style={{ width: 24, height: 24, borderRadius: '10px', backgroundColor: C.iconBg }}>
+                                <MdNotificationsActive style={{ width: 14, height: 14, color: C.iconColor }} />
                             </div>
                             Create Announcement
                         </h3>
@@ -664,9 +766,11 @@ export default function ManageCoursePage({ params }) {
                             </div>
                             <div className="flex justify-end">
                                 <button type="submit" disabled={submitting}
-                                    className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-all disabled:opacity-60 hover:opacity-90"
-                                    style={{ backgroundColor: C.btnPrimary, color: C.surfaceWhite, fontFamily: T.fontFamily }}>
-                                    {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />}
+                                    className="flex items-center gap-2 transition-all disabled:opacity-60 hover:opacity-90"
+                                    style={{ background: C.gradientBtn, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, padding: '10px 20px', borderRadius: '10px', border: 'none', boxShadow: S.btn, cursor: 'pointer' }}>
+                                    {submitting
+                                        ? <div className="rounded-full border-2 animate-spin" style={{ width: 16, height: 16, borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fff' }} />
+                                        : <MdCampaign style={{ width: 16, height: 16 }} />}
                                     Post Announcement
                                 </button>
                             </div>
@@ -674,38 +778,36 @@ export default function ManageCoursePage({ params }) {
                     </div>
 
                     {/* History */}
-                    <div className="rounded-2xl overflow-hidden max-w-2xl"
-                        style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="overflow-hidden" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card, borderRadius: R['2xl'], maxWidth: 672 }}>
                         <div className="px-5 py-3.5" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
-                            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
                                 Previous Announcements
                             </h3>
                         </div>
                         <div>
                             {course.announcements?.length > 0
                                 ? [...course.announcements].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map((ann, idx) => (
-                                    <div key={idx} className="p-5 transition-all"
-                                        style={{ borderBottom: `1px solid ${C.cardBorder}` }}
+                                    <div key={idx} className="transition-all"
+                                        style={{ padding: 20, borderBottom: `1px solid ${C.cardBorder}` }}
                                         onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}
                                         onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
                                         <div className="flex items-start justify-between gap-3 mb-1.5">
-                                            <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading }}>
+                                            <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}>
                                                 {ann.title}
                                             </h4>
-                                            <span className="text-[10px] px-2 py-1 rounded-xl whitespace-nowrap flex-shrink-0"
-                                                style={{ fontFamily: T.fontFamily, color: C.textMuted, backgroundColor: C.innerBg }}>
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, backgroundColor: C.innerBg, padding: '4px 8px', borderRadius: '10px', whiteSpace: 'nowrap', flexShrink: 0 }}>
                                                 {new Date(ann.createdAt).toLocaleDateString()} {new Date(ann.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, whiteSpace: 'pre-wrap' }}>
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, whiteSpace: 'pre-wrap' }}>
                                             {ann.message}
                                         </p>
                                     </div>
                                 ))
                                 : (
-                                    <div className="p-12 text-center">
-                                        <Megaphone className="w-10 h-10 mx-auto mb-2" style={{ color: C.cardBorder }} />
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted }}>
+                                    <div className="text-center" style={{ padding: 48 }}>
+                                        <MdCampaign style={{ width: 40, height: 40, color: C.cardBorder, margin: '0 auto 8px' }} />
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text }}>
                                             No announcements yet.
                                         </p>
                                     </div>
@@ -715,44 +817,45 @@ export default function ManageCoursePage({ params }) {
                 </div>
             )}
 
-            {/* ── Exams Tab ─────────────────────────────────────────────── */}
+            {/* ── Exams Tab ── */}
             {activeTab === 'exams' && (
-                <div className="rounded-b-2xl overflow-hidden -mt-px"
-                    style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}` }}>
+                <div className="overflow-hidden -mt-px"
+                    style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: `0 0 ${R['2xl']} ${R['2xl']}` }}>
                     <div className="px-6 py-4 flex items-center justify-between"
-                        style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: FX.primary05 }}>
+                        style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
                         <div>
                             <h2 className="flex items-center gap-2"
-                                style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
-                                <Award className="w-4 h-4" style={{ color: C.btnPrimary }} /> Course Exams
+                                style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
+                                <MdEmojiEvents style={{ width: 16, height: 16, color: C.btnPrimary }} /> Course Exams
                             </h2>
-                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, marginTop: 2 }}>
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, marginTop: 2 }}>
                                 Exams linked to this course
                             </p>
                         </div>
                         <Link href={`/tutor/quizzes/create?courseId=${id}&courseTitle=${encodeURIComponent(course.title)}`}
-                            className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl hover:opacity-90 transition-all"
-                            style={{ backgroundColor: C.btnPrimary, color: C.surfaceWhite, fontFamily: T.fontFamily }}>
-                            <Plus className="w-4 h-4" /> Create Exam
+                            className="flex items-center gap-1.5 transition-all hover:opacity-90"
+                            style={{ background: C.gradientBtn, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, padding: '8px 16px', borderRadius: '10px', boxShadow: S.btn }}>
+                            <MdAdd style={{ width: 16, height: 16 }} /> Create Exam
                         </Link>
                     </div>
                     <div>
                         {courseExams.length > 0 ? courseExams.map(exam => (
-                            <div key={exam._id} className="px-5 py-4 flex items-center justify-between transition-all"
-                                style={{ borderBottom: `1px solid ${C.cardBorder}` }}
+                            <div key={exam._id}
+                                className="flex items-center justify-between transition-all"
+                                style={{ padding: '16px 20px', borderBottom: `1px solid ${C.cardBorder}` }}
                                 onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}
                                 onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
                                 <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                                        style={{ backgroundColor: FX.primary12 }}>
-                                        <FileText className="w-4 h-4" style={{ color: C.btnPrimary }} />
+                                    <div className="flex items-center justify-center flex-shrink-0"
+                                        style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.iconBg }}>
+                                        <MdArticle style={{ width: 16, height: 16, color: C.iconColor }} />
                                     </div>
                                     <div>
-                                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading }}>
+                                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}>
                                             {exam.title}
                                         </h3>
                                         <div className="flex items-center gap-2 mt-0.5"
-                                            style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.textMuted }}>
+                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
                                             <span>{exam.totalQuestions || exam.questions?.length || 0} Questions</span>
                                             <span>·</span>
                                             <span>{exam.duration || 30} min</span>
@@ -761,41 +864,41 @@ export default function ManageCoursePage({ params }) {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2.5">
-                                    <span className="text-[10px] px-2.5 py-1 rounded-full font-bold border"
-                                        style={exam.status === 'published'
-                                            ? { backgroundColor: C.successBg, color: C.success, borderColor: C.successBorder, fontFamily: T.fontFamily }
-                                            : { backgroundColor: C.warningBg, color: C.warning, borderColor: C.warningBorder, fontFamily: T.fontFamily }}>
+                                    <span style={exam.status === 'published'
+                                        ? { backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, padding: '3px 10px', borderRadius: '10px' }
+                                        : { backgroundColor: C.warningBg, color: C.warning, border: `1px solid ${C.warningBorder}`, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, padding: '3px 10px', borderRadius: '10px' }}>
                                         {exam.status === 'published' ? 'Published' : 'Draft'}
                                     </span>
                                     {exam.examAttempts?.length > 0 && (
                                         <span className="flex items-center gap-1"
-                                            style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.textMuted }}>
-                                            <Users className="w-3 h-3" /> {exam.examAttempts.length}
+                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
+                                            <MdPeople style={{ width: 12, height: 12 }} /> {exam.examAttempts.length}
                                         </span>
                                     )}
                                     <Link href={`/tutor/quizzes/${exam._id}/edit`}
-                                        className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-                                        style={{ backgroundColor: C.innerBg }}>
-                                        <Edit3 className="w-4 h-4" style={{ color: C.textMuted }} />
+                                        className="flex items-center justify-center transition-all hover:opacity-80"
+                                        style={{ width: 32, height: 32, borderRadius: '10px', backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
+                                        <MdEdit style={{ width: 16, height: 16, color: C.text }} />
                                     </Link>
                                 </div>
                             </div>
                         )) : (
-                            <div className="p-16 text-center">
-                                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                                    style={{ backgroundColor: FX.primary10, border: `1px solid ${FX.primary20}` }}>
-                                    <Award className="w-7 h-7" style={{ color: C.btnPrimary }} />
+                            <div className="p-14 text-center border-2 border-dashed"
+                                style={{ borderColor: C.cardBorder, borderRadius: `0 0 ${R['2xl']} ${R['2xl']}` }}>
+                                <div className="flex items-center justify-center mx-auto mb-4"
+                                    style={{ width: 56, height: 56, borderRadius: '10px', backgroundColor: C.iconBg }}>
+                                    <MdEmojiEvents style={{ width: 28, height: 28, color: C.iconColor }} />
                                 </div>
-                                <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading, marginBottom: 4 }}>
+                                <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading, marginBottom: 4 }}>
                                     No Exams Yet
                                 </h3>
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, marginBottom: 20 }}>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, marginBottom: 20 }}>
                                     Create an exam for this course to assess student knowledge.
                                 </p>
                                 <Link href={`/tutor/quizzes/create?courseId=${id}&courseTitle=${encodeURIComponent(course.title)}`}
-                                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl hover:opacity-90"
-                                    style={{ backgroundColor: C.btnPrimary, color: C.surfaceWhite, fontFamily: T.fontFamily }}>
-                                    <Plus className="w-4 h-4" /> Create First Exam
+                                    className="inline-flex items-center gap-2 hover:opacity-90 transition-all"
+                                    style={{ background: C.gradientBtn, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, padding: '10px 20px', borderRadius: '10px', boxShadow: S.btn }}>
+                                    <MdAdd style={{ width: 16, height: 16 }} /> Create First Exam
                                 </Link>
                             </div>
                         )}
@@ -803,30 +906,30 @@ export default function ManageCoursePage({ params }) {
                 </div>
             )}
 
-            {/* ════════════════════════════════════════════════════════════
+            {/* ════════════════════════════════════════════════════
                 MODALS
-            ════════════════════════════════════════════════════════════ */}
+            ════════════════════════════════════════════════════ */}
 
-            {/* ── Module Modal ──────────────────────────────────────────── */}
+            {/* ── Module Modal ── */}
             {isModuleModalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
-                        style={{ backgroundColor: C.surfaceWhite }}>
-                        <div className="p-5 flex items-center justify-between"
+                <div className="fixed inset-0 flex items-center justify-center z-50 p-4"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
+                    <div className="max-w-md w-full overflow-hidden" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.cardHover }}>
+                        <div className="flex items-center justify-between p-5"
                             style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
                             <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                                    style={{ backgroundColor: FX.primary15, border: `1px solid ${FX.primary25}` }}>
-                                    <Plus className="w-4 h-4" style={{ color: C.btnPrimary }} />
+                                <div className="flex items-center justify-center"
+                                    style={{ width: 32, height: 32, borderRadius: '10px', backgroundColor: C.iconBg }}>
+                                    <MdAdd style={{ width: 16, height: 16, color: C.iconColor }} />
                                 </div>
                                 <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
                                     Create New Module
                                 </h3>
                             </div>
                             <button onClick={() => setIsModuleModalOpen(false)}
-                                className="w-7 h-7 rounded-xl flex items-center justify-center transition-all hover:opacity-70"
-                                style={{ backgroundColor: C.innerBg }}>
-                                <X className="w-4 h-4" style={{ color: C.textMuted }} />
+                                className="flex items-center justify-center transition-all hover:opacity-70"
+                                style={{ width: 28, height: 28, borderRadius: '10px', backgroundColor: C.innerBg, border: 'none', cursor: 'pointer' }}>
+                                <MdClose style={{ width: 16, height: 16, color: C.text }} />
                             </button>
                         </div>
                         <form onSubmit={handleCreateModule} className="p-5 space-y-4">
@@ -840,8 +943,8 @@ export default function ManageCoursePage({ params }) {
                             <div className="flex gap-3 pt-1">
                                 <CancelBtn onClick={() => setIsModuleModalOpen(false)} />
                                 <button type="submit" disabled={submitting || !moduleTitle}
-                                    className="flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all disabled:opacity-50 hover:opacity-90"
-                                    style={{ backgroundColor: C.btnPrimary, color: C.surfaceWhite, fontFamily: T.fontFamily }}>
+                                    className="flex-1 transition-all disabled:opacity-50 hover:opacity-90"
+                                    style={{ background: C.gradientBtn, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, padding: '10px 0', borderRadius: '10px', border: 'none', boxShadow: S.btn, cursor: 'pointer' }}>
                                     {submitting ? 'Creating…' : 'Create Module'}
                                 </button>
                             </div>
@@ -850,31 +953,31 @@ export default function ManageCoursePage({ params }) {
                 </div>
             )}
 
-            {/* ── Lesson Modal ──────────────────────────────────────────── */}
+            {/* ── Lesson Modal ── */}
             {isLessonModalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="rounded-2xl shadow-2xl max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden"
-                        style={{ backgroundColor: C.surfaceWhite }}>
-                        <div className="p-5 flex items-center justify-between flex-shrink-0"
+                <div className="fixed inset-0 flex items-center justify-center z-50 p-4"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
+                    <div className="max-w-lg w-full flex flex-col overflow-hidden" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.cardHover, maxHeight: '92vh' }}>
+                        <div className="flex items-center justify-between p-5 flex-shrink-0"
                             style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
                             <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                                    style={{ backgroundColor: FX.primary15, border: `1px solid ${FX.primary25}` }}>
-                                    <Video className="w-4 h-4" style={{ color: C.btnPrimary }} />
+                                <div className="flex items-center justify-center"
+                                    style={{ width: 32, height: 32, borderRadius: '10px', backgroundColor: C.iconBg }}>
+                                    <MdVideocam style={{ width: 16, height: 16, color: C.iconColor }} />
                                 </div>
                                 <div>
-                                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
                                         {editingLessonId ? 'Edit Lesson' : 'Add New Lesson'}
                                     </h3>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
                                         Add content to your module
                                     </p>
                                 </div>
                             </div>
                             <button onClick={() => setIsLessonModalOpen(false)}
-                                className="w-7 h-7 rounded-xl flex items-center justify-center transition-all hover:opacity-70"
-                                style={{ backgroundColor: C.innerBg }}>
-                                <X className="w-4 h-4" style={{ color: C.textMuted }} />
+                                className="flex items-center justify-center transition-all hover:opacity-70"
+                                style={{ width: 28, height: 28, borderRadius: '10px', backgroundColor: C.innerBg, border: 'none', cursor: 'pointer' }}>
+                                <MdClose style={{ width: 16, height: 16, color: C.text }} />
                             </button>
                         </div>
 
@@ -888,10 +991,10 @@ export default function ManageCoursePage({ params }) {
                                         {['video', 'document', 'quiz'].map(type => (
                                             <button key={type} type="button"
                                                 onClick={() => setLessonForm(prev => ({ ...prev, type }))}
-                                                className="py-2.5 rounded-xl border-2 text-xs font-bold capitalize transition-all"
+                                                className="capitalize transition-all"
                                                 style={lessonForm.type === type
-                                                    ? { borderColor: C.btnPrimary, backgroundColor: FX.primary08, color: C.btnPrimary, fontFamily: T.fontFamily }
-                                                    : { borderColor: C.cardBorder, color: C.textMuted, fontFamily: T.fontFamily }}>
+                                                    ? { border: `2px solid ${C.btnPrimary}`, backgroundColor: C.btnViewAllBg, color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, padding: '10px 0', borderRadius: '10px', cursor: 'pointer' }
+                                                    : { border: `2px solid ${C.cardBorder}`, color: C.text, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, padding: '10px 0', borderRadius: '10px', cursor: 'pointer', background: 'transparent' }}>
                                                 {type}
                                             </button>
                                         ))}
@@ -921,37 +1024,37 @@ export default function ManageCoursePage({ params }) {
                                 <div className="space-y-2">
                                     <ModalLabel>Resources & Attachments</ModalLabel>
                                     {lessonForm.attachments.map((file, idx) => (
-                                        <div key={idx} className="flex items-center justify-between p-3 rounded-xl"
-                                            style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
+                                        <div key={idx} className="flex items-center justify-between"
+                                            style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px', padding: 12 }}>
                                             <div className="flex items-center gap-2.5 min-w-0">
-                                                <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
-                                                    style={{ backgroundColor: FX.primary12 }}>
-                                                    <FileText className="w-3.5 h-3.5" style={{ color: C.btnPrimary }} />
+                                                <div className="flex items-center justify-center flex-shrink-0"
+                                                    style={{ width: 28, height: 28, borderRadius: '10px', backgroundColor: C.iconBg }}>
+                                                    <MdArticle style={{ width: 14, height: 14, color: C.iconColor }} />
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.text }}>
                                                         {file.name}
                                                     </p>
-                                                    <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, textTransform: 'uppercase' }}>
+                                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, textTransform: 'uppercase' }}>
                                                         {file.type?.split('/')[1] || 'File'}
                                                     </p>
                                                 </div>
                                             </div>
                                             <button type="button"
                                                 onClick={() => setLessonForm(prev => ({ ...prev, attachments: prev.attachments.filter((_, i) => i !== idx) }))}
-                                                className="w-6 h-6 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-                                                style={{ backgroundColor: C.dangerBg }}>
-                                                <X className="w-3.5 h-3.5" style={{ color: C.danger }} />
+                                                className="flex items-center justify-center transition-all hover:opacity-80"
+                                                style={{ width: 24, height: 24, borderRadius: '10px', backgroundColor: C.dangerBg, border: 'none', cursor: 'pointer' }}>
+                                                <MdClose style={{ width: 14, height: 14, color: C.danger }} />
                                             </button>
                                         </div>
                                     ))}
                                     <input type="file" onChange={handleFileUpload} className="hidden" id="resource-upload" />
                                     <label htmlFor="resource-upload"
-                                        className="flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed rounded-xl text-xs font-semibold cursor-pointer transition-all"
-                                        style={{ borderColor: FX.primary25, color: C.btnPrimary, fontFamily: T.fontFamily }}
-                                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = FX.primary06; }}
+                                        className="flex items-center justify-center gap-2 w-full border-2 border-dashed transition-all cursor-pointer"
+                                        style={{ padding: '12px 0', borderColor: C.cardBorder, color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, borderRadius: '10px' }}
+                                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}
                                         onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                                        <Plus className="w-3.5 h-3.5" /> Upload Resource
+                                        <MdAdd style={{ width: 14, height: 14 }} /> Upload Resource
                                     </label>
                                 </div>
 
@@ -962,21 +1065,23 @@ export default function ManageCoursePage({ params }) {
                                         <input type="file" onChange={handleVideoUpload} accept="video/mp4,video/x-m4v,video/*"
                                             className="hidden" id="video-upload" disabled={isUploadingVideo} />
                                         <label htmlFor="video-upload"
-                                            className={`flex items-center justify-center gap-2 w-full py-3.5 rounded-xl border-2 border-dashed text-sm font-semibold transition-all ${isUploadingVideo ? 'opacity-50 cursor-wait' : 'cursor-pointer'}`}
-                                            style={{ borderColor: FX.primary40, color: C.btnPrimary, backgroundColor: FX.primary06, fontFamily: T.fontFamily }}>
+                                            className={`flex items-center justify-center gap-2 w-full border-2 border-dashed ${isUploadingVideo ? 'opacity-50 cursor-wait' : 'cursor-pointer'} transition-all`}
+                                            style={{ padding: '14px 0', borderColor: C.btnPrimary, color: C.btnPrimary, backgroundColor: C.btnViewAllBg, fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, borderRadius: '10px' }}>
                                             {isUploadingVideo
-                                                ? <><Loader2 className="w-4 h-4 animate-spin" /> Uploading & Processing…</>
-                                                : <><Video className="w-4 h-4" /> Upload Video (Auto HLS)</>}
+                                                ? <><div className="rounded-full border-2 animate-spin" style={{ width: 16, height: 16, borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} /> Uploading & Processing…</>
+                                                : <><MdVideocam style={{ width: 16, height: 16 }} /> Upload Video (Auto HLS)</>}
                                         </label>
-                                        <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider before:h-px before:flex-1 after:h-px after:flex-1"
-                                            style={{ color: C.textMuted, '--before-bg': C.cardBorder, '--after-bg': C.cardBorder }}>
+                                        <div className="flex items-center gap-3"
+                                            style={{ color: C.text, fontSize: T.size.xs, fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                            <div style={{ height: 1, flex: 1, backgroundColor: C.cardBorder }} />
                                             or paste URL
+                                            <div style={{ height: 1, flex: 1, backgroundColor: C.cardBorder }} />
                                         </div>
                                         <input type="url" value={lessonForm.videoUrl}
                                             onChange={e => setLessonForm(prev => ({ ...prev, videoUrl: e.target.value }))}
                                             placeholder="https://example.com/video.mp4"
                                             style={inp} onFocus={applyFocus} onBlur={removeFocus} />
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.textMuted }}>
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
                                             Direct video link or YouTube URL
                                         </p>
                                     </div>
@@ -987,12 +1092,12 @@ export default function ManageCoursePage({ params }) {
                                     <div className="space-y-2">
                                         <ModalLabel>Upload Documents (PDF, Word, PPT)</ModalLabel>
                                         {lessonForm.documents?.map((file, idx) => (
-                                            <div key={idx} className="flex items-center justify-between p-3 rounded-xl"
-                                                style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
+                                            <div key={idx} className="flex items-center justify-between"
+                                                style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px', padding: 12 }}>
                                                 <div className="flex items-center gap-2.5">
-                                                    <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
-                                                        style={{ backgroundColor: C.warningBg }}>
-                                                        <FileText className="w-3.5 h-3.5" style={{ color: C.warning }} />
+                                                    <div className="flex items-center justify-center flex-shrink-0"
+                                                        style={{ width: 28, height: 28, borderRadius: '10px', backgroundColor: C.warningBg }}>
+                                                        <MdArticle style={{ width: 14, height: 14, color: C.warning }} />
                                                     </div>
                                                     <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.text }}>
                                                         {file.name}
@@ -1000,28 +1105,28 @@ export default function ManageCoursePage({ params }) {
                                                 </div>
                                                 <button type="button"
                                                     onClick={() => setLessonForm(prev => ({ ...prev, documents: prev.documents.filter((_, i) => i !== idx) }))}
-                                                    className="w-6 h-6 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-                                                    style={{ backgroundColor: C.dangerBg }}>
-                                                    <X className="w-3.5 h-3.5" style={{ color: C.danger }} />
+                                                    className="flex items-center justify-center transition-all hover:opacity-80"
+                                                    style={{ width: 24, height: 24, borderRadius: '10px', backgroundColor: C.dangerBg, border: 'none', cursor: 'pointer' }}>
+                                                    <MdClose style={{ width: 14, height: 14, color: C.danger }} />
                                                 </button>
                                             </div>
                                         ))}
                                         <input type="file" onChange={handleDocumentUpload} className="hidden" id="document-upload" accept=".pdf,.doc,.docx,.ppt,.pptx" />
                                         <label htmlFor="document-upload"
-                                            className="flex items-center justify-center gap-2 w-full py-3.5 border-2 border-dashed rounded-xl text-sm font-semibold cursor-pointer hover:opacity-80 transition-all"
-                                            style={{ borderColor: C.warningBorder, backgroundColor: C.warningBg, color: C.warning, fontFamily: T.fontFamily }}>
-                                            <Upload className="w-4 h-4" /> Upload Document
+                                            className="flex items-center justify-center gap-2 w-full border-2 border-dashed cursor-pointer hover:opacity-80 transition-all"
+                                            style={{ padding: '14px 0', borderColor: C.warningBorder, backgroundColor: C.warningBg, color: C.warning, fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, borderRadius: '10px' }}>
+                                            <MdUpload style={{ width: 16, height: 16 }} /> Upload Document
                                         </label>
                                     </div>
                                 )}
 
                                 {/* Quiz specific */}
                                 {lessonForm.type === 'quiz' && (
-                                    <div className="p-4 rounded-2xl border text-center"
-                                        style={{ borderColor: FX.primary25, backgroundColor: FX.primary06 }}>
-                                        <AlertCircle className="w-7 h-7 mx-auto mb-2" style={{ color: C.btnPrimary }} />
-                                        <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>Quiz Builder</h4>
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, margin: '4px 0 16px' }}>
+                                    <div className="text-center"
+                                        style={{ border: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg, borderRadius: '10px', padding: 16 }}>
+                                        <MdWarning style={{ width: 28, height: 28, color: C.btnPrimary, margin: '0 auto 8px' }} />
+                                        <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>Quiz Builder</h4>
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, margin: '4px 0 16px' }}>
                                             Questions are managed in the Quiz Builder after creation.
                                         </p>
                                         <div className="grid grid-cols-2 gap-3 text-left">
@@ -1052,17 +1157,17 @@ export default function ManageCoursePage({ params }) {
                                                 placeholder="15" style={inp}
                                                 onFocus={applyFocus} onBlur={removeFocus} />
                                         </div>
-                                        <label className="flex items-center gap-3 p-3.5 rounded-xl cursor-pointer"
-                                            style={{ backgroundColor: C.innerBg }}>
+                                        <label className="flex items-center gap-3 cursor-pointer"
+                                            style={{ backgroundColor: C.innerBg, borderRadius: '10px', padding: 14 }}>
                                             <input type="checkbox" id="isFree" checked={lessonForm.isFree}
                                                 onChange={e => setLessonForm(prev => ({ ...prev, isFree: e.target.checked }))}
-                                                className="w-4 h-4 rounded"
+                                                className="w-4 h-4"
                                                 style={{ accentColor: C.btnPrimary }} />
                                             <div>
-                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading }}>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}>
                                                     Free preview lesson
                                                 </p>
-                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
                                                     Students can watch this without enrolling
                                                 </p>
                                             </div>
@@ -1072,12 +1177,12 @@ export default function ManageCoursePage({ params }) {
                             </div>
 
                             {/* Modal footer */}
-                            <div className="p-4 flex gap-3 flex-shrink-0"
-                                style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
+                            <div className="flex gap-3 flex-shrink-0"
+                                style={{ padding: 16, borderTop: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
                                 <CancelBtn onClick={() => setIsLessonModalOpen(false)} />
                                 <button type="submit" disabled={submitting || !lessonForm.title}
-                                    className="flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all disabled:opacity-50 hover:opacity-90"
-                                    style={{ backgroundColor: C.btnPrimary, color: C.surfaceWhite, fontFamily: T.fontFamily }}>
+                                    className="flex-1 transition-all disabled:opacity-50 hover:opacity-90"
+                                    style={{ background: C.gradientBtn, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, padding: '10px 0', borderRadius: '10px', border: 'none', boxShadow: S.btn, cursor: 'pointer' }}>
                                     {submitting ? 'Saving…' : editingLessonId ? 'Update Lesson' : 'Add Lesson'}
                                 </button>
                             </div>
@@ -1086,46 +1191,42 @@ export default function ManageCoursePage({ params }) {
                 </div>
             )}
 
-            {/* ── Settings Modal ────────────────────────────────────────── */}
+            {/* ── Settings Modal ── */}
             {isSettingsModalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="rounded-2xl shadow-2xl max-w-xl w-full max-h-[92vh] flex flex-col overflow-hidden"
-                        style={{ backgroundColor: C.surfaceWhite }}>
-                        <div className="p-5 flex items-center justify-between flex-shrink-0"
+                <div className="fixed inset-0 flex items-center justify-center z-50 p-4"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
+                    <div className="max-w-xl w-full flex flex-col overflow-hidden" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.cardHover, maxHeight: '92vh' }}>
+                        <div className="flex items-center justify-between p-5 flex-shrink-0"
                             style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
                             <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                                    style={{ backgroundColor: FX.primary15, border: `1px solid ${FX.primary25}` }}>
-                                    <Settings className="w-4 h-4" style={{ color: C.btnPrimary }} />
+                                <div className="flex items-center justify-center"
+                                    style={{ width: 32, height: 32, borderRadius: '10px', backgroundColor: C.iconBg }}>
+                                    <MdSettings style={{ width: 16, height: 16, color: C.iconColor }} />
                                 </div>
                                 <div>
-                                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
                                         Course Settings
                                     </h3>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
                                         Update all course details
                                     </p>
                                 </div>
                             </div>
                             <button onClick={() => setIsSettingsModalOpen(false)}
-                                className="w-7 h-7 rounded-xl flex items-center justify-center transition-all hover:opacity-70"
-                                style={{ backgroundColor: C.innerBg }}>
-                                <X className="w-4 h-4" style={{ color: C.textMuted }} />
+                                className="flex items-center justify-center transition-all hover:opacity-70"
+                                style={{ width: 28, height: 28, borderRadius: '10px', backgroundColor: C.innerBg, border: 'none', cursor: 'pointer' }}>
+                                <MdClose style={{ width: 16, height: 16, color: C.text }} />
                             </button>
                         </div>
 
                         <form onSubmit={handleSaveSettings} className="flex flex-col flex-1 min-h-0">
                             <div className="p-5 space-y-4 overflow-y-auto flex-1">
-                                {[
-                                    { label: 'Course Title', key: 'title', type: 'text', required: true },
-                                ].map(({ label, key, type, required }) => (
-                                    <div key={key}>
-                                        <ModalLabel>{label}</ModalLabel>
-                                        <input type={type} value={settingsForm[key]} required={required}
-                                            onChange={e => setSettingsForm(prev => ({ ...prev, [key]: e.target.value }))}
-                                            style={inp} onFocus={applyFocus} onBlur={removeFocus} />
-                                    </div>
-                                ))}
+                                <div>
+                                    <ModalLabel>Course Title</ModalLabel>
+                                    <input type="text" value={settingsForm.title} required
+                                        onChange={e => setSettingsForm(prev => ({ ...prev, title: e.target.value }))}
+                                        style={inp} onFocus={applyFocus} onBlur={removeFocus} />
+                                </div>
                                 <div>
                                     <ModalLabel>Description</ModalLabel>
                                     <textarea value={settingsForm.description} rows={3}
@@ -1165,24 +1266,24 @@ export default function ManageCoursePage({ params }) {
                                     <ModalLabel>Course Visibility</ModalLabel>
                                     <div className="grid grid-cols-2 gap-3">
                                         {[
-                                            { value: 'institute', icon: Lock, label: 'Institute', sub: 'Your students only' },
-                                            { value: 'public',    icon: Globe, label: 'Global',    sub: 'Visible to everyone' },
+                                            { value: 'institute', icon: MdLock,     label: 'Institute', sub: 'Your students only' },
+                                            { value: 'public',    icon: MdLanguage, label: 'Global',    sub: 'Visible to everyone' },
                                         ].map(({ value, icon: Icon, label, sub }) => (
                                             <label key={value}
-                                                className="flex items-center gap-2.5 p-3 border-2 rounded-xl cursor-pointer transition-all"
+                                                className="flex items-center gap-2.5 cursor-pointer transition-all"
                                                 style={settingsForm.visibility === value
-                                                    ? { borderColor: C.btnPrimary, backgroundColor: FX.primary06 }
-                                                    : { borderColor: C.cardBorder }}>
+                                                    ? { border: `2px solid ${C.btnPrimary}`, backgroundColor: C.btnViewAllBg, borderRadius: '10px', padding: 12 }
+                                                    : { border: `2px solid ${C.cardBorder}`, borderRadius: '10px', padding: 12 }}>
                                                 <input type="radio" name="visibility" value={value}
                                                     checked={settingsForm.visibility === value}
                                                     onChange={e => setSettingsForm(prev => ({ ...prev, visibility: e.target.value }))}
                                                     className="sr-only" />
-                                                <Icon className="w-4 h-4 flex-shrink-0" style={{ color: C.textMuted }} />
+                                                <Icon style={{ width: 16, height: 16, color: C.text, flexShrink: 0 }} />
                                                 <div>
                                                     <span className="block" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>
                                                         {label}
                                                     </span>
-                                                    <span className="block" style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted }}>
+                                                    <span className="block" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
                                                         {sub}
                                                     </span>
                                                 </div>
@@ -1191,7 +1292,7 @@ export default function ManageCoursePage({ params }) {
                                     </div>
                                 </div>
 
-                                {/* What you'll learn */}
+                                {/* What you'll learn + Prerequisites */}
                                 {[
                                     { title: 'What Students Will Learn', key: 'whatYouWillLearn', placeholder: 'Learning outcome' },
                                     { title: 'Prerequisites & Requirements', key: 'requirements', placeholder: 'Requirement' },
@@ -1212,31 +1313,33 @@ export default function ManageCoursePage({ params }) {
                                                 {settingsForm[key].length > 1 && (
                                                     <button type="button"
                                                         onClick={() => setSettingsForm(prev => ({ ...prev, [key]: prev[key].filter((_, i) => i !== idx) }))}
-                                                        className="w-7 h-7 rounded-xl flex items-center justify-center transition-all hover:opacity-80"
-                                                        style={{ backgroundColor: C.dangerBg }}>
-                                                        <X className="w-3.5 h-3.5" style={{ color: C.danger }} />
+                                                        className="flex items-center justify-center transition-all hover:opacity-80"
+                                                        style={{ width: 28, height: 28, borderRadius: '10px', backgroundColor: C.dangerBg, border: 'none', cursor: 'pointer' }}>
+                                                        <MdClose style={{ width: 14, height: 14, color: C.danger }} />
                                                     </button>
                                                 )}
                                             </div>
                                         ))}
                                         <button type="button"
                                             onClick={() => setSettingsForm(prev => ({ ...prev, [key]: [...prev[key], ''] }))}
-                                            className="text-xs font-semibold flex items-center gap-1 transition-opacity hover:opacity-70"
-                                            style={{ color: C.btnPrimary, fontFamily: T.fontFamily }}>
-                                            <Plus className="w-3.5 h-3.5" /> Add item
+                                            className="flex items-center gap-1 transition-opacity hover:opacity-70"
+                                            style={{ color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, background: 'none', border: 'none', cursor: 'pointer' }}>
+                                            <MdAdd style={{ width: 14, height: 14 }} /> Add item
                                         </button>
                                     </div>
                                 ))}
                             </div>
 
                             {/* Settings footer */}
-                            <div className="p-4 flex gap-3 flex-shrink-0"
-                                style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
+                            <div className="flex gap-3 flex-shrink-0"
+                                style={{ padding: 16, borderTop: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
                                 <CancelBtn onClick={() => setIsSettingsModalOpen(false)} />
                                 <button type="submit" disabled={submitting}
-                                    className="flex-1 py-2.5 text-sm font-semibold flex items-center justify-center gap-2 rounded-xl transition-all disabled:opacity-60 hover:opacity-90"
-                                    style={{ backgroundColor: C.btnPrimary, color: C.surfaceWhite, fontFamily: T.fontFamily }}>
-                                    {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                    className="flex-1 flex items-center justify-center gap-2 transition-all disabled:opacity-60 hover:opacity-90"
+                                    style={{ background: C.gradientBtn, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, padding: '10px 0', borderRadius: '10px', border: 'none', boxShadow: S.btn, cursor: 'pointer' }}>
+                                    {submitting
+                                        ? <div className="rounded-full border-2 animate-spin" style={{ width: 16, height: 16, borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fff' }} />
+                                        : <MdSave style={{ width: 16, height: 16 }} />}
                                     Save Changes
                                 </button>
                             </div>

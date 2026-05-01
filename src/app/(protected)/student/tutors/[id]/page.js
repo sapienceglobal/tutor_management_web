@@ -4,64 +4,86 @@ import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import api from '@/lib/axios';
 import {
-    Calendar as CalendarIcon, Clock, MapPin, Star, Award,
-    CheckCircle, Loader2, BookOpen, MessageSquare, ArrowLeft,
-    Users, Sparkles, GraduationCap, X, Bot
-} from 'lucide-react';
+    MdCalendarMonth,
+    MdAccessTime,
+    MdLocationOn,
+    MdStar,
+    MdStarBorder,
+    MdEmojiEvents,
+    MdCheckCircle,
+    MdMenuBook,
+    MdMessage,
+    MdArrowBack,
+    MdPeople,
+    MdAutoAwesome,
+    MdSchool,
+    MdClose,
+    MdSmartToy,
+    MdSchedule,
+    MdPerson,
+    MdHourglassEmpty,
+} from 'react-icons/md';
 import { toast } from 'react-hot-toast';
 import { format, addDays, startOfToday, isSameDay, parse } from 'date-fns';
 import AiTutorWidget from '@/components/AiTutorWidget';
 import { C, T, S, R } from '@/constants/studentTokens';
 
-// ─── Theme Colors ─────────────────────────────────────────────────────────────
-const themeBg = '#dfdaf3';
-const outerCard = '#EAE8FA';
-const innerBox = '#E3DFF8';
-
-// Focus Handlers
+// ─── Focus Handlers ───────────────────────────────────────────────────────────
 const onFocusHandler = e => {
     e.target.style.borderColor = C.btnPrimary;
-    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.15)';
+    e.target.style.boxShadow   = '0 0 0 3px rgba(117,115,232,0.15)';
 };
 const onBlurHandler = e => {
     e.target.style.borderColor = C.cardBorder;
-    e.target.style.boxShadow = 'none';
+    e.target.style.boxShadow   = 'none';
 };
 
 const baseInputStyle = {
-    backgroundColor: C.surfaceWhite,
-    border: `1px solid ${C.cardBorder}`,
-    borderRadius: R.xl,
-    color: C.heading,
-    fontFamily: T.fontFamily,
-    fontSize: T.size.sm,
-    fontWeight: T.weight.bold,
-    outline: 'none',
-    width: '100%',
-    padding: '12px 16px',
-    transition: 'all 0.2s ease',
+    backgroundColor: C.cardBg,
+    border:          `1px solid ${C.cardBorder}`,
+    borderRadius:    '10px',
+    color:           C.heading,
+    fontFamily:      T.fontFamily,
+    fontSize:        T.size.base,
+    fontWeight:      T.weight.semibold,
+    outline:         'none',
+    width:           '100%',
+    padding:         '12px 16px',
+    transition:      'all 0.2s ease',
 };
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 function Avatar({ src, name, size = 'xl' }) {
-    const dims = { xl: 96, lg: 56, md: 40, sm: 32 };
-    const fonts = { xl: T.size['4xl'], lg: T.size.xl, md: T.size.md, sm: T.size.base };
-    const dim = dims[size];
+    const dims  = { xl: 88, lg: 52, md: 40, sm: 32 };
+    const fonts = { xl: T.size['3xl'], lg: T.size.xl, md: T.size.md, sm: T.size.base };
+    const dim   = dims[size];
     return (
-        <div style={{
-            width: dim, height: dim,
-            borderRadius: R['2xl'],
-            overflow: 'hidden',
-            border: `4px solid ${outerCard}`,
-            boxShadow: S.card,
-            flexShrink: 0,
-            backgroundColor: innerBox,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
+        <div
+            style={{
+                width:           dim,
+                height:          dim,
+                borderRadius:    R.xl,
+                overflow:        'hidden',
+                border:          `3px solid ${C.cardBg}`,
+                boxShadow:       S.card,
+                flexShrink:      0,
+                backgroundColor: C.innerBg,
+                display:         'flex',
+                alignItems:      'center',
+                justifyContent:  'center',
+            }}
+        >
             {src ? (
                 <img src={src} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-                <span style={{ fontFamily: T.fontFamily, fontSize: fonts[size], fontWeight: T.weight.black, color: C.btnPrimary }}>
+                <span
+                    style={{
+                        fontFamily: T.fontFamily,
+                        fontSize:   fonts[size],
+                        fontWeight: T.weight.bold,
+                        color:      C.btnPrimary,
+                    }}
+                >
                     {name?.[0]?.toUpperCase() || 'T'}
                 </span>
             )}
@@ -69,47 +91,94 @@ function Avatar({ src, name, size = 'xl' }) {
     );
 }
 
-// ─── Tab Button ───────────────────────────────────────────────────────────────
-function TabBtn({ active, onClick, icon: Icon, label }) {
+// ─── Icon Pill ─────────────────────────────────────────────────────────────────
+function IconPill({ icon: Icon, size = 20 }) {
     return (
-        <button onClick={onClick}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 w-full sm:w-auto rounded-xl transition-all border-none cursor-pointer whitespace-nowrap"
-            style={active
-                ? { backgroundColor: C.btnPrimary, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }
-                : { backgroundColor: 'transparent', color: C.textMuted, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
-            {Icon && <Icon size={16} />}
-            {label}
-        </button>
-    );
-}
-
-// ─── Star Row ─────────────────────────────────────────────────────────────────
-function StarRow({ rating, size = 4 }) {
-    return (
-        <div className="flex items-center gap-0.5">
-            {[1, 2, 3, 4, 5].map(s => (
-                <Star key={s} className={`w-${size} h-${size} ${s <= Math.round(rating || 0) ? 'fill-amber-400 text-amber-400' : 'fill-transparent text-slate-300'}`} />
-            ))}
+        <div
+            className="flex items-center justify-center rounded-lg shrink-0"
+            style={{ width: 40, height: 40, backgroundColor: C.iconBg }}
+        >
+            <Icon style={{ width: size, height: size, color: C.iconColor }} />
         </div>
     );
 }
 
 // ─── Section Title ────────────────────────────────────────────────────────────
 function SectionTitle({ icon: Icon, children, accentColor }) {
-    const color = accentColor || C.btnPrimary;
     return (
-        <div className="flex items-center gap-3 mb-5">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: innerBox }}>
-                <Icon size={16} style={{ color }} />
+        <div className="flex items-center gap-2.5 mb-4">
+            <div
+                className="flex items-center justify-center rounded-lg shrink-0"
+                style={{
+                    width:           40,
+                    height:          40,
+                    backgroundColor: accentColor ? `${accentColor}18` : C.iconBg,
+                }}
+            >
+                <Icon style={{ width: 16, height: 16, color: accentColor || C.iconColor }} />
             </div>
-            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+            <h3
+                style={{
+                    fontFamily:  T.fontFamily,
+                    fontSize:    T.size.xl,
+                    fontWeight:  T.weight.semibold,
+                    color:       C.heading,
+                    margin:      0,
+                }}
+            >
                 {children}
             </h3>
         </div>
     );
 }
 
-// ─── Main Page ─────────────────────────────────────────────────────────────────
+// ─── Tab Button ───────────────────────────────────────────────────────────────
+function TabBtn({ active, onClick, icon: Icon, label }) {
+    return (
+        <button
+            onClick={onClick}
+            className="flex items-center justify-center gap-2 px-5 py-2 transition-all border-none cursor-pointer whitespace-nowrap"
+            style={
+                active
+                    ? {
+                        backgroundColor: C.btnPrimary,
+                        color:           '#ffffff',
+                        fontFamily:      T.fontFamily,
+                        fontSize:        T.size.base,
+                        fontWeight:      T.weight.semibold,
+                        borderRadius:    '10px',
+                        boxShadow:       `0 2px 8px ${C.btnPrimary}40`,
+                    }
+                    : {
+                        backgroundColor: 'transparent',
+                        color:           C.text,
+                        fontFamily:      T.fontFamily,
+                        fontSize:        T.size.base,
+                        fontWeight:      T.weight.semibold,
+                        borderRadius:    '10px',
+                    }
+            }
+        >
+            {Icon && <Icon style={{ width: 16, height: 16 }} />}
+            {label}
+        </button>
+    );
+}
+
+// ─── Star Row ─────────────────────────────────────────────────────────────────
+function StarRow({ rating }) {
+    return (
+        <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map(s =>
+                s <= Math.round(rating || 0)
+                    ? <MdStar     key={s} style={{ width: 14, height: 14, color: '#F59E0B' }} />
+                    : <MdStarBorder key={s} style={{ width: 14, height: 14, color: C.cardBorder }} />
+            )}
+        </div>
+    );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function TutorDetailPage({ params }) {
     const { id } = use(params);
 
@@ -122,10 +191,10 @@ export default function TutorDetailPage({ params }) {
     const [loadingReviews, setLoadingReviews] = useState(false);
     const [aiOpen, setAiOpen]                 = useState(false);
 
-    const [selectedDate, setSelectedDate]   = useState(null);
+    const [selectedDate, setSelectedDate]     = useState(null);
     const [availableSlots, setAvailableSlots] = useState([]);
-    const [selectedSlot, setSelectedSlot]   = useState(null);
-    const [bookingNote, setBookingNote]     = useState('');
+    const [selectedSlot, setSelectedSlot]     = useState(null);
+    const [bookingNote, setBookingNote]       = useState('');
     const [bookingLoading, setBookingLoading] = useState(false);
     const [datesWithSlots, setDatesWithSlots] = useState([]);
 
@@ -175,7 +244,7 @@ export default function TutorDetailPage({ params }) {
         const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
         const available = [];
         for (let i = 0; i < 14; i++) {
-            const date = addDays(startOfToday(), i);
+            const date    = addDays(startOfToday(), i);
             const dateStr = format(date, 'yyyy-MM-dd');
             const dayName = days[date.getDay()];
             const override = overrides?.find(o => o.date === dateStr);
@@ -209,7 +278,12 @@ export default function TutorDetailPage({ params }) {
         dateTime.setHours(hours, minutes || 0, 0, 0);
         try {
             setBookingLoading(true);
-            const res = await api.post('/appointments', { tutorId: id, dateTime: dateTime.toISOString(), notes: bookingNote, sessionType: 'online_live' });
+            const res = await api.post('/appointments', {
+                tutorId: id,
+                dateTime: dateTime.toISOString(),
+                notes: bookingNote,
+                sessionType: 'online_live',
+            });
             if (res.data?.success) {
                 toast.success('Live class requested successfully! 🎉');
                 setBookingNote(''); setSelectedSlot(null); fetchSlotsForDate();
@@ -221,22 +295,77 @@ export default function TutorDetailPage({ params }) {
 
     // ── Loading ──────────────────────────────────────────────────────────────
     if (loading) return (
-        <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily }}>
-            <div className="w-12 h-12 rounded-full border-[3px] border-[#4F46E5]/30 border-t-[#4F46E5] animate-spin" />
-            <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading tutor profile…</p>
+        <div
+            className="flex flex-col items-center justify-center min-h-screen gap-3 w-full"
+            style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}
+        >
+            <div className="relative w-12 h-12">
+                <div
+                    className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                    style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }}
+                />
+            </div>
+            <p style={{ color: C.text, fontSize: T.size.base, fontWeight: T.weight.medium }}>
+                Loading tutor profile…
+            </p>
         </div>
     );
 
+    // ── Not Found ────────────────────────────────────────────────────────────
     if (!tutor) return (
-        <div className="flex flex-col items-center justify-center min-h-screen gap-4" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily }}>
-            <div className="rounded-3xl p-10 text-center max-w-sm shadow-sm border" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
-                <GraduationCap className="w-16 h-16 mx-auto mb-4" style={{ color: C.textMuted, opacity: 0.3 }} />
-                <p style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, marginBottom: 8 }}>Tutor not found</p>
-                <p style={{ fontSize: T.size.sm, color: C.textMuted, marginBottom: 24 }}>The profile you are looking for does not exist or has been removed.</p>
-                <Link href="/student/tutors" className="text-decoration-none block">
-                    <button className="w-full flex items-center justify-center gap-2 h-11 rounded-xl text-white font-bold cursor-pointer border-none shadow-md transition-transform hover:scale-105"
-                        style={{ background: C.gradientBtn, fontSize: T.size.sm, fontFamily: T.fontFamily }}>
-                        <ArrowLeft size={16} /> Back to Search
+        <div
+            className="flex flex-col items-center justify-center min-h-screen gap-4"
+            style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}
+        >
+            <div
+                className="p-10 text-center max-w-sm"
+                style={{
+                    backgroundColor: C.cardBg,
+                    border:          `1px solid ${C.cardBorder}`,
+                    boxShadow:       S.card,
+                    borderRadius:    R['2xl'],
+                }}
+            >
+                <div
+                    className="flex items-center justify-center mx-auto mb-4"
+                    style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: R.lg }}
+                >
+                    <MdSchool style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.4 }} />
+                </div>
+                <p
+                    style={{
+                        fontFamily:   T.fontFamily,
+                        fontSize:     T.size.lg,
+                        fontWeight:   T.weight.bold,
+                        color:        C.heading,
+                        marginBottom: 8,
+                    }}
+                >
+                    Tutor not found
+                </p>
+                <p
+                    style={{
+                        fontFamily:   T.fontFamily,
+                        fontSize:     T.size.base,
+                        color:        C.text,
+                        marginBottom: 24,
+                    }}
+                >
+                    The profile you are looking for does not exist or has been removed.
+                </p>
+                <Link href="/student/tutors">
+                    <button
+                        className="w-full flex items-center justify-center gap-2 h-11 text-white cursor-pointer border-none transition-opacity hover:opacity-90"
+                        style={{
+                            background:   C.gradientBtn,
+                            fontFamily:   T.fontFamily,
+                            fontSize:     T.size.base,
+                            fontWeight:   T.weight.bold,
+                            borderRadius: '10px',
+                            boxShadow:    S.btn,
+                        }}
+                    >
+                        <MdArrowBack style={{ width: 16, height: 16 }} /> Back to Search
                     </button>
                 </Link>
             </div>
@@ -245,88 +374,206 @@ export default function TutorDetailPage({ params }) {
 
     const calendarDays = Array.from({ length: 14 }, (_, i) => addDays(startOfToday(), i));
     const tabs = [
-        { id: 'about',    label: 'About',    icon: GraduationCap },
-        { id: 'courses',  label: 'Courses',  icon: BookOpen },
-        { id: 'reviews',  label: 'Reviews',  icon: MessageSquare },
-        { id: 'schedule', label: 'Schedule', icon: CalendarIcon },
+        { id: 'about',    label: 'About',    icon: MdSchool },
+        { id: 'courses',  label: 'Courses',  icon: MdMenuBook },
+        { id: 'reviews',  label: 'Reviews',  icon: MdMessage },
+        { id: 'schedule', label: 'Schedule', icon: MdCalendarMonth },
     ];
 
     return (
-        <div className="w-full min-h-screen p-6 space-y-6 pb-20 relative" style={{ backgroundColor: themeBg, fontFamily: T.fontFamily, color: C.text }}>
-
-            {/* ── Breadcrumb ─────────────────────────────────────────────── */}
-            <div className="flex items-center gap-2 text-sm font-bold text-slate-500 bg-white/50 px-4 py-2 rounded-xl border border-white/60 shadow-sm w-fit">
-                <Link href="/student/tutors" className="hover:text-indigo-600 transition-colors flex items-center gap-1.5"><ArrowLeft size={14}/> Find a Tutor</Link>
-                <span className="text-slate-300">/</span>
-                <span className="text-slate-800">{tutor.userId?.name}</span>
+        <div
+            className="w-full min-h-screen space-y-5 pb-20 relative"
+            style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}
+        >
+            {/* ── Breadcrumb ──────────────────────────────────────────────── */}
+            <div
+                className="flex items-center gap-2 w-fit px-4 py-2"
+                style={{
+                    backgroundColor: C.cardBg,
+                    border:          `1px solid ${C.cardBorder}`,
+                    boxShadow:       S.card,
+                    borderRadius:    '10px',
+                }}
+            >
+                <Link
+                    href="/student/tutors"
+                    className="flex items-center gap-1.5 transition-colors hover:opacity-70"
+                    style={{
+                        fontFamily:  T.fontFamily,
+                        fontSize:    T.size.base,
+                        fontWeight:  T.weight.semibold,
+                        color:       C.btnPrimary,
+                    }}
+                >
+                    <MdArrowBack style={{ width: 16, height: 16 }} /> Find a Tutor
+                </Link>
+                <span style={{ color: C.cardBorder, fontSize: T.size.base }}>／</span>
+                <span
+                    style={{
+                        fontFamily:  T.fontFamily,
+                        fontSize:    T.size.base,
+                        fontWeight:  T.weight.semibold,
+                        color:       C.heading,
+                    }}
+                >
+                    {tutor.userId?.name}
+                </span>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-                {/* ── LEFT: Profile + Tabs ──────────────────────────────── */}
-                <div className="lg:col-span-2 space-y-6">
+                {/* ── LEFT: Profile + Tabs ────────────────────────────────── */}
+                <div className="lg:col-span-2 space-y-5">
 
                     {/* Profile Hero Card */}
-                    <div className="rounded-3xl overflow-hidden shadow-sm border" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
+                    <div
+                        className="overflow-hidden"
+                        style={{
+                            backgroundColor: C.cardBg,
+                            border:          `1px solid ${C.cardBorder}`,
+                            boxShadow:       S.card,
+                            borderRadius:    R['2xl'],
+                        }}
+                    >
                         {/* Banner */}
-                        <div className="h-32 relative overflow-hidden" style={{ background: C.gradientBtn }}>
-                            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+                        <div
+                            className="h-28 relative overflow-hidden"
+                            style={{ background: C.gradientBtn }}
+                        >
+                            <div
+                                className="absolute inset-0 opacity-[0.08]"
+                                style={{
+                                    backgroundImage: 'radial-gradient(white 1px, transparent 1px)',
+                                    backgroundSize:  '16px 16px',
+                                }}
+                            />
                         </div>
 
-                        {/* Info */}
-                        <div className="px-6 pb-6 sm:px-8 sm:pb-8 relative">
+                        {/* Info section */}
+                        <div className="px-6 pb-6 relative">
                             {/* Avatar pulled up */}
-                            <div className="-mt-12 mb-4">
+                            <div className="-mt-11 mb-4">
                                 <Avatar src={tutor.userId?.profileImage} name={tutor.userId?.name} size="xl" />
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-4 items-start justify-between">
                                 <div className="flex-1 min-w-0">
+                                    {/* Name + Verified */}
                                     <div className="flex items-center gap-3 flex-wrap mb-1">
-                                        <h1 style={{ fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, margin: 0, lineHeight: 1 }}>
+                                        <h1
+                                            style={{
+                                                fontFamily:  T.fontFamily,
+                                                fontSize:    T.size['2xl'],
+                                                fontWeight:  T.weight.bold,
+                                                color:       C.heading,
+                                                margin:      0,
+                                                lineHeight:  T.leading.tight,
+                                            }}
+                                        >
                                             {tutor.userId?.name}
                                         </h1>
                                         {tutor.isVerified && (
-                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider"
-                                                style={{ backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}` }}>
-                                                <CheckCircle size={12} /> Verified
+                                            <span
+                                                className="inline-flex items-center gap-1 px-2 py-0.5"
+                                                style={{
+                                                    backgroundColor: C.successBg,
+                                                    color:           C.success,
+                                                    border:          `1px solid ${C.successBorder}`,
+                                                    fontFamily:      T.fontFamily,
+                                                    fontSize:        T.size.xs,
+                                                    fontWeight:      T.weight.bold,
+                                                    borderRadius:    '10px',
+                                                    textTransform:   'uppercase',
+                                                }}
+                                            >
+                                                <MdCheckCircle style={{ width: 12, height: 12 }} /> Verified
                                             </span>
                                         )}
                                     </div>
-                                    
+
+                                    {/* Category + Institute */}
                                     <div className="flex items-center gap-2 flex-wrap mb-4">
-                                        <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.btnPrimary }}>
+                                        <span
+                                            style={{
+                                                fontFamily:  T.fontFamily,
+                                                fontSize:    T.size.base,
+                                                fontWeight:  T.weight.semibold,
+                                                color:       C.btnPrimary,
+                                            }}
+                                        >
                                             {tutor.categoryId?.name || 'Expert'} Tutor
                                         </span>
                                         {tutor.instituteId && (
-                                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider"
-                                                style={{ backgroundColor: innerBox, color: C.textMuted, border: `1px solid ${C.cardBorder}` }}>
+                                            <span
+                                                className="px-2 py-0.5"
+                                                style={{
+                                                    backgroundColor: C.innerBg,
+                                                    color:           C.text,
+                                                    border:          `1px solid ${C.cardBorder}`,
+                                                    fontFamily:      T.fontFamily,
+                                                    fontSize:        T.size.xs,
+                                                    fontWeight:      T.weight.semibold,
+                                                    borderRadius:    '10px',
+                                                    textTransform:   'uppercase',
+                                                }}
+                                            >
                                                 {tutor.instituteId.name}
                                             </span>
                                         )}
                                     </div>
 
-                                    <div className="flex items-center gap-4 flex-wrap">
-                                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
-                                            <StarRow rating={tutor.rating} size={4} />
-                                            <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, marginLeft: 4 }}>
+                                    {/* Rating + Meta */}
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                        <div
+                                            className="flex items-center gap-2 px-3 py-1.5"
+                                            style={{
+                                                backgroundColor: C.innerBg,
+                                                border:          `1px solid ${C.cardBorder}`,
+                                                borderRadius:    '10px',
+                                            }}
+                                        >
+                                            <StarRow rating={tutor.rating} />
+                                            <span
+                                                style={{
+                                                    fontFamily:  T.fontFamily,
+                                                    fontSize:    T.size.base,
+                                                    fontWeight:  T.weight.bold,
+                                                    color:       C.heading,
+                                                    marginLeft:  2,
+                                                }}
+                                            >
                                                 {tutor.rating?.toFixed(1) || 'New'}
                                             </span>
-                                            <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>
+                                            <span
+                                                style={{
+                                                    fontFamily:  T.fontFamily,
+                                                    fontSize:    T.size.xs,
+                                                    fontWeight:  T.weight.medium,
+                                                    color:       C.text,
+                                                }}
+                                            >
                                                 ({tutor.reviewCount || 0} reviews)
                                             </span>
                                         </div>
-                                        <div className="flex items-center gap-3 flex-wrap">
-                                            {[
-                                                { icon: Award,  text: `${tutor.experience ?? 0} yrs exp` },
-                                                { icon: Users,  text: `${tutor.studentsCount || 0} students` },
-                                                { icon: MapPin, text: 'Live Online' },
-                                            ].map(({ icon: Icon, text }) => (
-                                                <span key={text} className="flex items-center gap-1.5 text-xs font-bold" style={{ color: C.textMuted }}>
-                                                    <Icon size={14} style={{ color: C.btnPrimary }} /> {text}
-                                                </span>
-                                            ))}
-                                        </div>
+                                        {[
+                                            { icon: MdEmojiEvents, text: `${tutor.experience ?? 0} yrs exp` },
+                                            { icon: MdPeople,      text: `${tutor.studentsCount || 0} students` },
+                                            { icon: MdLocationOn,  text: 'Live Online' },
+                                        ].map(({ icon: Icon, text }) => (
+                                            <span
+                                                key={text}
+                                                className="flex items-center gap-1.5"
+                                                style={{
+                                                    fontFamily:  T.fontFamily,
+                                                    fontSize:    T.size.base,
+                                                    fontWeight:  T.weight.medium,
+                                                    color:       C.text,
+                                                }}
+                                            >
+                                                <Icon style={{ width: 15, height: 15, color: C.btnPrimary }} />
+                                                {text}
+                                            </span>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
@@ -334,47 +581,114 @@ export default function TutorDetailPage({ params }) {
                     </div>
 
                     {/* Tabs Card */}
-                    <div className="rounded-3xl overflow-hidden shadow-sm border flex flex-col" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
-                        
+                    <div
+                        className="overflow-hidden flex flex-col"
+                        style={{
+                            backgroundColor: C.cardBg,
+                            border:          `1px solid ${C.cardBorder}`,
+                            boxShadow:       S.card,
+                            borderRadius:    R['2xl'],
+                        }}
+                    >
                         {/* Tab Bar */}
-                        <div className="flex p-2 overflow-x-auto custom-scrollbar border-b shrink-0" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                        <div
+                            className="flex p-1.5 overflow-x-auto gap-1 shrink-0"
+                            style={{
+                                backgroundColor: C.innerBg,
+                                borderBottom:    `1px solid ${C.cardBorder}`,
+                            }}
+                        >
                             {tabs.map(tab => (
-                                <TabBtn key={tab.id} active={activeTab === tab.id}
-                                    onClick={() => setActiveTab(tab.id)} icon={tab.icon} label={tab.label} />
+                                <TabBtn
+                                    key={tab.id}
+                                    active={activeTab === tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    icon={tab.icon}
+                                    label={tab.label}
+                                />
                             ))}
                         </div>
 
                         {/* Tab Content */}
-                        <div className="p-6 md:p-8 flex-1 min-h-[400px]">
-                            
+                        <div className="p-5 md:p-6 flex-1 min-h-[400px]">
+
                             {/* ── ABOUT ── */}
                             {activeTab === 'about' && (
-                                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+
+                                    {/* Bio */}
                                     <div>
-                                        <SectionTitle icon={GraduationCap}>About the Tutor</SectionTitle>
-                                        <p style={{ fontSize: T.size.sm, color: C.heading, lineHeight: 1.7, fontWeight: T.weight.medium, whiteSpace: 'pre-line', margin: 0 }}>
+                                        <SectionTitle icon={MdSchool}>About the Tutor</SectionTitle>
+                                        <p
+                                            style={{
+                                                fontFamily:  T.fontFamily,
+                                                fontSize:    T.size.base,
+                                                color:       C.heading,
+                                                lineHeight:  T.leading.relaxed,
+                                                fontWeight:  T.weight.medium,
+                                                whiteSpace:  'pre-line',
+                                                margin:      0,
+                                            }}
+                                        >
                                             {tutor.bio || 'Passionate tutor dedicated to helping students achieve their goals through personalized and interactive learning sessions.'}
                                         </p>
                                     </div>
 
+                                    {/* Title badge */}
                                     {tutor.title && (
-                                        <div className="flex items-center gap-3 p-4 rounded-2xl border" style={{ backgroundColor: '#E3DFF8', borderColor: C.btnPrimary }}>
-                                            <Award size={20} color={C.btnPrimary} className="shrink-0" />
-                                            <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                                        <div
+                                            className="flex items-center gap-3 p-4"
+                                            style={{
+                                                backgroundColor: C.innerBg,
+                                                border:          `1px solid ${C.btnPrimary}`,
+                                                borderRadius:    '10px',
+                                            }}
+                                        >
+                                            <MdEmojiEvents style={{ width: 20, height: 20, color: C.btnPrimary, flexShrink: 0 }} />
+                                            <span
+                                                style={{
+                                                    fontFamily:  T.fontFamily,
+                                                    fontSize:    T.size.base,
+                                                    fontWeight:  T.weight.semibold,
+                                                    color:       C.heading,
+                                                }}
+                                            >
                                                 {tutor.title}
                                             </span>
                                         </div>
                                     )}
 
+                                    {/* Subjects */}
                                     {tutor.subjects?.length > 0 && (
                                         <div>
-                                            <p style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 12 }}>
+                                            <p
+                                                style={{
+                                                    fontFamily:    T.fontFamily,
+                                                    fontSize:      T.size.xs,
+                                                    fontWeight:    T.weight.bold,
+                                                    color:         C.text,
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: T.tracking.wider,
+                                                    marginBottom:  12,
+                                                }}
+                                            >
                                                 Expertise & Subjects
                                             </p>
-                                            <div className="flex flex-wrap gap-2.5">
+                                            <div className="flex flex-wrap gap-2">
                                                 {tutor.subjects.map((s, i) => (
-                                                    <span key={i} className="px-4 py-2 rounded-xl text-xs font-bold border shadow-sm"
-                                                        style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, borderColor: C.cardBorder }}>
+                                                    <span
+                                                        key={i}
+                                                        className="px-4 py-2"
+                                                        style={{
+                                                            backgroundColor: C.innerBg,
+                                                            color:           C.btnPrimary,
+                                                            border:          `1px solid ${C.cardBorder}`,
+                                                            fontFamily:      T.fontFamily,
+                                                            fontSize:        T.size.base,
+                                                            fontWeight:      T.weight.semibold,
+                                                            borderRadius:    '10px',
+                                                        }}
+                                                    >
                                                         {s}
                                                     </span>
                                                 ))}
@@ -382,20 +696,72 @@ export default function TutorDetailPage({ params }) {
                                         </div>
                                     )}
 
-                                    <div className="grid grid-cols-2 gap-4 pt-2">
-                                        <div className="p-5 rounded-2xl text-center border" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
-                                            <p style={{ fontSize: T.size['3xl'], fontWeight: T.weight.black, color: C.btnPrimary, margin: '0 0 4px 0', lineHeight: 1 }}>
+                                    {/* Stats grid */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div
+                                            className="p-5 text-center"
+                                            style={{
+                                                backgroundColor: C.innerBg,
+                                                border:          `1px solid ${C.cardBorder}`,
+                                                borderRadius:    '10px',
+                                            }}
+                                        >
+                                            <p
+                                                style={{
+                                                    fontFamily:   T.fontFamily,
+                                                    fontSize:     T.size['3xl'],
+                                                    fontWeight:   T.weight.bold,
+                                                    color:        C.btnPrimary,
+                                                    margin:       '0 0 4px 0',
+                                                    lineHeight:   1,
+                                                }}
+                                            >
                                                 {tutorCourses.length}
                                             </p>
-                                            <p style={{ fontSize: '11px', color: C.textMuted, fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+                                            <p
+                                                style={{
+                                                    fontFamily:    T.fontFamily,
+                                                    fontSize:      T.size.xs,
+                                                    color:         C.text,
+                                                    fontWeight:    T.weight.semibold,
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: T.tracking.wider,
+                                                    margin:        0,
+                                                }}
+                                            >
                                                 Active Courses
                                             </p>
                                         </div>
-                                        <div className="p-5 rounded-2xl text-center border shadow-md" style={{ background: C.gradientBtn, borderColor: 'rgba(255,255,255,0.1)' }}>
-                                            <p style={{ fontSize: T.size['3xl'], fontWeight: T.weight.black, color: '#ffffff', margin: '0 0 4px 0', lineHeight: 1 }}>
+                                        <div
+                                            className="p-5 text-center"
+                                            style={{
+                                                background:   C.gradientBtn,
+                                                borderRadius: '10px',
+                                            }}
+                                        >
+                                            <p
+                                                style={{
+                                                    fontFamily:  T.fontFamily,
+                                                    fontSize:    T.size['3xl'],
+                                                    fontWeight:  T.weight.bold,
+                                                    color:       '#ffffff',
+                                                    margin:      '0 0 4px 0',
+                                                    lineHeight:  1,
+                                                }}
+                                            >
                                                 ₹{tutor.hourlyRate ?? 0}
                                             </p>
-                                            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+                                            <p
+                                                style={{
+                                                    fontFamily:    T.fontFamily,
+                                                    fontSize:      T.size.xs,
+                                                    color:         'rgba(255,255,255,0.75)',
+                                                    fontWeight:    T.weight.semibold,
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: T.tracking.wider,
+                                                    margin:        0,
+                                                }}
+                                            >
                                                 Per Hour
                                             </p>
                                         </div>
@@ -405,44 +771,106 @@ export default function TutorDetailPage({ params }) {
 
                             {/* ── COURSES ── */}
                             {activeTab === 'courses' && (
-                                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                    <SectionTitle icon={BookOpen}>Courses by {tutor.userId?.name?.split(' ')[0]}</SectionTitle>
-                                    
+                                <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <SectionTitle icon={MdMenuBook}>
+                                        Courses by {tutor.userId?.name?.split(' ')[0]}
+                                    </SectionTitle>
+
                                     {loadingCourses ? (
                                         <div className="flex justify-center py-16">
-                                            <div className="w-10 h-10 rounded-full border-[3px] border-[#4F46E5]/30 border-t-[#4F46E5] animate-spin" />
+                                            <div
+                                                className="w-10 h-10 rounded-full border-[3px] animate-spin"
+                                                style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }}
+                                            />
                                         </div>
                                     ) : tutorCourses.length > 0 ? (
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             {tutorCourses.map(course => (
-                                                <Link key={course._id} href={`/student/courses/${course._id}`} className="text-decoration-none block group">
-                                                    <div className="rounded-2xl overflow-hidden transition-all duration-300 border shadow-sm"
-                                                        style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}
-                                                        onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = S.cardHover; }}
-                                                        onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = S.card; }}>
-                                                        
-                                                        <div className="aspect-video relative overflow-hidden" style={{ backgroundColor: outerCard }}>
+                                                <Link key={course._id} href={`/student/courses/${course._id}`} className="block group">
+                                                    <div
+                                                        className="overflow-hidden transition-all duration-200"
+                                                        style={{
+                                                            backgroundColor: C.innerBg,
+                                                            border:          `1px solid ${C.cardBorder}`,
+                                                            borderRadius:    '10px',
+                                                        }}
+                                                        onMouseEnter={e => {
+                                                            e.currentTarget.style.borderColor = C.btnPrimary;
+                                                            e.currentTarget.style.transform   = 'translateY(-2px)';
+                                                            e.currentTarget.style.boxShadow   = S.cardHover;
+                                                        }}
+                                                        onMouseLeave={e => {
+                                                            e.currentTarget.style.borderColor = C.cardBorder;
+                                                            e.currentTarget.style.transform   = 'none';
+                                                            e.currentTarget.style.boxShadow   = 'none';
+                                                        }}
+                                                    >
+                                                        <div
+                                                            className="aspect-video relative overflow-hidden"
+                                                            style={{ backgroundColor: C.cardBg }}
+                                                        >
                                                             {course.thumbnail && (
-                                                                <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                                                <img
+                                                                    src={course.thumbnail}
+                                                                    alt={course.title}
+                                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                                />
                                                             )}
-                                                            <div className="absolute top-3 right-3 px-3 py-1 rounded-lg text-xs font-black shadow-md backdrop-blur-md"
-                                                                style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: C.heading }}>
+                                                            <div
+                                                                className="absolute top-3 right-3 px-3 py-1 backdrop-blur-md"
+                                                                style={{
+                                                                    backgroundColor: 'rgba(255,255,255,0.92)',
+                                                                    color:           C.heading,
+                                                                    fontFamily:      T.fontFamily,
+                                                                    fontSize:        T.size.xs,
+                                                                    fontWeight:      T.weight.bold,
+                                                                    borderRadius:    '10px',
+                                                                }}
+                                                            >
                                                                 {course.price ? `₹${course.price}` : 'FREE'}
                                                             </div>
                                                         </div>
-                                                        
+
                                                         <div className="p-4">
                                                             <div className="flex items-center gap-1.5 mb-2">
-                                                                <StarRow rating={course.rating} size={3} />
-                                                                <span style={{ fontSize: '11px', fontWeight: T.weight.black, color: C.heading, marginLeft: 2 }}>
+                                                                <StarRow rating={course.rating} />
+                                                                <span
+                                                                    style={{
+                                                                        fontFamily:  T.fontFamily,
+                                                                        fontSize:    T.size.xs,
+                                                                        fontWeight:  T.weight.bold,
+                                                                        color:       C.heading,
+                                                                        marginLeft:  2,
+                                                                    }}
+                                                                >
                                                                     {course.rating?.toFixed(1) || '—'}
                                                                 </span>
                                                             </div>
-                                                            <h4 className="line-clamp-2" style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: '0 0 6px 0', lineHeight: 1.4 }}>
+                                                            <h4
+                                                                className="line-clamp-2"
+                                                                style={{
+                                                                    fontFamily:   T.fontFamily,
+                                                                    fontSize:     T.size.base,
+                                                                    fontWeight:   T.weight.semibold,
+                                                                    color:        C.heading,
+                                                                    margin:       '0 0 6px 0',
+                                                                    lineHeight:   T.leading.snug,
+                                                                }}
+                                                            >
                                                                 {course.title}
                                                             </h4>
-                                                            <p style={{ fontSize: '11px', color: C.textMuted, fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
-                                                                <BookOpen size={12} className="inline mr-1 opacity-60" /> {course.lessons?.length || 0} lessons
+                                                            <p
+                                                                className="flex items-center gap-1.5"
+                                                                style={{
+                                                                    fontFamily:  T.fontFamily,
+                                                                    fontSize:    T.size.xs,
+                                                                    color:       C.text,
+                                                                    fontWeight:  T.weight.medium,
+                                                                    margin:      0,
+                                                                }}
+                                                            >
+                                                                <MdMenuBook style={{ width: 12, height: 12, opacity: 0.6 }} />
+                                                                {course.lessons?.length || 0} lessons
                                                             </p>
                                                         </div>
                                                     </div>
@@ -450,9 +878,14 @@ export default function TutorDetailPage({ params }) {
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="text-center py-16 rounded-3xl border-2 border-dashed" style={{ borderColor: C.cardBorder, backgroundColor: innerBox }}>
-                                            <BookOpen className="w-12 h-12 mx-auto mb-3" style={{ color: C.cardBorder }} />
-                                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted, margin: 0 }}>No courses published yet.</p>
+                                        <div
+                                            className="text-center py-16 border-2 border-dashed"
+                                            style={{ borderColor: C.cardBorder, backgroundColor: C.innerBg, borderRadius: '10px' }}
+                                        >
+                                            <MdMenuBook style={{ width: 40, height: 40, color: C.cardBorder, margin: '0 auto 12px' }} />
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text, margin: 0 }}>
+                                                No courses published yet.
+                                            </p>
                                         </div>
                                     )}
                                 </div>
@@ -460,57 +893,141 @@ export default function TutorDetailPage({ params }) {
 
                             {/* ── REVIEWS ── */}
                             {activeTab === 'reviews' && (
-                                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                    <SectionTitle icon={Star} accentColor="#f59e0b">
+                                <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <SectionTitle icon={MdStar} accentColor="#F59E0B">
                                         Student Reviews ({tutor.reviewCount || 0})
                                     </SectionTitle>
-                                    
+
                                     {loadingReviews ? (
                                         <div className="flex justify-center py-16">
-                                            <div className="w-10 h-10 rounded-full border-[3px] border-[#f59e0b]/30 border-t-[#f59e0b] animate-spin" />
+                                            <div
+                                                className="w-10 h-10 rounded-full border-[3px] animate-spin"
+                                                style={{ borderColor: `${C.warning}30`, borderTopColor: C.warning }}
+                                            />
                                         </div>
                                     ) : tutorReviews.length > 0 ? (
                                         <div className="space-y-4">
                                             {tutorReviews.map(review => (
-                                                <div key={review._id} className="p-5 rounded-2xl border" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                                                <div
+                                                    key={review._id}
+                                                    className="p-4"
+                                                    style={{
+                                                        backgroundColor: C.innerBg,
+                                                        border:          `1px solid ${C.cardBorder}`,
+                                                        borderRadius:    '10px',
+                                                    }}
+                                                >
                                                     <div className="flex items-start justify-between gap-4 mb-3">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shrink-0 border border-white shadow-sm" style={{ backgroundColor: outerCard }}>
+                                                            <div
+                                                                className="flex items-center justify-center overflow-hidden shrink-0"
+                                                                style={{
+                                                                    width:           40,
+                                                                    height:          40,
+                                                                    borderRadius:    '10px',
+                                                                    backgroundColor: C.cardBg,
+                                                                    border:          `1px solid ${C.cardBorder}`,
+                                                                }}
+                                                            >
                                                                 {review.studentId?.profileImage
                                                                     ? <img src={review.studentId.profileImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                                    : <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.textMuted }}>
+                                                                    : <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.text }}>
                                                                         {review.studentId?.name?.[0]?.toUpperCase() || '?'}
-                                                                    </span>}
+                                                                      </span>
+                                                                }
                                                             </div>
                                                             <div>
-                                                                <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 2px 0' }}>
+                                                                <p
+                                                                    style={{
+                                                                        fontFamily:   T.fontFamily,
+                                                                        fontSize:     T.size.base,
+                                                                        fontWeight:   T.weight.semibold,
+                                                                        color:        C.heading,
+                                                                        margin:       '0 0 3px 0',
+                                                                    }}
+                                                                >
                                                                     {review.studentId?.name || 'Student'}
                                                                 </p>
-                                                                <StarRow rating={review.rating} size={3.5} />
+                                                                <StarRow rating={review.rating} />
                                                             </div>
                                                         </div>
-                                                        <span style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, flexShrink: 0 }}>
-                                                            {new Date(review.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                        <span
+                                                            style={{
+                                                                fontFamily:  T.fontFamily,
+                                                                fontSize:    T.size.xs,
+                                                                fontWeight:  T.weight.medium,
+                                                                color:       C.text,
+                                                                flexShrink:  0,
+                                                            }}
+                                                        >
+                                                            {new Date(review.createdAt).toLocaleDateString('en-IN', {
+                                                                month: 'short', day: 'numeric', year: 'numeric',
+                                                            })}
                                                         </span>
                                                     </div>
-                                                    
-                                                    <p style={{ fontSize: T.size.sm, color: C.heading, lineHeight: 1.6, fontWeight: T.weight.medium, margin: '0 0 8px 0' }}>
+
+                                                    <p
+                                                        style={{
+                                                            fontFamily:   T.fontFamily,
+                                                            fontSize:     T.size.base,
+                                                            color:        C.heading,
+                                                            lineHeight:   T.leading.relaxed,
+                                                            fontWeight:   T.weight.medium,
+                                                            margin:       '0 0 10px 0',
+                                                        }}
+                                                    >
                                                         "{review.comment}"
                                                     </p>
 
                                                     {review.courseId?.title && (
-                                                        <span className="inline-block px-3 py-1 rounded-lg text-[10px] font-bold border"
-                                                            style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, color: C.textMuted }}>
+                                                        <span
+                                                            className="inline-block px-3 py-1"
+                                                            style={{
+                                                                backgroundColor: C.cardBg,
+                                                                border:          `1px solid ${C.cardBorder}`,
+                                                                color:           C.text,
+                                                                fontFamily:      T.fontFamily,
+                                                                fontSize:        T.size.xs,
+                                                                fontWeight:      T.weight.medium,
+                                                                borderRadius:    '10px',
+                                                            }}
+                                                        >
                                                             Course: {review.courseId.title}
                                                         </span>
                                                     )}
 
                                                     {review.tutorResponse?.comment && (
-                                                        <div className="mt-4 p-4 rounded-xl border-l-[4px]" style={{ backgroundColor: `${C.btnPrimary}10`, borderLeftColor: C.btnPrimary }}>
-                                                            <p style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.btnPrimary, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 4px 0' }}>
+                                                        <div
+                                                            className="mt-4 p-4"
+                                                            style={{
+                                                                backgroundColor: `${C.btnPrimary}0d`,
+                                                                borderLeft:      `3px solid ${C.btnPrimary}`,
+                                                                borderRadius:    '0 10px 10px 0',
+                                                            }}
+                                                        >
+                                                            <p
+                                                                style={{
+                                                                    fontFamily:    T.fontFamily,
+                                                                    fontSize:      T.size.xs,
+                                                                    fontWeight:    T.weight.bold,
+                                                                    color:         C.btnPrimary,
+                                                                    textTransform: 'uppercase',
+                                                                    letterSpacing: T.tracking.wider,
+                                                                    margin:        '0 0 4px 0',
+                                                                }}
+                                                            >
                                                                 Tutor Reply
                                                             </p>
-                                                            <p style={{ fontSize: T.size.sm, color: C.btnPrimary, fontWeight: T.weight.semibold, margin: 0, lineHeight: 1.5 }}>
+                                                            <p
+                                                                style={{
+                                                                    fontFamily:  T.fontFamily,
+                                                                    fontSize:    T.size.base,
+                                                                    color:       C.btnPrimary,
+                                                                    fontWeight:  T.weight.medium,
+                                                                    margin:      0,
+                                                                    lineHeight:  T.leading.relaxed,
+                                                                }}
+                                                            >
                                                                 {review.tutorResponse.comment}
                                                             </p>
                                                         </div>
@@ -519,9 +1036,14 @@ export default function TutorDetailPage({ params }) {
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="text-center py-16 rounded-3xl border-2 border-dashed" style={{ borderColor: C.cardBorder, backgroundColor: innerBox }}>
-                                            <MessageSquare className="w-12 h-12 mx-auto mb-3" style={{ color: C.cardBorder }} />
-                                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted, margin: 0 }}>No reviews yet.</p>
+                                        <div
+                                            className="text-center py-16 border-2 border-dashed"
+                                            style={{ borderColor: C.cardBorder, backgroundColor: C.innerBg, borderRadius: '10px' }}
+                                        >
+                                            <MdMessage style={{ width: 40, height: 40, color: C.cardBorder, margin: '0 auto 12px' }} />
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text, margin: 0 }}>
+                                                No reviews yet.
+                                            </p>
                                         </div>
                                     )}
                                 </div>
@@ -529,34 +1051,75 @@ export default function TutorDetailPage({ params }) {
 
                             {/* ── SCHEDULE ── */}
                             {activeTab === 'schedule' && (
-                                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                    
+                                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+
                                     {/* Date picker */}
                                     <div>
-                                    <SectionTitle icon={CalendarIcon}>Select Live Class Date</SectionTitle>
-                                        <div className="flex gap-2.5 overflow-x-auto pb-3 custom-scrollbar">
+                                        <SectionTitle icon={MdCalendarMonth}>Select Live Class Date</SectionTitle>
+                                        <div className="flex gap-2 overflow-x-auto pb-2">
                                             {calendarDays.map(date => {
-                                                const dateStr = format(date, 'yyyy-MM-dd');
-                                                const hasSlots  = datesWithSlots.includes(dateStr);
+                                                const dateStr    = format(date, 'yyyy-MM-dd');
+                                                const hasSlots   = datesWithSlots.includes(dateStr);
                                                 const isSelected = selectedDate && isSameDay(date, selectedDate);
                                                 return (
-                                                    <button key={dateStr} type="button"
+                                                    <button
+                                                        key={dateStr}
+                                                        type="button"
                                                         onClick={() => { setSelectedDate(date); setSelectedSlot(null); }}
                                                         disabled={!hasSlots}
-                                                        className="min-w-[64px] h-[80px] flex flex-col items-center justify-center shrink-0 rounded-2xl border-2 transition-all cursor-pointer disabled:cursor-not-allowed"
-                                                        style={isSelected
-                                                            ? { background: C.gradientBtn, color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)' }
-                                                            : hasSlots
-                                                                ? { backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, color: C.heading }
-                                                                : { backgroundColor: innerBox, borderColor: 'transparent', color: C.textMuted, opacity: 0.6 }}>
-                                                        <span style={{ fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>
+                                                        className="min-w-[60px] h-[76px] flex flex-col items-center justify-center shrink-0 transition-all cursor-pointer disabled:cursor-not-allowed border"
+                                                        style={
+                                                            isSelected
+                                                                ? {
+                                                                    background:   C.gradientBtn,
+                                                                    color:        '#ffffff',
+                                                                    borderColor:  'transparent',
+                                                                    boxShadow:    S.btn,
+                                                                    borderRadius: '10px',
+                                                                }
+                                                                : hasSlots
+                                                                ? {
+                                                                    backgroundColor: C.cardBg,
+                                                                    borderColor:     C.cardBorder,
+                                                                    color:           C.heading,
+                                                                    borderRadius:    '10px',
+                                                                }
+                                                                : {
+                                                                    backgroundColor: C.innerBg,
+                                                                    borderColor:     'transparent',
+                                                                    color:           C.text,
+                                                                    opacity:         0.5,
+                                                                    borderRadius:    '10px',
+                                                                }
+                                                        }
+                                                    >
+                                                        <span
+                                                            style={{
+                                                                fontFamily:    T.fontFamily,
+                                                                fontSize:      T.size.xs,
+                                                                fontWeight:    T.weight.bold,
+                                                                textTransform: 'uppercase',
+                                                                letterSpacing: T.tracking.wider,
+                                                                marginBottom:  4,
+                                                            }}
+                                                        >
                                                             {format(date, 'EEE')}
                                                         </span>
-                                                        <span style={{ fontSize: T.size.xl, fontWeight: T.weight.black, lineHeight: 1 }}>
+                                                        <span
+                                                            style={{
+                                                                fontFamily:  T.fontFamily,
+                                                                fontSize:    T.size.xl,
+                                                                fontWeight:  T.weight.bold,
+                                                                lineHeight:  1,
+                                                            }}
+                                                        >
                                                             {format(date, 'd')}
                                                         </span>
                                                         {hasSlots && !isSelected && (
-                                                            <div className="w-1.5 h-1.5 rounded-full mt-2" style={{ backgroundColor: C.success }} />
+                                                            <div
+                                                                className="rounded-full mt-1.5"
+                                                                style={{ width: 5, height: 5, backgroundColor: C.success }}
+                                                            />
                                                         )}
                                                     </button>
                                                 );
@@ -566,26 +1129,55 @@ export default function TutorDetailPage({ params }) {
 
                                     {/* Time slots */}
                                     <div>
-                                        <SectionTitle icon={Clock}>Available Live Class Slots</SectionTitle>
+                                        <SectionTitle icon={MdAccessTime}>Available Live Class Slots</SectionTitle>
                                         {availableSlots.length > 0 ? (
                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                                 {availableSlots.map(slot => (
-                                                    <button key={slot} type="button"
+                                                    <button
+                                                        key={slot}
+                                                        type="button"
                                                         onClick={() => setSelectedSlot(slot)}
-                                                        className="py-3 px-4 rounded-xl border-2 transition-all cursor-pointer font-bold text-sm"
-                                                        style={selectedSlot === slot
-                                                            ? { background: C.gradientBtn, color: '#ffffff', borderColor: 'transparent', boxShadow: '0 4px 10px rgba(79, 70, 229, 0.2)' }
-                                                            : { backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, color: C.heading }}
-                                                        onMouseEnter={e => { if(selectedSlot !== slot) e.currentTarget.style.borderColor = C.btnPrimary; }}
-                                                        onMouseLeave={e => { if(selectedSlot !== slot) e.currentTarget.style.borderColor = C.cardBorder; }}>
+                                                        className="py-3 px-4 border transition-all cursor-pointer"
+                                                        style={
+                                                            selectedSlot === slot
+                                                                ? {
+                                                                    background:   C.gradientBtn,
+                                                                    color:        '#ffffff',
+                                                                    borderColor:  'transparent',
+                                                                    fontFamily:   T.fontFamily,
+                                                                    fontSize:     T.size.base,
+                                                                    fontWeight:   T.weight.bold,
+                                                                    borderRadius: '10px',
+                                                                    boxShadow:    S.btn,
+                                                                }
+                                                                : {
+                                                                    backgroundColor: C.cardBg,
+                                                                    borderColor:     C.cardBorder,
+                                                                    color:           C.heading,
+                                                                    fontFamily:      T.fontFamily,
+                                                                    fontSize:        T.size.base,
+                                                                    fontWeight:      T.weight.semibold,
+                                                                    borderRadius:    '10px',
+                                                                }
+                                                        }
+                                                        onMouseEnter={e => {
+                                                            if (selectedSlot !== slot) e.currentTarget.style.borderColor = C.btnPrimary;
+                                                        }}
+                                                        onMouseLeave={e => {
+                                                            if (selectedSlot !== slot) e.currentTarget.style.borderColor = C.cardBorder;
+                                                        }}
+                                                    >
                                                         {slot}
                                                     </button>
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div className="text-center py-10 rounded-2xl border-2 border-dashed" style={{ borderColor: C.cardBorder, backgroundColor: innerBox }}>
-                                                <Clock className="w-10 h-10 mx-auto mb-3" style={{ color: C.cardBorder }} />
-                                                <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.textMuted, margin: 0 }}>
+                                            <div
+                                                className="text-center py-10 border-2 border-dashed"
+                                                style={{ borderColor: C.cardBorder, backgroundColor: C.innerBg, borderRadius: '10px' }}
+                                            >
+                                                <MdAccessTime style={{ width: 36, height: 36, color: C.cardBorder, margin: '0 auto 12px' }} />
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text, margin: 0 }}>
                                                     {selectedDate ? 'No slots available for this date.' : 'Select a date to see available slots.'}
                                                 </p>
                                             </div>
@@ -599,42 +1191,117 @@ export default function TutorDetailPage({ params }) {
 
                 {/* ── RIGHT: Booking Widget ───────────────────────────────── */}
                 <div className="lg:col-span-1">
-                    <div className="rounded-3xl overflow-hidden sticky top-6 shadow-md border" style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
-                        
+                    <div
+                        className="overflow-hidden sticky top-6"
+                        style={{
+                            backgroundColor: C.cardBg,
+                            border:          `1px solid ${C.cardBorder}`,
+                            boxShadow:       S.card,
+                            borderRadius:    R['2xl'],
+                        }}
+                    >
                         {/* Rate Header */}
-                        <div className="px-6 py-8 text-center relative overflow-hidden" style={{ background: C.gradientBtn }}>
-                            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
-                            <p className="relative" style={{ fontSize: '10px', fontWeight: T.weight.black, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 6px 0' }}>
+                        <div
+                            className="px-6 py-8 text-center relative overflow-hidden"
+                            style={{ background: C.gradientBtn }}
+                        >
+                            <div
+                                className="absolute inset-0 opacity-[0.07]"
+                                style={{
+                                    backgroundImage: 'radial-gradient(white 1px, transparent 1px)',
+                                    backgroundSize:  '16px 16px',
+                                }}
+                            />
+                            <p
+                                className="relative"
+                                style={{
+                                    fontFamily:    T.fontFamily,
+                                    fontSize:      T.size.xs,
+                                    fontWeight:    T.weight.bold,
+                                    color:         'rgba(255,255,255,0.7)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: T.tracking.wider,
+                                    margin:        '0 0 6px 0',
+                                }}
+                            >
                                 Session Rate
                             </p>
-                            <p className="relative" style={{ fontSize: T.size['4xl'], fontWeight: T.weight.black, color: '#ffffff', margin: 0, lineHeight: 1 }}>
-                                ₹{tutor.hourlyRate ?? 0}<span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.7)' }}>/hr</span>
+                            <p
+                                className="relative"
+                                style={{
+                                    fontFamily:  T.fontFamily,
+                                    fontSize:    T.size['4xl'],
+                                    fontWeight:  T.weight.bold,
+                                    color:       '#ffffff',
+                                    margin:      0,
+                                    lineHeight:  1,
+                                }}
+                            >
+                                ₹{tutor.hourlyRate ?? 0}
+                                <span
+                                    style={{
+                                        fontSize:   T.size.base,
+                                        fontWeight: T.weight.medium,
+                                        color:      'rgba(255,255,255,0.65)',
+                                    }}
+                                >
+                                    /hr
+                                </span>
                             </p>
                         </div>
 
-                        <div className="p-6 space-y-6">
+                        <div className="p-5 space-y-5">
                             {/* Booking Summary */}
-                            <div className="p-5 rounded-2xl border" style={{ backgroundColor: innerBox, borderColor: C.cardBorder }}>
+                            <div
+                                className="p-4"
+                                style={{
+                                    backgroundColor: C.innerBg,
+                                    border:          `1px solid ${C.cardBorder}`,
+                                    borderRadius:    '10px',
+                                }}
+                            >
                                 <div className="flex items-center gap-2.5 mb-4">
-                                    <div className="w-6 h-6 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                                        <CheckCircle size={14} style={{ color: C.success }} />
-                                    </div>
-                                    <p style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+                                    <MdCheckCircle style={{ width: 18, height: 18, color: C.success }} />
+                                    <p
+                                        style={{
+                                            fontFamily:  T.fontFamily,
+                                            fontSize:    T.size.base,
+                                            fontWeight:  T.weight.semibold,
+                                            color:       C.heading,
+                                            margin:      0,
+                                        }}
+                                    >
                                         Booking Details
                                     </p>
                                 </div>
                                 <dl className="space-y-3">
-                                        {[
-                                            { label: 'Date',     value: selectedDate ? format(selectedDate, 'MMM d, yyyy') : '—', highlight: false },
-                                            { label: 'Time',     value: selectedSlot || 'Select a slot',                  highlight: !!selectedSlot },
-                                            { label: 'Duration', value: '60 mins',                                        highlight: false },
-                                            { label: 'Mode',     value: 'Online Live',                                    highlight: true },
-                                        ].map(item => (
+                                    {[
+                                        { label: 'Date',     value: selectedDate ? format(selectedDate, 'MMM d, yyyy') : '—', highlight: false },
+                                        { label: 'Time',     value: selectedSlot || 'Select a slot',                          highlight: !!selectedSlot },
+                                        { label: 'Duration', value: '60 mins',                                                highlight: false },
+                                        { label: 'Mode',     value: 'Online Live',                                            highlight: true },
+                                    ].map(item => (
                                         <div key={item.label} className="flex items-center justify-between">
-                                            <dt style={{ fontSize: T.size.xs, color: C.textMuted, fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                            <dt
+                                                style={{
+                                                    fontFamily:    T.fontFamily,
+                                                    fontSize:      T.size.xs,
+                                                    color:         C.text,
+                                                    fontWeight:    T.weight.semibold,
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: T.tracking.wider,
+                                                }}
+                                            >
                                                 {item.label}
                                             </dt>
-                                            <dd style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: item.highlight ? C.btnPrimary : C.heading }}>
+                                            <dd
+                                                style={{
+                                                    fontFamily:  T.fontFamily,
+                                                    fontSize:    T.size.base,
+                                                    fontWeight:  T.weight.bold,
+                                                    color:       item.highlight ? C.btnPrimary : C.heading,
+                                                }}
+                                            >
                                                 {item.value}
                                             </dd>
                                         </div>
@@ -642,30 +1309,66 @@ export default function TutorDetailPage({ params }) {
                                 </dl>
                             </div>
 
-                            {/* Note Textarea */}
+                            {/* Note textarea */}
                             <div className="space-y-2">
-                                <label style={{ display: 'block', fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>
+                                <label
+                                    style={{
+                                        display:       'block',
+                                        fontFamily:    T.fontFamily,
+                                        fontSize:      T.size.xs,
+                                        fontWeight:    T.weight.bold,
+                                        color:         C.text,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: T.tracking.wider,
+                                        margin:        0,
+                                    }}
+                                >
                                     Message for Live Class (Optional)
                                 </label>
-                                <textarea rows={3} placeholder="What do you want to learn?"
+                                <textarea
+                                    rows={3}
+                                    placeholder="What do you want to learn?"
                                     value={bookingNote}
                                     onChange={e => setBookingNote(e.target.value)}
-                                    style={{ ...baseInputStyle, resize: 'none', backgroundColor: C.surfaceWhite }}
-                                    onFocus={onFocusHandler} onBlur={onBlurHandler}
+                                    style={{ ...baseInputStyle, resize: 'none' }}
+                                    onFocus={onFocusHandler}
+                                    onBlur={onBlurHandler}
                                 />
                             </div>
 
                             {/* Confirm Button */}
-                            <button disabled={!selectedSlot || bookingLoading}
+                            <button
+                                disabled={!selectedSlot || bookingLoading}
                                 onClick={handleBookAppointment}
-                                className="w-full py-3.5 rounded-xl transition-all cursor-pointer border-none shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2"
-                                style={{ background: C.gradientBtn, color: '#fff', fontSize: T.size.sm, fontWeight: T.weight.black }}>
+                                className="w-full py-3.5 transition-all cursor-pointer border-none flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                style={{
+                                    background:   C.gradientBtn,
+                                    color:        '#fff',
+                                    fontFamily:   T.fontFamily,
+                                    fontSize:     T.size.base,
+                                    fontWeight:   T.weight.bold,
+                                    borderRadius: '10px',
+                                    boxShadow:    S.btn,
+                                }}
+                            >
                                 {bookingLoading
-                                    ? <><Loader2 size={16} className="animate-spin" /> Requesting…</>
-                                    : <><CalendarIcon size={16} /> Book Live Class</>}
+                                    ? <><MdHourglassEmpty style={{ width: 16, height: 16 }} className="animate-spin" /> Requesting…</>
+                                    : <><MdCalendarMonth style={{ width: 16, height: 16 }} /> Book Live Class</>
+                                }
                             </button>
 
-                            <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textAlign: 'center', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            <p
+                                style={{
+                                    fontFamily:    T.fontFamily,
+                                    fontSize:      T.size.xs,
+                                    fontWeight:    T.weight.medium,
+                                    color:         C.text,
+                                    textAlign:     'center',
+                                    margin:        0,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: T.tracking.wider,
+                                }}
+                            >
                                 Free cancellation up to 24 hours before.
                             </p>
                         </div>
@@ -673,49 +1376,131 @@ export default function TutorDetailPage({ params }) {
                 </div>
             </div>
 
-            {/* ── Floating AI Button ────────────────────────────────────── */}
-            <button onClick={() => setAiOpen(true)}
-                className="fixed bottom-8 right-8 z-40 flex items-center gap-3 px-5 h-14 text-white rounded-full shadow-2xl transition-all cursor-pointer border border-white/20 hover:scale-105"
-                style={{ background: C.gradientBtn, fontSize: T.size.sm, fontWeight: T.weight.black }}>
-                <div className="relative flex items-center justify-center w-8 h-8 bg-white/20 rounded-full">
-                    <Bot size={18} />
-                    <span className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-indigo-600" style={{ backgroundColor: C.success }} />
+            {/* ── Floating AI Button ──────────────────────────────────────── */}
+            <button
+                onClick={() => setAiOpen(true)}
+                className="fixed bottom-8 right-8 z-40 flex items-center gap-3 px-5 h-14 text-white transition-all cursor-pointer border-none hover:opacity-90"
+                style={{
+                    background:   C.gradientBtn,
+                    fontFamily:   T.fontFamily,
+                    fontSize:     T.size.base,
+                    fontWeight:   T.weight.bold,
+                    borderRadius: R.full,
+                    boxShadow:    S.btnDark,
+                }}
+            >
+                <div
+                    className="relative flex items-center justify-center"
+                    style={{
+                        width:           32,
+                        height:          32,
+                        backgroundColor: 'rgba(255,255,255,0.2)',
+                        borderRadius:    '50%',
+                    }}
+                >
+                    <MdSmartToy style={{ width: 18, height: 18 }} />
+                    <span
+                        className="absolute top-0 right-0 border-2 rounded-full"
+                        style={{
+                            width:           10,
+                            height:          10,
+                            backgroundColor: C.success,
+                            borderColor:     C.btnPrimary,
+                        }}
+                    />
                 </div>
                 Ask AI Assistant
             </button>
 
-            {/* ── AI Drawer (Themed) ─────────────────────────────────────────────── */}
+            {/* ── AI Drawer ───────────────────────────────────────────────── */}
             {aiOpen && (
                 <>
-                    <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setAiOpen(false)} />
-                    <div className="fixed bottom-0 right-0 z-50 w-full sm:w-[420px] h-[85vh] sm:h-[600px] sm:bottom-8 sm:right-8 sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border animate-in slide-in-from-bottom-10 sm:slide-in-from-right-10 duration-300"
-                        style={{ backgroundColor: outerCard, borderColor: C.cardBorder }}>
-                        
+                    <div
+                        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+                        onClick={() => setAiOpen(false)}
+                    />
+                    <div
+                        className="fixed bottom-0 right-0 z-50 w-full sm:w-[420px] h-[85vh] sm:h-[600px] sm:bottom-8 sm:right-8 flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 sm:slide-in-from-right-10 duration-300"
+                        style={{
+                            backgroundColor: C.cardBg,
+                            border:          `1px solid ${C.cardBorder}`,
+                            boxShadow:       S.cardHover,
+                            borderRadius:    R['2xl'],
+                        }}
+                    >
                         {/* Drawer Header */}
-                        <div className="px-6 py-5 flex items-center justify-between relative overflow-hidden shrink-0 border-b"
-                            style={{ background: C.gradientBtn, borderColor: C.cardBorder }}>
-                            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '14px 14px' }} />
+                        <div
+                            className="px-6 py-5 flex items-center justify-between relative overflow-hidden shrink-0"
+                            style={{
+                                background:   C.gradientBtn,
+                                borderBottom: `1px solid ${C.cardBorder}`,
+                            }}
+                        >
+                            <div
+                                className="absolute inset-0 opacity-[0.07]"
+                                style={{
+                                    backgroundImage: 'radial-gradient(white 1px, transparent 1px)',
+                                    backgroundSize:  '14px 14px',
+                                }}
+                            />
                             <div className="relative flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl flex items-center justify-center border border-white/20 shadow-inner" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
-                                    <Sparkles size={20} className="text-amber-300" />
+                                <div
+                                    className="flex items-center justify-center"
+                                    style={{
+                                        width:           40,
+                                        height:          40,
+                                        backgroundColor: 'rgba(255,255,255,0.18)',
+                                        border:          '1px solid rgba(255,255,255,0.2)',
+                                        borderRadius:    '10px',
+                                    }}
+                                >
+                                    <MdAutoAwesome style={{ width: 20, height: 20, color: '#FCD34D' }} />
                                 </div>
                                 <div>
-                                    <p style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: '#ffffff', margin: '0 0 2px 0' }}>
+                                    <p
+                                        style={{
+                                            fontFamily:  T.fontFamily,
+                                            fontSize:    T.size.md,
+                                            fontWeight:  T.weight.bold,
+                                            color:       '#ffffff',
+                                            margin:      '0 0 2px 0',
+                                        }}
+                                    >
                                         Tutor Assistant
                                     </p>
-                                    <p style={{ fontSize: '11px', fontWeight: T.weight.bold, color: 'rgba(255,255,255,0.7)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                    <p
+                                        style={{
+                                            fontFamily:    T.fontFamily,
+                                            fontSize:      T.size.xs,
+                                            fontWeight:    T.weight.medium,
+                                            color:         'rgba(255,255,255,0.7)',
+                                            margin:        0,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: T.tracking.wider,
+                                        }}
+                                    >
                                         Ask anything about this tutor
                                     </p>
                                 </div>
                             </div>
-                            <button onClick={() => setAiOpen(false)} className="relative w-8 h-8 rounded-xl flex items-center justify-center transition-colors cursor-pointer border-none"
-                                style={{ backgroundColor: 'rgba(255,255,255,0.15)' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.25)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}>
-                                <X size={16} className="text-white" />
+                            <button
+                                onClick={() => setAiOpen(false)}
+                                className="relative flex items-center justify-center cursor-pointer border-none transition-colors"
+                                style={{
+                                    width:           32,
+                                    height:          32,
+                                    backgroundColor: 'rgba(255,255,255,0.15)',
+                                    borderRadius:    '10px',
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.25)'}
+                                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
+                            >
+                                <MdClose style={{ width: 16, height: 16, color: '#ffffff' }} />
                             </button>
                         </div>
 
                         {/* Drawer Body */}
-                        <div className="flex-1 overflow-hidden" style={{ backgroundColor: innerBox }}>
+                        <div className="flex-1 overflow-hidden" style={{ backgroundColor: C.innerBg }}>
                             <AiTutorWidget
                                 title="Profile Insights"
                                 subtitle="I can analyze reviews, courses, and schedules."

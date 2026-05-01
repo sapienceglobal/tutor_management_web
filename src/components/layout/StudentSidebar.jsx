@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { MdChevronRight, MdClose, MdSchool } from 'react-icons/md';
 import { studentNavItems } from '@/config/studentNav';
 import { useSettings } from '@/components/providers/SettingsProvider';
@@ -11,11 +11,11 @@ import { C, T, R } from '@/constants/studentTokens';
 
 // ─── Sidebar-specific color constants ────────────────────────────────────────
 const SB = {
-    bg: 'rgb(253,252,255)',          // darker lavender — creates contrast vs page #DCD7F6
-    activeBg: '#5A72D4',          // active item background
-    activeText: '#ffffff',          // active item text + icon
-    inactiveText: '#242661',          // inactive item text
-    hoverBg: 'rgba(90,114,212,0.12)', // Subtle hover for inactive
+    bg: 'rgb(253,252,255)',
+    activeBg: '#5A72D4',
+    activeText: '#ffffff',
+    inactiveText: '#242661',
+    hoverBg: 'rgba(90,114,212,0.12)',
     sectionLabel: 'rgba(36,38,97,0.45)',
     divider: 'rgba(71,72,170,0.15)',
 };
@@ -30,18 +30,26 @@ function truncateName(name, maxLen = 18) {
 
 export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
     const pathname = usePathname();
+    const searchParams = useSearchParams(); // Added to catch ?tab=discover
     const [expandedMenu, setExpandedMenu] = useState(null);
     const [isHovering, setIsHovering] = useState(false);
     const [mounted, setMounted] = useState(false);
     const { settings } = useSettings();
     const { institute } = useInstitute();
+    const [isHydrated, setIsHydrated] = useState(false);
 
-    useEffect(() => { setMounted(true); }, []);
+    useEffect(() => {
+        setMounted(true);
+        setIsHydrated(true);
+    }, []);
 
     const toggleSubmenu = (title) => setExpandedMenu(expandedMenu === title ? null : title);
     const showFull = !isCollapsed || isHovering;
 
     const activePath = mounted ? pathname : '';
+    // Combine path + search params for exact submenu matching
+    const currentUrl = mounted ? `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}` : '';
+
     const rawName = mounted ? (institute?.name || settings?.siteName || 'SapienceLMS') : 'SapienceLMS';
     const displayName = mounted ? truncateName(rawName, 20) : 'SapienceLMS';
     const instituteLogo = mounted ? institute?.logo : null;
@@ -51,13 +59,17 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
         studentNavItems.forEach(section => {
             if (section.type === 'section') {
                 section.children?.forEach(child => {
-                    if (child.submenu?.some(sub => activePath === sub.href || activePath.startsWith(sub.href + '/'))) {
+                    if (child.submenu?.some(sub =>
+                        currentUrl === sub.href ||
+                        activePath === sub.href ||
+                        activePath.startsWith(sub.href + '/')
+                    )) {
                         setExpandedMenu(child.title);
                     }
                 });
             }
         });
-    }, [activePath, mounted]);
+    }, [activePath, currentUrl, mounted]);
 
     // ── Item style helpers ────────────────────────────────────────────────────
     const activeLinkStyle = {
@@ -86,7 +98,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
         borderRadius: '10px',
         fontFamily: T.fontFamily,
         fontSize: '15px',
-        fontWeight: T.weight.bold,
+        fontWeight: T.weight.bold, // Parent text becomes bold when expanded
     };
 
     const onEnterInactive = (e) => {
@@ -114,9 +126,9 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                 onMouseEnter={() => isCollapsed && setIsHovering(true)}
                 onMouseLeave={() => isCollapsed && setIsHovering(false)}
                 className={`fixed top-0 left-0 z-50 h-screen flex flex-col
-                    transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+                    ${isHydrated ? 'transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]' : ''}
                     ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-                    ${showFull ? 'w-64' : 'w-[72px]'}
+                    ${showFull ? 'w-[256px]' : 'w-[72px]'}
                 `}
                 style={{
                     backgroundColor: SB.bg,
@@ -133,7 +145,6 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                             ) : (
                                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
                                     style={{ backgroundColor: SB.activeBg }}>
-
                                     <MdSchool className="w-6 h-6" style={{ color: '#ffffff' }} />
                                 </div>
                             )}
@@ -144,7 +155,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                             <span style={{
                                 fontFamily: T.fontFamily,
                                 fontSize: T.size.md,
-                                fontWeight: T.weight.black,
+                                fontWeight: T.weight.bold,
                                 color: SB.inactiveText,
                                 lineHeight: T.leading.snug,
                             }} className="truncate">
@@ -165,11 +176,10 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
 
                     {showFull && (
                         <button onClick={() => setIsOpen(false)}
-                            className="ml-2 lg:hidden p-1.5 rounded-lg transition-all flex-shrink-0"
+                            className="ml-2 lg:hidden p-1.5 rounded-lg transition-all flex-shrink-0 cursor-pointer border-none bg-transparent"
                             style={{ color: 'rgba(36,38,97,0.5)' }}
                             onMouseEnter={e => { e.currentTarget.style.backgroundColor = SB.hoverBg; e.currentTarget.style.color = SB.inactiveText; }}
                             onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'rgba(36,38,97,0.5)'; }}>
-
                             <MdClose size={18} />
                         </button>
                     )}
@@ -183,13 +193,13 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                         <div className="space-y-1">
                             {studentNavItems.filter(item => item.type !== 'section').map((item) => {
                                 const isActive = activePath === item.href || activePath.startsWith(item.href + '/');
-                                const Icon = item.icon; // Ye tumhare studentNav config se aayega
+                                const Icon = item.icon;
                                 return (
                                     <div key={item.href}>
                                         <Link href={item.href}
                                             onClick={() => setIsOpen(false)}
                                             title={!showFull ? item.title : ''}
-                                            className={`group flex items-center gap-3.5 px-3 py-2.5 transition-all duration-150 ${!showFull ? 'justify-center' : ''}`}
+                                            className={`group flex items-center gap-3.5 px-3 py-2.5 transition-all duration-150 text-decoration-none ${!showFull ? 'justify-center' : ''}`}
                                             style={isActive ? activeLinkStyle : inactiveLinkStyle}
                                             onMouseEnter={e => { if (!isActive) onEnterInactive(e); }}
                                             onMouseLeave={e => { if (!isActive) onLeaveInactive(e); }}>
@@ -213,10 +223,11 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                         style={{
                                             fontFamily: T.fontFamily,
                                             fontSize: '11px',
-                                            fontWeight: T.weight.black,
+                                            fontWeight: T.weight.bold,
                                             letterSpacing: '1px',
                                             textTransform: 'uppercase',
                                             color: SB.sectionLabel,
+                                            margin: 0
                                         }}>
                                         {section.title}
                                     </h3>
@@ -230,7 +241,10 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                         const hasSubmenu = child.submenu?.length > 0;
                                         const isExpanded = expandedMenu === child.title;
                                         const isSubmenuActive = hasSubmenu && child.submenu.some(sub =>
-                                            activePath === sub.href || activePath.startsWith(sub.href + '/'));
+                                            currentUrl === sub.href ||
+                                            activePath === sub.href ||
+                                            activePath.startsWith(sub.href + '/')
+                                        );
                                         const isActive = (activePath === child.href || activePath.startsWith(child.href + '/')) || isSubmenuActive;
 
                                         return (
@@ -239,7 +253,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                     <button
                                                         onClick={() => showFull && toggleSubmenu(child.title)}
                                                         title={!showFull ? child.title : ''}
-                                                        className={`group flex items-center gap-3.5 w-full px-3 py-1 transition-all duration-150 ${!showFull ? 'justify-center' : ''}`}
+                                                        className={`group flex items-center gap-3.5 w-full px-3 py-2 cursor-pointer border-none transition-all duration-150 ${!showFull ? 'justify-center' : ''}`}
                                                         style={isActive ? activeLinkStyle : isExpanded ? expandedBtnStyle : inactiveLinkStyle}
                                                         onMouseEnter={e => { if (isActive) return; isExpanded ? onEnterExpanded(e) : onEnterInactive(e); }}
                                                         onMouseLeave={e => { if (isActive) return; isExpanded ? onLeaveExpanded(e) : onLeaveInactive(e); }}>
@@ -249,9 +263,8 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                         {showFull && (
                                                             <>
                                                                 <span className="flex-1 text-left truncate">{child.title}</span>
-                                                                {/* ✅ Material Icon Replace */}
                                                                 <MdChevronRight
-                                                                    className={`w-6 h-6 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+                                                                    className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
                                                                     style={{ color: isActive ? 'rgba(255,255,255,0.70)' : 'rgba(36,38,97,0.40)' }} />
                                                             </>
                                                         )}
@@ -260,7 +273,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                     <Link href={child.href}
                                                         onClick={() => setIsOpen(false)}
                                                         title={!showFull ? child.title : ''}
-                                                        className={`group flex items-center gap-3.5 px-3 py-2.5 transition-all duration-150 ${!showFull ? 'justify-center' : ''}`}
+                                                        className={`group flex items-center gap-3.5 px-3 py-2.5 transition-all duration-150 text-decoration-none ${!showFull ? 'justify-center' : ''}`}
                                                         style={isActive ? activeLinkStyle : inactiveLinkStyle}
                                                         onMouseEnter={e => { if (!isActive) onEnterInactive(e); }}
                                                         onMouseLeave={e => { if (!isActive) onLeaveInactive(e); }}>
@@ -273,22 +286,27 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
 
                                                 {/* Submenu */}
                                                 <div className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
-    ${hasSubmenu && isExpanded && showFull ? 'max-h-96 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
-                                                    <div className="ml-[22px] space-y-1 pl-4"
-                                                        style={{ borderLeft: '1px solid #cde6ff' }}>
+                                                    ${hasSubmenu && isExpanded && showFull ? 'max-h-96 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
+                                                    <div className="ml-[22px] space-y-1 pl-4" style={{ borderLeft: '1px solid #cde6ff' }}>
                                                         {child.submenu?.map((sub) => {
-                                                            const subActive = activePath === sub.href || activePath.startsWith(sub.href + '/');
+                                                            // Detailed match for Submenu
+                                                         const subActive = sub.href.includes('?') 
+    ? currentUrl === sub.href 
+    : (activePath === sub.href && !searchParams.get('tab')) || 
+      (sub.href !== '/student/courses' && activePath.startsWith(sub.href + '/')) ||
+      (sub.href === '/student/courses' && activePath.startsWith('/student/courses/'));
+
                                                             return (
                                                                 <Link key={sub.title} href={sub.href}
                                                                     onClick={() => setIsOpen(false)}
-                                                                    className="flex items-center gap-2.5 px-3 py-2 transition-all duration-150 relative"
+                                                                    className="flex items-center gap-2.5 px-3 py-2 transition-all duration-150 relative text-decoration-none"
                                                                     style={subActive
                                                                         ? {
                                                                             backgroundColor: 'transparent',
-                                                                            color: SB.activeBg, fontWeight: T.weight.bold,
+                                                                            color: SB.activeBg,
+                                                                            fontWeight: T.weight.bold,
                                                                             fontFamily: T.fontFamily,
-                                                                            fontSize: '13px',
-                                                                            boxShadow: 'none'
+                                                                            fontSize: '13px'
                                                                         }
                                                                         : {
                                                                             backgroundColor: 'transparent',
@@ -296,9 +314,8 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                                             opacity: 0.75,
                                                                             fontFamily: T.fontFamily,
                                                                             fontSize: '13px',
-                                                                            fontWeight: T.weight.medium
-                                                                        }
-                                                                    }
+                                                                            fontWeight: T.weight.semibold
+                                                                        }}
                                                                     onMouseEnter={e => {
                                                                         if (!subActive) {
                                                                             e.currentTarget.style.backgroundColor = 'transparent';
@@ -309,7 +326,7 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                                     onMouseLeave={e => {
                                                                         if (!subActive) {
                                                                             e.currentTarget.style.backgroundColor = 'transparent';
-                                                                            e.currentTarget.style.color = SB.inactiveText;  
+                                                                            e.currentTarget.style.color = SB.inactiveText;
                                                                             e.currentTarget.style.opacity = '0.75';
                                                                         }
                                                                     }}>
@@ -319,13 +336,14 @@ export function StudentSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed 
                                                         })}
                                                     </div>
                                                 </div>
-
                                                 {/* Separator Line */}
                                                 <div style={{ height: '1px', backgroundColor: "#ececec", margin: '6px 12px' }} />
                                             </div>
                                         );
                                     })}
                                 </div>
+
+
                             </div>
                         ))}
                     </nav>

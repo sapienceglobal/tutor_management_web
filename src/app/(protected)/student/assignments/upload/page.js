@@ -3,53 +3,63 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Upload as UploadIcon, FileText, Loader2, X, ArrowLeft, Send, Sparkles, Brain } from 'lucide-react';
+import {
+    MdUpload,
+    MdArticle,
+    MdHourglassEmpty,
+    MdClose,
+    MdArrowBack,
+    MdSend,
+    MdAutoAwesome,
+    MdPsychology,
+    MdAssignment,
+} from 'react-icons/md';
 import api from '@/lib/axios';
 import assignmentService from '@/services/assignmentService';
 import { toast } from 'react-hot-toast';
 import AiTutorWidget from '@/components/AiTutorWidget';
 import { C, T, S, R } from '@/constants/studentTokens';
 
-// ─── Theme Colors ─────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
+const MAX_SIZE_MB = 20;
+const ALLOWED_EXT = ['.pdf', '.doc', '.docx', '.txt', '.png', '.jpg', '.jpeg'];
 
-const MAX_SIZE_MB  = 20;
-const ALLOWED_EXT  = ['.pdf', '.doc', '.docx', '.txt', '.png', '.jpg', '.jpeg'];
-
-// Focus Handlers
+// ─── Focus Handlers ───────────────────────────────────────────────────────────
 const onFocusHandler = e => {
     e.target.style.borderColor = C.btnPrimary;
-    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.15)';
+    e.target.style.boxShadow   = '0 0 0 3px rgba(117,115,232,0.15)';
 };
 const onBlurHandler = e => {
     e.target.style.borderColor = C.cardBorder;
-    e.target.style.boxShadow = 'none';
+    e.target.style.boxShadow   = 'none';
 };
 
-// Base style for all inputs, selects, and textareas
 const baseInputStyle = {
-    backgroundColor: C.innerBox, // Updated to match theme instead of white
-    border: `1px solid ${C.cardBorder}`,
-    borderRadius: R.xl,
-    color: C.heading,
-    fontFamily: T.fontFamily,
-    fontSize: T.size.sm,
-    fontWeight: T.weight.bold,
-    outline: 'none',
-    width: '100%',
-    padding: '12px 16px',
-    transition: 'all 0.2s ease',
+    backgroundColor: C.cardBg,
+    border:          `1px solid ${C.cardBorder}`,
+    borderRadius:    '10px',
+    color:           C.heading,
+    fontFamily:      T.fontFamily,
+    fontSize:        T.size.base,
+    fontWeight:      T.weight.semibold,
+    outline:         'none',
+    width:           '100%',
+    padding:         '12px 16px',
+    transition:      'all 0.2s ease',
 };
 
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function UploadAssignmentPage() {
     const router = useRouter();
-    const [enrollments, setEnrollments]           = useState([]);
-    const [assignments, setAssignments]           = useState([]);
-    const [selectedCourseId, setSelectedCourseId] = useState('');
+
+    const [enrollments, setEnrollments]                   = useState([]);
+    const [assignments, setAssignments]                   = useState([]);
+    const [selectedCourseId, setSelectedCourseId]         = useState('');
     const [selectedAssignmentId, setSelectedAssignmentId] = useState('');
-    const [files, setFiles]         = useState([]);
-    const [comments, setComments]   = useState('');
-    const [dragOver, setDragOver]   = useState(false);
-    const [submitting, setSubmitting] = useState(false);
+    const [files, setFiles]                               = useState([]);
+    const [comments, setComments]                         = useState('');
+    const [dragOver, setDragOver]                         = useState(false);
+    const [submitting, setSubmitting]                     = useState(false);
 
     useEffect(() => {
         api.get('/enrollments/my-enrollments')
@@ -66,8 +76,8 @@ export default function UploadAssignmentPage() {
 
     const validateFile = (file) => {
         const ext = '.' + (file.name.split('.').pop() || '').toLowerCase();
-        if (!ALLOWED_EXT.includes(ext))                    { toast.error('Allowed: PDF, DOC, DOCX, TXT, PNG, JPG'); return false; }
-        if (file.size > MAX_SIZE_MB * 1024 * 1024)        { toast.error(`Max file size: ${MAX_SIZE_MB}MB`);         return false; }
+        if (!ALLOWED_EXT.includes(ext))             { toast.error('Allowed: PDF, DOC, DOCX, TXT, PNG, JPG'); return false; }
+        if (file.size > MAX_SIZE_MB * 1024 * 1024)  { toast.error(`Max file size: ${MAX_SIZE_MB}MB`);         return false; }
         return true;
     };
 
@@ -118,45 +128,139 @@ export default function UploadAssignmentPage() {
     };
 
     return (
-        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: C.pageBgAlt, fontFamily: T.fontFamily, color: C.text }}>
-
-            {/* ── Header ───────────────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5" style={{ backgroundColor: C.outerCard, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                <div className="flex items-center gap-4">
-                    <Link href="/student/assignments" className="text-decoration-none">
-                        <button className="w-10 h-10 flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80 shrink-0 shadow-sm"
-                            style={{ backgroundColor: C.innerBox, borderRadius: R.full, border: `1px solid ${C.cardBorder}` }}>
-                            <ArrowLeft size={18} color={C.heading} />
+        <div
+            className="w-full min-h-screen space-y-5 pb-8"
+            style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}
+        >
+            {/* ── Header ──────────────────────────────────────────────────── */}
+            <div
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5"
+                style={{
+                    backgroundColor: C.cardBg,
+                    borderRadius:    R['2xl'],
+                    border:          `1px solid ${C.cardBorder}`,
+                    boxShadow:       S.card,
+                }}
+            >
+                <div className="flex items-center gap-3">
+                    {/* Back button */}
+                    <Link href="/student/assignments">
+                        <button
+                            className="flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80 shrink-0"
+                            style={{
+                                width:           40,
+                                height:          40,
+                                backgroundColor: C.innerBg,
+                                borderRadius:    '10px',
+                                border:          `1px solid ${C.cardBorder}`,
+                            }}
+                        >
+                            <MdArrowBack style={{ width: 18, height: 18, color: C.heading }} />
                         </button>
                     </Link>
+
+                    {/* Icon Pill + Title */}
+                    <div
+                        className="flex items-center justify-center rounded-lg shrink-0"
+                        style={{ width: 40, height: 40, backgroundColor: C.iconBg }}
+                    >
+                        <MdAssignment style={{ width: 20, height: 20, color: C.iconColor }} />
+                    </div>
                     <div>
-                        <h1 style={{ color: C.heading, fontSize: T.size.xl, fontWeight: T.weight.black, margin: '0 0 4px 0' }}>
+                        <h1
+                            style={{
+                                fontFamily:  T.fontFamily,
+                                color:       C.heading,
+                                fontSize:    T.size['2xl'],
+                                fontWeight:  T.weight.bold,
+                                margin:      '0 0 2px 0',
+                                lineHeight:  T.leading.tight,
+                            }}
+                        >
                             Upload Assignment
                         </h1>
-                        <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.medium, margin: 0 }}>
+                        <p
+                            style={{
+                                fontFamily:  T.fontFamily,
+                                color:       C.text,
+                                fontSize:    T.size.base,
+                                fontWeight:  T.weight.medium,
+                                margin:      0,
+                            }}
+                        >
                             Select your course, choose the assignment, and submit your work.
                         </p>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-                {/* ── Form Area ─────────────────────────────────────────────── */}
+                {/* ── Form Area ───────────────────────────────────────────── */}
                 <div className="lg:col-span-2">
-                    <div className="rounded-3xl overflow-hidden shadow-sm" style={{ backgroundColor: C.outerCard, border: `1px solid ${C.cardBorder}` }}>
-                        <div className="px-6 py-5 border-b" style={{ borderColor: C.cardBorder, backgroundColor: C.innerBox }}>
-                            <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>Submission Details</h2>
+                    <div
+                        className="overflow-hidden"
+                        style={{
+                            backgroundColor: C.cardBg,
+                            border:          `1px solid ${C.cardBorder}`,
+                            boxShadow:       S.card,
+                            borderRadius:    R['2xl'],
+                        }}
+                    >
+                        {/* Card Header */}
+                        <div
+                            className="px-6 py-4 flex items-center gap-2.5"
+                            style={{
+                                borderBottom:    `1px solid ${C.cardBorder}`,
+                                backgroundColor: C.innerBg,
+                            }}
+                        >
+                            <div
+                                className="flex items-center justify-center rounded-lg shrink-0"
+                                style={{ width: 40, height: 40, backgroundColor: C.iconBg }}
+                            >
+                                <MdArticle style={{ width: 16, height: 16, color: C.iconColor }} />
+                            </div>
+                            <h2
+                                style={{
+                                    fontFamily:  T.fontFamily,
+                                    fontSize:    T.size.xl,
+                                    fontWeight:  T.weight.semibold,
+                                    color:       C.heading,
+                                    margin:      0,
+                                }}
+                            >
+                                Submission Details
+                            </h2>
                         </div>
 
                         <form onSubmit={handleSubmit} className="p-6 space-y-6">
 
-                            {/* Selectors */}
+                            {/* ── Selectors ─────────────────────────────── */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                <div className="space-y-2.5">
-                                    <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Course *</label>
-                                    <select value={selectedCourseId} onChange={e => setSelectedCourseId(e.target.value)}
-                                        style={{ ...baseInputStyle, cursor: 'pointer' }} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+
+                                {/* Course */}
+                                <div className="space-y-2">
+                                    <label
+                                        style={{
+                                            display:       'block',
+                                            fontFamily:    T.fontFamily,
+                                            fontSize:      T.size.xs,
+                                            fontWeight:    T.weight.bold,
+                                            color:         C.text,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: T.tracking.wider,
+                                        }}
+                                    >
+                                        Course *
+                                    </label>
+                                    <select
+                                        value={selectedCourseId}
+                                        onChange={e => setSelectedCourseId(e.target.value)}
+                                        style={{ ...baseInputStyle, cursor: 'pointer' }}
+                                        onFocus={onFocusHandler}
+                                        onBlur={onBlurHandler}
+                                    >
                                         <option value="">Select Course</option>
                                         {enrollments.map(e => (
                                             <option key={e.courseId?._id || e.courseId} value={e.courseId?._id || e.courseId}>
@@ -165,10 +269,34 @@ export default function UploadAssignmentPage() {
                                         ))}
                                     </select>
                                 </div>
-                                <div className="space-y-2.5">
-                                    <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assignment *</label>
-                                    <select value={selectedAssignmentId} onChange={e => setSelectedAssignmentId(e.target.value)} disabled={!selectedCourseId}
-                                        style={{ ...baseInputStyle, cursor: 'pointer', opacity: !selectedCourseId ? 0.6 : 1 }} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+
+                                {/* Assignment */}
+                                <div className="space-y-2">
+                                    <label
+                                        style={{
+                                            display:       'block',
+                                            fontFamily:    T.fontFamily,
+                                            fontSize:      T.size.xs,
+                                            fontWeight:    T.weight.bold,
+                                            color:         C.text,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: T.tracking.wider,
+                                        }}
+                                    >
+                                        Assignment *
+                                    </label>
+                                    <select
+                                        value={selectedAssignmentId}
+                                        onChange={e => setSelectedAssignmentId(e.target.value)}
+                                        disabled={!selectedCourseId}
+                                        style={{
+                                            ...baseInputStyle,
+                                            cursor:  'pointer',
+                                            opacity: !selectedCourseId ? 0.55 : 1,
+                                        }}
+                                        onFocus={onFocusHandler}
+                                        onBlur={onBlurHandler}
+                                    >
                                         <option value="">Select Assignment</option>
                                         {assignments.map(a => (
                                             <option key={a._id} value={a._id}>{a.title}</option>
@@ -177,58 +305,157 @@ export default function UploadAssignmentPage() {
                                 </div>
                             </div>
 
-                            {/* Drop Zone */}
-                            <div className="space-y-2.5">
-                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Upload Files *</label>
+                            {/* ── Drop Zone ─────────────────────────────── */}
+                            <div className="space-y-2">
+                                <label
+                                    style={{
+                                        display:       'block',
+                                        fontFamily:    T.fontFamily,
+                                        fontSize:      T.size.xs,
+                                        fontWeight:    T.weight.bold,
+                                        color:         C.text,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: T.tracking.wider,
+                                    }}
+                                >
+                                    Upload Files *
+                                </label>
                                 <div
                                     onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                                     onDragLeave={() => setDragOver(false)}
                                     onDrop={handleDrop}
-                                    className="rounded-2xl p-10 text-center transition-all border-2 border-dashed cursor-pointer"
-                                    style={{
-                                        borderColor: dragOver ? C.btnPrimary : C.cardBorder,
-                                        backgroundColor: dragOver ? `${C.btnPrimary}10` : C.innerBox,
-                                    }}
                                     onClick={() => document.getElementById('upload-files').click()}
+                                    className="p-10 text-center transition-all border-2 border-dashed cursor-pointer"
+                                    style={{
+                                        borderColor:     dragOver ? C.btnPrimary : C.cardBorder,
+                                        backgroundColor: dragOver ? `${C.btnPrimary}0d` : C.innerBg,
+                                        borderRadius:    '10px',
+                                    }}
                                 >
-                                    <input type="file" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg" onChange={handleFileInput} className="hidden" id="upload-files" />
-                                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: C.outerCard, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                                        <UploadIcon className="w-8 h-8" style={{ color: C.btnPrimary }} />
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
+                                        onChange={handleFileInput}
+                                        className="hidden"
+                                        id="upload-files"
+                                    />
+
+                                    {/* Upload Icon */}
+                                    <div
+                                        className="flex items-center justify-center mx-auto mb-4"
+                                        style={{
+                                            width:           56,
+                                            height:          56,
+                                            backgroundColor: C.cardBg,
+                                            border:          `1px solid ${C.cardBorder}`,
+                                            boxShadow:       S.card,
+                                            borderRadius:    '10px',
+                                        }}
+                                    >
+                                        <MdUpload style={{ width: 28, height: 28, color: C.btnPrimary }} />
                                     </div>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading }}>
+
+                                    <p
+                                        style={{
+                                            fontFamily:  T.fontFamily,
+                                            fontSize:    T.size.lg,
+                                            fontWeight:  T.weight.bold,
+                                            color:       C.heading,
+                                            margin:      0,
+                                        }}
+                                    >
                                         Drag & drop files here
                                     </p>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, marginTop: 4, fontWeight: T.weight.medium }}>
+                                    <p
+                                        style={{
+                                            fontFamily:  T.fontFamily,
+                                            fontSize:    T.size.base,
+                                            color:       C.text,
+                                            marginTop:   4,
+                                            fontWeight:  T.weight.medium,
+                                        }}
+                                    >
                                         or click to browse from your computer
                                     </p>
-                                    <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, marginTop: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                    <p
+                                        style={{
+                                            fontFamily:    T.fontFamily,
+                                            fontSize:      T.size.xs,
+                                            fontWeight:    T.weight.bold,
+                                            color:         C.text,
+                                            marginTop:     12,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: T.tracking.wider,
+                                        }}
+                                    >
                                         Supported: PDF, DOCX, TXT, JPG, PNG (Max {MAX_SIZE_MB}MB)
                                     </p>
                                 </div>
 
-                                {/* File list */}
+                                {/* File List */}
                                 {files.length > 0 && (
-                                    <div className="mt-4 space-y-2">
+                                    <div className="mt-3 space-y-2">
                                         {files.map((f, i) => (
-                                            <div key={i} className="flex items-center justify-between p-3.5 rounded-xl border transition-colors"
-                                                style={{ backgroundColor: C.innerBox, borderColor: C.cardBorder }}>
+                                            <div
+                                                key={i}
+                                                className="flex items-center justify-between p-3.5 transition-colors"
+                                                style={{
+                                                    backgroundColor: C.innerBg,
+                                                    border:          `1px solid ${C.cardBorder}`,
+                                                    borderRadius:    '10px',
+                                                }}
+                                            >
                                                 <div className="flex items-center gap-3 min-w-0">
-                                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: C.outerCard }}>
-                                                        <FileText size={16} color={C.btnPrimary} />
+                                                    <div
+                                                        className="flex items-center justify-center shrink-0"
+                                                        style={{
+                                                            width:           32,
+                                                            height:          32,
+                                                            backgroundColor: C.cardBg,
+                                                            borderRadius:    '10px',
+                                                        }}
+                                                    >
+                                                        <MdArticle style={{ width: 16, height: 16, color: C.btnPrimary }} />
                                                     </div>
-                                                    <span className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                                                    <span
+                                                        className="truncate"
+                                                        style={{
+                                                            fontFamily:  T.fontFamily,
+                                                            fontSize:    T.size.base,
+                                                            fontWeight:  T.weight.semibold,
+                                                            color:       C.heading,
+                                                        }}
+                                                    >
                                                         {f.name}
                                                     </span>
-                                                    <span style={{ fontSize: '10px', color: C.textMuted, fontWeight: T.weight.bold }}>
+                                                    <span
+                                                        style={{
+                                                            fontFamily:  T.fontFamily,
+                                                            fontSize:    T.size.xs,
+                                                            color:       C.text,
+                                                            fontWeight:  T.weight.medium,
+                                                            whiteSpace:  'nowrap',
+                                                        }}
+                                                    >
                                                         {(f.size / 1024 / 1024).toFixed(2)} MB
                                                     </span>
                                                 </div>
-                                                <button type="button" onClick={(e) => { e.stopPropagation(); removeFile(i); }}
-                                                    className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer border-none"
-                                                    style={{ color: C.danger, backgroundColor: 'transparent' }}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => { e.stopPropagation(); removeFile(i); }}
+                                                    className="flex items-center justify-center cursor-pointer border-none transition-colors"
+                                                    style={{
+                                                        width:           32,
+                                                        height:          32,
+                                                        color:           C.danger,
+                                                        backgroundColor: 'transparent',
+                                                        borderRadius:    '10px',
+                                                    }}
                                                     onMouseEnter={e => e.currentTarget.style.backgroundColor = C.dangerBg}
-                                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                                                    <X size={16} />
+                                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                >
+                                                    <MdClose style={{ width: 16, height: 16 }} />
                                                 </button>
                                             </div>
                                         ))}
@@ -236,68 +463,163 @@ export default function UploadAssignmentPage() {
                                 )}
                             </div>
 
-                            {/* Comments */}
-                            <div className="space-y-2.5">
-                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                    Comments <span style={{ textTransform: 'none', fontWeight: T.weight.medium }}>(Optional)</span>
+                            {/* ── Comments ──────────────────────────────── */}
+                            <div className="space-y-2">
+                                <label
+                                    style={{
+                                        display:       'block',
+                                        fontFamily:    T.fontFamily,
+                                        fontSize:      T.size.xs,
+                                        fontWeight:    T.weight.bold,
+                                        color:         C.text,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: T.tracking.wider,
+                                    }}
+                                >
+                                    Comments{' '}
+                                    <span
+                                        style={{
+                                            textTransform: 'none',
+                                            fontWeight:    T.weight.medium,
+                                            color:         C.text,
+                                        }}
+                                    >
+                                        (Optional)
+                                    </span>
                                 </label>
-                                <textarea value={comments} onChange={e => setComments(e.target.value)} placeholder="Add any notes for your instructor..."
-                                    rows={4} style={{ ...baseInputStyle, resize: 'vertical' }} onFocus={onFocusHandler} onBlur={onBlurHandler} />
+                                <textarea
+                                    value={comments}
+                                    onChange={e => setComments(e.target.value)}
+                                    placeholder="Add any notes for your instructor..."
+                                    rows={4}
+                                    style={{ ...baseInputStyle, resize: 'vertical' }}
+                                    onFocus={onFocusHandler}
+                                    onBlur={onBlurHandler}
+                                />
                             </div>
 
-                            {/* Actions */}
-                            <div className="flex justify-end gap-3 pt-6" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
-                                <Link href="/student/assignments" className="text-decoration-none">
-                                    <button type="button" className="px-6 py-3 rounded-xl transition-all cursor-pointer border border-transparent"
-                                        style={{ backgroundColor: C.innerBox, color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}
-                                        onMouseEnter={e => e.currentTarget.style.borderColor = C.cardBorder}
-                                        onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
+                            {/* ── Actions ───────────────────────────────── */}
+                            <div
+                                className="flex justify-end gap-3 pt-5"
+                                style={{ borderTop: `1px solid ${C.cardBorder}` }}
+                            >
+                                {/* Cancel */}
+                                <Link href="/student/assignments">
+                                    <button
+                                        type="button"
+                                        className="px-6 py-2.5 cursor-pointer transition-all"
+                                        style={{
+                                            backgroundColor: C.btnViewAllBg,
+                                            color:           C.btnViewAllText,
+                                            fontFamily:      T.fontFamily,
+                                            fontSize:        T.size.base,
+                                            fontWeight:      T.weight.bold,
+                                            borderRadius:    '10px',
+                                            border:          `1px solid ${C.cardBorder}`,
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+                                        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                    >
                                         Cancel
                                     </button>
                                 </Link>
-                                <button type="submit" disabled={submitting || files.length === 0 || !selectedAssignmentId}
-                                    className="flex items-center gap-2 px-8 py-3 text-white rounded-xl transition-opacity hover:opacity-90 disabled:opacity-50 cursor-pointer border-none shadow-md"
-                                    style={{ background: C.gradientBtn, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
-                                    {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                    {submitting ? 'Submitting…' : 'Submit Assignment'}
+
+                                {/* Submit */}
+                                <button
+                                    type="submit"
+                                    disabled={submitting || files.length === 0 || !selectedAssignmentId}
+                                    className="flex items-center gap-2 px-8 py-2.5 text-white transition-opacity hover:opacity-90 disabled:opacity-50 cursor-pointer border-none"
+                                    style={{
+                                        background:   C.gradientBtn,
+                                        fontFamily:   T.fontFamily,
+                                        fontSize:     T.size.base,
+                                        fontWeight:   T.weight.bold,
+                                        borderRadius: '10px',
+                                        boxShadow:    S.btn,
+                                    }}
+                                >
+                                    {submitting
+                                        ? <><MdHourglassEmpty style={{ width: 16, height: 16 }} className="animate-spin" /> Submitting…</>
+                                        : <><MdSend style={{ width: 16, height: 16 }} /> Submit Assignment</>
+                                    }
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
 
-                {/* ── AI Widget Sidebar (Themed) ─────────────────────────────────────────── */}
+                {/* ── AI Widget Sidebar ───────────────────────────────────── */}
                 <div className="lg:col-span-1">
                     <div className="sticky top-6">
-                        <div className="rounded-3xl shadow-sm border overflow-hidden" style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder }}>
-                            {/* Inner Box Header */}
-                            <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: C.cardBorder, backgroundColor: C.innerBox }}>
-                                <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: C.outerCard }}>
-                                    <Sparkles className="w-5 h-5" style={{ color: C.btnPrimary }} />
+                        <div
+                            className="overflow-hidden"
+                            style={{
+                                backgroundColor: C.cardBg,
+                                border:          `1px solid ${C.cardBorder}`,
+                                boxShadow:       S.card,
+                                borderRadius:    R['2xl'],
+                            }}
+                        >
+                            {/* Sidebar Header */}
+                            <div
+                                className="px-5 py-4 flex items-center gap-2.5"
+                                style={{
+                                    borderBottom:    `1px solid ${C.cardBorder}`,
+                                    backgroundColor: C.innerBg,
+                                }}
+                            >
+                                <div
+                                    className="flex items-center justify-center rounded-lg shrink-0"
+                                    style={{ width: 40, height: 40, backgroundColor: C.iconBg }}
+                                >
+                                    <MdAutoAwesome style={{ width: 20, height: 20, color: C.iconColor }} />
                                 </div>
                                 <div>
-                                    <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: '0 0 2px 0' }}>AI Assistant</h3>
-                                    <p style={{ fontSize: '10px', color: C.textMuted, fontWeight: T.weight.bold, textTransform: 'uppercase', margin: 0 }}>Need help?</p>
+                                    <h3
+                                        style={{
+                                            fontFamily:  T.fontFamily,
+                                            fontSize:    T.size.lg,
+                                            fontWeight:  T.weight.semibold,
+                                            color:       C.heading,
+                                            margin:      '0 0 2px 0',
+                                        }}
+                                    >
+                                        AI Assistant
+                                    </h3>
+                                    <p
+                                        style={{
+                                            fontFamily:    T.fontFamily,
+                                            fontSize:      T.size.xs,
+                                            color:         C.text,
+                                            fontWeight:    T.weight.medium,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: T.tracking.wider,
+                                            margin:        0,
+                                        }}
+                                    >
+                                        Need help?
+                                    </p>
                                 </div>
                             </div>
-                            
-                            {/* Widget Wrapper */}
+
+                            {/* Widget Body */}
                             <div className="p-4" style={{ minHeight: '300px' }}>
-                                {/* Note: Assuming AiTutorWidget adapts to its container. If it renders its own white box, 
-                                    it will sit cleanly inside this C.outerCard background. */}
                                 <AiTutorWidget
-                                    context={{ pageType: 'assignment_upload', courseId: selectedCourseId, assignmentId: selectedAssignmentId }}
+                                    context={{
+                                        pageType:     'assignment_upload',
+                                        courseId:     selectedCourseId,
+                                        assignmentId: selectedAssignmentId,
+                                    }}
                                     recommendedTopics={[
                                         'What are the key requirements for this type of assignment?',
                                         'Can you help me structure my essay/report?',
-                                        'What should I double check before submitting?'
+                                        'What should I double check before submitting?',
                                     ]}
                                 />
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     );

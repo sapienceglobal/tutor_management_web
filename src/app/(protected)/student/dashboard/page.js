@@ -33,7 +33,7 @@ import {
 import { toast } from "react-hot-toast";
 import useInstitute from "@/hooks/useInstitute";
 import { useRouter } from "next/navigation";
-import { C, T, S, cx, pageStyle } from "@/constants/studentTokens";
+import { C, T, S, R, cx, pageStyle } from "@/constants/studentTokens";
 import CustomAIIcon from "@/components/CustomAIIcon";
 import StatCard from "@/components/StatCard";
 
@@ -63,9 +63,10 @@ function FallbackImage({ src, alt, className }) {
   if (hasError) {
     return (
       <div
-        className={`flex items-center justify-center bg-slate-100 ${className}`}
+        className={`flex items-center justify-center ${className}`}
+        style={{ backgroundColor: C.innerBg }}
       >
-        <MdMenuBook className="w-6 h-6 text-slate-400" />
+        <MdMenuBook style={{ width: 24, height: 24, color: C.text }} />
       </div>
     );
   }
@@ -87,17 +88,18 @@ function FallbackImage({ src, alt, className }) {
 }
 
 // ─── Icon Pill ────────────────────────────────────────────────────────────────
-function IconPill({ icon: Icon, size = 20, bg, customSizeClasses }) {
+function IconPill({ icon: Icon, size = 20, bg }) {
   return (
     <div
-      className="flex items-center justify-center rounded-lg flex-shrink-0"
-      style={{ width: 40, height: 40, backgroundColor: bg || C.iconBg }}
+      className="flex items-center justify-center flex-shrink-0"
+      style={{
+        width: 40,
+        height: 40,
+        backgroundColor: bg || C.iconBg,
+        borderRadius: "10px",
+      }}
     >
-      {/* Yahan customSizeClasses pass ki hain taaki custom icon ko apne hisaab se bada kar sakein */}
-      <Icon
-        style={{ width: size, height: size, color: C.iconColor }}
-        className={customSizeClasses || "w-5 h-5"}
-      />
+      <Icon style={{ width: size, height: size, color: C.iconColor }} />
     </div>
   );
 }
@@ -117,7 +119,7 @@ function SectionHeader({
           style={{
             fontFamily: T.fontFamily,
             fontSize: T.size.xl,
-            fontWeight: T.weight.semibold,
+            fontWeight: T.weight.bold,
             color: C.heading,
           }}
         >
@@ -127,16 +129,18 @@ function SectionHeader({
       {linkHref && (
         <Link
           href={linkHref}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg"
+          className="inline-flex items-center gap-1 px-3 py-1.5 transition-colors hover:opacity-80 text-decoration-none"
           style={{
             backgroundColor: C.btnViewAllBg,
             color: C.btnViewAllText,
             fontFamily: T.fontFamily,
-            fontSize: T.size.sm,
-            fontWeight: T.weight.semibold,
+            fontSize: T.size.base,
+            fontWeight: T.weight.bold,
+            borderRadius: "10px",
+            border: `1px solid ${C.cardBorder}`,
           }}
         >
-          {linkLabel} <MdArrowForward className="w-4 h-4" />
+          {linkLabel} <MdArrowForward style={{ width: 16, height: 16 }} />
         </Link>
       )}
     </div>
@@ -146,18 +150,19 @@ function SectionHeader({
 // ─── SidePanel ────────────────────────────────────────────────────────────────
 function SidePanel({ icon: Icon, title, open, onToggle, children }) {
   return (
-    // SidePanel wrapper ko rounded-[10px] kar diya hai
     <div
-      className="rounded-[10px] overflow-hidden"
       style={{
         backgroundColor: C.cardBg,
         border: `1px solid ${C.cardBorder}`,
         boxShadow: S.card,
+        borderRadius: R["2xl"],
+        overflow: "hidden",
       }}
     >
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3.5 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 transition-colors"
+        style={{ background: "transparent", border: "none", cursor: "pointer" }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = C.innerBg;
         }}
@@ -166,12 +171,12 @@ function SidePanel({ icon: Icon, title, open, onToggle, children }) {
         }}
       >
         <div className="flex items-center gap-2.5">
-          <IconPill icon={Icon} size={15} />
+          <IconPill icon={Icon} size={16} />
           <span
             style={{
               fontFamily: T.fontFamily,
               fontSize: T.size.lg,
-              fontWeight: T.weight.semibold,
+              fontWeight: T.weight.bold,
               color: C.heading,
             }}
           >
@@ -179,12 +184,14 @@ function SidePanel({ icon: Icon, title, open, onToggle, children }) {
           </span>
         </div>
         {open ? (
-          <MdKeyboardArrowUp className="w-5 h-5" style={{ color: C.text }} />
+          <MdKeyboardArrowUp style={{ width: 20, height: 20, color: C.text }} />
         ) : (
-          <MdKeyboardArrowDown className="w-5 h-5" style={{ color: C.text }} />
+          <MdKeyboardArrowDown
+            style={{ width: 20, height: 20, color: C.text }}
+          />
         )}
       </button>
-      {open && <div className="px-4 pb-4">{children}</div>}
+      {open && <div className="px-5 pb-5">{children}</div>}
     </div>
   );
 }
@@ -194,14 +201,19 @@ const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload?.length) {
     return (
       <div
-        className="rounded-xl px-3 py-2 shadow-xl"
-        style={{ backgroundColor: "#3D3B8E", fontFamily: T.fontFamily }}
+        style={{
+          backgroundColor: "#3D3B8E",
+          fontFamily: T.fontFamily,
+          borderRadius: "10px",
+          padding: "8px 12px",
+          boxShadow: S.card,
+        }}
       >
         <p
           style={{
             fontSize: T.size.xs,
-            fontWeight: T.weight.medium,
-            color: "rgba(255,255,255,0.55)",
+            fontWeight: T.weight.semibold,
+            color: "rgba(255,255,255,0.7)",
             marginBottom: 2,
           }}
         >
@@ -210,7 +222,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         <p
           style={{
             fontSize: T.size.lg,
-            fontWeight: T.weight.black,
+            fontWeight: T.weight.bold,
             color: "#ffffff",
           }}
         >
@@ -243,6 +255,9 @@ export default function StudentDashboard() {
   const [aiOpen, setAiOpen] = useState(true);
   const [announcementsOpen, setAnnouncementsOpen] = useState(true);
   const [batchPanelOpen, setBatchPanelOpen] = useState(true);
+  const [announcements, setAnnouncements] = useState([]);
+  const [allExams, setAllExams] = useState([]); // Today's exam filter karne ke liye
+  const [todayCarouselIdx, setTodayCarouselIdx] = useState(0);
 
   const router = useRouter();
 
@@ -294,6 +309,7 @@ export default function StudentDashboard() {
           const examsRes = await api.get(`/exams/student/all${s}`);
           if (examsRes.data.success) {
             const now = new Date();
+            setAllExams(examsRes.data.exams); // Save all for Today's logic
             setUpcomingExams(
               examsRes.data.exams
                 .filter((e) => e.isScheduled && new Date(e.startDate) > now)
@@ -301,6 +317,13 @@ export default function StudentDashboard() {
                 .slice(0, 5),
             );
           }
+        } catch {}
+
+        try {
+          // Fetch real announcements
+          const annRes = await api.get(`/enrollments/my-announcements${s}`);
+          if (annRes.data.success)
+            setAnnouncements(annRes.data.announcements || []);
         } catch {}
         try {
           const liveRes = await api.get(`/live-classes/student${s}`);
@@ -333,7 +356,30 @@ export default function StudentDashboard() {
     };
     fetchContextData();
   }, [activeTab]);
-
+// ─── Image Resolver for VPS Bug ──────────────────────────────────────────────
+const resolveImageUrl = (path) => {
+    if (!path) return "/default-avatar.png";
+    if (path.startsWith("http")) return path; 
+    
+    // Yahan tumhara backend API URL aayega .env se
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    // API URL se base domain nikalna
+    const baseUrl = apiUrl.replace(/\/api\/?$/, ""); 
+    
+    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+  // Helper function for Today's Exam
+  const getStatus = (exam) => {
+    if (exam.isCompleted) return "completed";
+    if (exam.isScheduled) {
+      const now = new Date();
+      const start = new Date(exam.startDate);
+      const end = new Date(exam.endDate);
+      if (now < start) return "upcoming";
+      if (now > end) return "expired";
+    }
+    return "available";
+  };
   const avgScore =
     history.length > 0
       ? Math.round(
@@ -356,30 +402,164 @@ export default function StudentDashboard() {
     )
     .slice(0, 3);
 
+  // Reusable Continue Learning Render Block
+  const renderContinueLearning = () => (
+    <>
+      <SectionHeader
+        icon={MdPlayCircleOutline}
+        title="Continue Learning"
+        linkHref="/student/courses"
+      />
+      <div
+        className={`grid grid-cols-1 gap-4 ${inProgressCourses.length >= 3 ? "md:grid-cols-3" : "md:grid-cols-2"}`}
+      >
+        {inProgressCourses.map((enrollment, i) => {
+          const course = enrollment.courseId;
+          const pct = enrollment.progress?.percentage || 0;
+          const barColor = progressColors[i % progressColors.length];
+          return (
+            <Link
+              key={enrollment._id}
+              href={`/student/courses/${course?._id}`}
+              className="group p-4 transition-all duration-200 hover:-translate-y-0.5 text-decoration-none"
+              style={{
+                backgroundColor: C.cardBg,
+                border: `1px solid ${C.cardBorder}`,
+                borderRadius: "10px",
+                boxShadow: S.card,
+                display: "block",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = S.cardHover;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = S.card;
+              }}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div
+                  className="flex items-center justify-center overflow-hidden shrink-0"
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "10px",
+                    backgroundColor: C.innerBg,
+                  }}
+                >
+                  <FallbackImage
+                    src={course?.thumbnail}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <h3
+                    className="truncate"
+                    style={{
+                      fontFamily: T.fontFamily,
+                      fontSize: T.size.base,
+                      fontWeight: T.weight.bold,
+                      color: C.heading,
+                    }}
+                  >
+                    {course?.title}
+                  </h3>
+                  <p
+                    style={{
+                      fontFamily: T.fontFamily,
+                      fontSize: T.size.xs,
+                      color: C.textMuted,
+                      marginTop: 2,
+                    }}
+                  >
+                    {timeAgo(enrollment.lastAccessedAt || enrollment.updatedAt)}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between mb-2">
+                  <span
+                    style={{
+                      fontFamily: T.fontFamily,
+                      fontSize: T.size.base,
+                      fontWeight: T.weight.bold,
+                      color: C.text,
+                    }}
+                  >
+                    {pct}% complete
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: T.fontFamily,
+                      fontSize: T.size.base,
+                      fontWeight: T.weight.bold,
+                      color: barColor,
+                    }}
+                  >
+                    Resume →
+                  </span>
+                </div>
+                <div
+                  className="w-full overflow-hidden"
+                  style={{
+                    height: 8,
+                    borderRadius: "10px",
+                    backgroundColor: C.innerBg,
+                  }}
+                >
+                  <div
+                    className="h-full transition-all duration-700"
+                    style={{
+                      width: `${pct}%`,
+                      backgroundColor: barColor,
+                      borderRadius: "10px",
+                    }}
+                  />
+                </div>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </>
+  );
+
   return (
     <div
       className="space-y-5 pb-8 min-h-screen"
       style={{ fontFamily: T.fontFamily, backgroundColor: C.pageBg }}
     >
-      {/* ── Welcome Header & Switcher (YE HAMESHA DIKHEGA) ── */}
+      {/* ── Welcome Header & Switcher ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         {/* User Profile Info */}
         <div className="flex items-center gap-4">
           <div className="relative shrink-0">
             <div
-              className="w-14 h-14 rounded-2xl overflow-hidden"
               style={{
+                width: 56,
+                height: 56,
+                borderRadius: "10px",
+                overflow: "hidden",
                 border: `2px solid ${C.btnPrimary}`,
                 boxShadow: `0 0 0 3px ${C.btnViewAllBg}`,
               }}
             >
-              <img
-                src={user?.profileImage || "/default-avatar.png"}
+           <img
+                src={resolveImageUrl(user?.profileImage)}
                 alt={user?.name}
                 className="w-full h-full object-cover"
               />
             </div>
-            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full" />
+            <span
+              className="absolute bottom-0 right-0 border-2"
+              style={{
+                width: 14,
+                height: 14,
+                backgroundColor: "#34D399",
+                borderColor: "#ffffff",
+                borderRadius: R.full,
+              }}
+            />
           </div>
           <div>
             <p
@@ -387,8 +567,8 @@ export default function StudentDashboard() {
               style={{
                 fontFamily: T.fontFamily,
                 fontSize: T.size.xs,
-                fontWeight: T.weight.semibold,
-                color: C.text,
+                fontWeight: T.weight.bold,
+                color: C.textMuted,
                 textTransform: "uppercase",
                 letterSpacing: T.tracking.wider,
                 marginBottom: 2,
@@ -404,7 +584,7 @@ export default function StudentDashboard() {
               style={{
                 fontFamily: T.fontFamily,
                 fontSize: T.size["2xl"],
-                fontWeight: T.weight.black,
+                fontWeight: T.weight.bold,
                 color: C.heading,
                 lineHeight: T.leading.tight,
               }}
@@ -418,7 +598,7 @@ export default function StudentDashboard() {
             <p
               style={{
                 fontFamily: T.fontFamily,
-                fontSize: T.size.md,
+                fontSize: T.size.base,
                 fontWeight: T.weight.semibold,
                 color: C.text,
                 marginTop: 2,
@@ -434,8 +614,9 @@ export default function StudentDashboard() {
         {/* Animated Switcher */}
         {myInstitutes.length > 0 && (
           <div
-            className="relative flex items-center p-1 rounded-xl self-start sm:self-auto w-[240px]"
+            className="relative flex items-center p-1 rounded-xl self-start sm:self-auto"
             style={{
+              width: 240,
               backgroundColor: C.cardBg,
               border: `1px solid ${C.cardBorder}`,
             }}
@@ -449,19 +630,23 @@ export default function StudentDashboard() {
                     ? "translateX(0)"
                     : "translateX(100%)",
                 boxShadow: `0 2px 10px ${C.btnPrimary}40`,
+                borderRadius: "10px",
               }}
             />
             {["institute", "global"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className="flex-1 relative z-10 py-1.5 rounded-lg capitalize transition-colors duration-300"
+                className="flex-1 relative z-10 px-5 py-1.5 capitalize transition-colors duration-300"
                 style={{
                   fontFamily: T.fontFamily,
-                  fontSize: T.size.lg,
-                  fontWeight:
-                    activeTab === tab ? T.weight.semibold : T.weight.semibold,
+                  fontSize: T.size.base,
+                  fontWeight: T.weight.bold,
                   color: activeTab === tab ? "#ffffff" : C.text,
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  borderRadius: "10px",
                 }}
               >
                 {tab === "institute" ? "My Institute" : "Global"}
@@ -471,9 +656,12 @@ export default function StudentDashboard() {
         )}
       </div>
 
-      {/* ── NEECHE KA HISSA: LOADING YA DASHBOARD CONTENT ── */}
+      {/* ── Loading or Dashboard Content ── */}
       {loading ? (
-        <div className="flex items-center justify-center min-h-[50vh]">
+        <div
+          className="flex items-center justify-center min-h-[50vh]"
+          style={{ backgroundColor: C.pageBg }}
+        >
           <div className="flex flex-col items-center gap-3">
             <div className="relative w-12 h-12">
               <div
@@ -483,18 +671,12 @@ export default function StudentDashboard() {
                   borderTopColor: C.btnPrimary,
                 }}
               />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <MdAutoAwesome
-                  className="w-5 h-5 animate-pulse"
-                  style={{ color: C.btnPrimary }}
-                />
-              </div>
             </div>
             <p
               style={{
                 fontFamily: T.fontFamily,
-                fontSize: T.size.sm,
-                fontWeight: T.weight.medium,
+                fontSize: T.size.base,
+                fontWeight: T.weight.bold,
                 color: C.text,
               }}
             >
@@ -503,7 +685,7 @@ export default function StudentDashboard() {
           </div>
         </div>
       ) : (
-        <div className="space-y-5 animate-in fade-in duration-500">
+        <div className="space-y-6 animate-in fade-in duration-500">
           {/* Stat Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
@@ -539,129 +721,744 @@ export default function StudentDashboard() {
               isAI
             />
           </div>
+          {/* Today's Exams Logic & UI */}
+          {(() => {
+            const now = new Date();
+            const todayStr = now.toDateString();
+            const todayExams = allExams.filter((exam) => {
+              const status = getStatus(exam);
+              if (status !== "available") return false;
+              if (!exam.startDate) return true;
+              return new Date(exam.startDate).toDateString() === todayStr;
+            });
 
-          {/* Continue Learning */}
-          {inProgressCourses.length > 0 && (
-            <div>
-              <SectionHeader
-                icon={MdPlayCircleOutline}
-                title="Continue Learning"
-                linkHref="/student/courses"
-              />
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {inProgressCourses.map((enrollment, i) => {
-                  const course = enrollment.courseId;
-                  const pct = enrollment.progress?.percentage || 0;
-                  const barColor = progressColors[i % progressColors.length];
-                  return (
-                    <Link
-                      key={enrollment._id}
-                      href={`/student/courses/${course?._id}`}
-                      className="group rounded-[10px] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
-                      style={{
-                        backgroundColor: C.cardBg,
-                        border: `1px solid ${C.cardBorder}`,
-                      }}
-                    >
-                      <div className="flex items-center gap-3 mb-4">
-                        <div
-                          className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden shrink-0"
-                          style={{ backgroundColor: C.innerBg }}
-                        >
-                          <FallbackImage
-                            src={course?.thumbnail}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <h3
-                            className="truncate"
-                            style={{
-                              fontFamily: T.fontFamily,
-                              fontSize: T.size.md,
-                              fontWeight: T.weight.semibold,
-                              color: C.heading,
-                            }}
-                          >
-                            {course?.title}
-                          </h3>
-                          <p
-                            style={{
-                              fontFamily: T.fontFamily,
-                              fontSize: "11px",
-                              color: C.text,
+            if (todayExams.length === 0) return null;
+            const exam = todayExams[todayCarouselIdx];
+            if (!exam) return null;
 
-                              marginTop: 2,
-                            }}
-                          >
-                            {timeAgo(
-                              enrollment.lastAccessedAt || enrollment.updatedAt,
-                            )}
-                          </p>
-                        </div>
+            return (
+              <div
+                className="p-6 relative overflow-hidden"
+                style={{
+                  background: "linear-gradient(to top, #4A00E0, #8E2DE2)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  boxShadow: S.card,
+                  borderRadius: R["2xl"],
+                }}
+              >
+                <div
+                  className="absolute inset-0 opacity-[0.07] pointer-events-none"
+                  style={{
+                    backgroundImage:
+                      "radial-gradient(white 1px, transparent 1px)",
+                    backgroundSize: "16px 16px",
+                  }}
+                />
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 flex items-center justify-center"
+                        style={{
+                          backgroundColor: "rgba(255,255,255,0.15)",
+                          border: "1px solid rgba(255,255,255,0.2)",
+                          borderRadius: "10px",
+                        }}
+                      >
+                        <MdFlashOn size={18} className="text-amber-300" />
                       </div>
                       <div>
-                        <div className="flex justify-between mb-1.5">
-                          <span
-                            style={{
-                              fontFamily: T.fontFamily,
-                              fontSize: "12px",
-                              fontWeight: T.weight.semibold,
-                              color: C.text,
-                            }}
-                          >
-                            {pct}% complete
-                          </span>
-                          <span
-                            style={{
-                              fontFamily: T.fontFamily,
-                              fontSize: "12px",
-                              fontWeight: T.weight.semibold,
-                              color: barColor,
-                            }}
-                          >
-                            Resume →
-                          </span>
-                        </div>
-                        <div
-                          className="w-full h-2 rounded-full overflow-hidden"
-                          style={{ backgroundColor: C.innerBg }}
+                        <h2
+                          style={{
+                            fontSize: T.size.md,
+                            fontWeight: T.weight.bold,
+                            color: "#ffffff",
+                            margin: 0,
+                          }}
                         >
-                          <div
-                            className="h-full rounded-full transition-all duration-700"
+                          Today's Exams
+                        </h2>
+                        <p
+                          style={{
+                            fontSize: T.size.xs,
+                            color: "rgba(255,255,255,0.6)",
+                            margin: 0,
+                            marginTop: 2,
+                          }}
+                        >
+                          {todayExams.length} exam
+                          {todayExams.length > 1 ? "s" : ""} available right now
+                        </p>
+                      </div>
+                    </div>
+                    {todayExams.length > 1 && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() =>
+                            setTodayCarouselIdx(
+                              (i) =>
+                                (i - 1 + todayExams.length) % todayExams.length,
+                            )
+                          }
+                          className="w-9 h-9 flex items-center justify-center border-none cursor-pointer transition-colors"
+                          style={{
+                            backgroundColor: "rgba(255,255,255,0.15)",
+                            color: "#fff",
+                            borderRadius: "8px",
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.backgroundColor =
+                              "rgba(255,255,255,0.25)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.backgroundColor =
+                              "rgba(255,255,255,0.15)")
+                          }
+                        >
+                          <MdChevronLeft size={18} />
+                        </button>
+                        <span
+                          style={{
+                            fontSize: T.size.xs,
+                            fontWeight: T.weight.bold,
+                            color: "rgba(255,255,255,0.7)",
+                          }}
+                        >
+                          {todayCarouselIdx + 1} / {todayExams.length}
+                        </span>
+                        <button
+                          onClick={() =>
+                            setTodayCarouselIdx(
+                              (i) => (i + 1) % todayExams.length,
+                            )
+                          }
+                          className="w-9 h-9 flex items-center justify-center border-none cursor-pointer transition-colors"
+                          style={{
+                            backgroundColor: "rgba(255,255,255,0.15)",
+                            color: "#fff",
+                            borderRadius: "8px",
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.backgroundColor =
+                              "rgba(255,255,255,0.25)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.backgroundColor =
+                              "rgba(255,255,255,0.15)")
+                          }
+                        >
+                          <MdChevronRight size={18} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-5"
+                    style={{
+                      backgroundColor: "rgba(255,255,255,0.1)",
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      backdropFilter: "blur(8px)",
+                      borderRadius: "10px",
+                    }}
+                  >
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                      <div
+                        className="w-12 h-12 flex items-center justify-center shrink-0"
+                        style={{
+                          backgroundColor: "rgba(255,255,255,0.15)",
+                          borderRadius: "10px",
+                        }}
+                      >
+                        <MdArticle size={22} className="text-white" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3
+                          className="truncate"
+                          style={{
+                            fontSize: T.size.lg,
+                            fontWeight: T.weight.bold,
+                            color: "#ffffff",
+                            margin: "0 0 4px 0",
+                          }}
+                        >
+                          {exam.title}
+                        </h3>
+                        {exam.courseTitle && (
+                          <p
                             style={{
-                              width: `${pct}%`,
-                              backgroundColor: barColor,
+                              fontSize: T.size.xs,
+                              color: "rgba(255,255,255,0.6)",
+                              margin: "0 0 10px 0",
                             }}
-                          />
+                          >
+                            {exam.courseTitle}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap gap-4">
+                          <span
+                            className="flex items-center gap-1.5"
+                            style={{
+                              fontSize: T.size.xs,
+                              fontWeight: T.weight.bold,
+                              color: "rgba(255,255,255,0.8)",
+                            }}
+                          >
+                            <MdAccessTime
+                              size={13}
+                              className="text-amber-300"
+                            />{" "}
+                            {exam.duration} mins
+                          </span>
                         </div>
                       </div>
+                    </div>
+                    <Link
+                      href={`/student/exams/${exam._id}/take`}
+                      className="shrink-0 text-decoration-none"
+                    >
+                      <button
+                        className="flex items-center gap-2 px-7 py-3.5 border-none cursor-pointer transition-transform hover:scale-105 shadow-lg"
+                        style={{
+                          background: C.surfaceWhite,
+                          color: C.btnPrimary,
+                          fontFamily: T.fontFamily,
+                          fontSize: T.size.base,
+                          fontWeight: T.weight.bold,
+                          borderRadius: "10px",
+                        }}
+                      >
+                        <MdPlayCircleOutline size={16} /> Take Exam
+                      </button>
                     </Link>
-                  );
-                })}
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
+          {/* ── Main Dynamic Grid ─────────────────────────────────────────── */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            {/* Case A: 3 Courses -> Take Full Width on Top */}
+            {inProgressCourses.length >= 3 && (
+              <div className="xl:col-span-3">{renderContinueLearning()}</div>
+            )}
 
-          {/* ── Main Grid ─────────────────────────────────────────────────── */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-            {/* Left 2/3 */}
-            <div className="xl:col-span-2 space-y-5">
-              {/* Performance Overview */}
+            {/* Left Column (Span 2) */}
+            <div className="xl:col-span-2 space-y-6">
+              {/* Case B: 1 or 2 Courses -> Sit inside left column */}
+              {inProgressCourses.length > 0 && inProgressCourses.length < 3 && (
+                <div>{renderContinueLearning()}</div>
+              )}
+
+              {/* Batch Details */}
               <div
-                className="rounded-[10px] p-5"
                 style={{
                   backgroundColor: C.cardBg,
                   border: `1px solid ${C.cardBorder}`,
                   boxShadow: S.card,
+                  borderRadius: R["2xl"],
+                  padding: 24,
+                }}
+              >
+                <SectionHeader
+                  icon={MdPeople}
+                  title="Batch Details"
+                  linkHref="/student/batches"
+                />
+                <div
+                  className="grid grid-cols-1 md:grid-cols-2 gap-0 md:divide-x"
+                  style={{ borderColor: C.cardBorder }}
+                >
+                  {/* Left: course progress */}
+                  <div className="pr-0 md:pr-6">
+                    <p
+                      className="mb-3 uppercase"
+                      style={{
+                        fontFamily: T.fontFamily,
+                        fontSize: T.size.base,
+                        fontWeight: T.weight.bold,
+                        color: C.btnPrimary,
+                        letterSpacing: T.tracking.wider,
+                      }}
+                    >
+                      {batches[0]?.name || "Batch A, Advanced Science"}
+                    </p>
+                    {batches[0] && (
+                      <div
+                        className="flex items-center gap-3 mb-4"
+                        style={{
+                          backgroundColor: C.innerBg,
+                          border: `1px solid ${C.cardBorder}`,
+                          borderRadius: "10px",
+                          padding: 12,
+                        }}
+                      >
+                        <div
+                          className="flex items-center justify-center overflow-hidden shrink-0"
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: "10px",
+                            backgroundColor: C.btnViewAllBg,
+                          }}
+                        >
+                          <MdPerson
+                            style={{
+                              width: 20,
+                              height: 20,
+                              color: C.btnPrimary,
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <p
+                            style={{
+                              fontFamily: T.fontFamily,
+                              fontSize: T.size.base,
+                              fontWeight: T.weight.bold,
+                              color: C.heading,
+                            }}
+                          >
+                            {batches[0]?.name || "Batch A"}
+                          </p>
+                          <p
+                            style={{
+                              fontFamily: T.fontFamily,
+                              fontSize: T.size.base,
+                              color: C.textMuted,
+                            }}
+                          >
+                            {batches[0]?.instructorName || ""}
+                          </p>
+                        </div>
+                        <span
+                          className="ml-auto text-white shrink-0"
+                          style={{
+                            backgroundColor: C.btnPrimary,
+                            fontFamily: T.fontFamily,
+                            fontSize: T.size.xs,
+                            fontWeight: T.weight.bold,
+                            padding: "4px 10px",
+                            borderRadius: "10px",
+                          }}
+                        >
+                          {enrollments[0]?.progress?.percentage || 0}%
+                        </span>
+                      </div>
+                    )}
+                    <div className="space-y-3.5">
+                      {enrollments.slice(0, 4).length > 0 ? (
+                        enrollments.slice(0, 4).map((enrollment, i) => {
+                          const pct = enrollment.progress?.percentage || 0;
+                          const barColor =
+                            progressColors[i % progressColors.length];
+                          return (
+                            <Link
+                              key={enrollment._id}
+                              href={`/student/courses/${enrollment.courseId?._id}`}
+                              className="block group text-decoration-none"
+                            >
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span
+                                  className="truncate max-w-[68%]"
+                                  style={{
+                                    fontFamily: T.fontFamily,
+                                    fontSize: T.size.base,
+                                    fontWeight: T.weight.bold,
+                                    color: C.text,
+                                  }}
+                                >
+                                  {enrollment.courseId?.title || "Course"}
+                                </span>
+                                <span
+                                  className="text-white shrink-0 ml-2"
+                                  style={{
+                                    backgroundColor: barColor,
+                                    fontFamily: T.fontFamily,
+                                    fontSize: T.size.xs,
+                                    fontWeight: T.weight.bold,
+                                    padding: "2px 8px",
+                                    borderRadius: "10px",
+                                  }}
+                                >
+                                  {pct}%
+                                </span>
+                              </div>
+                              <div
+                                className="w-full overflow-hidden"
+                                style={{
+                                  height: 8,
+                                  borderRadius: "10px",
+                                  backgroundColor: C.innerBg,
+                                }}
+                              >
+                                <div
+                                  className="h-full transition-all duration-700"
+                                  style={{
+                                    width: `${pct}%`,
+                                    backgroundColor: barColor,
+                                    borderRadius: "10px",
+                                  }}
+                                />
+                              </div>
+                            </Link>
+                          );
+                        })
+                      ) : (
+                        <p
+                          style={{
+                            fontFamily: T.fontFamily,
+                            fontSize: T.size.base,
+                            fontStyle: "italic",
+                            color: C.textMuted,
+                          }}
+                        >
+                          No enrolled courses yet.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right: upcoming exams */}
+                  <div className="pl-0 md:pl-6 mt-5 md:mt-0">
+                    <p
+                      className="mb-3 uppercase"
+                      style={{
+                        fontFamily: T.fontFamily,
+                        fontSize: T.size.xs,
+                        fontWeight: T.weight.bold,
+                        color: C.btnPrimary,
+                        letterSpacing: T.tracking.wider,
+                      }}
+                    >
+                      {batches[0]?.name || "Batch A, Advanced Science"}
+                    </p>
+                    <div className="space-y-3">
+                      {upcomingExams.slice(0, 4).length > 0 ? (
+                        upcomingExams.slice(0, 4).map((exam) => (
+                          <div
+                            key={exam._id}
+                            className="flex items-center justify-between transition-colors"
+                            style={{
+                              backgroundColor: C.innerBg,
+                              border: `1px solid ${C.cardBorder}`,
+                              borderRadius: "10px",
+                              padding: 12,
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor =
+                                C.btnViewAllBg;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = C.innerBg;
+                            }}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div
+                                className="flex items-center justify-center shrink-0"
+                                style={{
+                                  width: 32,
+                                  height: 32,
+                                  borderRadius: "10px",
+                                  backgroundColor: C.iconBg,
+                                }}
+                              >
+                                <MdArticle
+                                  style={{
+                                    width: 16,
+                                    height: 16,
+                                    color: C.iconColor,
+                                  }}
+                                />
+                              </div>
+                              <div className="min-w-0">
+                                <p
+                                  className="truncate"
+                                  style={{
+                                    fontFamily: T.fontFamily,
+                                    fontSize: T.size.base,
+                                    fontWeight: T.weight.bold,
+                                    color: C.heading,
+                                    margin: 0,
+                                  }}
+                                >
+                                  {exam.title}
+                                </p>
+                                <p
+                                  style={{
+                                    fontFamily: T.fontFamily,
+                                    fontSize: T.size.xs,
+                                    color: C.textMuted,
+                                    margin: 0,
+                                    marginTop: 2,
+                                    fontWeight: T.weight.bold,
+                                  }}
+                                >
+                                  Batch in{" "}
+                                  {Math.ceil(
+                                    (new Date(exam.startDate) - new Date()) /
+                                      (1000 * 60 * 60 * 24),
+                                  )}{" "}
+                                  days
+                                </p>
+                              </div>
+                            </div>
+                            <Link
+                              href={`/student/exams/${exam._id}`}
+                              className="text-white shrink-0 ml-3 transition-opacity hover:opacity-80 text-decoration-none"
+                              style={{
+                                backgroundColor: C.btnPrimary,
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.xs,
+                                fontWeight: T.weight.bold,
+                                padding: "6px 12px",
+                                borderRadius: "10px",
+                              }}
+                            >
+                              Attempt
+                            </Link>
+                          </div>
+                        ))
+                      ) : (
+                        <p
+                          style={{
+                            fontFamily: T.fontFamily,
+                            fontSize: T.size.base,
+                            fontStyle: "italic",
+                            color: C.textMuted,
+                          }}
+                        >
+                          No upcoming exams.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pagination */}
+                <div
+                  className="flex items-center justify-center gap-2 mt-6 pt-5"
+                  style={{ borderTop: `1px solid ${C.cardBorder}` }}
+                >
+                  {["‹ Previous", "1", "2", "3", "Next ›"].map((item) => (
+                    <button
+                      key={item}
+                      style={
+                        item === "1"
+                          ? {
+                              backgroundColor: C.btnPrimary,
+                              color: "#ffffff",
+                              padding: "6px 12px",
+                              fontFamily: T.fontFamily,
+                              fontSize: T.size.xs,
+                              fontWeight: T.weight.bold,
+                              borderRadius: "10px",
+                              border: "none",
+                              cursor: "pointer",
+                            }
+                          : {
+                              backgroundColor: C.btnViewAllBg,
+                              color: C.btnViewAllText,
+                              padding: "6px 12px",
+                              fontFamily: T.fontFamily,
+                              fontSize: T.size.xs,
+                              fontWeight: T.weight.bold,
+                              borderRadius: "10px",
+                              border: `1px solid ${C.cardBorder}`,
+                              cursor: "pointer",
+                            }
+                      }
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recent Results */}
+              <div
+                style={{
+                  backgroundColor: C.cardBg,
+                  border: `1px solid ${C.cardBorder}`,
+                  boxShadow: S.card,
+                  borderRadius: R["2xl"],
+                  padding: 24,
+                }}
+              >
+                <SectionHeader
+                  icon={MdWorkspacePremium}
+                  title="Recent Results"
+                  linkHref="/student/history"
+                />
+                <div className="space-y-3">
+                  {history.length > 0 ? (
+                    history.slice(0, 4).map((attempt) => {
+                      const scorePct =
+                        attempt.totalMarks > 0
+                          ? Math.round(
+                              (attempt.score / attempt.totalMarks) * 100,
+                            )
+                          : 0;
+                      const passed = attempt.isPassed;
+                      return (
+                        <div
+                          key={attempt._id}
+                          className="flex items-center justify-between transition-colors"
+                          style={{
+                            backgroundColor: C.innerBg,
+                            border: `1px solid ${C.cardBorder}`,
+                            borderRadius: "10px",
+                            padding: 14,
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              C.btnViewAllBg;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = C.innerBg;
+                          }}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div
+                              className="flex items-center justify-center text-white shrink-0"
+                              style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: "10px",
+                                backgroundColor: passed ? C.success : C.danger,
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.md,
+                                fontWeight: T.weight.bold,
+                              }}
+                            >
+                              {scorePct}%
+                            </div>
+                            <div className="min-w-0">
+                              <p
+                                className="truncate"
+                                style={{
+                                  fontFamily: T.fontFamily,
+                                  fontSize: T.size.base,
+                                  fontWeight: T.weight.bold,
+                                  color: C.heading,
+                                  margin: 0,
+                                }}
+                              >
+                                {attempt.examId?.title || "Exam"}
+                              </p>
+                              <p
+                                style={{
+                                  fontFamily: T.fontFamily,
+                                  fontSize: T.size.xs,
+                                  color: C.textMuted,
+                                  margin: 0,
+                                  marginTop: 2,
+                                  fontWeight: T.weight.bold,
+                                }}
+                              >
+                                {new Date(
+                                  attempt.submittedAt,
+                                ).toLocaleDateString("en-IN")}
+                              </p>
+                            </div>
+                          </div>
+                          <span
+                            className="shrink-0 ml-3"
+                            style={
+                              passed
+                                ? {
+                                    backgroundColor: C.successBg,
+                                    color: C.success,
+                                    fontFamily: T.fontFamily,
+                                    fontSize: T.size.xs,
+                                    fontWeight: T.weight.bold,
+                                    padding: "4px 10px",
+                                    borderRadius: "10px",
+                                    border: `1px solid ${C.successBorder}`,
+                                  }
+                                : {
+                                    backgroundColor: C.dangerBg,
+                                    color: C.danger,
+                                    fontFamily: T.fontFamily,
+                                    fontSize: T.size.xs,
+                                    fontWeight: T.weight.bold,
+                                    padding: "4px 10px",
+                                    borderRadius: "10px",
+                                    border: `1px solid ${C.dangerBorder}`,
+                                  }
+                            }
+                          >
+                            {passed ? "PASSED" : "FAILED"}
+                          </span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div
+                      className="p-14 text-center border border-dashed"
+                      style={{
+                        backgroundColor: C.cardBg,
+                        borderColor: C.cardBorder,
+                        borderRadius: "10px",
+                      }}
+                    >
+                      <div
+                        className="flex items-center justify-center mx-auto mb-4"
+                        style={{
+                          width: 56,
+                          height: 56,
+                          backgroundColor: C.innerBg,
+                          borderRadius: "10px",
+                        }}
+                      >
+                        <MdArticle
+                          style={{
+                            width: 28,
+                            height: 28,
+                            color: C.btnPrimary,
+                            opacity: 0.5,
+                          }}
+                        />
+                      </div>
+                      <h3
+                        style={{
+                          fontFamily: T.fontFamily,
+                          fontSize: T.size.lg,
+                          fontWeight: T.weight.bold,
+                          color: C.heading,
+                        }}
+                      >
+                        No Results Yet
+                      </h3>
+                      <p
+                        style={{
+                          fontFamily: T.fontFamily,
+                          fontSize: T.size.base,
+                          color: C.textMuted,
+                          marginTop: 4,
+                        }}
+                      >
+                        Complete exams to see your results here
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Performance Overview (MOVED TO BOTTOM) */}
+              <div
+                style={{
+                  backgroundColor: C.cardBg,
+                  border: `1px solid ${C.cardBorder}`,
+                  boxShadow: S.card,
+                  borderRadius: R["2xl"],
+                  padding: 24,
                 }}
               >
                 <SectionHeader
                   icon={MdTrendingUp}
                   title="Performance Overview"
                 />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="md:col-span-2 h-52">
                     {activityData.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
@@ -693,9 +1490,9 @@ export default function StudentDashboard() {
                             dataKey="month"
                             tick={{
                               fontSize: 11,
-                              fill: C.text,
-
+                              fill: C.textMuted,
                               fontFamily: T.fontFamily,
+                              fontWeight: "bold",
                             }}
                             tickLine={false}
                             axisLine={false}
@@ -703,9 +1500,9 @@ export default function StudentDashboard() {
                           <YAxis
                             tick={{
                               fontSize: 11,
-                              fill: C.text,
-
+                              fill: C.textMuted,
                               fontFamily: T.fontFamily,
+                              fontWeight: "bold",
                             }}
                             tickLine={false}
                             axisLine={false}
@@ -726,20 +1523,29 @@ export default function StudentDashboard() {
                     ) : (
                       <div className="flex flex-col items-center justify-center h-full gap-2">
                         <div
-                          className="w-14 h-14 rounded-lg flex items-center justify-center"
-                          style={{ backgroundColor: C.innerBg }}
+                          className="flex items-center justify-center"
+                          style={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: "10px",
+                            backgroundColor: C.innerBg,
+                          }}
                         >
                           <MdTrendingUp
-                            className="w-6 h-6"
-                            style={{ color: C.chartLine }}
+                            style={{
+                              width: 24,
+                              height: 24,
+                              color: C.chartLine,
+                            }}
                           />
                         </div>
                         <p
                           style={{
                             fontFamily: T.fontFamily,
-                            fontSize: T.size.sm,
-                            fontWeight: T.weight.semibold,
-                            color: C.text,
+                            fontSize: T.size.base,
+                            fontWeight: T.weight.bold,
+                            color: C.heading,
+                            margin: 0,
                           }}
                         >
                           No activity yet
@@ -748,9 +1554,9 @@ export default function StudentDashboard() {
                           style={{
                             fontFamily: T.fontFamily,
                             fontSize: T.size.xs,
-                            color: C.text,
-
+                            color: C.textMuted,
                             textAlign: "center",
+                            margin: 0,
                           }}
                         >
                           Complete exams to see your trend
@@ -760,28 +1566,35 @@ export default function StudentDashboard() {
                   </div>
                   {/* Score circle wrapper */}
                   <div
-                    className="flex flex-col items-center justify-center rounded-[10px] p-4 gap-2"
+                    className="flex flex-col items-center justify-center gap-2"
                     style={{
                       backgroundColor: C.innerBg,
                       border: `1px solid ${C.cardBorder}`,
+                      borderRadius: "10px",
+                      padding: 16,
                     }}
                   >
                     <div
-                      className="w-12 h-12 rounded-full border-[3px] flex items-center justify-center mb-1"
-                      style={{ borderColor: C.chartLine }}
+                      className="flex items-center justify-center mb-1"
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: R.full,
+                        border: `3px solid ${C.chartLine}`,
+                      }}
                     >
                       <MdCheckCircleOutline
-                        className="w-6 h-6"
-                        style={{ color: C.chartLine }}
+                        style={{ width: 24, height: 24, color: C.chartLine }}
                       />
                     </div>
                     <div className="text-center">
                       <p
                         style={{
                           fontFamily: T.fontFamily,
-                          fontSize: T.size.sm,
-                          fontWeight: T.weight.semibold,
-                          color: C.text,
+                          fontSize: T.size.base,
+                          fontWeight: T.weight.bold,
+                          color: C.heading,
+                          margin: 0,
                         }}
                       >
                         Score
@@ -790,8 +1603,9 @@ export default function StudentDashboard() {
                         style={{
                           fontFamily: T.fontFamily,
                           fontSize: T.size["3xl"],
-                          fontWeight: T.weight.black,
+                          fontWeight: T.weight.bold,
                           color: C.statValue,
+                          margin: "4px 0",
                         }}
                       >
                         {avgScore}%
@@ -801,432 +1615,22 @@ export default function StudentDashboard() {
                         style={{
                           fontFamily: T.fontFamily,
                           fontSize: T.size.xs,
-                          fontWeight: T.weight.semibold,
+                          fontWeight: T.weight.bold,
                           color: C.chartLine,
+                          margin: 0,
                         }}
                       >
-                        <MdTrendingUp className="w-4 h-4" /> This Month
+                        <MdTrendingUp style={{ width: 14, height: 14 }} /> This
+                        Month
                       </p>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Batch Details */}
-              <div
-                className="rounded-[10px] p-5"
-                style={{
-                  backgroundColor: C.cardBg,
-                  border: `1px solid ${C.cardBorder}`,
-                  boxShadow: S.card,
-                }}
-              >
-                <SectionHeader
-                  icon={MdPeople}
-                  title="Batch Details"
-                  linkHref="/student/batches"
-                />
-                <div
-                  className="grid grid-cols-1 md:grid-cols-2 gap-0 md:divide-x"
-                  style={{ borderColor: C.cardBorder }}
-                >
-                  {/* Left: course progress */}
-                  <div className="pr-0 md:pr-6">
-                    <p
-                      className="mb-3 uppercase"
-                      style={{
-                        fontFamily: T.fontFamily,
-                        fontSize: T.size.base,
-                        fontWeight: T.weight.bold,
-                        color: C.btnPrimary,
-                        letterSpacing: T.tracking.wider,
-                      }}
-                    >
-                      {batches[0]?.name || "Batch A, Advanced Science"}
-                    </p>
-                    {batches[0] && (
-                      <div
-                        className="flex items-center gap-3 mb-4 p-2.5 rounded-[10px]"
-                        style={{
-                          backgroundColor: C.innerBg,
-                          border: `1px solid ${C.cardBorder}`,
-                        }}
-                      >
-                        <div
-                          className="w-9 h-9 rounded-lg overflow-hidden shrink-0 flex items-center justify-center"
-                          style={{ backgroundColor: C.btnViewAllBg }}
-                        >
-                          <User
-                            className="w-5 h-5"
-                            style={{ color: C.btnPrimary }}
-                          />
-                        </div>
-                        <div>
-                          <p
-                            style={{
-                              fontFamily: T.fontFamily,
-                              fontSize: T.size.base,
-                              fontWeight: T.weight.bold,
-                              color: C.heading,
-                            }}
-                          >
-                            {batches[0]?.name || "Batch A"}
-                          </p>
-                          <p
-                            style={{
-                              fontFamily: T.fontFamily,
-                              fontSize: T.size.sm,
-                              color: C.text,
-                            }}
-                          >
-                            {batches[0]?.instructorName || ""}
-                          </p>
-                        </div>
-                        <span
-                          className="ml-auto text-white px-2.5 py-1 rounded-lg shrink-0"
-                          style={{
-                            backgroundColor: C.btnPrimary,
-                            fontFamily: T.fontFamily,
-                            fontSize: T.size.xs,
-                            fontWeight: T.weight.black,
-                          }}
-                        >
-                          {enrollments[0]?.progress?.percentage || 0}%
-                        </span>
-                      </div>
-                    )}
-                    <div className="space-y-3.5">
-                      {enrollments.slice(0, 4).length > 0 ? (
-                        enrollments.slice(0, 4).map((enrollment, i) => {
-                          const pct = enrollment.progress?.percentage || 0;
-                          const barColor =
-                            progressColors[i % progressColors.length];
-                          return (
-                            <Link
-                              key={enrollment._id}
-                              href={`/student/courses/${enrollment.courseId?._id}`}
-                              className="block group"
-                            >
-                              <div className="flex items-center justify-between mb-1.5">
-                                <span
-                                  className="truncate max-w-[68%]"
-                                  style={{
-                                    fontFamily: T.fontFamily,
-                                    fontSize: T.size.sm,
-                                    fontWeight: T.weight.semibold,
-                                    color: C.text,
-                                  }}
-                                >
-                                  {enrollment.courseId?.title || "Course"}
-                                </span>
-                                <span
-                                  className="text-white px-2 py-0.5 rounded-lg shrink-0 ml-2"
-                                  style={{
-                                    backgroundColor: barColor,
-                                    fontFamily: T.fontFamily,
-                                    fontSize: T.size.xs,
-                                    fontWeight: T.weight.black,
-                                  }}
-                                >
-                                  {pct}%
-                                </span>
-                              </div>
-                              <div
-                                className="h-2 w-full rounded-full overflow-hidden"
-                                style={{ backgroundColor: C.innerBg }}
-                              >
-                                <div
-                                  className="h-full rounded-full transition-all duration-700"
-                                  style={{
-                                    width: `${pct}%`,
-                                    backgroundColor: barColor,
-                                  }}
-                                />
-                              </div>
-                            </Link>
-                          );
-                        })
-                      ) : (
-                        <p
-                          style={{
-                            fontFamily: T.fontFamily,
-                            fontSize: T.size.sm,
-                            fontStyle: "italic",
-                            color: C.text,
-                          }}
-                        >
-                          No enrolled courses yet.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right: upcoming exams */}
-                  <div className="pl-0 md:pl-6 mt-4 md:mt-0">
-                    <p
-                      className="mb-3 uppercase"
-                      style={{
-                        fontFamily: T.fontFamily,
-                        fontSize: T.size.xs,
-                        fontWeight: T.weight.bold,
-                        color: C.btnPrimary,
-                        letterSpacing: T.tracking.wider,
-                      }}
-                    >
-                      {batches[0]?.name || "Batch A, Advanced Science"}
-                    </p>
-                    <div className="space-y-2.5">
-                      {upcomingExams.slice(0, 4).length > 0 ? (
-                        upcomingExams.slice(0, 4).map((exam) => (
-                          <div
-                            key={exam._id}
-                            className="flex items-center justify-between p-3 rounded-[10px] transition-colors"
-                            style={{
-                              backgroundColor: C.innerBg,
-                              border: `1px solid ${C.cardBorder}`,
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor =
-                                C.btnViewAllBg;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = C.innerBg;
-                            }}
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <div
-                                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                                style={{ backgroundColor: C.iconBg }}
-                              >
-                                <MdArticle className="w-5 h-5 text-white" />
-                              </div>
-                              <div className="min-w-0">
-                                <p
-                                  className="truncate"
-                                  style={{
-                                    fontFamily: T.fontFamily,
-                                    fontSize: T.size.sm,
-                                    fontWeight: T.weight.semibold,
-                                    color: C.heading,
-                                  }}
-                                >
-                                  {exam.title}
-                                </p>
-                                <p
-                                  style={{
-                                    fontFamily: T.fontFamily,
-                                    fontSize: "11px",
-                                    color: C.text,
-
-                                    marginTop: 2,
-                                  }}
-                                >
-                                  Batch in{" "}
-                                  {Math.ceil(
-                                    (new Date(exam.startDate) - new Date()) /
-                                      (1000 * 60 * 60 * 24),
-                                  )}{" "}
-                                  days
-                                </p>
-                              </div>
-                            </div>
-                            <Link
-                              href={`/student/exams/${exam._id}`}
-                              className="px-3 py-1.5 text-white rounded-lg shrink-0 ml-2 transition-colors"
-                              style={{
-                                backgroundColor: C.btnPrimary,
-                                fontFamily: T.fontFamily,
-                                fontSize: T.size.xs,
-                                fontWeight: T.weight.bold,
-                              }}
-                            >
-                              Attempt
-                            </Link>
-                          </div>
-                        ))
-                      ) : (
-                        <p
-                          style={{
-                            fontFamily: T.fontFamily,
-                            fontSize: T.size.base,
-                            fontStyle: "italic",
-                            color: C.text,
-                          }}
-                        >
-                          No upcoming exams.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pagination */}
-                <div
-                  className="flex items-center justify-center gap-2 mt-5 pt-4"
-                  style={{ borderTop: `1px solid ${C.cardBorder}` }}
-                >
-                  {["‹ Previous", "1", "2", "3", "Next ›"].map((item) => (
-                    <button
-                      key={item}
-                      className="rounded-lg transition-colors"
-                      style={
-                        item === "1"
-                          ? {
-                              backgroundColor: C.btnPrimary,
-                              color: "#ffffff",
-                              padding: "6px 12px",
-                              fontFamily: T.fontFamily,
-                              fontSize: T.size.xs,
-                              fontWeight: T.weight.black,
-                            }
-                          : {
-                              backgroundColor: C.btnViewAllBg,
-                              color: C.btnViewAllText,
-                              padding: "6px 12px",
-                              fontFamily: T.fontFamily,
-                              fontSize: T.size.xs,
-                              fontWeight: T.weight.bold,
-                            }
-                      }
-                    >
-                      {item}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Recent Results */}
-              <div
-                className="rounded-[10px] p-5"
-                style={{
-                  backgroundColor: C.cardBg,
-                  border: `1px solid ${C.cardBorder}`,
-                  boxShadow: S.card,
-                }}
-              >
-                <SectionHeader
-                  icon={MdWorkspacePremium}
-                  title="Recent Results"
-                  linkHref="/student/history"
-                />
-                <div className="space-y-3">
-                  {history.length > 0 ? (
-                    history.slice(0, 4).map((attempt) => {
-                      const scorePct =
-                        attempt.totalMarks > 0
-                          ? Math.round(
-                              (attempt.score / attempt.totalMarks) * 100,
-                            )
-                          : 0;
-                      const passed = attempt.isPassed;
-                      return (
-                        <div
-                          key={attempt._id}
-                          className="flex items-center justify-between p-3.5 rounded-[10px] transition-colors"
-                          style={{
-                            backgroundColor: C.innerBg,
-                            border: `1px solid ${C.cardBorder}`,
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              C.btnViewAllBg;
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = C.innerBg;
-                          }}
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div
-                              className="w-11 h-11 rounded-lg flex items-center justify-center text-white shrink-0"
-                              style={{
-                                backgroundColor: passed ? C.success : C.danger,
-                                fontFamily: T.fontFamily,
-                                fontSize: T.size.md,
-                                fontWeight: T.weight.semibold,
-                              }}
-                            >
-                              {scorePct}%
-                            </div>
-                            <div className="min-w-0">
-                              <p
-                                className="truncate"
-                                style={{
-                                  fontFamily: T.fontFamily,
-                                  fontSize: T.size.md,
-                                  fontWeight: T.weight.semibold,
-                                  color: C.heading,
-                                }}
-                              >
-                                {attempt.examId?.title || "Exam"}
-                              </p>
-                              <p
-                                style={{
-                                  fontFamily: T.fontFamily,
-                                  fontSize: "12px",
-                                  color: C.text,
-
-                                  marginTop: 2,
-                                }}
-                              >
-                                {new Date(
-                                  attempt.submittedAt,
-                                ).toLocaleDateString("en-IN")}
-                              </p>
-                            </div>
-                          </div>
-                          <span
-                            className="shrink-0 ml-2 px-2.5 py-1 rounded-full"
-                            style={
-                              passed
-                                ? {
-                                    backgroundColor: C.successBg,
-                                    color: C.success,
-                                    fontFamily: T.fontFamily,
-                                    fontSize: "11px",
-                                    fontWeight: T.weight.bold,
-                                  }
-                                : {
-                                    backgroundColor: C.dangerBg,
-                                    color: C.danger,
-                                    fontFamily: T.fontFamily,
-                                    fontSize: "11px",
-                                    fontWeight: T.weight.bold,
-                                  }
-                            }
-                          >
-                            {passed ? "PASSED" : "FAILED"}
-                          </span>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 py-8">
-                      <div
-                        className="w-12 h-12 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: C.innerBg }}
-                      >
-                        <MdArticle
-                          className="w-5 h-5"
-                          style={{ color: C.btnPrimary }}
-                        />
-                      </div>
-                      <p
-                        style={{
-                          fontFamily: T.fontFamily,
-                          fontSize: T.size.sm,
-                          color: C.text,
-                        }}
-                      >
-                        No exam results yet
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
 
-            {/* Right Sidebar */}
-            <div className="space-y-4">
+            {/* Right Sidebar (1 Column) */}
+            <div className="xl:col-span-1 space-y-6">
               {/* AI Recommendations */}
               <SidePanel
                 icon={CustomAIIcon}
@@ -1234,7 +1638,7 @@ export default function StudentDashboard() {
                 open={aiOpen}
                 onToggle={() => setAiOpen((v) => !v)}
               >
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {[
                     {
                       icon: MdMenuBook,
@@ -1244,24 +1648,33 @@ export default function StudentDashboard() {
                   ].map((rec, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-2.5 p-3 rounded-[10px]"
+                      className="flex items-center gap-3"
                       style={{
                         backgroundColor: C.innerBg,
                         border: `1px solid ${C.cardBorder}`,
+                        borderRadius: "10px",
+                        padding: 12,
                       }}
                     >
                       <div
-                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: C.iconBg }}
+                        className="flex items-center justify-center shrink-0"
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: "10px",
+                          backgroundColor: C.iconBg,
+                        }}
                       >
-                        <rec.icon className="w-3.5 h-3.5 text-white" />
+                        <rec.icon
+                          style={{ width: 16, height: 16, color: C.iconColor }}
+                        />
                       </div>
                       <span
                         style={{
                           fontFamily: T.fontFamily,
-                          fontSize: T.size.md,
-                          fontWeight: T.weight.semibold,
-                          color: C.text,
+                          fontSize: T.size.base,
+                          fontWeight: T.weight.bold,
+                          color: C.heading,
                         }}
                       >
                         {rec.text}
@@ -1270,16 +1683,20 @@ export default function StudentDashboard() {
                   ))}
                   <Link
                     href="/student/ai-analytics"
-                    className="flex items-center justify-center gap-2 w-full py-3 text-white rounded-lg mt-1 transition-all"
+                    className="flex items-center justify-center gap-2 w-full text-white transition-opacity hover:opacity-90 text-decoration-none"
                     style={{
-                      backgroundColor: C.btnPrimary,
+                      background: C.gradientBtn,
                       fontFamily: T.fontFamily,
-                      fontSize: T.size.sm,
+                      fontSize: T.size.base,
                       fontWeight: T.weight.bold,
-                      boxShadow: `0 4px 14px ${C.btnPrimary}50`,
+                      boxShadow: S.btn,
+                      borderRadius: "10px",
+                      border: "none",
+                      padding: "12px 0",
+                      marginTop: 8,
                     }}
                   >
-                    <MdAutoAwesome className="w-5 h-5" />
+                    <MdAutoAwesome style={{ width: 18, height: 18 }} />
                     Start AI Study Plan
                   </Link>
                 </div>
@@ -1292,54 +1709,54 @@ export default function StudentDashboard() {
                 open={announcementsOpen}
                 onToggle={() => setAnnouncementsOpen((v) => !v)}
               >
-                <div className="space-y-2.5">
-                  {upcomingExams.length > 0 ? (
-                    upcomingExams.slice(0, 3).map((exam) => (
+                <div className="space-y-3">
+                  {announcements.length > 0 ? (
+                    announcements.slice(0, 3).map((a) => (
                       <div
-                        key={exam._id}
-                        className="flex items-start gap-2.5 p-3 rounded-[10px]"
+                        key={a.id}
+                        className="p-3 border transition-colors hover:bg-slate-50"
                         style={{
                           backgroundColor: C.innerBg,
-                          border: `1px solid ${C.cardBorder}`,
+                          borderColor: C.cardBorder,
+                          borderRadius: "10px",
                         }}
                       >
-                        <div
-                          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                          style={{ backgroundColor: C.iconBg }}
-                        >
-                          <MdArticle className="w-3.5 h-3.5 text-white" />
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span
+                            className="px-2 py-0.5 text-[9px] uppercase"
+                            style={{
+                              fontFamily: T.fontFamily,
+                              fontWeight: T.weight.bold,
+                              backgroundColor: C.cardBg,
+                              color: C.text,
+                              borderRadius: "8px",
+                              border: `1px solid ${C.cardBorder}`,
+                            }}
+                          >
+                            {a.courseTitle || "General"}
+                          </span>
                         </div>
                         <p
                           style={{
-                            fontFamily: T.fontFamily,
-                            fontSize: T.size.xs,
-                            lineHeight: T.leading.relaxed,
-                            color: C.text,
+                            fontSize: T.size.base,
+                            fontWeight: T.weight.bold,
+                            color: C.heading,
+                            lineHeight: 1.3,
+                            margin: "0 0 4px 0",
                           }}
                         >
-                          <span
-                            style={{
-                              fontWeight: T.weight.bold,
-                              color: C.heading,
-                            }}
-                          >
-                            {exam.title}
-                          </span>{" "}
-                          on{" "}
-                          <span
-                            style={{
-                              fontWeight: T.weight.semibold,
-                              color: C.btnPrimary,
-                            }}
-                          >
-                            {new Date(exam.startDate).toLocaleDateString(
-                              "en-US",
-                              {
-                                month: "short",
-                                day: "numeric",
-                              },
-                            )}
-                          </span>
+                          {a.title}
+                        </p>
+                        <p
+                          className="line-clamp-2"
+                          style={{
+                            fontSize: T.size.xs,
+                            color: C.textMuted,
+                            fontFamily: T.fontFamily,
+                            margin: 0,
+                          }}
+                        >
+                          {a.message}
                         </p>
                       </div>
                     ))
@@ -1349,7 +1766,8 @@ export default function StudentDashboard() {
                         fontFamily: T.fontFamily,
                         fontSize: T.size.base,
                         fontStyle: "italic",
-                        color: C.text,
+                        color: C.textMuted,
+                        margin: 0,
                       }}
                     >
                       No announcements at this time.
@@ -1361,11 +1779,11 @@ export default function StudentDashboard() {
               {/* Batch Details quick links */}
               <SidePanel
                 icon={MdBarChart}
-                title="Batch Details"
+                title="Quick Links"
                 open={batchPanelOpen}
                 onToggle={() => setBatchPanelOpen((v) => !v)}
               >
-                <div className="space-y-0.5">
+                <div className="space-y-1">
                   {[
                     {
                       label: "My Batches",
@@ -1373,12 +1791,12 @@ export default function StudentDashboard() {
                       icon: MdPeople,
                     },
                     {
-                      label: "Batch Reportrties",
+                      label: "Test History",
                       href: "/student/history",
                       icon: MdBarChart,
                     },
                     {
-                      label: "Profile",
+                      label: "My Profile",
                       href: "/student/profile",
                       icon: MdPerson,
                     },
@@ -1386,8 +1804,12 @@ export default function StudentDashboard() {
                     <Link
                       key={link.label}
                       href={link.href}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-[10px] transition-colors"
-                      style={{ color: C.text }}
+                      className="flex items-center gap-3 transition-colors text-decoration-none"
+                      style={{
+                        color: C.heading,
+                        padding: "10px 12px",
+                        borderRadius: "10px",
+                      }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = C.innerBg;
                       }}
@@ -1396,23 +1818,30 @@ export default function StudentDashboard() {
                       }}
                     >
                       <div
-                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: C.iconBg }}
+                        className="flex items-center justify-center shrink-0"
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: "10px",
+                          backgroundColor: C.iconBg,
+                        }}
                       >
-                        <link.icon className="w-3.5 h-3.5 text-white" />
+                        <link.icon
+                          style={{ width: 16, height: 16, color: C.iconColor }}
+                        />
                       </div>
                       <span
                         style={{
                           fontFamily: T.fontFamily,
-                          fontSize: T.size.md,
-                          fontWeight: T.weight.semibold,
+                          fontSize: T.size.base,
+                          fontWeight: T.weight.bold,
                         }}
                       >
                         {link.label}
                       </span>
                       <MdArrowForward
-                        className="w-4 h-4 ml-auto"
-                        style={{ color: C.text }}
+                        className="ml-auto"
+                        style={{ width: 16, height: 16, color: C.textMuted }}
                       />
                     </Link>
                   ))}
