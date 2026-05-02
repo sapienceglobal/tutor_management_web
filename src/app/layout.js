@@ -29,6 +29,26 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${inter.variable} ${jakarta.variable} ${sora.variable} ${outfit.variable} ${kanit.variable} ${nunito.variable}`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var sessionType = localStorage.getItem('session_type');
+                var token = localStorage.getItem('token');
+                if (token) {
+                  var sessionActive = document.cookie.includes('session_active=1');
+                  if (!sessionActive && (sessionType === 'session' || sessionType === 'persistent')) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    localStorage.removeItem('session_type');
+                  }
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
       <body suppressHydrationWarning={true} className="antialiased">
         <ErrorBoundary>
           <Toaster

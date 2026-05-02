@@ -169,22 +169,35 @@ export default function StudentTestsPage() {
 
                                             {!isUpcoming && (
                                                 <div>
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span style={{ fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>{score}</span>
-                                                        <span style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted }}>/ {totalMarks}</span>
-                                                    </div>
-                                                    <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}` }}>
-                                                        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: pct >= 60 ? C.success : C.danger }} />
-                                                    </div>
+                                                    {item.status === 'Pending' ? (
+                                                        <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.warning }}>Results Hidden</span>
+                                                    ) : (
+                                                        <>
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span style={{ fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>{score}</span>
+                                                                <span style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted }}>/ {totalMarks}</span>
+                                                            </div>
+                                                            <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}` }}>
+                                                                <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: pct >= 60 ? C.success : C.danger }} />
+                                                            </div>
+                                                        </>
+                                                    )}
                                                 </div>
                                             )}
 
                                             {!isUpcoming && (
                                                 <div>
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 border"
-                                                        style={{ backgroundColor: passed ? C.successBg : C.dangerBg, borderColor: passed ? C.successBorder : C.dangerBorder, color: passed ? C.success : C.danger, fontSize: '10px', fontWeight: T.weight.bold, textTransform: 'uppercase', borderRadius: '8px' }}>
-                                                        {passed ? <MdCheckCircle size={10} /> : <MdCancel size={10} />} {passed ? 'Passed' : 'Failed'}
-                                                    </span>
+                                                    {item.status === 'Pending' ? (
+                                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 border"
+                                                            style={{ backgroundColor: C.warningBg, borderColor: C.warning, color: C.warning, fontSize: '10px', fontWeight: T.weight.bold, textTransform: 'uppercase', borderRadius: '8px' }}>
+                                                            <MdAccessTime size={10} /> Pending
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 border"
+                                                            style={{ backgroundColor: passed ? C.successBg : C.dangerBg, borderColor: passed ? C.successBorder : C.dangerBorder, color: passed ? C.success : C.danger, fontSize: '10px', fontWeight: T.weight.bold, textTransform: 'uppercase', borderRadius: '8px' }}>
+                                                            {passed ? <MdCheckCircle size={10} /> : <MdCancel size={10} />} {passed ? 'Passed' : 'Failed'}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             )}
 

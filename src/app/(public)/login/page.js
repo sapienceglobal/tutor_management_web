@@ -28,6 +28,7 @@ const LoginPageClient = () => {
   const [oauthResetEmail, setOauthResetEmail] = useState("");
   const [isClient, setIsClient] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -68,10 +69,20 @@ const LoginPageClient = () => {
       const { token, user } = response.data;
 
       // ── Auth tokens ──────────────────────────────────────────────
-      Cookies.set("token", token, { expires: 7 });
-      Cookies.set("user_role", user.role, { expires: 7 });
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
+
+      if (rememberMe) {
+        Cookies.set("token", token, { expires: 1 });
+        Cookies.set("user_role", user.role, { expires: 1 });
+        localStorage.setItem("session_type", "persistent");
+        Cookies.set("session_active", "1", { expires: 1 });
+      } else {
+        Cookies.set("token", token);
+        Cookies.set("user_role", user.role);
+        localStorage.setItem("session_type", "session");
+        Cookies.set("session_active", "1");
+      }
 
       // ── userRole for ThemeContext ─────────────────────────────────
       // ThemeContext reads this to decide student vs tutor theme
@@ -279,6 +290,21 @@ const LoginPageClient = () => {
                       onChange={handleChange}
                     />
                   </div>
+                </div>
+                <div className="flex items-center space-x-2 pt-2 pb-1">
+                  <input
+                    type="checkbox"
+                    id="rememberMe"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 focus:ring-2 focus:ring-offset-1 transition-colors cursor-pointer"
+                  />
+                  <Label
+                    htmlFor="rememberMe"
+                    className="text-sm font-medium text-slate-700 cursor-pointer"
+                  >
+                    Keep me logged in on this device
+                  </Label>
                 </div>
 
                 <Button

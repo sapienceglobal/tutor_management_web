@@ -101,15 +101,11 @@ export default function StudentExamsPage() {
     [exams],
   );
 
-  // Today's exams: available now AND whose startDate is today (or no startDate = always available today)
+  // Today's exams: active exams that have a specific schedule
   const todayExams = useMemo(() => {
-    const now = new Date();
-    const todayStr = now.toDateString();
     return exams.filter((exam) => {
-      const status = getStatus(exam);
-      if (status !== "available") return false;
-      if (!exam.startDate) return true; // unscheduled = always available
-      return new Date(exam.startDate).toDateString() === todayStr;
+      // Must be 'available' right now AND must be a scheduled event
+      return getStatus(exam) === "available" && exam.isScheduled;
     });
   }, [exams]);
 

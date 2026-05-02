@@ -98,6 +98,7 @@ export default function ManageCoursePage({ params }) {
         title: '', description: '', visibility: 'institute', price: 0,
         level: 'beginner', language: 'English',
         whatYouWillLearn: [''], requirements: [''],
+        requireApproval: false,
     });
 
     const [currentModuleId,     setCurrentModuleId]     = useState(null);
@@ -180,6 +181,7 @@ export default function ManageCoursePage({ params }) {
             level: course.level || 'beginner', language: course.language || 'English',
             whatYouWillLearn: course.whatYouWillLearn?.length ? [...course.whatYouWillLearn] : [''],
             requirements: course.requirements?.length ? [...course.requirements] : [''],
+            requireApproval: course.enrollmentSettings?.requireApproval || false,
         });
         setIsSettingsModalOpen(true);
     };
@@ -193,6 +195,7 @@ export default function ManageCoursePage({ params }) {
                 level: settingsForm.level, language: settingsForm.language,
                 whatYouWillLearn: settingsForm.whatYouWillLearn.filter(i => i.trim()),
                 requirements: settingsForm.requirements.filter(i => i.trim()),
+                enrollmentSettings: { requireApproval: settingsForm.requireApproval },
             });
             if (res.data.success) { setCourse(res.data.course); toast.success('Course settings updated'); setIsSettingsModalOpen(false); }
         } catch { toast.error('Failed to update settings'); }
@@ -1291,6 +1294,28 @@ export default function ManageCoursePage({ params }) {
                                         ))}
                                     </div>
                                 </div>
+
+                                {/* Enrollment Approval */}
+                                <label
+                                    className="flex items-center gap-3 cursor-pointer"
+                                    style={{ backgroundColor: C.innerBg, borderRadius: '10px', padding: 14, border: `1px solid ${C.cardBorder}` }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={settingsForm.requireApproval}
+                                        onChange={e => setSettingsForm(prev => ({ ...prev, requireApproval: e.target.checked }))}
+                                        className="w-4 h-4 flex-shrink-0"
+                                        style={{ accentColor: C.btnPrimary }}
+                                    />
+                                    <div>
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}>
+                                            Require Approval to Enroll
+                                        </p>
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
+                                            Students must request to join — you approve or reject them
+                                        </p>
+                                    </div>
+                                </label>
 
                                 {/* What you'll learn + Prerequisites */}
                                 {[
