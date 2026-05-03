@@ -457,13 +457,23 @@ export default function TakeExamPage({ params }) {
       setProctoringEvents((prev) => [...prev, newEvent]);
 
       if (exam.strictTabSwitching) {
-        const msg =
-          newCount >= 5
-            ? `🚨 CRITICAL: ${newCount} tab switches! Exam flagged as HIGH RISK.`
-            : newCount >= 3
-              ? `🚨 Warning #${newCount}: Tab switching will result in exam cancellation.`
-              : `⚠️ Tab switch detected (${newCount}/5). Strict monitoring is active.`;
-        toast.error(msg, { duration: 5000, id: "tab-switch" });
+        if (newCount >= 5) {
+          toast.error(
+            "🚨 CRITICAL: Maximum tab switches reached. Exam is being auto-submitted!",
+            { duration: 8000, id: "tab-switch" },
+          );
+          handleSubmit(true);
+        } else if (newCount >= 3) {
+          toast.error(
+            `🚨 Warning #${newCount}: Tab switching will result in exam cancellation.`,
+            { duration: 5000, id: "tab-switch" },
+          );
+        } else {
+          toast.error(
+            `⚠️ Tab switch detected (${newCount}/5). Strict monitoring is active.`,
+            { duration: 5000, id: "tab-switch" },
+          );
+        }
       } else {
         if (newCount <= 3) {
           toast(`ℹ️ Tab switch recorded (${newCount})`, {
@@ -501,16 +511,31 @@ export default function TakeExamPage({ params }) {
                 setSelections(parsed.selections || {});
                 setCurrentQuestionIndex(parsed.currentQuestionIndex || 0);
                 setVisitedQuestions(new Set(parsed.visitedQuestions || [0]));
-                const savedTime = parsed.timeLeft;
-                if (
-                  typeof savedTime === "number" &&
-                  savedTime > 0 &&
-                  savedTime <= fetchedExam.duration * 60
+
+                // 🔥 YAHAN CHANGE HUA HAI: examEndTime check
+                const savedEndTime = parsed.examEndTime;
+                if (savedEndTime) {
+                  const remainingTime = Math.floor(
+                    (savedEndTime - Date.now()) / 1000,
+                  );
+                  if (
+                    remainingTime > 0 &&
+                    remainingTime <= fetchedExam.duration * 60
+                  ) {
+                    setTimeLeft(remainingTime);
+                  } else {
+                    setTimeLeft(0); // Time is up agar tab band kar rakha tha der tak
+                  }
+                } else if (
+                  typeof parsed.timeLeft === "number" &&
+                  parsed.timeLeft > 0
                 ) {
-                  setTimeLeft(savedTime);
+                  // Fallback purane saves ke liye
+                  setTimeLeft(parsed.timeLeft);
                 } else {
                   setTimeLeft(fetchedExam.duration * 60);
                 }
+
                 toast.success("Your previous progress has been restored.", {
                   icon: "💾",
                 });
@@ -643,6 +668,7 @@ export default function TakeExamPage({ params }) {
             selections,
             currentQuestionIndex,
             visitedQuestions: [...visitedQuestions],
+            examEndTime: Date.now() + timeLeftRef.current * 1000,
             timeLeft: timeLeftRef.current,
             savedAt: Date.now(),
           }),
@@ -1658,8 +1684,15 @@ export default function TakeExamPage({ params }) {
     const counts = getStatusCounts();
     const totalMarksObtainable = exam.totalMarks || exam.questions.length;
     const answeredCount = counts.answered + counts.marked_answered;
+    let attemptedMarks = 0;
+    exam.questions.forEach((q, idx) => {
+      const status = getQuestionStatus(idx);
+      if (status === "answered" || status === "marked_answered") {
+        attemptedMarks += q.points || 1;
+      }
+    });
     const marksProgress = Math.round(
-      (answeredCount / exam.questions.length) * 100,
+      (attemptedMarks / totalMarksObtainable) * 100,
     );
 
     return (
@@ -1721,9 +1754,7 @@ export default function TakeExamPage({ params }) {
               Marks:
             </span>
             <span className="text-[22px] font-black text-[#1E1B4B]">
-              {answeredCount *
-                Math.round(totalMarksObtainable / exam.questions.length)}{" "}
-              / {totalMarksObtainable}
+             {attemptedMarks} / {totalMarksObtainable}
             </span>
           </div>
 
@@ -1908,7 +1939,7 @@ export default function TakeExamPage({ params }) {
           </main>
 
           {/* ── RIGHT: Sidebar ── */}
-         {/* ── RIGHT: Sidebar ── */}
+          {/* ── RIGHT: Sidebar ── */}
           <aside
             className={cn(
               "w-full lg:w-[320px] flex flex-col gap-4 transition-all duration-300 z-40 shrink-0 h-[calc(100vh-2rem)] lg:max-h-full",
@@ -1933,22 +1964,29 @@ export default function TakeExamPage({ params }) {
 
             {/* ── Scrollable Middle Area (Grid / List + Legend) ── */}
             <div className="flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar pr-2">
-              
               {/* Header: Answered Status & Menu Toggle (Fixed within scroll) */}
               <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0] shrink-0 pt-1 mb-5">
                 <div className="flex items-center gap-2.5">
                   <span className="w-3 h-3 rounded-full bg-[#22C55E]" />
                   <span className="font-semibold text-[#1E1B4B] text-[16px]">
-                    {counts?.answered || 0}/{exam?.questions?.length || 0} Answered
+                    {counts?.answered || 0}/{exam?.questions?.length || 0}{" "}
+                    Answered
                   </span>
                 </div>
-                <div 
+                <div
                   className="w-9 h-9 rounded-lg text-[#1E1B4B] flex items-center justify-center cursor-pointer transition-colors shrink-0"
-                  style={{ backgroundColor: showQuestionList ? "#6366F1" : "#EAE8FA", color: showQuestionList ? "#ffffff" : "#1E1B4B" }}
+                  style={{
+                    backgroundColor: showQuestionList ? "#6366F1" : "#EAE8FA",
+                    color: showQuestionList ? "#ffffff" : "#1E1B4B",
+                  }}
                   onClick={() => setShowQuestionList(!showQuestionList)}
                   title={showQuestionList ? "Show Grid" : "Show Question List"}
                 >
-                  {showQuestionList ? <XCircle className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5" />}
+                  {showQuestionList ? (
+                    <XCircle className="w-5 h-5 text-white" />
+                  ) : (
+                    <Menu className="w-5 h-5" />
+                  )}
                 </div>
               </div>
 
@@ -1960,9 +1998,11 @@ export default function TakeExamPage({ params }) {
                     const status = getQuestionStatus(idx);
                     const styles = getGridBtnStyles(status);
                     const isActive = idx === currentQuestionIndex;
-                    
+
                     // Safely strip HTML tags for preview (Clean text only)
-                    const cleanTextPreview = q?.question?.replace(/<[^>]+>/g, '') || "Question text not available";
+                    const cleanTextPreview =
+                      q?.question?.replace(/<[^>]+>/g, "") ||
+                      "Question text not available";
 
                     return (
                       <button
@@ -1974,30 +2014,44 @@ export default function TakeExamPage({ params }) {
                         className="flex items-start gap-3 p-3.5 rounded-xl border-none cursor-pointer w-full text-left transition-all shrink-0 hover:-translate-y-px"
                         style={{
                           backgroundColor: isActive ? "#EAE8FA" : "#ffffff",
-                          border: isActive ? `1px solid #6366F1` : `1px solid #E2E8F0`,
-                          boxShadow: isActive ? "0 2px 8px rgba(99,102,241,0.15)" : "0 2px 4px rgba(0,0,0,0.03)",
+                          border: isActive
+                            ? `1px solid #6366F1`
+                            : `1px solid #E2E8F0`,
+                          boxShadow: isActive
+                            ? "0 2px 8px rgba(99,102,241,0.15)"
+                            : "0 2px 4px rgba(0,0,0,0.03)",
                         }}
                       >
                         {/* Status Dot & Q Number */}
                         <div className="flex flex-col items-center gap-1.5 shrink-0 mt-0.5 w-7">
-                          <div 
-                            className="w-2.5 h-2.5 rounded-full" 
-                            style={{ backgroundColor: isActive ? "#6366F1" : styles.barColor }} 
+                          <div
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{
+                              backgroundColor: isActive
+                                ? "#6366F1"
+                                : styles.barColor,
+                            }}
                           />
-                          <span style={{ fontSize: 12, fontWeight: 700, color: isActive ? "#6366F1" : "#64748b" }}>
+                          <span
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: isActive ? "#6366F1" : "#64748b",
+                            }}
+                          >
                             Q{idx + 1}
                           </span>
                         </div>
 
                         {/* Question Snippet */}
                         <div className="flex-1 min-w-0">
-                          <p 
-                            className="line-clamp-2 m-0" 
-                            style={{ 
-                              fontSize: 13, 
-                              fontWeight: 600, 
-                              color: isActive ? "#1E1B4B" : "#334155", 
-                              lineHeight: 1.4 
+                          <p
+                            className="line-clamp-2 m-0"
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: isActive ? "#1E1B4B" : "#334155",
+                              lineHeight: 1.4,
                             }}
                           >
                             {cleanTextPreview}
@@ -2024,9 +2078,13 @@ export default function TakeExamPage({ params }) {
                             width: 44,
                             height: 48,
                             backgroundColor: isActive ? "#EAE8FA" : "#ffffff",
-                            border: isActive ? `1px solid #6366F1` : styles.border,
+                            border: isActive
+                              ? `1px solid #6366F1`
+                              : styles.border,
                             borderRadius: 8,
-                            boxShadow: isActive ? `0 0 0 2px rgba(99,102,241,0.2)` : "0 2px 4px rgba(0,0,0,0.04)",
+                            boxShadow: isActive
+                              ? `0 0 0 2px rgba(99,102,241,0.2)`
+                              : "0 2px 4px rgba(0,0,0,0.04)",
                             padding: 0,
                           }}
                         >
@@ -2046,7 +2104,9 @@ export default function TakeExamPage({ params }) {
                             style={{
                               height: 4,
                               width: "100%",
-                              backgroundColor: isActive ? "#6366F1" : styles.barColor,
+                              backgroundColor: isActive
+                                ? "#6366F1"
+                                : styles.barColor,
                               borderRadius: "0 0 8px 8px",
                             }}
                           />

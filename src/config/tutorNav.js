@@ -80,7 +80,7 @@ export const tutorNavItems = [
                 icon: Library,
                 submenu: [
                     { title: "All Questions", href: "/tutor/questions" },
-                    { title: "AI Bulk Generator", href: "/tutor/questions/ai-generator" },
+                    { title: "AI Bulk Generator", href: "/tutor/questions/ai-generator", badge: "Premium", featureGate: "aiAssessment" },
                 ],
             },
             {

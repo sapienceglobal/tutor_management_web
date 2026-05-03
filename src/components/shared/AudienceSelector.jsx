@@ -28,6 +28,7 @@ export default function AudienceSelector({
   allowPrivate = true,
   instituteId = null,
   className = "",
+  hideBatchOption = false,
 }) {
   const { institute } = useInstitute();
   const audience = { ...defaultAudience, ...value };
@@ -69,7 +70,7 @@ export default function AudienceSelector({
     ...(institute || instituteId
       ? [{ value: "institute", label: institute?.name || "Institute Only" }]
       : []),
-    { value: "batch", label: "Batch" },
+    ...(hideBatchOption ? [] : [{ value: "batch", label: "Batch" }]),
     ...(allowPrivate ? [{ value: "private", label: "Private" }] : []),
   ];
 

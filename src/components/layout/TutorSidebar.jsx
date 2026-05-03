@@ -301,10 +301,10 @@ export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed })
                                                         <div className="ml-[22px] space-y-1 pl-4" style={{ borderLeft: '1px solid #cde6ff' }}>
                                                             {child.submenu?.map((sub) => {
                                                                 const subActive = activePath === sub.href || activePath.startsWith(sub.href + '/');
-                                                                return (
+                                                                const SubElement = (
                                                                     <Link key={sub.title} href={sub.href}
                                                                         onClick={() => setIsOpen(false)}
-                                                                        className="flex items-center gap-2.5 px-3 py-2 transition-all duration-150 relative text-decoration-none"
+                                                                        className="flex items-center justify-between gap-2.5 px-3 py-2 transition-all duration-150 relative text-decoration-none w-full"
                                                                         style={subActive
                                                                             ? {
                                                                                 backgroundColor: 'transparent',
@@ -336,8 +336,17 @@ export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed })
                                                                             }
                                                                         }}>
                                                                         <span className="truncate">{sub.title}</span>
+                                                                        {sub.badge === 'Premium' && showFull && (
+                                                                            <span className="ml-2 text-[9px] font-bold tracking-widest uppercase bg-gradient-to-r from-purple-400 to-pink-500 text-white px-1.5 py-0.5 rounded-md shadow-sm">Pro</span>
+                                                                        )}
                                                                     </Link>
                                                                 );
+                                                                
+                                                                return sub.featureGate ? (
+                                                                    <FeatureGate key={sub.title} featureName={sub.featureGate} mode="lock" className="block w-full">
+                                                                        {SubElement}
+                                                                    </FeatureGate>
+                                                                ) : SubElement;
                                                             })}
                                                         </div>
                                                     </div>

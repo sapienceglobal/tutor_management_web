@@ -20,6 +20,7 @@ import {
   MdAssignment,
   MdPerson,
   MdFlashOn,
+  MdAccessTime,
 } from "react-icons/md";
 import Link from "next/link";
 import api from "@/lib/axios";
@@ -178,15 +179,15 @@ function SidePanel({ icon: Icon, title, open, onToggle, children }) {
             {title}
           </span>
         </div>
-        
+
         {/* Arrow ab smoothly rotate hoga jhatke se change nahi hoga */}
         <MdKeyboardArrowDown
-          style={{ 
-            width: 20, 
-            height: 20, 
+          style={{
+            width: 20,
+            height: 20,
             color: C.text,
-            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 300ms ease-in-out'
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 300ms ease-in-out",
           }}
         />
       </button>
@@ -194,15 +195,13 @@ function SidePanel({ icon: Icon, title, open, onToggle, children }) {
       {/* Smooth Accordion Transition Wrapper */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateRows: open ? '1fr' : '0fr',
-          transition: 'grid-template-rows 300ms ease-in-out',
+          display: "grid",
+          gridTemplateRows: open ? "1fr" : "0fr",
+          transition: "grid-template-rows 300ms ease-in-out",
         }}
       >
-        <div style={{ overflow: 'hidden' }}>
-          <div className="px-5 pb-5">
-            {children}
-          </div>
+        <div style={{ overflow: "hidden" }}>
+          <div className="px-5 pb-5">{children}</div>
         </div>
       </div>
     </div>
@@ -271,6 +270,7 @@ export default function StudentDashboard() {
   const [announcements, setAnnouncements] = useState([]);
   const [allExams, setAllExams] = useState([]); // Today's exam filter karne ke liye
   const [todayCarouselIdx, setTodayCarouselIdx] = useState(0);
+  const [batchPage, setBatchPage] = useState(1);
 
   const router = useRouter();
 
@@ -369,18 +369,19 @@ export default function StudentDashboard() {
     };
     fetchContextData();
   }, [activeTab]);
-// ─── Image Resolver for VPS Bug ──────────────────────────────────────────────
-const resolveImageUrl = (path) => {
+  // ─── Image Resolver for VPS Bug ──────────────────────────────────────────────
+  const resolveImageUrl = (path) => {
     if (!path) return "/default-avatar.png";
-    if (path.startsWith("http")) return path; 
-    
+    if (path.startsWith("http")) return path;
+
     // Yahan tumhara backend API URL aayega .env se
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
     // API URL se base domain nikalna
-    const baseUrl = apiUrl.replace(/\/api\/?$/, ""); 
-    
-    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
-};
+    const baseUrl = apiUrl.replace(/\/api\/?$/, "");
+
+    return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+  };
   // Helper function for Today's Exam
   const getStatus = (exam) => {
     if (exam.isCompleted) return "completed";
@@ -557,7 +558,7 @@ const resolveImageUrl = (path) => {
                 boxShadow: `0 0 0 3px ${C.btnViewAllBg}`,
               }}
             >
-           <img
+              <img
                 src={resolveImageUrl(user?.profileImage)}
                 alt={user?.name}
                 className="w-full h-full object-cover"
@@ -963,329 +964,465 @@ const resolveImageUrl = (path) => {
               )}
 
               {/* Batch Details */}
-              <div
-                style={{
-                  backgroundColor: C.cardBg,
-                  border: `1px solid ${C.cardBorder}`,
-                  boxShadow: S.card,
-                  borderRadius: R["2xl"],
-                  padding: 24,
-                }}
-              >
-                <SectionHeader
-                  icon={MdPeople}
-                  title="Batch Details"
-                  linkHref="/student/batches"
-                />
-                <div
-                  className="grid grid-cols-1 md:grid-cols-2 gap-0 md:divide-x"
-                  style={{ borderColor: C.cardBorder }}
-                >
-                  {/* Left: course progress */}
-                  <div className="pr-0 md:pr-6">
-                    <p
-                      className="mb-3 uppercase"
-                      style={{
-                        fontFamily: T.fontFamily,
-                        fontSize: T.size.base,
-                        fontWeight: T.weight.bold,
-                        color: C.btnPrimary,
-                        letterSpacing: T.tracking.wider,
-                      }}
+              {/* Batch Details (Always Visible, Dynamically Paginated) */}
+
+              {(() => {
+                // Safely define variables right here so they are always available
+                const totalBatchPages = Math.max(1, batches.length);
+                const currentBatch = batches[batchPage - 1];
+
+                // 1. REAL ENROLLMENTS FOR THIS BATCH ONLY (No Fake Fallbacks)
+                const displayEnrollments = currentBatch
+                  ? enrollments
+                      .filter((e) => {
+                        // Check both populated and unpopulated batchId
+                        const eBatchId =
+                          e.batchId?._id || e.batchId || e.batch?._id;
+                        return (
+                          eBatchId?.toString() === currentBatch._id?.toString()
+                        );
+                      })
+                      .slice(0, 4)
+                  : [];
+
+                // 2. REAL EXAMS FOR THIS BATCH ONLY (No Fake Fallbacks)
+                const displayUpcomingExams = currentBatch
+                  ? upcomingExams
+                      .filter((e) => {
+                        const eBatchId = e.batchId?._id || e.batchId;
+                        const audienceBatchIds = e.audience?.batchIds || [];
+                        return (
+                          eBatchId?.toString() ===
+                            currentBatch._id?.toString() ||
+                          audienceBatchIds.some(
+                            (id) =>
+                              id.toString() === currentBatch._id?.toString(),
+                          ) ||
+                          e.batches?.includes(currentBatch._id)
+                        );
+                      })
+                      .slice(0, 4)
+                  : [];
+
+                // 3. Real Instructor Name
+                const instructorName =
+                  currentBatch?.tutorId?.userId?.name ||
+                  currentBatch?.instructors?.[0]?.userId?.name ||
+                  "Instructor";
+
+                // 4. Real Batch Progress
+                const batchProgressPct = currentBatch
+                  ? enrollments.find((e) => {
+                      const eBatchId = e.batchId?._id || e.batchId;
+                      return (
+                        eBatchId?.toString() === currentBatch._id?.toString()
+                      );
+                    })?.progress?.percentage || 0
+                  : 0;
+
+                return (
+                  <div
+                    style={{
+                      backgroundColor: C.cardBg,
+                      border: `1px solid ${C.cardBorder}`,
+                      boxShadow: S.card,
+                      borderRadius: R["2xl"],
+                      padding: 24,
+                    }}
+                  >
+                    <SectionHeader
+                      icon={MdPeople}
+                      title="Batch Details"
+                      linkHref="/student/batches"
+                    />
+
+                    <div
+                      className="grid grid-cols-1 md:grid-cols-2 gap-0 md:divide-x"
+                      style={{ borderColor: C.cardBorder }}
                     >
-                      {batches[0]?.name || "Batch A, Advanced Science"}
-                    </p>
-                    {batches[0] && (
-                      <div
-                        className="flex items-center gap-3 mb-4"
-                        style={{
-                          backgroundColor: C.innerBg,
-                          border: `1px solid ${C.cardBorder}`,
-                          borderRadius: "10px",
-                          padding: 12,
-                        }}
-                      >
-                        <div
-                          className="flex items-center justify-center overflow-hidden shrink-0"
-                          style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: "10px",
-                            backgroundColor: C.btnViewAllBg,
-                          }}
-                        >
-                          <MdPerson
-                            style={{
-                              width: 20,
-                              height: 20,
-                              color: C.btnPrimary,
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <p
-                            style={{
-                              fontFamily: T.fontFamily,
-                              fontSize: T.size.base,
-                              fontWeight: T.weight.bold,
-                              color: C.heading,
-                            }}
-                          >
-                            {batches[0]?.name || "Batch A"}
-                          </p>
-                          <p
-                            style={{
-                              fontFamily: T.fontFamily,
-                              fontSize: T.size.base,
-                              color: C.textMuted,
-                            }}
-                          >
-                            {batches[0]?.instructorName || ""}
-                          </p>
-                        </div>
-                        <span
-                          className="ml-auto text-white shrink-0"
-                          style={{
-                            backgroundColor: C.btnPrimary,
-                            fontFamily: T.fontFamily,
-                            fontSize: T.size.xs,
-                            fontWeight: T.weight.bold,
-                            padding: "4px 10px",
-                            borderRadius: "10px",
-                          }}
-                        >
-                          {enrollments[0]?.progress?.percentage || 0}%
-                        </span>
-                      </div>
-                    )}
-                    <div className="space-y-3.5">
-                      {enrollments.slice(0, 4).length > 0 ? (
-                        enrollments.slice(0, 4).map((enrollment, i) => {
-                          const pct = enrollment.progress?.percentage || 0;
-                          const barColor =
-                            progressColors[i % progressColors.length];
-                          return (
-                            <Link
-                              key={enrollment._id}
-                              href={`/student/courses/${enrollment.courseId?._id}`}
-                              className="block group text-decoration-none"
-                            >
-                              <div className="flex items-center justify-between mb-1.5">
-                                <span
-                                  className="truncate max-w-[68%]"
-                                  style={{
-                                    fontFamily: T.fontFamily,
-                                    fontSize: T.size.base,
-                                    fontWeight: T.weight.bold,
-                                    color: C.text,
-                                  }}
-                                >
-                                  {enrollment.courseId?.title || "Course"}
-                                </span>
-                                <span
-                                  className="text-white shrink-0 ml-2"
-                                  style={{
-                                    backgroundColor: barColor,
-                                    fontFamily: T.fontFamily,
-                                    fontSize: T.size.xs,
-                                    fontWeight: T.weight.bold,
-                                    padding: "2px 8px",
-                                    borderRadius: "10px",
-                                  }}
-                                >
-                                  {pct}%
-                                </span>
-                              </div>
-                              <div
-                                className="w-full overflow-hidden"
-                                style={{
-                                  height: 8,
-                                  borderRadius: "10px",
-                                  backgroundColor: C.innerBg,
-                                }}
-                              >
-                                <div
-                                  className="h-full transition-all duration-700"
-                                  style={{
-                                    width: `${pct}%`,
-                                    backgroundColor: barColor,
-                                    borderRadius: "10px",
-                                  }}
-                                />
-                              </div>
-                            </Link>
-                          );
-                        })
-                      ) : (
+                      {/* Left: course progress */}
+                      <div className="pr-0 md:pr-6">
                         <p
+                          className="mb-3 uppercase truncate"
                           style={{
                             fontFamily: T.fontFamily,
                             fontSize: T.size.base,
-                            fontStyle: "italic",
-                            color: C.textMuted,
+                            fontWeight: T.weight.bold,
+                            color: C.btnPrimary,
+                            letterSpacing: T.tracking.wider,
                           }}
                         >
-                          No enrolled courses yet.
+                          {currentBatch?.name || "Not Enrolled in Any Batch"}
                         </p>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Right: upcoming exams */}
-                  <div className="pl-0 md:pl-6 mt-5 md:mt-0">
-                    <p
-                      className="mb-3 uppercase"
-                      style={{
-                        fontFamily: T.fontFamily,
-                        fontSize: T.size.xs,
-                        fontWeight: T.weight.bold,
-                        color: C.btnPrimary,
-                        letterSpacing: T.tracking.wider,
-                      }}
-                    >
-                      {batches[0]?.name || "Batch A, Advanced Science"}
-                    </p>
-                    <div className="space-y-3">
-                      {upcomingExams.slice(0, 4).length > 0 ? (
-                        upcomingExams.slice(0, 4).map((exam) => (
+                        {currentBatch && (
                           <div
-                            key={exam._id}
-                            className="flex items-center justify-between transition-colors"
+                            className="flex items-center gap-3 mb-4"
                             style={{
                               backgroundColor: C.innerBg,
                               border: `1px solid ${C.cardBorder}`,
                               borderRadius: "10px",
                               padding: 12,
                             }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor =
-                                C.btnViewAllBg;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = C.innerBg;
-                            }}
                           >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div
-                                className="flex items-center justify-center shrink-0"
+                            <div
+                              className="flex items-center justify-center overflow-hidden shrink-0"
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: "10px",
+                                backgroundColor: C.btnViewAllBg,
+                              }}
+                            >
+                              <MdPerson
                                 style={{
-                                  width: 32,
-                                  height: 32,
-                                  borderRadius: "10px",
-                                  backgroundColor: C.iconBg,
+                                  width: 20,
+                                  height: 20,
+                                  color: C.btnPrimary,
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <p
+                                className="truncate max-w-[200px]"
+                                style={{
+                                  fontFamily: T.fontFamily,
+                                  fontSize: T.size.base,
+                                  fontWeight: T.weight.bold,
+                                  color: C.heading,
+                                  margin: 0,
                                 }}
                               >
-                                <MdArticle
-                                  style={{
-                                    width: 16,
-                                    height: 16,
-                                    color: C.iconColor,
-                                  }}
-                                />
-                              </div>
-                              <div className="min-w-0">
-                                <p
-                                  className="truncate"
-                                  style={{
-                                    fontFamily: T.fontFamily,
-                                    fontSize: T.size.base,
-                                    fontWeight: T.weight.bold,
-                                    color: C.heading,
-                                    margin: 0,
-                                  }}
-                                >
-                                  {exam.title}
-                                </p>
-                                <p
-                                  style={{
-                                    fontFamily: T.fontFamily,
-                                    fontSize: T.size.xs,
-                                    color: C.textMuted,
-                                    margin: 0,
-                                    marginTop: 2,
-                                    fontWeight: T.weight.bold,
-                                  }}
-                                >
-                                  Batch in{" "}
-                                  {Math.ceil(
-                                    (new Date(exam.startDate) - new Date()) /
-                                      (1000 * 60 * 60 * 24),
-                                  )}{" "}
-                                  days
-                                </p>
-                              </div>
+                                {currentBatch.name}
+                              </p>
+                              <p
+                                style={{
+                                  fontFamily: T.fontFamily,
+                                  fontSize: T.size.xs,
+                                  fontWeight: T.weight.semibold,
+                                  color: C.textMuted,
+                                  margin: 0,
+                                }}
+                              >
+                                {instructorName}
+                              </p>
                             </div>
-                            <Link
-                              href={`/student/exams/${exam._id}`}
-                              className="text-white shrink-0 ml-3 transition-opacity hover:opacity-80 text-decoration-none"
+                            <span
+                              className="ml-auto text-white shrink-0"
                               style={{
                                 backgroundColor: C.btnPrimary,
                                 fontFamily: T.fontFamily,
                                 fontSize: T.size.xs,
                                 fontWeight: T.weight.bold,
-                                padding: "6px 12px",
+                                padding: "4px 10px",
                                 borderRadius: "10px",
                               }}
                             >
-                              Attempt
-                            </Link>
+                              {batchProgressPct}%
+                            </span>
                           </div>
-                        ))
-                      ) : (
+                        )}
+
+                        <div className="space-y-3.5 flex flex-col" style={{ minHeight: '100px' }}>
+                          {displayEnrollments.length > 0 ? (
+                            displayEnrollments.map((enrollment, i) => {
+                              const pct = enrollment.progress?.percentage || 0;
+                              const barColor =
+                                progressColors[i % progressColors.length];
+                              return (
+                                <Link
+                                  key={enrollment._id}
+                                  href={`/student/courses/${enrollment.courseId?._id}`}
+                                  className="block group text-decoration-none"
+                                >
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <span
+                                      className="truncate max-w-[68%]"
+                                      style={{
+                                        fontFamily: T.fontFamily,
+                                        fontSize: T.size.base,
+                                        fontWeight: T.weight.bold,
+                                        color: C.text,
+                                      }}
+                                    >
+                                      {enrollment.courseId?.title || "Course"}
+                                    </span>
+                                    <span
+                                      className="text-white shrink-0 ml-2"
+                                      style={{
+                                        backgroundColor: barColor,
+                                        fontFamily: T.fontFamily,
+                                        fontSize: T.size.xs,
+                                        fontWeight: T.weight.bold,
+                                        padding: "2px 8px",
+                                        borderRadius: "10px",
+                                      }}
+                                    >
+                                      {pct}%
+                                    </span>
+                                  </div>
+                                  <div
+                                    className="w-full overflow-hidden"
+                                    style={{
+                                      height: 8,
+                                      borderRadius: "10px",
+                                      backgroundColor: C.innerBg,
+                                    }}
+                                  >
+                                    <div
+                                      className="h-full transition-all duration-700"
+                                      style={{
+                                        width: `${pct}%`,
+                                        backgroundColor: barColor,
+                                        borderRadius: "10px",
+                                      }}
+                                    />
+                                  </div>
+                                </Link>
+                              );
+                            })
+                          ) : (
+                            <div className="flex-1 flex items-center justify-center">
+                              <p
+                                style={{
+                                  fontFamily: T.fontFamily,
+                                  fontSize: T.size.base,
+                                  fontStyle: "italic",
+                                  color: C.textMuted,
+                                  margin: 0,
+                                  textAlign: "center",
+                                }}
+                              >
+                                No enrolled courses for this batch yet.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right: upcoming exams */}
+                      <div className="pl-0 md:pl-6 mt-5 md:mt-0">
                         <p
+                          className="mb-3 uppercase truncate"
                           style={{
                             fontFamily: T.fontFamily,
-                            fontSize: T.size.base,
-                            fontStyle: "italic",
-                            color: C.textMuted,
+                            fontSize: T.size.xs,
+                            fontWeight: T.weight.bold,
+                            color: C.btnPrimary,
+                            letterSpacing: T.tracking.wider,
                           }}
                         >
-                          No upcoming exams.
+                          {currentBatch?.name || "Not Enrolled in Any Batch"}
                         </p>
-                      )}
+                        <div className="space-y-3 flex flex-col" style={{ minHeight: '100px' }}>
+                          {displayUpcomingExams.length > 0 ? (
+                            displayUpcomingExams.map((exam) => {
+                              const daysLeft = exam.startDate
+                                ? Math.max(
+                                    0,
+                                    Math.ceil(
+                                      (new Date(exam.startDate) - new Date()) /
+                                        (1000 * 60 * 60 * 24),
+                                    ),
+                                  )
+                                : 0;
+
+                              return (
+                                <div
+                                  key={exam._id}
+                                  className="flex items-center justify-between transition-colors"
+                                  style={{
+                                    backgroundColor: C.innerBg,
+                                    border: `1px solid ${C.cardBorder}`,
+                                    borderRadius: "10px",
+                                    padding: 12,
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor =
+                                      C.btnViewAllBg;
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor =
+                                      C.innerBg;
+                                  }}
+                                >
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <div
+                                      className="flex items-center justify-center shrink-0"
+                                      style={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: "10px",
+                                        backgroundColor: C.iconBg,
+                                      }}
+                                    >
+                                      <MdArticle
+                                        style={{
+                                          width: 16,
+                                          height: 16,
+                                          color: C.iconColor,
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p
+                                        className="truncate"
+                                        style={{
+                                          fontFamily: T.fontFamily,
+                                          fontSize: T.size.base,
+                                          fontWeight: T.weight.bold,
+                                          color: C.heading,
+                                          margin: 0,
+                                        }}
+                                      >
+                                        {exam.title}
+                                      </p>
+                                      <p
+                                        style={{
+                                          fontFamily: T.fontFamily,
+                                          fontSize: T.size.xs,
+                                          color: C.textMuted,
+                                          margin: 0,
+                                          marginTop: 2,
+                                          fontWeight: T.weight.bold,
+                                        }}
+                                      >
+                                        Batch in {daysLeft} days
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Link
+                                    href={`/student/exams/${exam._id}`}
+                                    className="text-white shrink-0 ml-3 transition-opacity hover:opacity-80 text-decoration-none"
+                                    style={{
+                                      backgroundColor: C.btnPrimary,
+                                      fontFamily: T.fontFamily,
+                                      fontSize: T.size.xs,
+                                      fontWeight: T.weight.bold,
+                                      padding: "6px 12px",
+                                      borderRadius: "10px",
+                                    }}
+                                  >
+                                    Attempt
+                                  </Link>
+                                </div>
+                              );
+                            })
+                          ) : (
+                           <div className="flex-1 flex items-center justify-center">
+            <p
+                style={{
+                    fontFamily: T.fontFamily,
+                    fontSize: T.size.base,
+                    fontStyle: "italic",
+                    color: C.textMuted,
+                    margin: 0,
+                    textAlign: "center"
+                }}
+            >
+                No upcoming exams for this batch.
+            </p>
+        </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Pagination (Always Visible) */}
+                    <div
+                      className="flex items-center justify-center gap-2 mt-6 pt-5"
+                      style={{ borderTop: `1px solid ${C.cardBorder}` }}
+                    >
+                      <button
+                        onClick={() => setBatchPage((p) => Math.max(1, p - 1))}
+                        disabled={batchPage === 1}
+                        style={{
+                          backgroundColor: C.btnViewAllBg,
+                          color: C.btnViewAllText,
+                          padding: "6px 12px",
+                          fontFamily: T.fontFamily,
+                          fontSize: T.size.xs,
+                          fontWeight: T.weight.bold,
+                          borderRadius: "10px",
+                          border: `1px solid ${C.cardBorder}`,
+                          cursor: batchPage === 1 ? "not-allowed" : "pointer",
+                          opacity: batchPage === 1 ? 0.5 : 1,
+                        }}
+                      >
+                        ‹ Previous
+                      </button>
+
+                      {Array.from(
+                        { length: Math.max(3, totalBatchPages) },
+                        (_, i) => i + 1,
+                      ).map((item) => {
+                        const isDisabled = item > totalBatchPages;
+                        return (
+                          <button
+                            key={item}
+                            onClick={() => !isDisabled && setBatchPage(item)}
+                            disabled={isDisabled}
+                            style={
+                              batchPage === item && !isDisabled
+                                ? {
+                                    backgroundColor: C.btnPrimary,
+                                    color: "#ffffff",
+                                    padding: "6px 12px",
+                                    fontFamily: T.fontFamily,
+                                    fontSize: T.size.xs,
+                                    fontWeight: T.weight.bold,
+                                    borderRadius: "10px",
+                                    border: "none",
+                                    cursor: "pointer",
+                                  }
+                                : {
+                                    backgroundColor: C.btnViewAllBg,
+                                    color: C.btnViewAllText,
+                                    padding: "6px 12px",
+                                    fontFamily: T.fontFamily,
+                                    fontSize: T.size.xs,
+                                    fontWeight: T.weight.bold,
+                                    borderRadius: "10px",
+                                    border: `1px solid ${C.cardBorder}`,
+                                    cursor: isDisabled
+                                      ? "not-allowed"
+                                      : "pointer",
+                                    opacity: isDisabled ? 0.5 : 1,
+                                  }
+                            }
+                          >
+                            {item}
+                          </button>
+                        );
+                      })}
+
+                      <button
+                        onClick={() =>
+                          setBatchPage((p) => Math.min(totalBatchPages, p + 1))
+                        }
+                        disabled={batchPage >= totalBatchPages}
+                        style={{
+                          backgroundColor: C.btnViewAllBg,
+                          color: C.btnViewAllText,
+                          padding: "6px 12px",
+                          fontFamily: T.fontFamily,
+                          fontSize: T.size.xs,
+                          fontWeight: T.weight.bold,
+                          borderRadius: "10px",
+                          border: `1px solid ${C.cardBorder}`,
+                          cursor:
+                            batchPage >= totalBatchPages
+                              ? "not-allowed"
+                              : "pointer",
+                          opacity: batchPage >= totalBatchPages ? 0.5 : 1,
+                        }}
+                      >
+                        Next ›
+                      </button>
                     </div>
                   </div>
-                </div>
-
-                {/* Pagination */}
-                <div
-                  className="flex items-center justify-center gap-2 mt-6 pt-5"
-                  style={{ borderTop: `1px solid ${C.cardBorder}` }}
-                >
-                  {["‹ Previous", "1", "2", "3", "Next ›"].map((item) => (
-                    <button
-                      key={item}
-                      style={
-                        item === "1"
-                          ? {
-                              backgroundColor: C.btnPrimary,
-                              color: "#ffffff",
-                              padding: "6px 12px",
-                              fontFamily: T.fontFamily,
-                              fontSize: T.size.xs,
-                              fontWeight: T.weight.bold,
-                              borderRadius: "10px",
-                              border: "none",
-                              cursor: "pointer",
-                            }
-                          : {
-                              backgroundColor: C.btnViewAllBg,
-                              color: C.btnViewAllText,
-                              padding: "6px 12px",
-                              fontFamily: T.fontFamily,
-                              fontSize: T.size.xs,
-                              fontWeight: T.weight.bold,
-                              borderRadius: "10px",
-                              border: `1px solid ${C.cardBorder}`,
-                              cursor: "pointer",
-                            }
-                      }
-                    >
-                      {item}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Recent Results */}
               <div

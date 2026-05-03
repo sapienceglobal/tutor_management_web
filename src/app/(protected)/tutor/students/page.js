@@ -128,7 +128,7 @@ export default function TutorStudentsPage() {
     }
 
     return (
-        <div className="w-full min-h-screen p-6 md:p-8" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}>
+        <div className="w-full min-h-screen md:p-8" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}>
             
             {/* ── Header ────────────────────────────────────────────────────── */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">

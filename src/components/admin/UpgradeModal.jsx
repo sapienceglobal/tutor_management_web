@@ -2,57 +2,7 @@
 
 import { X, Crown, Zap, Video, Palette, Users, Brain, Check } from 'lucide-react';
 
-export default function UpgradeModal({ isOpen, onClose, currentPlan, onUpgrade }) {
-    const plans = [
-        {
-            name: 'Basic',
-            price: '$9/month',
-            description: 'Perfect for small institutes',
-            features: [
-                'Up to 50 students',
-                'Basic analytics',
-                'Zoom Integration',
-                'Email support',
-                'Standard video upload'
-            ],
-            availableFeatures: ['zoomIntegration'],
-            color: 'green'
-        },
-        {
-            name: 'Pro',
-            price: '$29/month',
-            description: 'Great for growing institutes',
-            features: [
-                'Up to 200 students',
-                'Advanced analytics',
-                'Custom Branding',
-                'AI Features',
-                'Priority support',
-                'Standard video upload'
-            ],
-            availableFeatures: ['customBranding', 'aiFeatures', 'zoomIntegration'],
-            color: 'blue',
-            popular: true
-        },
-        {
-            name: 'Enterprise',
-            price: '$99/month',
-            description: 'Complete solution for large institutes',
-            features: [
-                'Unlimited students',
-                'Advanced analytics',
-                'Custom Branding',
-                'AI Features',
-                'HLS Streaming',
-                'Dedicated support',
-                'API access',
-                'White-label options'
-            ],
-            availableFeatures: ['hlsStreaming', 'customBranding', 'aiFeatures', 'zoomIntegration'],
-            color: 'purple'
-        }
-    ];
-
+export default function UpgradeModal({ isOpen, onClose, currentPlan, plans = [], onUpgrade }) {
     if (!isOpen) return null;
 
     return (
@@ -105,25 +55,44 @@ export default function UpgradeModal({ isOpen, onClose, currentPlan, onUpgrade }
                                         }`}>
                                             {plan.name}
                                         </h3>
-                                        <div className="mt-2">
+                                        <div className="mt-2 flex items-baseline justify-center gap-1">
                                             <span className="text-3xl font-bold text-slate-800">
-                                                {plan.price}
+                                                ₹{plan.price}
                                             </span>
+                                            <span className="text-sm font-semibold text-slate-500">/{plan.billingCycle}</span>
                                         </div>
-                                        <p className="text-sm text-slate-600 mt-2">{plan.description}</p>
+                                        <p className="text-sm text-slate-600 mt-2">{plan.description || `Unlock ${plan.name} features`}</p>
                                     </div>
 
                                     <div className="space-y-3 mb-6">
-                                        {plan.features.map((feature, index) => (
-                                            <div key={index} className="flex items-center gap-3">
-                                                <Check className="w-4 h-4 text-green-600 shrink-0" />
-                                                <span className="text-sm text-slate-700">{feature}</span>
-                                            </div>
-                                        ))}
+                                        <div className="flex items-center gap-3">
+                                            <Check className="w-4 h-4 text-green-600 shrink-0" />
+                                            <span className="text-sm text-slate-700">
+                                                {plan.features.maxTutors === -1 ? 'Unlimited' : `Up to ${plan.features.maxTutors}`} Tutors
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <Check className="w-4 h-4 text-green-600 shrink-0" />
+                                            <span className="text-sm text-slate-700">
+                                                {plan.features.maxStudents === -1 ? 'Unlimited' : `Up to ${plan.features.maxStudents}`} Students
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <Check className="w-4 h-4 text-green-600 shrink-0" />
+                                            <span className="text-sm text-slate-700">
+                                                {plan.features.storageLimitGB} GB Storage
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-3 font-semibold text-purple-600">
+                                            <Zap className="w-4 h-4 text-purple-600 shrink-0" />
+                                            <span className="text-sm">
+                                                {plan.features.aiCreditsPerMonth || 0} AI Credits/mo
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <button
-                                        onClick={() => onUpgrade(plan.name.toLowerCase())}
+                                        onClick={() => onUpgrade(plan._id)}
                                         disabled={isCurrentPlan}
                                         className={`w-full py-3 px-4 rounded-lg font-semibold transition-all ${
                                             isCurrentPlan

@@ -9,15 +9,34 @@ import { toast } from 'react-hot-toast';
 
 export default function SubscriptionPage() {
     const [institute, setInstitute] = useState(null);
+    const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
-
+    
     const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.12)';
 
     useEffect(() => {
+        const loadRazorpay = () => {
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            document.body.appendChild(script);
+        };
+        loadRazorpay();
         fetchInstituteData();
+        fetchPlans();
     }, []);
+
+    const fetchPlans = async () => {
+        try {
+            const res = await api.get('/subscriptions');
+            if (res.data?.success) {
+                setPlans(res.data.plans);
+            }
+        } catch (error) {
+            console.error('Failed to load plans:', error);
+        }
+    };
 
     const fetchInstituteData = async () => {
         try {
@@ -45,10 +64,74 @@ export default function SubscriptionPage() {
         }
     };
 
-    const handleUpgrade = (planName) => {
-        // Here you would typically call your payment gateway / Stripe API
-        toast.success(`Upgrade to ${planName} initiated! Redirecting to payment...`);
-        setShowUpgradeModal(false);
+    const handleUpgrade = async (planId) => {
+        if (!window.Razorpay) {
+            toast.error('Payment gateway is still loading. Please wait.');
+            return;
+        }
+
+        try {
+            const toastId = toast.loading('Initiating secure payment...');
+            setShowUpgradeModal(false);
+
+            // 1. Create Order
+            const orderRes = await api.post('/payments/renew-subscription', {
+                planId,
+                instituteId: institute._id
+            });
+
+            if (!orderRes.data.success) {
+                toast.error(orderRes.data.message || 'Failed to initialize payment', { id: toastId });
+                return;
+            }
+
+            toast.dismiss(toastId);
+
+            // 2. Open Razorpay
+            const options = {
+                key: orderRes.data.key,
+                amount: orderRes.data.order.amount,
+                currency: orderRes.data.order.currency,
+                name: "Sapience LMS",
+                description: `Subscription Upgrade`,
+                order_id: orderRes.data.order.id,
+                handler: async function (response) {
+                    const verifyToastId = toast.loading('Verifying your payment...');
+                    try {
+                        const verifyRes = await api.post('/payments/verify', {
+                            razorpayOrderId: response.razorpay_order_id,
+                            razorpayPaymentId: response.razorpay_payment_id,
+                            razorpaySignature: response.razorpay_signature
+                        });
+                        if (verifyRes.data.success) {
+                            toast.success('Subscription Upgraded Successfully! 🎉', { id: verifyToastId });
+                            fetchInstituteData();
+                        } else {
+                            toast.error('Payment verification failed.', { id: verifyToastId });
+                        }
+                    } catch (err) {
+                        toast.error('An error occurred during verification.', { id: verifyToastId });
+                    }
+                },
+                prefill: {
+                    name: institute.name,
+                    email: institute.contactEmail || ''
+                },
+                theme: {
+                    color: "#6B4DF1"
+                }
+            };
+
+            const rzp = new window.Razorpay(options);
+            rzp.on('payment.failed', function (response) {
+                toast.error(`Payment failed: ${response.error.description}`);
+            });
+            rzp.open();
+
+        } catch (error) {
+            console.error('Upgrade error:', error);
+            toast.error('Something went wrong while initiating payment.');
+        }
     };
 
     const getPlanGradient = (plan) => {
@@ -239,6 +322,7 @@ export default function SubscriptionPage() {
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
                 currentPlan={institute?.subscriptionPlan}
+                plans={plans}
                 onUpgrade={handleUpgrade}
             />
         </div>

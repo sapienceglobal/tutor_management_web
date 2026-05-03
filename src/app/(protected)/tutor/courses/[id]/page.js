@@ -29,6 +29,9 @@ import {
     MdPeople,
     MdUpload,
     MdWarning,
+    MdPersonAdd,
+    MdCheck,
+    MdBlock,
 } from 'react-icons/md';
 import Link from 'next/link';
 import api from '@/lib/axios';
@@ -82,10 +85,11 @@ export default function ManageCoursePage({ params }) {
     const router = useRouter();
     const { id }  = use(params);
 
-    const [course, setCourse]           = useState(null);
-    const [lessons, setLessons]         = useState([]);
-    const [courseExams, setCourseExams] = useState([]);
-    const [loading, setLoading]         = useState(true);
+    const [course, setCourse]                   = useState(null);
+    const [lessons, setLessons]                 = useState([]);
+    const [courseExams, setCourseExams]         = useState([]);
+    const [pendingEnrollments, setPendingEnrollments] = useState([]);
+    const [loading, setLoading]                 = useState(true);
 
     const [isModuleModalOpen,   setIsModuleModalOpen]   = useState(false);
     const [isLessonModalOpen,   setIsLessonModalOpen]   = useState(false);
@@ -149,6 +153,12 @@ export default function ManageCoursePage({ params }) {
                 const examsRes = await api.get(`/exams/course/${id}`);
                 if (examsRes.data.success) setCourseExams(examsRes.data.exams || []);
             } catch { /* no exams */ }
+            try {
+                const studentsRes = await api.get(`/enrollments/students/${id}`);
+                if (studentsRes.data.success) {
+                    setPendingEnrollments((studentsRes.data.students || []).filter(e => e.status === 'pending'));
+                }
+            } catch { /* no students */ }
         } catch (error) {
             console.error('Error loading course:', error);
             if ([403, 404].includes(error.response?.status)) router.push('/tutor/courses');
@@ -377,10 +387,29 @@ export default function ManageCoursePage({ params }) {
     const totalDuration = lessons.reduce((a, l) => a + (l.duration || 0), 0);
 
     const TABS = [
-        { key: 'curriculum',    icon: MdArticle,           label: 'Curriculum' },
-        { key: 'exams',         icon: MdEmojiEvents,       label: `Exams (${courseExams.length})` },
-        { key: 'announcements', icon: MdCampaign,          label: 'Announcements' },
+        { key: 'curriculum',    icon: MdArticle,    label: 'Curriculum' },
+        { key: 'exams',         icon: MdEmojiEvents, label: `Exams (${courseExams.length})` },
+        { key: 'announcements', icon: MdCampaign,   label: 'Announcements' },
+        ...(course?.enrollmentSettings?.requireApproval ? [{ key: 'requests', icon: MdPersonAdd, label: `Requests${pendingEnrollments.length > 0 ? ` (${pendingEnrollments.length})` : ''}` }] : []),
     ];
+
+    const handleApproveEnrollment = async (enrollmentId) => {
+        try {
+            await api.patch(`/enrollments/${enrollmentId}/approve`);
+            setPendingEnrollments(prev => prev.filter(e => e._id !== enrollmentId));
+            toast.success('Student approved!');
+        } catch { toast.error('Failed to approve'); }
+    };
+
+    const handleRejectEnrollment = async (enrollmentId) => {
+        const ok = await confirmDialog('Reject Request', 'Reject this enrollment request? The student will be notified.', { variant: 'destructive' });
+        if (!ok) return;
+        try {
+            await api.delete(`/enrollments/${enrollmentId}/reject`);
+            setPendingEnrollments(prev => prev.filter(e => e._id !== enrollmentId));
+            toast.success('Request rejected.');
+        } catch { toast.error('Failed to reject'); }
+    };
 
     // ── Reusable modal cancel button ─────────────────────────────────────────
     const CancelBtn = ({ onClick }) => (
@@ -905,6 +934,81 @@ export default function ManageCoursePage({ params }) {
                                 </Link>
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Requests Tab ── */}
+            {activeTab === 'requests' && course?.enrollmentSettings?.requireApproval && (
+                <div className="space-y-4 -mt-px">
+                    <div className="overflow-hidden" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card, borderRadius: R['2xl'] }}>
+                        <div className="px-6 py-4" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
+                            <h3 className="flex items-center gap-2" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
+                                <MdPersonAdd style={{ width: 18, height: 18, color: C.btnPrimary }} />
+                                Pending Enrollment Requests
+                            </h3>
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, marginTop: 4 }}>
+                                These students have requested to join your course. Approve to grant them access.
+                            </p>
+                        </div>
+                        <div>
+                            {pendingEnrollments.length > 0 ? (
+                                <div className="divide-y" style={{ borderColor: C.cardBorder }}>
+                                    {pendingEnrollments.map((req) => (
+                                        <div key={req._id} className="p-5 flex items-center justify-between transition-all"
+                                            style={{ backgroundColor: 'transparent' }}
+                                            onMouseEnter={e => e.currentTarget.style.backgroundColor = C.innerBg}
+                                            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white uppercase flex-shrink-0"
+                                                    style={{ backgroundColor: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.base }}>
+                                                    {req.studentId?.name?.charAt(0) || '?'}
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}>
+                                                        {req.studentId?.name || 'Unknown Student'}
+                                                    </p>
+                                                    <div className="flex items-center gap-2 mt-1" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
+                                                        <span>{req.studentId?.email}</span>
+                                                        {req.enrolledAt && (
+                                                            <>
+                                                                <span>•</span>
+                                                                <span>Requested on {new Date(req.enrolledAt).toLocaleDateString()}</span>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                                <button onClick={() => handleApproveEnrollment(req._id)}
+                                                    className="flex items-center gap-1.5 transition-all hover:opacity-80"
+                                                    style={{ backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, padding: '6px 12px', borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, cursor: 'pointer' }}>
+                                                    <MdCheck style={{ width: 14, height: 14 }} /> Approve
+                                                </button>
+                                                <button onClick={() => handleRejectEnrollment(req._id)}
+                                                    className="flex items-center gap-1.5 transition-all hover:opacity-80"
+                                                    style={{ backgroundColor: C.dangerBg, color: C.danger, border: `1px solid ${C.dangerBorder}`, padding: '6px 12px', borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, cursor: 'pointer' }}>
+                                                    <MdBlock style={{ width: 14, height: 14 }} /> Reject
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="p-10 text-center">
+                                    <div className="flex items-center justify-center mx-auto mb-4"
+                                        style={{ width: 48, height: 48, borderRadius: '10px', backgroundColor: C.iconBg }}>
+                                        <MdPersonAdd style={{ width: 24, height: 24, color: C.iconColor }} />
+                                    </div>
+                                    <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}>
+                                        No Pending Requests
+                                    </h4>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, marginTop: 4 }}>
+                                        You're all caught up! There are no students waiting for approval.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
