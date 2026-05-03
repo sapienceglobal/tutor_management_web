@@ -107,7 +107,7 @@ export default function ManageAppointmentsPage() {
     }
 
     return (
-        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen space-y-6" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
 
             {/* ── Header ────────────────────────────────────────────────────── */}
             <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 p-5"

@@ -6,13 +6,11 @@ import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import {
     MdSearch,
-    MdArrowUpward,
     MdCheckBox,
     MdWarning,
     MdDownload,
     MdFilterList,
     MdArrowOutward,
-    MdTrendingUp,
     MdChevronLeft,
     MdChevronRight,
     MdAdd,
@@ -21,6 +19,7 @@ import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { C, T, S, R } from '@/constants/studentTokens';
+import StatCard from '@/components/StatCard';
 
 // ─── Focus Handlers ───────────────────────────────────────────────────────────
 const onFocusHandler = e => {
@@ -74,38 +73,6 @@ const CustomTooltip = ({ active, payload, label }) => {
     }
     return null;
 };
-
-// ─── Metric Card ──────────────────────────────────────────────────────────────
-function TopMetricCard({ title, value, subtext, icon: Icon, iconColor, iconBg, trendIcon: TrendIcon }) {
-    return (
-        <div
-            className="flex flex-col justify-between"
-            style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card, padding: 20, minHeight: 120 }}
-        >
-            <div className="flex items-center gap-2 mb-2">
-                <div className="flex items-center justify-center shrink-0" style={{ width: 32, height: 32, borderRadius: '10px', backgroundColor: iconBg }}>
-                    <Icon style={{ width: 16, height: 16, color: iconColor }} />
-                </div>
-                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
-                    {title}
-                </p>
-            </div>
-            <div className="flex items-end gap-3 mt-auto">
-                <p style={{ fontFamily: T.fontFamily, fontSize: T.size['3xl'], fontWeight: T.weight.bold, color: C.heading, margin: 0, lineHeight: 1 }}>
-                    {value}
-                </p>
-                {subtext && (
-                    <span
-                        className="flex items-center gap-1 mb-1"
-                        style={{ backgroundColor: iconBg, color: iconColor, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, padding: '4px 8px', borderRadius: '10px' }}
-                    >
-                        {TrendIcon && <TrendIcon style={{ width: 10, height: 10 }} />} {subtext}
-                    </span>
-                )}
-            </div>
-        </div>
-    );
-}
 
 // ─── Grade Helper ─────────────────────────────────────────────────────────────
 const getGrade = (score) => {
@@ -201,7 +168,7 @@ export default function TutorStudentPerformancePage() {
     const incompleteAssigns  = summary?.totalPendingAssignments ?? 56;
 
     return (
-        <div className="w-full min-h-screen pb-24 space-y-6" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen p-6 pb-24 space-y-6" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
 
             {/* ── Header ── */}
             <div
@@ -230,33 +197,29 @@ export default function TutorStudentPerformancePage() {
 
             {/* ── Metric Cards ── */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <TopMetricCard
-                    title="Average Score" value={`${avgScore}%`} subtext="+ 5.2%"
-                    icon={MdArrowOutward} iconColor={C.success} iconBg={C.successBg} trendIcon={MdArrowUpward}
+                <StatCard
+                    icon={MdArrowOutward}
+                    value={`${avgScore}%`}
+                    label="Average Score"
+                    subtext="+ 5.2% this month"
+                    iconBg={C.successBg}
+                    iconColor={C.success}
                 />
-                <TopMetricCard
-                    title="Completed Courses" value={`${completedCourses}`} subtext="+ 15%"
-                    icon={MdCheckBox} iconColor={C.btnPrimary} iconBg={C.btnViewAllBg} trendIcon={MdArrowUpward}
+                <StatCard
+                    icon={MdCheckBox}
+                    value={`${completedCourses}`}
+                    label="Completed Courses"
+                    subtext="+ 15% this month"
+                    iconBg={C.btnViewAllBg}
+                    iconColor={C.btnPrimary}
                 />
-                {/* Incomplete Assignments — custom card (no subtext badge) */}
-                <div
-                    className="flex flex-col justify-between"
-                    style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card, padding: 20, minHeight: 120 }}
-                >
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className="flex items-center justify-center shrink-0" style={{ width: 32, height: 32, borderRadius: '10px', backgroundColor: C.dangerBg }}>
-                            <MdWarning style={{ width: 16, height: 16, color: C.danger }} />
-                        </div>
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
-                            Incomplete Assignments
-                        </p>
-                    </div>
-                    <div className="flex items-end gap-3 mt-auto">
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size['3xl'], fontWeight: T.weight.bold, color: C.heading, margin: 0, lineHeight: 1 }}>
-                            {incompleteAssigns}
-                        </p>
-                    </div>
-                </div>
+                <StatCard
+                    icon={MdWarning}
+                    value={`${incompleteAssigns}`}
+                    label="Incomplete Assignments"
+                    iconBg={C.dangerBg}
+                    iconColor={C.danger}
+                />
             </div>
 
             {/* ── Chart Area ── */}

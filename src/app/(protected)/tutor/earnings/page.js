@@ -1,15 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import {
-    DollarSign, Wallet, Clock, CheckCircle2, XCircle, Loader2,
-    Plus, Download, TrendingUp, CircleAlert, Building2, RefreshCw, Ban,
-    CreditCard, CalendarDays, TrendingDown
-} from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { useState, useEffect, useMemo } from 'react';
 import api from '@/lib/axios';
+import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
-import { C, T, S, R, FX } from '@/constants/tutorTokens';
+import { C, T, S, R, FX } from '@/constants/studentTokens';
+import StatCard from '@/components/StatCard';
+import {
+    MdAttachMoney, MdAccountBalanceWallet, MdAccessTime, MdCheckCircle,
+    MdCancel, MdHourglassEmpty, MdAdd, MdDownload, MdTrendingUp,
+    MdTrendingDown, MdAccountBalance, MdRefresh, MdCreditCard, MdCalendarMonth
+} from 'react-icons/md';
 
 const MIN_WITHDRAWAL = 500;
 const CURRENCY = 'INR';
@@ -40,7 +41,7 @@ const statusPillStyle = (status) => {
 // Focus Handlers for Input
 const onFocusHandler = e => {
     e.target.style.borderColor = C.btnPrimary;
-    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)';
+    e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}30`;
 };
 const onBlurHandler = e => {
     e.target.style.borderColor = 'transparent';
@@ -61,40 +62,6 @@ const baseInputStyle = {
     transition: 'all 0.2s ease',
 };
 
-function StatCard({ title, value, subtext, icon: Icon, tone = 'default' }) {
-    const toneMap = {
-        default: { bg: '#E3DFF8', color: C.btnPrimary },
-        success: { bg: C.successBg, color: C.success },
-        warning: { bg: C.warningBg, color: C.warning },
-        danger: { bg: C.dangerBg, color: C.danger },
-    };
-    const style = toneMap[tone] || toneMap.default;
-
-    return (
-        <div className="p-5 flex flex-col justify-between transition-transform hover:-translate-y-0.5" 
-            style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card, minHeight: '120px' }}>
-            <div className="flex items-center justify-between gap-2 mb-2">
-                <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, textTransform: 'uppercase', margin: 0 }}>
-                    {title}
-                </p>
-                <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ backgroundColor: style.bg, borderRadius: R.xl }}>
-                    <Icon size={20} color={style.color} />
-                </div>
-            </div>
-            <div className="mt-auto">
-                <p style={{ fontSize: T.size['3xl'], fontWeight: T.weight.black, color: style.color === C.btnPrimary ? C.heading : style.color, margin: 0, lineHeight: 1 }}>
-                    {value}
-                </p>
-                {subtext && (
-                    <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, margin: '6px 0 0 0' }}>
-                        {subtext}
-                    </p>
-                )}
-            </div>
-        </div>
-    );
-}
-
 export default function EarningsPage() {
     const { confirmDialog } = useConfirm();
 
@@ -113,7 +80,6 @@ export default function EarningsPage() {
         rejectedAmount: 0, withdrawableBalance: 0, activeRequests: 0, minimumPayoutAmount: MIN_WITHDRAWAL,
     });
     const [monthlyRevenue, setMonthlyRevenue] = useState([]);
-    const [courseRevenue, setCourseRevenue] = useState([]);
     const [recentPayments, setRecentPayments] = useState([]);
     const [payouts, setPayouts] = useState([]);
 
@@ -142,7 +108,6 @@ export default function EarningsPage() {
 
             setSummary(res.data.summary || {});
             setMonthlyRevenue(res.data.monthlyRevenue || []);
-            setCourseRevenue(res.data.courseRevenue || []);
             setRecentPayments(res.data.recentPayments || []);
             setPayouts(res.data.payouts || []);
         } catch (error) {
@@ -233,21 +198,21 @@ export default function EarningsPage() {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
-                <Loader2 className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
+            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}>
+                <MdHourglassEmpty className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
                 <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading financial data...</p>
             </div>
         );
     }
 
     return (
-        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen space-y-6" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
             
             {/* ── Page Header & Action Bar ──────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 flex items-center justify-center shrink-0" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
-                        <Wallet size={24} color={C.btnPrimary} />
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0" style={{ backgroundColor: C.innerBg, borderRadius: R.xl }}>
+                        <MdAccountBalanceWallet size={24} color={C.btnPrimary} />
                     </div>
                     <div>
                         <h1 style={{ color: C.heading, fontSize: T.size.xl, fontWeight: T.weight.black, margin: '0 0 4px 0' }}>Earnings & Payouts</h1>
@@ -257,27 +222,27 @@ export default function EarningsPage() {
 
                 <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
                     <select value={months} onChange={(e) => setMonths(Number(e.target.value))} 
-                        style={{ ...baseInputStyle, width: '160px', height: '40px', backgroundColor: '#E3DFF8' }} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+                        style={{ ...baseInputStyle, width: '160px', height: '40px', backgroundColor: C.innerBg }} onFocus={onFocusHandler} onBlur={onBlurHandler}>
                         <option value={6}>Last 6 months</option>
                         <option value={12}>Last 12 months</option>
                         <option value={18}>Last 18 months</option>
                     </select>
 
                     <button onClick={() => fetchReport(false)} disabled={refreshing} className="flex items-center justify-center w-10 h-10 cursor-pointer border-none transition-opacity hover:opacity-80 shrink-0"
-                        style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
-                        <RefreshCw size={16} color={C.heading} className={refreshing ? "animate-spin" : ""} />
+                        style={{ backgroundColor: C.innerBg, borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                        <MdRefresh size={18} color={C.heading} className={refreshing ? "animate-spin" : ""} />
                     </button>
 
                     <button onClick={handleExport} disabled={exporting} className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-sm shrink-0"
-                        style={{ backgroundColor: '#E3DFF8', color: C.btnPrimary, borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}>
-                        {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />} Export Report
+                        style={{ backgroundColor: C.innerBg, color: C.btnPrimary, borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}>
+                        {exporting ? <MdHourglassEmpty size={16} className="animate-spin" /> : <MdDownload size={16} />} Export Report
                     </button>
                 </div>
             </div>
 
             {/* ── Main Tabs ────────────────────────────────────────────────────── */}
-            <div className="flex gap-2 p-1 w-full sm:w-max" style={{ backgroundColor: '#EAE8FA', borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
-                {[{ id: 'overview', label: 'Earnings Overview', icon: TrendingUp }, { id: 'payouts', label: 'Payout Requests', icon: CreditCard }].map(tab => (
+            <div className="flex gap-2 p-1 w-full sm:w-max" style={{ backgroundColor: C.innerBg, borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                {[{ id: 'overview', label: 'Earnings Overview', icon: MdTrendingUp }, { id: 'payouts', label: 'Payout Requests', icon: MdCreditCard }].map(tab => (
                     <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-11 px-6 cursor-pointer border-none transition-all"
                         style={{
                             backgroundColor: activeTab === tab.id ? C.surfaceWhite : 'transparent',
@@ -285,7 +250,7 @@ export default function EarningsPage() {
                             borderRadius: R.lg, boxShadow: activeTab === tab.id ? S.card : 'none',
                             fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily
                         }}>
-                        <tab.icon size={16} /> {tab.label}
+                        <tab.icon size={18} /> {tab.label}
                     </button>
                 ))}
             </div>
@@ -294,20 +259,48 @@ export default function EarningsPage() {
                 TAB 1: EARNINGS OVERVIEW
             ══════════════════════════════════════════════════════════════════════ */}
             {activeTab === 'overview' && (
-                <div className="space-y-6">
+                <div className="space-y-6 animate-in fade-in duration-500">
                     {/* Top Stats */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <StatCard title="Total Earnings" value={fmtCurrency(summary.totalEarnings)} subtext={`${summary.totalTransactions || 0} successful payments`} icon={DollarSign} />
-                        <StatCard title="Withdrawable Balance" value={fmtCurrency(summary.withdrawableBalance)} subtext={`Min payout: ${fmtCurrency(summary.minimumPayoutAmount || MIN_WITHDRAWAL)}`} icon={Wallet} tone="success" />
-                        <StatCard title="Pending Payouts" value={fmtCurrency(summary.pendingAmount)} subtext={`${summary.activeRequests || 0} active request(s)`} icon={Clock} tone={(summary.pendingAmount || 0) > 0 ? 'warning' : 'default'} />
-                        <StatCard title="Total Paid Out" value={fmtCurrency(summary.paidAmount)} subtext="Successfully transferred" icon={CheckCircle2} tone="success" />
+                        <StatCard 
+                            label="Total Earnings" 
+                            value={fmtCurrency(summary.totalEarnings)} 
+                            subtext={`${summary.totalTransactions || 0} successful payments`} 
+                            icon={MdAttachMoney} 
+                            iconBg={C.iconBg} 
+                            iconColor={C.btnPrimary} 
+                        />
+                        <StatCard 
+                            label="Withdrawable Balance" 
+                            value={fmtCurrency(summary.withdrawableBalance)} 
+                            subtext={`Min payout: ${fmtCurrency(summary.minimumPayoutAmount || MIN_WITHDRAWAL)}`} 
+                            icon={MdAccountBalanceWallet} 
+                            iconBg={C.successBg} 
+                            iconColor={C.success} 
+                        />
+                        <StatCard 
+                            label="Pending Payouts" 
+                            value={fmtCurrency(summary.pendingAmount)} 
+                            subtext={`${summary.activeRequests || 0} active request(s)`} 
+                            icon={MdAccessTime} 
+                            iconBg={(summary.pendingAmount || 0) > 0 ? C.warningBg : C.iconBg} 
+                            iconColor={(summary.pendingAmount || 0) > 0 ? C.warning : C.iconColor} 
+                        />
+                        <StatCard 
+                            label="Total Paid Out" 
+                            value={fmtCurrency(summary.paidAmount)} 
+                            subtext="Successfully transferred" 
+                            icon={MdCheckCircle} 
+                            iconBg={C.successBg} 
+                            iconColor={C.success} 
+                        />
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         
                         {/* Revenue Trend / Bar Chart Approximation */}
-                        <div className="lg:col-span-2 overflow-hidden flex flex-col" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                            <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: '#E3DFF8' }}>
+                        <div className="lg:col-span-2 overflow-hidden flex flex-col" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                            <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
                                 <div>
                                     <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: '0 0 2px 0' }}>Earnings Trend</h2>
                                     <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, margin: 0 }}>Revenue over selected period</p>
@@ -318,7 +311,7 @@ export default function EarningsPage() {
                                         border: `1px solid ${revenueTrend >= 0 ? C.successBorder : C.dangerBorder}`,
                                         padding: '4px 10px', borderRadius: R.full, fontSize: '10px', fontWeight: T.weight.black, display: 'flex', alignItems: 'center', gap: '4px' 
                                     }}>
-                                        {revenueTrend >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                                        {revenueTrend >= 0 ? <MdTrendingUp size={14} /> : <MdTrendingDown size={14} />}
                                         {Math.abs(revenueTrend)}% vs Last Month
                                     </span>
                                 )}
@@ -349,15 +342,15 @@ export default function EarningsPage() {
                         </div>
 
                         {/* Recent Payments (Students) */}
-                        <div className="lg:col-span-1 overflow-hidden flex flex-col" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                            <div className="px-6 py-4" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: '#E3DFF8' }}>
+                        <div className="lg:col-span-1 overflow-hidden flex flex-col" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                            <div className="px-6 py-4" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
                                 <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: '0 0 2px 0' }}>Recent Payments</h2>
                                 <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, margin: 0 }}>Latest student transactions</p>
                             </div>
                             <div className="p-4 overflow-y-auto max-h-[300px] custom-scrollbar space-y-3">
                                 {recentPayments.length > 0 ? (
                                     recentPayments.slice(0, 10).map((payment) => (
-                                        <div key={payment._id} className="flex items-center justify-between p-3" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                                        <div key={payment._id} className="flex items-center justify-between p-3" style={{ backgroundColor: C.innerBg, borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
                                             <div className="flex items-center gap-3 min-w-0">
                                                 <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white text-xs font-bold" style={{ backgroundColor: C.btnPrimary }}>
                                                     {payment.student?.name?.[0]?.toUpperCase() || 'S'}
@@ -386,15 +379,15 @@ export default function EarningsPage() {
                 TAB 2: PAYOUT REQUESTS
             ══════════════════════════════════════════════════════════════════════ */}
             {activeTab === 'payouts' && (
-                <div className="space-y-6">
+                <div className="space-y-6 animate-in fade-in duration-500">
                     {/* Action Bar for Payouts */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                         <div className="flex gap-2 w-full sm:w-auto overflow-x-auto custom-scrollbar pb-2 sm:pb-0">
                             {['all', 'pending', 'processing', 'paid', 'rejected'].map(status => (
                                 <button key={status} onClick={() => setStatusFilter(status)}
                                     className="px-4 py-2 cursor-pointer border-none transition-all shrink-0 capitalize"
                                     style={{
-                                        backgroundColor: statusFilter === status ? C.btnPrimary : '#E3DFF8',
+                                        backgroundColor: statusFilter === status ? C.btnPrimary : C.innerBg,
                                         color: statusFilter === status ? '#fff' : C.textMuted,
                                         borderRadius: R.xl,
                                         fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily,
@@ -407,14 +400,14 @@ export default function EarningsPage() {
                         <button onClick={() => setRequestModalOpen(true)} disabled={Number(summary.withdrawableBalance || 0) < (summary.minimumPayoutAmount || MIN_WITHDRAWAL)}
                             className="flex items-center justify-center gap-2 h-11 px-6 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-md w-full sm:w-auto disabled:opacity-50"
                             style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
-                            <Plus size={16} /> Request Payout
+                            <MdAdd size={18} /> Request Payout
                         </button>
                     </div>
 
                     {/* Payouts List Table */}
-                    <div className="overflow-x-auto" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="overflow-x-auto" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                         <div className="min-w-[900px]">
-                            <div className="grid grid-cols-[1.5fr_2fr_1.5fr_1fr_1.5fr_1fr] gap-4 px-6 py-4" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: '#E3DFF8' }}>
+                            <div className="grid grid-cols-[1.5fr_2fr_1.5fr_1fr_1.5fr_1fr] gap-4 px-6 py-4" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
                                 {['Date Requested', 'Payment Method', 'Amount', 'Status', 'Details', 'Action'].map((h, i) => (
                                     <span key={i} className={i === 5 ? 'text-right' : ''} style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</span>
                                 ))}
@@ -423,17 +416,19 @@ export default function EarningsPage() {
                             {payouts.length > 0 ? (
                                 <div className="flex flex-col">
                                     {payouts.map((payout, idx) => (
-                                        <div key={payout._id} className="grid grid-cols-[1.5fr_2fr_1.5fr_1fr_1.5fr_1fr] gap-4 px-6 py-4 items-center transition-colors hover:bg-white/50" 
-                                            style={{ borderBottom: idx !== payouts.length - 1 ? `1px solid ${C.cardBorder}` : 'none' }}>
+                                        <div key={payout._id} className="grid grid-cols-[1.5fr_2fr_1.5fr_1fr_1.5fr_1fr] gap-4 px-6 py-4 items-center transition-colors" 
+                                            style={{ borderBottom: idx !== payouts.length - 1 ? `1px solid ${C.cardBorder}` : 'none', backgroundColor: C.cardBg }}
+                                            onMouseEnter={e => e.currentTarget.style.backgroundColor = C.innerBg}
+                                            onMouseLeave={e => e.currentTarget.style.backgroundColor = C.cardBg}>
                                             
                                             <div className="flex items-center gap-2">
-                                                <CalendarDays size={16} color={C.textMuted} />
+                                                <MdCalendarMonth size={18} color={C.textMuted} />
                                                 <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>{fmtDate(payout.createdAt)}</span>
                                             </div>
 
                                             <div>
-                                                <span className="flex items-center gap-2 px-3 py-1.5 w-fit" style={{ backgroundColor: '#E3DFF8', borderRadius: R.md, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, border: `1px solid ${C.cardBorder}` }}>
-                                                    <CreditCard size={14} color={C.btnPrimary} />
+                                                <span className="flex items-center gap-2 px-3 py-1.5 w-fit" style={{ backgroundColor: C.innerBg, borderRadius: R.md, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, border: `1px solid ${C.cardBorder}` }}>
+                                                    <MdCreditCard size={16} color={C.btnPrimary} />
                                                     {payout.bankDetails?.upiId ? 'UPI Transfer' : 'Bank Transfer'}
                                                 </span>
                                             </div>
@@ -473,7 +468,7 @@ export default function EarningsPage() {
                                 </div>
                             ) : (
                                 <div className="text-center py-20 flex flex-col items-center">
-                                    <Building2 size={40} color={C.textMuted} style={{ opacity: 0.3, marginBottom: '12px' }} />
+                                    <MdAccountBalance size={48} color={C.textMuted} style={{ opacity: 0.3, marginBottom: '12px' }} />
                                     <p style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>No payout requests found</p>
                                     <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>Adjust filters or request a new payout.</p>
                                 </div>
@@ -485,19 +480,19 @@ export default function EarningsPage() {
 
             {/* ── Request Payout Modal ────────────────────────────────────────── */}
             {requestModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(21, 22, 86, 0.4)', backdropFilter: 'blur(4px)' }}>
-                    <div className="w-full max-w-lg p-6" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.cardHover }}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(4px)' }}>
+                    <div className="w-full max-w-lg p-6 animate-in zoom-in duration-200" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.cardHover }}>
                         <div className="flex items-center justify-between mb-6 pb-4" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
                             <h3 className="flex items-center gap-2" style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
-                                <Wallet size={20} color={C.btnPrimary} /> Request Payout
+                                <MdAccountBalanceWallet size={24} color={C.btnPrimary} /> Request Payout
                             </h3>
-                            <button onClick={() => setRequestModalOpen(false)} className="bg-transparent border-none cursor-pointer hover:opacity-70 flex items-center justify-center" style={{ width: '32px', height: '32px', backgroundColor: '#E3DFF8', borderRadius: R.md }}>
-                                <XCircle size={16} color={C.heading} />
+                            <button onClick={() => setRequestModalOpen(false)} className="bg-transparent border-none cursor-pointer hover:opacity-70 flex items-center justify-center transition-colors" style={{ width: '32px', height: '32px', backgroundColor: C.innerBg, borderRadius: R.md }}>
+                                <MdCancel size={20} color={C.heading} />
                             </button>
                         </div>
 
                         <form onSubmit={handleRequestPayout} className="space-y-5">
-                            <div className="p-4 flex items-center justify-between" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                            <div className="p-4 flex items-center justify-between" style={{ backgroundColor: C.innerBg, borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
                                 <div>
                                     <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', margin: '0 0 2px 0' }}>Available Balance</p>
                                     <p style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.success, margin: 0 }}>{fmtCurrency(summary.withdrawableBalance)}</p>
@@ -521,7 +516,7 @@ export default function EarningsPage() {
                                     {['bank', 'upi'].map(method => (
                                         <button key={method} type="button" onClick={() => setPayoutMethod(method)} className="flex-1 h-12 cursor-pointer border-none transition-all uppercase"
                                             style={{
-                                                backgroundColor: payoutMethod === method ? C.btnPrimary : '#E3DFF8',
+                                                backgroundColor: payoutMethod === method ? C.btnPrimary : C.innerBg,
                                                 color: payoutMethod === method ? '#fff' : C.textMuted,
                                                 borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily,
                                                 boxShadow: payoutMethod === method ? S.card : 'none'
@@ -532,7 +527,7 @@ export default function EarningsPage() {
                                 </div>
                             </div>
 
-                            <div className="p-4 space-y-4" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                            <div className="p-4 space-y-4" style={{ backgroundColor: C.innerBg, borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
                                 {payoutMethod === 'bank' ? (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="space-y-1"><label style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase' }}>Bank Name *</label><input required placeholder="e.g. HDFC Bank" value={requestForm.bankName} onChange={e => setRequestForm(p => ({ ...p, bankName: e.target.value }))} style={{ ...baseInputStyle, backgroundColor: C.surfaceWhite }} onFocus={onFocusHandler} onBlur={onBlurHandler} /></div>
@@ -550,9 +545,9 @@ export default function EarningsPage() {
                             </div>
 
                             <div className="flex justify-end gap-3 pt-4 mt-2" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
-                                <button type="button" onClick={() => setRequestModalOpen(false)} className="px-6 py-2.5 cursor-pointer bg-transparent border-none hover:opacity-70" style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>Cancel</button>
+                                <button type="button" onClick={() => setRequestModalOpen(false)} className="px-6 py-2.5 cursor-pointer bg-transparent border-none hover:opacity-70 transition-opacity" style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>Cancel</button>
                                 <button type="submit" disabled={submitting} className="flex items-center justify-center gap-2 h-11 px-8 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md" style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
-                                    {submitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} Submit Request
+                                    {submitting ? <MdHourglassEmpty size={18} className="animate-spin" /> : <MdCheckCircle size={18} />} Submit Request
                                 </button>
                             </div>
                         </form>

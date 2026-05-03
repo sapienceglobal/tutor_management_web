@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
-import {
-    AlertTriangle, CheckCircle2, EyeOff, Flag, Loader2,
-    MessageCircle, Search, Send, ShieldCheck, RefreshCw, XCircle
-} from 'lucide-react';
-import { C, T, FX, S, R } from '@/constants/tutorTokens';
+import { 
+    MdWarning, MdCheckCircle, MdVisibilityOff, MdFlag, MdHourglassEmpty,
+    MdForum, MdSearch, MdSend, MdVerifiedUser, MdRefresh
+} from 'react-icons/md';
+import { C, T, S, R } from '@/constants/studentTokens';
+import StatCard from '@/components/StatCard'; // Global StatCard Component
 
 const STATUS_OPTIONS = [
     { value: 'all', label: 'All Status' },
@@ -20,59 +21,26 @@ const STATUS_OPTIONS = [
 // Focus Handlers
 const onFocusHandler = e => {
     e.target.style.borderColor = C.btnPrimary;
-    e.target.style.boxShadow = '0 0 0 3px rgba(117,115,232,0.10)';
+    e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}30`;
 };
 const onBlurHandler = e => {
-    e.target.style.borderColor = 'transparent';
+    e.target.style.borderColor = C.cardBorder;
     e.target.style.boxShadow = 'none';
 };
 
 const baseInputStyle = {
     backgroundColor: C.surfaceWhite,
-    border: '1.5px solid transparent',
-    borderRadius: R.xl,
+    border: `1.5px solid ${C.cardBorder}`,
+    borderRadius: '10px',
     color: C.heading,
     fontFamily: T.fontFamily,
     fontSize: T.size.sm,
-    fontWeight: T.weight.medium,
+    fontWeight: T.weight.semibold,
     outline: 'none',
     width: '100%',
     padding: '10px 16px',
     transition: 'all 0.2s ease',
 };
-
-function StatCard({ title, value, sub, icon: Icon, tone = 'default' }) {
-    const toneMap = {
-        default: { bg: '#E3DFF8', color: C.btnPrimary },
-        success: { bg: C.successBg, color: C.success },
-        warning: { bg: C.warningBg, color: C.warning },
-        danger: { bg: C.dangerBg, color: C.danger },
-    };
-    const style = toneMap[tone] || toneMap.default;
-    return (
-        <div className="p-5 flex flex-col justify-between transition-transform hover:-translate-y-0.5" 
-            style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card, minHeight: '120px' }}>
-            <div className="flex items-center justify-between gap-2 mb-2">
-                <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, textTransform: 'uppercase', margin: 0 }}>
-                    {title}
-                </p>
-                <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ backgroundColor: style.bg, borderRadius: R.xl }}>
-                    <Icon size={20} color={style.color} />
-                </div>
-            </div>
-            <div className="mt-auto">
-                <p style={{ fontSize: T.size['3xl'], fontWeight: T.weight.black, color: style.color === C.btnPrimary ? C.heading : style.color, margin: 0, lineHeight: 1 }}>
-                    {value}
-                </p>
-                {sub && (
-                    <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, margin: '6px 0 0 0' }}>
-                        {sub}
-                    </p>
-                )}
-            </div>
-        </div>
-    );
-}
 
 export default function TutorDiscussionsPage() {
     const [loading, setLoading] = useState(true);
@@ -178,7 +146,7 @@ export default function TutorDiscussionsPage() {
         if (status === 'hidden') return { bg: C.dangerBg, border: C.dangerBorder, color: C.danger };
         if (status === 'flagged') return { bg: C.warningBg, border: C.warningBorder, color: C.warning };
         if (status === 'resolved') return { bg: C.successBg, border: C.successBorder, color: C.success };
-        return { bg: C.surfaceWhite, border: C.cardBorder, color: C.heading };
+        return { bg: C.innerBg, border: C.cardBorder, color: C.textMuted };
     };
 
     const pendingReplies = useMemo(() => {
@@ -187,64 +155,66 @@ export default function TutorDiscussionsPage() {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
-                <Loader2 className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
+            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}>
+                <MdHourglassEmpty className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
                 <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading discussions...</p>
             </div>
         );
     }
 
     return (
-        <div className="w-full min-h-screen p-6 pb-24 space-y-6" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen pb-24 space-y-6" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
             
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 flex items-center justify-center shrink-0" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
-                        <MessageCircle size={24} color={C.btnPrimary} />
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0" style={{ backgroundColor: C.iconBg, borderRadius: '10px' }}>
+                        <MdForum size={24} color={C.iconColor} />
                     </div>
                     <div>
                         <h1 style={{ color: C.heading, fontSize: T.size.xl, fontWeight: T.weight.black, margin: '0 0 4px 0' }}>Discussion Forum</h1>
-                        <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold, margin: 0 }}>Moderate lesson discussions and reply to student comments.</p>
+                        <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.semibold, margin: 0 }}>Moderate lesson discussions and reply to student comments.</p>
                     </div>
                 </div>
                 <button
                     onClick={() => fetchModeration(false)}
                     disabled={refreshing}
-                    className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-md w-full sm:w-auto"
-                    style={{ backgroundColor: '#E3DFF8', color: C.btnPrimary, borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}
+                    className="flex items-center justify-center gap-2 h-11 px-6 cursor-pointer border-none transition-colors hover:bg-opacity-80 shadow-sm w-full sm:w-auto"
+                    style={{ backgroundColor: C.innerBg, color: C.btnPrimary, borderRadius: '10px', fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = C.btnViewAllBg}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = C.innerBg}
                 >
-                    {refreshing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} Refresh
+                    {refreshing ? <MdHourglassEmpty size={18} className="animate-spin" /> : <MdRefresh size={18} />} Refresh
                 </button>
             </div>
 
             {/* Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                <StatCard title="Total Comments" value={summary?.total ?? 0} sub="Across your lessons" icon={MessageCircle} />
-                <StatCard title="Flagged" value={summary?.flagged ?? 0} sub="Need moderation" icon={Flag} tone={(summary?.flagged ?? 0) > 0 ? 'warning' : 'default'} />
-                <StatCard title="Hidden" value={summary?.hidden ?? 0} sub="Currently hidden" icon={EyeOff} tone={(summary?.hidden ?? 0) > 0 ? 'danger' : 'default'} />
-                <StatCard title="Pending Replies" value={pendingReplies} sub="No tutor reply yet" icon={AlertTriangle} tone={pendingReplies > 0 ? 'warning' : 'success'} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 animate-in fade-in duration-500 delay-100">
+                <StatCard label="Total Comments" value={summary?.total ?? 0} subtext="Across your lessons" icon={MdForum} iconBg={C.iconBg} iconColor={C.btnPrimary} />
+                <StatCard label="Flagged" value={summary?.flagged ?? 0} subtext="Need moderation" icon={MdFlag} iconBg={(summary?.flagged ?? 0) > 0 ? C.warningBg : C.iconBg} iconColor={(summary?.flagged ?? 0) > 0 ? C.warning : C.btnPrimary} />
+                <StatCard label="Hidden" value={summary?.hidden ?? 0} subtext="Currently hidden" icon={MdVisibilityOff} iconBg={(summary?.hidden ?? 0) > 0 ? C.dangerBg : C.iconBg} iconColor={(summary?.hidden ?? 0) > 0 ? C.danger : C.btnPrimary} />
+                <StatCard label="Pending Replies" value={pendingReplies} subtext="No tutor reply yet" icon={MdWarning} iconBg={pendingReplies > 0 ? C.warningBg : C.successBg} iconColor={pendingReplies > 0 ? C.warning : C.success} />
             </div>
 
             {/* Filters Area */}
-            <div className="p-4 flex flex-col md:flex-row gap-4 items-center justify-between" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+            <div className="p-5 flex flex-col md:flex-row gap-4 items-center justify-between animate-in fade-in duration-500 delay-200" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <div className="relative w-full md:flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2" size={16} color={C.textMuted} />
+                    <MdSearch className="absolute left-3.5 top-1/2 -translate-y-1/2" size={18} color={C.textMuted} />
                     <input
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
                         placeholder="Search by comment, student, lesson..."
-                        style={{ ...baseInputStyle, paddingLeft: '36px', backgroundColor: C.surfaceWhite }}
+                        style={{ ...baseInputStyle, paddingLeft: '40px', backgroundColor: C.surfaceWhite }}
                         onFocus={onFocusHandler} onBlur={onBlurHandler}
                     />
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto shrink-0">
-                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ ...baseInputStyle, backgroundColor: C.surfaceWhite, width: '160px' }} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
+                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ ...baseInputStyle, backgroundColor: C.surfaceWhite, width: '100%', minWidth: '180px', cursor: 'pointer' }} onFocus={onFocusHandler} onBlur={onBlurHandler}>
                         {STATUS_OPTIONS.map((opt) => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                     </select>
-                    <select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} style={{ ...baseInputStyle, backgroundColor: C.surfaceWhite, width: '160px' }} onFocus={onFocusHandler} onBlur={onBlurHandler}>
+                    <select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} style={{ ...baseInputStyle, backgroundColor: C.surfaceWhite, width: '100%', minWidth: '180px', cursor: 'pointer' }} onFocus={onFocusHandler} onBlur={onBlurHandler}>
                         <option value="all">All Courses</option>
                         {courses.map((course) => (
                             <option key={course._id} value={course._id}>{course.title}</option>
@@ -255,13 +225,13 @@ export default function TutorDiscussionsPage() {
 
             {/* Comments List */}
             {comments.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-4 animate-in fade-in duration-500 delay-300">
                     {comments.map((comment) => {
                         const tone = statusTone(comment.moderationStatus);
                         const isBusy = moderatingFor === comment._id || submittingReplyFor === comment._id;
 
                         return (
-                            <div key={comment._id} className="p-6 transition-all" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                            <div key={comment._id} className="p-6 transition-all" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                                 
                                 {/* Header */}
                                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
@@ -274,7 +244,7 @@ export default function TutorDiscussionsPage() {
                                                 <p className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
                                                     {comment.student?.name || 'Student'}
                                                 </p>
-                                                <span style={{ fontSize: '10px', color: C.textMuted, fontWeight: T.weight.bold }}>
+                                                <span style={{ fontSize: '10px', color: C.textMuted, fontWeight: T.weight.bold, letterSpacing: T.tracking.wider }}>
                                                     {new Date(comment.createdAt).toLocaleString()}
                                                 </span>
                                             </div>
@@ -283,28 +253,28 @@ export default function TutorDiscussionsPage() {
                                             </p>
                                         </div>
                                     </div>
-                                    <span className="inline-flex items-center shrink-0 h-fit" style={{ fontSize: '10px', fontWeight: T.weight.black, padding: '4px 10px', borderRadius: R.md, textTransform: 'uppercase', backgroundColor: tone.bg, color: tone.color, border: `1px solid ${tone.border}` }}>
+                                    <span className="inline-flex items-center shrink-0 h-fit" style={{ fontSize: '10px', fontWeight: T.weight.black, padding: '4px 10px', borderRadius: '6px', textTransform: 'uppercase', letterSpacing: T.tracking.wider, backgroundColor: tone.bg, color: tone.color, border: `1px solid ${tone.border}` }}>
                                         {comment.moderationStatus}
                                     </span>
                                 </div>
 
                                 {/* Comment Body */}
-                                <div className="p-4 mb-4" style={{ backgroundColor: C.surfaceWhite, borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
-                                    <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                                <div className="p-4 mb-4" style={{ backgroundColor: C.surfaceWhite, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                                    <p style={{ fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text, margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
                                         {comment.text}
                                     </p>
                                 </div>
 
                                 {/* Reply Section */}
                                 {comment.tutorReply ? (
-                                    <div className="p-4 ml-6 sm:ml-12" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
-                                        <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.btnPrimary, textTransform: 'uppercase', margin: '0 0 6px 0' }}>Tutor Reply</p>
+                                    <div className="p-4 ml-4 sm:ml-12" style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                                        <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.btnPrimary, textTransform: 'uppercase', letterSpacing: T.tracking.wider, margin: '0 0 6px 0' }}>Tutor Reply</p>
                                         <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
                                             {comment.tutorReply.text}
                                         </p>
                                     </div>
                                 ) : (
-                                    <div className="ml-6 sm:ml-12 space-y-3">
+                                    <div className="ml-4 sm:ml-12 space-y-3">
                                         <textarea
                                             value={replyDrafts[comment._id] || ''}
                                             onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [comment._id]: e.target.value }))}
@@ -318,9 +288,9 @@ export default function TutorDiscussionsPage() {
                                                 onClick={() => submitReply(comment._id)}
                                                 disabled={isBusy}
                                                 className="flex items-center justify-center gap-2 h-10 px-6 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md"
-                                                style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}
+                                                style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: '10px', fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily, boxShadow: S.btn }}
                                             >
-                                                {submittingReplyFor === comment._id ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} Reply
+                                                {submittingReplyFor === comment._id ? <MdHourglassEmpty size={16} className="animate-spin" /> : <MdSend size={16} />} Reply
                                             </button>
                                         </div>
                                     </div>
@@ -328,26 +298,26 @@ export default function TutorDiscussionsPage() {
 
                                 {/* Action Buttons */}
                                 <div className="flex flex-wrap items-center gap-2 pt-4 mt-4" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
-                                    <button onClick={() => moderate(comment._id, 'flag')} disabled={isBusy} className="flex items-center justify-center gap-1.5 h-9 px-4 cursor-pointer border-none transition-opacity hover:opacity-80 disabled:opacity-50"
-                                        style={{ backgroundColor: C.warningBg, color: C.warning, borderRadius: R.md, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.warningBorder}` }}>
-                                        <Flag size={14} /> Flag
+                                    <button onClick={() => moderate(comment._id, 'flag')} disabled={isBusy} className="flex items-center justify-center gap-1.5 h-9 px-4 cursor-pointer border-none transition-opacity hover:opacity-80 disabled:opacity-50 shadow-sm"
+                                        style={{ backgroundColor: C.warningBg, color: C.warning, borderRadius: '8px', fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.warningBorder}` }}>
+                                        <MdFlag size={14} /> Flag
                                     </button>
 
                                     {comment.moderationStatus === 'hidden' ? (
-                                        <button onClick={() => moderate(comment._id, 'unhide')} disabled={isBusy} className="flex items-center justify-center gap-1.5 h-9 px-4 cursor-pointer border-none transition-opacity hover:opacity-80 disabled:opacity-50"
-                                            style={{ backgroundColor: C.successBg, color: C.success, borderRadius: R.md, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.successBorder}` }}>
-                                            <ShieldCheck size={14} /> Unhide
+                                        <button onClick={() => moderate(comment._id, 'unhide')} disabled={isBusy} className="flex items-center justify-center gap-1.5 h-9 px-4 cursor-pointer border-none transition-opacity hover:opacity-80 disabled:opacity-50 shadow-sm"
+                                            style={{ backgroundColor: C.successBg, color: C.success, borderRadius: '8px', fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.successBorder}` }}>
+                                            <MdVerifiedUser size={14} /> Unhide
                                         </button>
                                     ) : (
-                                        <button onClick={() => moderate(comment._id, 'hide')} disabled={isBusy} className="flex items-center justify-center gap-1.5 h-9 px-4 cursor-pointer border-none transition-opacity hover:opacity-80 disabled:opacity-50"
-                                            style={{ backgroundColor: C.dangerBg, color: C.danger, borderRadius: R.md, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.dangerBorder}` }}>
-                                            <EyeOff size={14} /> Hide
+                                        <button onClick={() => moderate(comment._id, 'hide')} disabled={isBusy} className="flex items-center justify-center gap-1.5 h-9 px-4 cursor-pointer border-none transition-opacity hover:opacity-80 disabled:opacity-50 shadow-sm"
+                                            style={{ backgroundColor: C.dangerBg, color: C.danger, borderRadius: '8px', fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.dangerBorder}` }}>
+                                            <MdVisibilityOff size={14} /> Hide
                                         </button>
                                     )}
 
-                                    <button onClick={() => moderate(comment._id, 'resolve')} disabled={isBusy} className="flex items-center justify-center gap-1.5 h-9 px-4 cursor-pointer border-none transition-opacity hover:opacity-80 disabled:opacity-50"
-                                        style={{ backgroundColor: C.successBg, color: C.success, borderRadius: R.md, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.successBorder}` }}>
-                                        <CheckCircle2 size={14} /> Resolve
+                                    <button onClick={() => moderate(comment._id, 'resolve')} disabled={isBusy} className="flex items-center justify-center gap-1.5 h-9 px-4 cursor-pointer border-none transition-opacity hover:opacity-80 disabled:opacity-50 shadow-sm"
+                                        style={{ backgroundColor: C.successBg, color: C.success, borderRadius: '8px', fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.successBorder}` }}>
+                                        <MdCheckCircle size={14} /> Resolve
                                     </button>
                                 </div>
 
@@ -356,10 +326,12 @@ export default function TutorDiscussionsPage() {
                     })}
                 </div>
             ) : (
-                <div className="text-center py-20 flex flex-col items-center" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px dashed ${C.cardBorder}` }}>
-                    <MessageCircle size={48} color={C.textMuted} style={{ opacity: 0.3, marginBottom: '16px' }} />
-                    <p style={{ fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 8px 0' }}>No comments found</p>
-                    <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>No discussion comments matched your current filters.</p>
+                <div className="text-center py-20 flex flex-col items-center animate-in fade-in duration-500" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px dashed ${C.cardBorder}` }}>
+                    <div className="flex items-center justify-center mb-4" style={{ width: 64, height: 64, backgroundColor: C.innerBg, borderRadius: '12px' }}>
+                        <MdForum size={32} color={C.textMuted} style={{ opacity: 0.5 }} />
+                    </div>
+                    <p style={{ fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>No comments found</p>
+                    <p style={{ fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.textMuted, margin: 0 }}>No discussion comments matched your current filters.</p>
                 </div>
             )}
         </div>

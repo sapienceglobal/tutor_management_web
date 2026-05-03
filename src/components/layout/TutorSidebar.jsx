@@ -29,7 +29,35 @@ function truncateName(name, maxLen = 18) {
     if (words.length === 2) return words[0] + ' ' + words[1].slice(0, maxLen - words[0].length - 1) + '.';
     return name.slice(0, maxLen - 1) + '…';
 }
+// ── Helper logic for accurate Active State matching ────────────────────────
+const allKnownHrefs = [];
+tutorNavItems.forEach(section => {
+    if (section.type === 'section') {
+        section.children?.forEach(child => {
+            if (child.href) allKnownHrefs.push(child.href);
+            child.submenu?.forEach(sub => {
+                if (sub.href) allKnownHrefs.push(sub.href);
+            });
+        });
+    } else if (section.href) {
+        allKnownHrefs.push(section.href);
+    }
+});
 
+function checkIsActive(activePath, href) {
+    if (!href || !activePath) return false;
+    if (activePath === href) return true;
+    
+    // Match exact child paths but prevent parent from capturing if a more specific child exists
+    if (activePath.startsWith(href + '/')) {
+        const hasBetterMatch = allKnownHrefs.some(known =>
+            known && known !== href && known.length > href.length &&
+            (activePath === known || activePath.startsWith(known + '/'))
+        );
+        return !hasBetterMatch; // Sirf tabhi true hoga agar koi aur zyada perfect match nahi hai
+    }
+    return false;
+}
 export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
     const pathname = usePathname();
     const [expandedMenu, setExpandedMenu] = useState(null);
@@ -54,12 +82,12 @@ export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed })
     const displayName = mounted ? truncateName(rawName, 20) : 'Sapience LMS';
     const instituteLogo = mounted ? institute?.logo : null;
 
-    useEffect(() => {
+ useEffect(() => {
         if (!mounted) return;
         tutorNavItems.forEach(section => {
             if (section.type === 'section') {
                 section.children?.forEach(child => {
-                    if (child.submenu?.some(sub => activePath === sub.href || activePath.startsWith(sub.href + '/'))) {
+                    if (child.submenu?.some(sub => checkIsActive(activePath, sub.href))) {
                         setExpandedMenu(child.title);
                     }
                 });
@@ -188,7 +216,7 @@ export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed })
                         {/* Direct links */}
                         <div className="space-y-1">
                             {tutorNavItems.filter(item => item.type !== 'section').map((item) => {
-                                const isActive = activePath === item.href || activePath.startsWith(item.href + '/');
+                              const isActive = checkIsActive(activePath, item.href);
                                 const Icon = item.icon;
                                 return (
                                     <div key={item.href}>
@@ -236,8 +264,8 @@ export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed })
                                         const Icon = child.icon;
                                         const hasSubmenu = child.submenu?.length > 0;
                                         const isExpanded = expandedMenu === child.title;
-                                        const isSubmenuActive = hasSubmenu && child.submenu.some(sub => activePath === sub.href || activePath.startsWith(sub.href + '/'));
-                                        const isActive = (activePath === child.href || activePath.startsWith(child.href + '/')) || isSubmenuActive;
+                                      const isSubmenuActive = hasSubmenu && child.submenu.some(sub => checkIsActive(activePath, sub.href));
+                                        const isActive = checkIsActive(activePath, child.href) || isSubmenuActive;
 
                                         const NavElement = hasSubmenu ? (
                                             <button
@@ -300,7 +328,7 @@ export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed })
                                                         ${isExpanded && showFull ? 'max-h-96 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
                                                         <div className="ml-[22px] space-y-1 pl-4" style={{ borderLeft: '1px solid #cde6ff' }}>
                                                             {child.submenu?.map((sub) => {
-                                                                const subActive = activePath === sub.href || activePath.startsWith(sub.href + '/');
+                                                             const subActive = checkIsActive(activePath, sub.href);
                                                                 const SubElement = (
                                                                     <Link key={sub.title} href={sub.href}
                                                                         onClick={() => setIsOpen(false)}

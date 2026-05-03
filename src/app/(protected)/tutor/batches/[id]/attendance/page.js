@@ -3,9 +3,13 @@
 import { useMemo, useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
-import { ArrowLeft, CalendarDays, CheckCircle2, Download, Loader2, Users, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { C, T, S, R } from '@/constants/tutorTokens';
+import { 
+    MdArrowBack, MdCalendarToday, MdCheckCircle, 
+    MdDownload, MdHourglassEmpty, MdPeople, MdCancel 
+} from 'react-icons/md';
+import { C, T, S, R } from '@/constants/studentTokens';
+import StatCard from '@/components/StatCard'; // Global StatCard component
 
 function safeArray(value) {
     return Array.isArray(value) ? value : [];
@@ -147,8 +151,8 @@ export default function TutorBatchAttendancePage({ params }) {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
-                <Loader2 className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
+            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}>
+                <MdHourglassEmpty className="animate-spin" style={{ color: C.btnPrimary, width: '28px', height: '28px' }} />
                 <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.bold }}>Loading batch attendance...</p>
             </div>
         );
@@ -156,21 +160,23 @@ export default function TutorBatchAttendancePage({ params }) {
 
     if (!batch) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily }}>
+            <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}>
                 <p style={{ color: C.danger, fontSize: T.size.md, fontWeight: T.weight.bold }}>Failed to load batch attendance data.</p>
             </div>
         );
     }
 
     return (
-        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen space-y-6" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
             
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <div className="flex items-center gap-4">
-                    <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80"
-                        style={{ backgroundColor: '#EAE8FA', borderRadius: R.full }}>
-                        <ArrowLeft size={18} color={C.heading} />
+                    <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center cursor-pointer border-none transition-colors hover:opacity-80 shrink-0"
+                        style={{ backgroundColor: C.innerBg, borderRadius: '10px' }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = C.btnViewAllBg}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = C.innerBg}>
+                        <MdArrowBack size={20} color={C.heading} />
                     </button>
                     <div>
                         <h1 style={{ fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, margin: '0 0 2px 0' }}>
@@ -183,55 +189,46 @@ export default function TutorBatchAttendancePage({ params }) {
                 </div>
                 <button
                     onClick={() => window.print()}
-                    className="flex items-center gap-2 h-11 px-5 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-md"
-                    style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: R.xl, fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}
+                    className="flex items-center justify-center gap-2 h-11 px-6 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-md w-full sm:w-auto"
+                    style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: '10px', fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily, boxShadow: S.btn }}
                 >
-                    <Download size={16} /> Export Report
+                    <MdDownload size={18} /> Export Report
                 </button>
             </div>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                    { label: 'Sessions Marked', value: stats.sessions, icon: CalendarDays, color: C.btnPrimary, bg: '#E3DFF8' },
-                    { label: 'Present + Late', value: stats.presentEntries, icon: CheckCircle2, color: C.success, bg: C.successBg },
-                    { label: 'Absent', value: stats.absentEntries, icon: XCircle, color: C.danger, bg: C.dangerBg },
-                    { label: 'Attendance Rate', value: `${stats.attendanceRate}%`, icon: Users, color: C.warning, bg: C.warningBg },
-                ].map((item) => (
-                    <div key={item.label} className="p-5 flex flex-col justify-between" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ backgroundColor: item.bg, borderRadius: R.md }}>
-                                <item.icon size={18} color={item.color} />
-                            </div>
-                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{item.label}</p>
-                        </div>
-                        <p style={{ fontSize: T.size['3xl'], fontWeight: T.weight.black, color: C.heading, margin: 0, lineHeight: 1 }}>{item.value}</p>
-                    </div>
-                ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in duration-500 delay-100">
+                <StatCard label="Sessions Marked" value={stats.sessions} icon={MdCalendarToday} iconBg={C.iconBg} iconColor={C.btnPrimary} />
+                <StatCard label="Present + Late" value={stats.presentEntries} icon={MdCheckCircle} iconBg={C.successBg} iconColor={C.success} />
+                <StatCard label="Absent" value={stats.absentEntries} icon={MdCancel} iconBg={C.dangerBg} iconColor={C.danger} />
+                <StatCard label="Attendance Rate" value={`${stats.attendanceRate}%`} icon={MdPeople} iconBg={C.warningBg} iconColor={C.warning} />
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 animate-in fade-in duration-500 delay-200">
                 
                 {/* Student Attendance Summary */}
-                <div className="overflow-hidden flex flex-col h-[500px]" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                    <div className="px-5 py-4 shrink-0" style={{ backgroundColor: C.surfaceWhite, borderBottom: `1px solid ${C.cardBorder}` }}>
+                <div className="overflow-hidden flex flex-col h-[500px]" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="px-6 py-4 shrink-0" style={{ backgroundColor: C.innerBg, borderBottom: `1px solid ${C.cardBorder}` }}>
                         <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
                             Student Attendance Summary
                         </h2>
                     </div>
                     <div className="flex-1 overflow-auto custom-scrollbar">
                         <div className="min-w-[600px]">
-                            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] px-5 py-3" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] px-6 py-3" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
                                 {['Student', 'Rate', 'Present', 'Absent', 'Late'].map((h) => (
-                                    <span key={h} style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>{h}</span>
+                                    <span key={h} style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>{h}</span>
                                 ))}
                             </div>
-                            <div className="flex flex-col gap-2 p-3">
+                            <div className="flex flex-col gap-2 p-4">
                                 {studentRows.map((student) => (
-                                    <div key={student.studentId} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] px-3 py-3 items-center" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
-                                        <div>
-                                            <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 2px 0' }}>{student.name}</p>
-                                            <p style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>{student.email}</p>
+                                    <div key={student.studentId} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] px-4 py-3 items-center transition-colors hover:bg-white/40" 
+                                        style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = C.btnViewAllBg}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = C.innerBg}>
+                                        <div className="min-w-0 pr-2">
+                                            <p className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 2px 0' }}>{student.name}</p>
+                                            <p className="truncate" style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>{student.email}</p>
                                         </div>
                                         <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading }}>{student.attendanceRate}%</span>
                                         <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.success }}>{student.present + student.late}</span>
@@ -245,22 +242,25 @@ export default function TutorBatchAttendancePage({ params }) {
                 </div>
 
                 {/* Session History */}
-                <div className="overflow-hidden flex flex-col h-[500px]" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                    <div className="px-5 py-4 shrink-0" style={{ backgroundColor: C.surfaceWhite, borderBottom: `1px solid ${C.cardBorder}` }}>
+                <div className="overflow-hidden flex flex-col h-[500px]" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="px-6 py-4 shrink-0" style={{ backgroundColor: C.innerBg, borderBottom: `1px solid ${C.cardBorder}` }}>
                         <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
                             Session History
                         </h2>
                     </div>
                     <div className="flex-1 overflow-auto custom-scrollbar">
                         <div className="min-w-[600px]">
-                            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] px-5 py-3" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] px-6 py-3" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
                                 {['Date', 'Entries', 'Present', 'Absent', 'Rate'].map((h) => (
-                                    <span key={h} style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>{h}</span>
+                                    <span key={h} style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>{h}</span>
                                 ))}
                             </div>
-                            <div className="flex flex-col gap-2 p-3">
+                            <div className="flex flex-col gap-2 p-4">
                                 {sessionRows.map((session) => (
-                                    <div key={session.id} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] px-3 py-3 items-center" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+                                    <div key={session.id} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] px-4 py-3 items-center transition-colors hover:bg-white/40" 
+                                        style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = C.btnViewAllBg}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = C.innerBg}>
                                         <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
                                             {session.date ? format(new Date(session.date), 'PPP') : 'N/A'}
                                         </span>

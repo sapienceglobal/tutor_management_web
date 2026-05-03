@@ -15,6 +15,7 @@ import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { C, T, S, R } from '@/constants/studentTokens';
+import StatCard from '@/components/StatCard';
 
 export default function TutorStudentDetailPage({ params }) {
     const { id }  = use(params);
@@ -236,118 +237,22 @@ export default function TutorStudentDetailPage({ params }) {
 
             {/* ── Stats Row ───────────────────────────────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                {/* Enrolled Courses */}
-                <div
-                    className="p-5 flex items-center gap-4 transition-transform hover:-translate-y-0.5"
-                    style={{
-                        backgroundColor: C.cardBg,
-                        borderRadius:    R['2xl'],
-                        border:          `1px solid ${C.cardBorder}`,
-                        boxShadow:       S.card,
-                    }}
-                >
-                    <div
-                        className="flex items-center justify-center shrink-0"
-                        style={{ width: 48, height: 48, backgroundColor: C.innerBg, borderRadius: '10px' }}
-                    >
-                        <MdMenuBook style={{ width: 24, height: 24, color: C.btnPrimary }} />
-                    </div>
-                    <div>
-                        <p
-                            style={{
-                                fontFamily:    T.fontFamily,
-                                fontSize:      T.size.xs,
-                                fontWeight:    T.weight.bold,
-                                color:         C.text,
-                                textTransform: 'uppercase',
-                                letterSpacing: T.tracking.wider,
-                                margin:        '0 0 2px 0',
-                            }}
-                        >
-                            Courses Enrolled
-                        </p>
-                        <p
-                            style={{
-                                fontFamily:  T.fontFamily,
-                                fontSize:    T.size['2xl'],
-                                fontWeight:  T.weight.bold,
-                                color:       C.heading,
-                                margin:      0,
-                                lineHeight:  1,
-                            }}
-                        >
-                            {stats?.totalEnrolled || 0}
-                        </p>
-                        <p
-                            style={{
-                                fontFamily:  T.fontFamily,
-                                fontSize:    T.size.xs,
-                                fontWeight:  T.weight.medium,
-                                color:       C.text,
-                                margin:      '4px 0 0 0',
-                            }}
-                        >
-                            In your courses
-                        </p>
-                    </div>
-                </div>
-
-                {/* Total Spent */}
-                <div
-                    className="p-5 flex items-center gap-4 transition-transform hover:-translate-y-0.5"
-                    style={{
-                        backgroundColor: C.cardBg,
-                        borderRadius:    R['2xl'],
-                        border:          `1px solid ${C.cardBorder}`,
-                        boxShadow:       S.card,
-                    }}
-                >
-                    <div
-                        className="flex items-center justify-center shrink-0"
-                        style={{ width: 48, height: 48, backgroundColor: C.successBg, borderRadius: '10px' }}
-                    >
-                        <MdCreditCard style={{ width: 24, height: 24, color: C.success }} />
-                    </div>
-                    <div>
-                        <p
-                            style={{
-                                fontFamily:    T.fontFamily,
-                                fontSize:      T.size.xs,
-                                fontWeight:    T.weight.bold,
-                                color:         C.text,
-                                textTransform: 'uppercase',
-                                letterSpacing: T.tracking.wider,
-                                margin:        '0 0 2px 0',
-                            }}
-                        >
-                            Total Spent
-                        </p>
-                        <p
-                            style={{
-                                fontFamily:  T.fontFamily,
-                                fontSize:    T.size['2xl'],
-                                fontWeight:  T.weight.bold,
-                                color:       C.heading,
-                                margin:      0,
-                                lineHeight:  1,
-                            }}
-                        >
-                            ₹{stats?.totalSpent || 0}
-                        </p>
-                        <p
-                            style={{
-                                fontFamily:  T.fontFamily,
-                                fontSize:    T.size.xs,
-                                fontWeight:  T.weight.medium,
-                                color:       C.text,
-                                margin:      '4px 0 0 0',
-                            }}
-                        >
-                            On your courses
-                        </p>
-                    </div>
-                </div>
+                <StatCard
+                    icon={MdMenuBook}
+                    value={stats?.totalEnrolled || 0}
+                    label="Courses Enrolled"
+                    subtext="In your courses"
+                    iconBg={C.innerBg}
+                    iconColor={C.btnPrimary}
+                />
+                <StatCard
+                    icon={MdCreditCard}
+                    value={`₹${stats?.totalSpent || 0}`}
+                    label="Total Spent"
+                    subtext="On your courses"
+                    iconBg={C.successBg}
+                    iconColor={C.success}
+                />
             </div>
 
             {/* ── Enrollments List ─────────────────────────────────────────── */}
