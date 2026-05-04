@@ -1,16 +1,27 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Shield, AlertTriangle, CheckCircle, Info, Clock, Lock, ChevronLeft, ChevronRight, Activity } from 'lucide-react';
+import { 
+    MdSecurity, 
+    MdWarning, 
+    MdCheckCircle, 
+    MdInfoOutline, 
+    MdLock, 
+    MdAccessTime, 
+    MdFilterList, 
+    MdChevronLeft, 
+    MdChevronRight,
+    MdShield
+} from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
+import StatCard from '@/components/StatCard';
+import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
 
 export default function AdminSecurityPage() {
     const [loading, setLoading] = useState(true);
     const [logs, setLogs] = useState([]);
     const [filter, setFilter] = useState('all'); // all, error, warning, info, success, system
-
-    const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.12)';
 
     useEffect(() => {
         fetchLogs();
@@ -41,23 +52,23 @@ export default function AdminSecurityPage() {
 
     const getSeverityStyles = (severity) => {
         switch (severity?.toLowerCase()) {
-            case 'error': return 'bg-[#FEE2E2] text-[#E53E3E] border-[#FECACA]';
-            case 'warning': return 'bg-[#FFF7ED] text-[#FC8730] border-[#FDBA74]';
-            case 'success': return 'bg-[#ECFDF5] text-[#4ABCA8] border-[#A7F3D0]';
-            case 'system': return 'bg-[#F4F0FD] text-[#6B4DF1] border-[#D1C4F9]';
+            case 'error': return { bg: C.dangerBg, color: C.danger, border: C.dangerBorder };
+            case 'warning': return { bg: C.warningBg, color: C.warning, border: C.warningBorder };
+            case 'success': return { bg: C.successBg, color: C.success, border: C.successBorder };
+            case 'system': return { bg: C.btnViewAllBg, color: C.btnPrimary, border: C.cardBorder };
             case 'info':
-            default: return 'bg-[#EBF8FF] text-[#3182CE] border-[#BEE3F8]';
+            default: return { bg: C.innerBg, color: C.text, border: C.cardBorder };
         }
     };
 
     const getSeverityIcon = (severity) => {
         switch (severity?.toLowerCase()) {
-            case 'error': return <AlertTriangle size={14} strokeWidth={3} />;
-            case 'warning': return <Lock size={14} strokeWidth={3} />;
-            case 'success': return <CheckCircle size={14} strokeWidth={3} />;
-            case 'system': return <Shield size={14} strokeWidth={3} />;
+            case 'error': return <MdWarning style={{ width: 14, height: 14 }} />;
+            case 'warning': return <MdLock style={{ width: 14, height: 14 }} />;
+            case 'success': return <MdCheckCircle style={{ width: 14, height: 14 }} />;
+            case 'system': return <MdShield style={{ width: 14, height: 14 }} />;
             case 'info':
-            default: return <Info size={14} strokeWidth={3} />;
+            default: return <MdInfoOutline style={{ width: 14, height: 14 }} />;
         }
     };
 
@@ -71,63 +82,89 @@ export default function AdminSecurityPage() {
 
     if (loading) {
         return (
-            <div className="flex bg-[#F1EAFB] min-h-screen items-center justify-center">
-                <Loader2 className="w-10 h-10 animate-spin text-[#6B4DF1]" />
+            <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-12 h-12">
+                        <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                            style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                    </div>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                        Loading logs...
+                    </p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6 min-h-screen p-6 md:p-8" style={{ backgroundColor: '#F1EAFB', fontFamily: "'Inter', sans-serif" }}>
+        <div className="space-y-6 min-h-screen w-full" style={{ backgroundColor: C.pageBg, ...pageStyle }}>
             
             {/* ── Header ── */}
             <div className="mb-2">
-                <h1 className="text-[22px] font-black text-[#27225B] m-0">Security & Audit Logs</h1>
-                <p className="text-[13px] font-medium text-[#7D8DA6] m-0 mt-1">Monitor system activity, access attempts, and critical security events</p>
+                <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>
+                    Security & Audit Logs
+                </h1>
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>
+                    Monitor system activity, access attempts, and critical security events
+                </p>
             </div>
 
             {/* ── KPI Stats Grid ── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {[
-                    { title: 'Total Events', value: logs.length || '0', iconBg: '#6B4DF1', icon: Activity },
-                    { title: 'Warnings', value: warningsCount || '0', iconBg: '#FC8730', icon: Lock },
-                    { title: 'Errors', value: errorsCount || '0', iconBg: '#E53E3E', icon: AlertTriangle },
-                    { title: 'System Checks', value: systemCount || '0', iconBg: '#4ABCA8', icon: Shield }
-                ].map((stat, i) => (
-                    <div 
-                        key={i} 
-                        className="bg-white rounded-2xl p-5 flex items-center gap-4 transition-transform hover:-translate-y-1 relative" 
-                        style={{ boxShadow: softShadow }}
-                    >
-                        <div className="w-[46px] h-[46px] rounded-[12px] flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: stat.iconBg }}>
-                            <stat.icon size={22} color="#ffffff" strokeWidth={2.5} />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-[26px] font-black text-[#27225B] leading-none mb-1.5">{stat.value}</span>
-                            <span className="text-[13px] font-bold text-[#7D8DA6] leading-none">{stat.title}</span>
-                        </div>
-                    </div>
-                ))}
+                <StatCard 
+                    icon={MdSecurity}
+                    value={logs.length || '0'}
+                    label="Total Events"
+                    iconBg={C.btnViewAllBg}
+                    iconColor={C.btnPrimary}
+                />
+                <StatCard 
+                    icon={MdLock}
+                    value={warningsCount || '0'}
+                    label="Warnings"
+                    iconBg={C.warningBg}
+                    iconColor={C.warning}
+                />
+                <StatCard 
+                    icon={MdWarning}
+                    value={errorsCount || '0'}
+                    label="Errors"
+                    iconBg={C.dangerBg}
+                    iconColor={C.danger}
+                />
+                <StatCard 
+                    icon={MdShield}
+                    value={systemCount || '0'}
+                    label="System Checks"
+                    iconBg={C.successBg}
+                    iconColor={C.success}
+                />
             </div>
 
             {/* ── Main Integrated Table Area ── */}
-            <div className="bg-white rounded-3xl flex flex-col overflow-hidden mb-6" style={{ boxShadow: softShadow }}>
+            <div className="flex flex-col overflow-hidden mb-6" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
                 
                 {/* Table Header & Filters */}
-                <div className="px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-4 border-b border-[#F4F0FD] bg-[#FDFBFF]">
-                    <h2 className="text-[16px] font-black text-[#27225B] m-0">Activity Audit Log</h2>
+                <div className="px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-4" style={{ backgroundColor: C.surfaceWhite, borderBottom: `1px solid ${C.cardBorder}` }}>
+                    <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>Activity Audit Log</h2>
                     
                     {/* Custom Styled Filter Tabs */}
-                    <div className="flex bg-[#F4F0FD] p-1.5 rounded-xl w-full md:w-auto overflow-x-auto">
+                    <div className="flex p-1 w-full md:w-auto overflow-x-auto" style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: '12px' }}>
                         {['all', 'info', 'success', 'warning', 'error', 'system'].map(type => (
                             <button
                                 key={type}
                                 onClick={() => setFilter(type)}
-                                className={`px-4 py-2 text-[12px] font-bold rounded-lg capitalize transition-all whitespace-nowrap border-none cursor-pointer ${
-                                    filter === type 
-                                    ? 'bg-white text-[#6B4DF1] shadow-sm' 
-                                    : 'bg-transparent text-[#7D8DA6] hover:text-[#27225B]'
-                                }`}
+                                className="capitalize transition-colors duration-300 whitespace-nowrap cursor-pointer border-none"
+                                style={{
+                                    padding: '8px 16px',
+                                    fontFamily: T.fontFamily,
+                                    fontSize: T.size.sm,
+                                    fontWeight: T.weight.bold,
+                                    borderRadius: '10px',
+                                    backgroundColor: filter === type ? C.surfaceWhite : 'transparent',
+                                    color: filter === type ? C.btnPrimary : C.text,
+                                    boxShadow: filter === type ? S.active : 'none'
+                                }}
                             >
                                 {type}
                             </button>
@@ -136,66 +173,105 @@ export default function AdminSecurityPage() {
                 </div>
 
                 {/* Table */}
-                <div className="overflow-x-auto px-6 pb-2">
+                <div className="overflow-x-auto w-full">
                     <table className="w-full text-left border-collapse min-w-[800px]">
-                        <thead className="bg-[#F4F0FD] rounded-xl">
+                        <thead style={{ backgroundColor: C.innerBg }}>
                             <tr>
-                                <th className="px-5 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider uppercase first:rounded-l-xl">Severity</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider uppercase">Event Type</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider uppercase">Message Details</th>
-                                <th className="px-5 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider uppercase text-right last:rounded-r-xl">Timestamp</th>
+                                <th style={{ padding: '16px 24px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Severity</th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Event Type</th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Message Details</th>
+                                <th style={{ padding: '16px 24px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}`, textAlign: 'right' }}>Timestamp</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#F4F0FD]">
+                        <tbody>
                             {filteredLogs.length === 0 ? (
                                 <tr>
-                                    <td colSpan="4" className="px-6 py-16 text-center">
-                                        <Shield className="w-12 h-12 text-[#D1C4F9] mx-auto mb-3" />
-                                        <p className="text-[14px] font-bold text-[#7D8DA6] m-0">
-                                            No {filter !== 'all' ? filter : ''} logs found matching your criteria.
-                                        </p>
-                                    </td>
-                                </tr>
-                            ) : filteredLogs.map((log, index) => (
-                                <tr key={index} className="hover:bg-[#F8F7FF] transition-colors group">
-                                    <td className="px-4 py-4">
-                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-lg uppercase tracking-wider border ${getSeverityStyles(log.severity)}`}>
-                                            {getSeverityIcon(log.severity)}
-                                            {log.severity}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-4">
-                                        <div className="font-bold text-[#27225B] text-[13px]">{log.type}</div>
-                                    </td>
-                                    <td className="px-4 py-4">
-                                        <div className="text-[#4A5568] font-medium text-[13px] leading-relaxed max-w-[400px]">
-                                            {log.message}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-4 text-right">
-                                        <div className="flex flex-col items-end gap-0.5">
-                                            <span className="text-[13px] font-bold text-[#27225B]">
-                                                {new Date(log.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                            </span>
-                                            <span className="flex items-center gap-1 text-[11px] font-semibold text-[#A0ABC0] bg-[#F4F0FD] px-2 py-0.5 rounded-md w-fit">
-                                                <Clock size={10} strokeWidth={3} />
-                                                {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
+                                    <td colSpan="4" className="px-6 py-16">
+                                        <div className="p-14 text-center border border-dashed"
+                                             style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
+                                            <div className="flex items-center justify-center mx-auto mb-4"
+                                                 style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                                                <MdSecurity style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
+                                            </div>
+                                            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>No Logs Found</h3>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.textMuted, marginTop: 4 }}>
+                                                No {filter !== 'all' ? filter : ''} logs found matching your criteria.
+                                            </p>
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                            ) : filteredLogs.map((log, index) => {
+                                const styles = getSeverityStyles(log.severity);
+                                return (
+                                    <tr key={index} className="transition-colors group" style={{ backgroundColor: C.cardBg, borderBottom: `1px solid ${C.cardBorder}` }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.cardBg; }}>
+                                        <td style={{ padding: '16px 24px' }}>
+                                            <span style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                padding: '4px 10px',
+                                                fontFamily: T.fontFamily,
+                                                fontSize: T.size.xs,
+                                                fontWeight: T.weight.bold,
+                                                borderRadius: '10px',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: T.tracking.wider,
+                                                backgroundColor: styles.bg,
+                                                color: styles.color,
+                                                border: `1px solid ${styles.border}`
+                                            }}>
+                                                {getSeverityIcon(log.severity)}
+                                                {log.severity}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '16px 16px' }}>
+                                            <div style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>{log.type}</div>
+                                        </td>
+                                        <td style={{ padding: '16px 16px' }}>
+                                            <div className="max-w-[400px]" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.text, lineHeight: 1.6 }}>
+                                                {log.message}
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                                            <div className="flex flex-col items-end gap-1">
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                                                    {new Date(log.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                </span>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: C.btnViewAllBg, padding: '2px 8px', borderRadius: '6px', fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted }}>
+                                                    <MdAccessTime style={{ width: 12, height: 12 }} />
+                                                    {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
 
                 {/* Table Pagination Footer */}
-                <div className="px-6 py-4 border-t border-[#F4F0FD] flex items-center justify-between bg-white mt-2">
-                    <span className="text-[13px] font-bold text-[#7D8DA6]">Showing {filteredLogs.length} of {logs.length} logs</span>
+                <div className="px-6 py-4 flex items-center justify-between" style={{ backgroundColor: C.surfaceWhite, borderTop: `1px solid ${C.cardBorder}` }}>
+                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.textMuted }}>Showing {filteredLogs.length} of {logs.length} logs</span>
                     <div className="flex items-center gap-2">
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-[#E9DFFC] text-[#7D8DA6] hover:text-[#6B4DF1] cursor-pointer disabled:opacity-50"><ChevronLeft size={16}/></button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#F4F0FD] text-[#6B4DF1] font-bold border-none cursor-default text-[13px]">1</button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-[#E9DFFC] text-[#7D8DA6] hover:text-[#6B4DF1] cursor-pointer disabled:opacity-50"><ChevronRight size={16}/></button>
+                        <button className="flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
+                            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, color: C.textMuted }}
+                            onMouseEnter={e => { e.currentTarget.style.color = C.btnPrimary; e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; e.currentTarget.style.backgroundColor = C.surfaceWhite; }}>
+                            <MdChevronLeft style={{ width: 20, height: 20 }} />
+                        </button>
+                        <button className="flex items-center justify-center border-none cursor-default"
+                            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.btnViewAllBg, color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}>
+                            1
+                        </button>
+                        <button className="flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
+                            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, color: C.textMuted }}
+                            onMouseEnter={e => { e.currentTarget.style.color = C.btnPrimary; e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; e.currentTarget.style.backgroundColor = C.surfaceWhite; }}>
+                            <MdChevronRight style={{ width: 20, height: 20 }} />
+                        </button>
                     </div>
                 </div>
             </div>

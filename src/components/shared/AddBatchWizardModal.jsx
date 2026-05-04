@@ -18,28 +18,34 @@ const STEPS = [
     { id: 4, label: 'Review & Save' },
 ];
 
-function StepIndicator({ current }) {
+function StepIndicator({ current, steps }) {
     return (
         <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-2">
-            {STEPS.map((step, i) => (
-                <div key={step.id} className="flex items-center gap-1 shrink-0">
-                    <div className="flex items-center gap-2">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black transition-all
-                            ${current > step.id ? 'bg-[#6B4DF1] text-white' :
-                              current === step.id ? 'bg-[#6B4DF1] text-white ring-4 ring-[#6B4DF1]/20' :
-                              'bg-[#E9E0FC] text-[#7D8DA6]'}`}>
-                            {current > step.id ? <Check size={13} /> : step.id}
+            {steps.map((step, i) => {
+                const visualNumber = i + 1; // Always show sequential numbers (1, 2, 3)
+                const isCompleted = current > step.id;
+                const isCurrent = current === step.id;
+
+                return (
+                    <div key={step.id} className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-2">
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black transition-all
+                                ${isCompleted ? 'bg-[#6B4DF1] text-white' :
+                                    isCurrent ? 'bg-[#6B4DF1] text-white ring-4 ring-[#6B4DF1]/20' :
+                                        'bg-[#E9E0FC] text-[#7D8DA6]'}`}>
+                                {isCompleted ? <Check size={13} /> : visualNumber}
+                            </div>
+                            <span className={`text-[12px] font-bold whitespace-nowrap
+                                ${current >= step.id ? 'text-[#27225B]' : 'text-[#A0ABC0]'}`}>
+                                {step.label}
+                            </span>
                         </div>
-                        <span className={`text-[12px] font-bold whitespace-nowrap
-                            ${current >= step.id ? 'text-[#27225B]' : 'text-[#A0ABC0]'}`}>
-                            {step.label}
-                        </span>
+                        {i < steps.length - 1 && (
+                            <div className={`h-px w-8 mx-1 ${isCompleted ? 'bg-[#6B4DF1]' : 'bg-[#E9E0FC]'}`} />
+                        )}
                     </div>
-                    {i < STEPS.length - 1 && (
-                        <div className={`h-px w-8 mx-1 ${current > step.id ? 'bg-[#6B4DF1]' : 'bg-[#E9E0FC]'}`} />
-                    )}
-                </div>
-            ))}
+                );
+            })}
         </div>
     );
 }
@@ -312,7 +318,7 @@ function Step3({ selected, onToggle, students, batches }) {
 }
 
 // ── Step 4: Review & Save ─────────────────────────────────────────────────────
-function Step4({ form, selectedInstructors, selectedStudents, instructors, students, courses, page, setPage }) {
+function Step4({ form, selectedInstructors, selectedStudents, instructors, students, courses, page, setPage, role }) {
     const course = courses.find(c => c._id === form.courseId);
     const selInst = instructors.filter(t => selectedInstructors.includes(t._id));
     const selStu = students.filter(s => selectedStudents.includes(s._id));
@@ -346,30 +352,32 @@ function Step4({ form, selectedInstructors, selectedStudents, instructors, stude
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <h4 className="text-[13px] font-black text-[#27225B] mb-3">Assigned Instructors</h4>
-                    <div className="space-y-2">
-                        {pagedInst.map(inst => {
-                            const name = inst.userId?.name || inst.name || 'Unknown';
-                            const email = inst.userId?.email || inst.email || '';
-                            const avatar = inst.userId?.profileImage || inst.profileImage;
-                            return (
-                                <div key={inst._id} className="flex items-center gap-2.5 bg-[#F3EEFF] rounded-xl px-3 py-2">
-                                    <div className="w-8 h-8 rounded-full bg-[#E9E0FC] overflow-hidden shrink-0 flex items-center justify-center">
-                                        {avatar ? <img src={avatar} alt={name} className="w-full h-full object-cover" /> :
-                                            <User size={14} className="text-[#6B4DF1]" />}
+          <div className={`grid grid-cols-1 ${role === 'admin' ? 'sm:grid-cols-2' : ''} gap-4`}>
+                {role === 'admin' && (
+                    <div>
+                        <h4 className="text-[13px] font-black text-[#27225B] mb-3">Assigned Instructors</h4>
+                        <div className="space-y-2">
+                            {pagedInst.map(inst => {
+                                const name = inst.userId?.name || inst.name || 'Unknown';
+                                const email = inst.userId?.email || inst.email || '';
+                                const avatar = inst.userId?.profileImage || inst.profileImage;
+                                return (
+                                    <div key={inst._id} className="flex items-center gap-2.5 bg-[#F3EEFF] rounded-xl px-3 py-2">
+                                        <div className="w-8 h-8 rounded-full bg-[#E9E0FC] overflow-hidden shrink-0 flex items-center justify-center">
+                                            {avatar ? <img src={avatar} alt={name} className="w-full h-full object-cover" /> :
+                                                <User size={14} className="text-[#6B4DF1]" />}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-[12px] font-bold text-[#27225B] truncate">{name}</p>
+                                            <p className="text-[10px] text-[#7D8DA6] truncate">{email}</p>
+                                        </div>
                                     </div>
-                                    <div className="min-w-0">
-                                        <p className="text-[12px] font-bold text-[#27225B] truncate">{name}</p>
-                                        <p className="text-[10px] text-[#7D8DA6] truncate">{email}</p>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                        {selInst.length === 0 && <p className="text-[12px] text-[#A0ABC0] font-medium">No instructors selected</p>}
+                                );
+                            })}
+                            {selInst.length === 0 && <p className="text-[12px] text-[#A0ABC0] font-medium">No instructors selected</p>}
+                        </div>
                     </div>
-                </div>
+                )}
 
                 <div>
                     <h4 className="text-[13px] font-black text-[#27225B] mb-3">Assigned Students</h4>
@@ -442,13 +450,13 @@ export default function AddBatchWizardModal({ onClose, onSuccess, initialData = 
             try {
                 const [courseRes, studentsRes, batchesRes] = await Promise.all([
                     role === 'admin' ? api.get('/admin/courses') : api.get('/courses/my-courses'),
-                    api.get('/admin/students'),
+                    role === 'admin' ? api.get('/admin/students') : api.get('/tutor/dashboard/students'),
                     api.get('/batches'),
                 ]);
 
-                if (courseRes.data.success) setCourses(courseRes.data.courses || []);
-                if (studentsRes.data.success) setStudents(studentsRes.data.students || []);
-                if (batchesRes.data.success) setBatches(batchesRes.data.batches || []);
+                if (courseRes?.data?.success) setCourses(courseRes.data.courses || []);
+                if (studentsRes?.data?.success) setStudents(studentsRes.data.students || []);
+                if (batchesRes?.data?.success) setBatches(batchesRes.data.batches || []);
 
                 // Fetch instructors differently by role
                 if (role === 'admin') {
@@ -480,7 +488,18 @@ export default function AddBatchWizardModal({ onClose, onSuccess, initialData = 
             prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
         );
     }, []);
-
+    const activeSteps = role === 'admin'
+        ? [
+            { id: 1, label: 'Basic Details' },
+            { id: 2, label: 'Batch Instructors' },
+            { id: 3, label: 'Students Add' },
+            { id: 4, label: 'Review & Save' },
+        ]
+        : [
+            { id: 1, label: 'Basic Details' },
+            { id: 3, label: 'Students Add' },
+            { id: 4, label: 'Review & Save' },
+        ];
     const validateStep = () => {
         if (step === 1) {
             if (!form.name.trim()) { toast.error('Batch name is required'); return false; }
@@ -497,10 +516,14 @@ export default function AddBatchWizardModal({ onClose, onSuccess, initialData = 
 
     const handleNext = () => {
         if (!validateStep()) return;
-        setStep(s => Math.min(4, s + 1));
+        if (role === 'tutor' && step === 1) setStep(3); // Jump to students
+        else setStep(s => Math.min(4, s + 1));
     };
 
-    const handleBack = () => setStep(s => Math.max(1, s - 1));
+    const handleBack = () => {
+        if (role === 'tutor' && step === 3) setStep(1); // Jump back to details
+        else setStep(s => Math.max(1, s - 1));
+    };
 
     const handleSave = async () => {
         setSaving(true);
@@ -558,13 +581,13 @@ export default function AddBatchWizardModal({ onClose, onSuccess, initialData = 
 
                 {/* Step Indicator */}
                 <div className="px-7 pt-4">
-                    <StepIndicator current={step} />
+                    <StepIndicator current={step} steps={activeSteps} />
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto px-7 pb-4">
                     {step === 1 && <Step1 form={form} onChange={handleFormChange} courses={courses} />}
-                    {step === 2 && <Step2 selected={selectedInstructors} onToggle={toggleInstructor} instructors={instructors} />}
+                    {step === 2 && role === 'admin' && <Step2 selected={selectedInstructors} onToggle={toggleInstructor} instructors={instructors} />}
                     {step === 3 && <Step3 selected={selectedStudents} onToggle={toggleStudent} students={students} batches={batches} />}
                     {step === 4 && (
                         <Step4
@@ -576,6 +599,7 @@ export default function AddBatchWizardModal({ onClose, onSuccess, initialData = 
                             courses={courses}
                             page={reviewPage}
                             setPage={setReviewPage}
+                            role={role} // Pass role here
                         />
                     )}
                 </div>

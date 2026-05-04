@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  
-  serverExternalPackages: ["isomorphic-dompurify"],
-
   // Hide Next.js version fingerprint
   poweredByHeader: false,
 
@@ -40,7 +37,6 @@ const nextConfig = {
 
   // Compiler optimizations
   compiler: {
-    // Remove console.log in production builds
     removeConsole:
       process.env.NODE_ENV === "production"
         ? { exclude: ["error", "warn"] }

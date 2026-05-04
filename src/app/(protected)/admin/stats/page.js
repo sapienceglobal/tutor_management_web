@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Users, BookOpen, TrendingUp, Filter } from 'lucide-react';
+import { MdPeople, MdMenuBook, MdTrendingUp, MdFilterList } from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import {
@@ -9,8 +9,33 @@ import {
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell
 } from 'recharts';
+import { C, T, S, R } from '@/constants/studentTokens';
 
-const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
+const baseInputStyle = {
+    backgroundColor: C.cardBg,
+    border: `1px solid ${C.cardBorder}`,
+    borderRadius: '10px',
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.base,
+    fontWeight: T.weight.semibold,
+    outline: 'none',
+    width: '100%',
+    padding: '12px 16px',
+    transition: 'all 0.2s ease',
+};
+
+// Tooltip style mapping to design system
+const CustomTooltipStyle = {
+    backgroundColor: C.cardBg,
+    border: `1px solid ${C.cardBorder}`,
+    borderRadius: '10px',
+    boxShadow: S.card,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.sm,
+    fontWeight: T.weight.bold,
+    color: C.heading
+};
 
 export default function AdminStatsPage() {
     const [loading, setLoading] = useState(true);
@@ -19,6 +44,8 @@ export default function AdminStatsPage() {
         courseCategories: [],
         userDistribution: []
     });
+
+    const CHART_COLORS = [C.btnPrimary, C.chartLine, C.warning, C.danger, C.success];
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -40,8 +67,16 @@ export default function AdminStatsPage() {
 
     if (loading) {
         return (
-            <div className="flex bg-slate-50 min-h-screen items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-12 h-12">
+                        <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                            style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                    </div>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                        Loading...
+                    </p>
+                </div>
             </div>
         );
     }
@@ -49,21 +84,29 @@ export default function AdminStatsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-slate-800">Analytics Overview</h1>
-                <p className="text-slate-500">Deep dive into platform performance metrics</p>
+                <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>
+                    Analytics Overview
+                </h1>
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.textMuted, margin: 0 }}>
+                    Deep dive into platform performance metrics
+                </p>
             </div>
 
-            {/* Quick Stats Grid can be added here if needed */}
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
                 {/* User Growth Chart */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], boxShadow: S.card, padding: 24 }}>
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                            <Users className="w-5 h-5 text-indigo-600" />
-                            User Growth
-                        </h2>
-                        <select className="text-sm border-slate-200 rounded-lg p-1 text-slate-600 bg-slate-50">
+                        <div className="flex items-center gap-2.5">
+                            <div className="flex items-center justify-center shrink-0"
+                                style={{ width: 40, height: 40, backgroundColor: C.iconBg, borderRadius: '10px' }}>
+                                <MdPeople style={{ width: 16, height: 16, color: C.iconColor }} />
+                            </div>
+                            <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.semibold, color: C.heading, margin: 0 }}>
+                                User Growth
+                            </h2>
+                        </div>
+                        <select style={{ ...baseInputStyle, width: 'auto', padding: '8px 16px' }}>
                             <option>Last 6 Months</option>
                             <option>Last Year</option>
                         </select>
@@ -71,30 +114,30 @@ export default function AdminStatsPage() {
                     <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={data.userGrowth}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.cardBorder} />
                                 <XAxis
                                     dataKey="_id"
-                                    stroke="#94a3b8"
+                                    stroke={C.textMuted}
                                     tickLine={false}
                                     axisLine={false}
                                     padding={{ left: 20, right: 20 }}
+                                    tick={{ fontFamily: T.fontFamily, fontSize: 11, fontWeight: 'bold' }}
                                 />
                                 <YAxis
-                                    stroke="#94a3b8"
+                                    stroke={C.textMuted}
                                     tickLine={false}
                                     axisLine={false}
+                                    tick={{ fontFamily: T.fontFamily, fontSize: 11, fontWeight: 'bold' }}
                                 />
-                                <Tooltip
-                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                />
+                                <Tooltip contentStyle={CustomTooltipStyle} />
                                 <Line
                                     type="monotone"
                                     dataKey="count"
                                     name="New Users"
-                                    stroke="#6366f1"
+                                    stroke={C.btnPrimary}
                                     strokeWidth={3}
-                                    dot={{ stroke: '#6366f1', strokeWidth: 2, r: 4, fill: '#fff' }}
-                                    activeDot={{ r: 8, strokeWidth: 0 }}
+                                    dot={{ stroke: C.btnPrimary, strokeWidth: 2, r: 4, fill: '#fff' }}
+                                    activeDot={{ r: 8, strokeWidth: 0, fill: C.btnPrimary }}
                                 />
                             </LineChart>
                         </ResponsiveContainer>
@@ -102,12 +145,17 @@ export default function AdminStatsPage() {
                 </div>
 
                 {/* Course Categories Distribution */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], boxShadow: S.card, padding: 24 }}>
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                            <BookOpen className="w-5 h-5 text-purple-600" />
-                            Course Distribution
-                        </h2>
+                        <div className="flex items-center gap-2.5">
+                            <div className="flex items-center justify-center shrink-0"
+                                style={{ width: 40, height: 40, backgroundColor: C.iconBg, borderRadius: '10px' }}>
+                                <MdMenuBook style={{ width: 16, height: 16, color: C.iconColor }} />
+                            </div>
+                            <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.semibold, color: C.heading, margin: 0 }}>
+                                Course Distribution
+                            </h2>
+                        </div>
                     </div>
                     <div className="h-[300px] flex items-center justify-center">
                         <ResponsiveContainer width="100%" height="100%">
@@ -118,17 +166,21 @@ export default function AdminStatsPage() {
                                     cy="50%"
                                     innerRadius={60}
                                     outerRadius={100}
-                                    fill="#8884d8"
                                     paddingAngle={5}
                                     dataKey="count"
                                     nameKey="_id"
+                                    stroke="none"
                                 >
                                     {data.courseCategories.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip />
-                                <Legend verticalAlign="bottom" height={36} />
+                                <Tooltip contentStyle={CustomTooltipStyle} />
+                                <Legend 
+                                    verticalAlign="bottom" 
+                                    height={36} 
+                                    wrapperStyle={{ fontFamily: T.fontFamily, fontSize: '12px', fontWeight: T.weight.semibold, color: C.text }} 
+                                />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
@@ -136,32 +188,46 @@ export default function AdminStatsPage() {
             </div>
 
             {/* Role Distribution Bar Chart */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], boxShadow: S.card, padding: 24 }}>
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-emerald-600" />
-                        User Distribution by Role
-                    </h2>
+                    <div className="flex items-center gap-2.5">
+                        <div className="flex items-center justify-center shrink-0"
+                            style={{ width: 40, height: 40, backgroundColor: C.iconBg, borderRadius: '10px' }}>
+                            <MdTrendingUp style={{ width: 16, height: 16, color: C.iconColor }} />
+                        </div>
+                        <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.semibold, color: C.heading, margin: 0 }}>
+                            User Distribution by Role
+                        </h2>
+                    </div>
                 </div>
                 <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={data.userDistribution} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
-                            <XAxis type="number" stroke="#94a3b8" />
+                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={C.cardBorder} />
+                            <XAxis 
+                                type="number" 
+                                stroke={C.textMuted} 
+                                tickLine={false} 
+                                axisLine={false} 
+                                tick={{ fontFamily: T.fontFamily, fontSize: 11, fontWeight: 'bold' }} 
+                            />
                             <YAxis
                                 dataKey="_id"
                                 type="category"
-                                stroke="#94a3b8"
+                                stroke={C.textMuted}
                                 width={100}
+                                tickLine={false}
+                                axisLine={false}
+                                tick={{ fontFamily: T.fontFamily, fontSize: 11, fontWeight: 'bold', textTransform: 'capitalize' }}
                             />
                             <Tooltip
-                                cursor={{ fill: '#f1f5f9' }}
-                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                cursor={{ fill: C.innerBg }}
+                                contentStyle={CustomTooltipStyle}
                             />
                             <Bar
                                 dataKey="count"
                                 name="Users"
-                                fill="#10b981"
+                                fill={C.success}
                                 radius={[0, 4, 4, 0]}
                                 barSize={40}
                             />

@@ -45,8 +45,14 @@ function StatusBadge({ status }) {
         published: { label: '● Published',        bg: C.successBg,  color: C.success,    border: C.successBorder },
         pending:   { label: '● Pending Approval',  bg: C.warningBg,  color: C.warning,    border: C.warningBorder },
         rejected:  { label: '● Rejected',          bg: C.dangerBg,   color: C.danger,     border: C.dangerBorder  },
+        // ✅ FIX: Added explicit mapping for suspended status
+        suspended: { label: '● Suspended',         bg: C.dangerBg,   color: C.danger,     border: C.dangerBorder  }, 
     };
-    const s = map[status] || { label: '● Draft', bg: C.btnViewAllBg, color: C.btnPrimary, border: C.cardBorder };
+    
+    // Safety fallback - converting to lowercase ensures matching even if backend sends "Suspended"
+    const normalizedStatus = (status || '').toLowerCase();
+    const s = map[normalizedStatus] || { label: '● Draft', bg: C.btnViewAllBg, color: C.btnPrimary, border: C.cardBorder };
+    
     return (
         <span style={{
             backgroundColor: s.bg,
@@ -480,17 +486,33 @@ export default function ManageCoursePage({ params }) {
 
                     {/* Actions */}
                     <div className="flex gap-2 flex-wrap flex-shrink-0">
-                        <button onClick={handlePublishToggle} disabled={publishing}
-                            className="flex items-center gap-1.5 transition-all hover:opacity-80"
-                            style={course.status === 'published' || course.status === 'pending'
-                                ? { backgroundColor: C.warningBg, color: C.warning, border: `1px solid ${C.warningBorder}`, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, padding: '6px 14px', borderRadius: '10px', cursor: 'pointer' }
-                                : { backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, padding: '6px 14px', borderRadius: '10px', cursor: 'pointer' }}>
+                       <button 
+                            onClick={handlePublishToggle} 
+                            disabled={publishing || course.status === 'suspended'}
+                            className={`flex items-center gap-1.5 transition-all ${course.status === 'suspended' ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-80'}`}
+                            style={
+                                course.status === 'suspended'
+                                    ? { backgroundColor: C.innerBg, color: C.textMuted, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, padding: '6px 14px', borderRadius: '10px', cursor: 'not-allowed' }
+                                    : course.status === 'published' || course.status === 'pending'
+                                        ? { backgroundColor: C.warningBg, color: C.warning, border: `1px solid ${C.warningBorder}`, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, padding: '6px 14px', borderRadius: '10px', cursor: 'pointer' }
+                                        : { backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, padding: '6px 14px', borderRadius: '10px', cursor: 'pointer' }
+                            }
+                        >
                             {publishing
                                 ? <div className="rounded-full border-2 animate-spin" style={{ width: 14, height: 14, borderColor: 'transparent', borderTopColor: 'currentColor' }} />
-                                : course.status === 'published' || course.status === 'pending'
-                                    ? <MdVisibilityOff style={{ width: 14, height: 14 }} />
-                                    : <MdLanguage style={{ width: 14, height: 14 }} />}
-                            {course.status === 'published' || course.status === 'pending' ? 'Unpublish' : course.status === 'rejected' ? 'Resubmit' : 'Publish'}
+                                : course.status === 'suspended'
+                                    ? <MdBlock style={{ width: 14, height: 14 }} />
+                                    : course.status === 'published' || course.status === 'pending'
+                                        ? <MdVisibilityOff style={{ width: 14, height: 14 }} />
+                                        : <MdLanguage style={{ width: 14, height: 14 }} />}
+                            
+                            {course.status === 'suspended' 
+                                ? 'Suspended by Admin' 
+                                : course.status === 'published' || course.status === 'pending' 
+                                    ? 'Unpublish' 
+                                    : course.status === 'rejected' 
+                                        ? 'Resubmit' 
+                                        : 'Publish'}
                         </button>
                         <button onClick={() => router.push(`/tutor/courses/${id}/assignments`)}
                             className="flex items-center gap-1.5 transition-all hover:opacity-80"

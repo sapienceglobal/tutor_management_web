@@ -21,6 +21,7 @@ export default function TutorAttendanceHubPage() {
     const [loading, setLoading] = useState(true);
     const [liveClasses, setLiveClasses] = useState([]);
     const [batches, setBatches] = useState([]);
+    const [stats, setStats] = useState({});
 
     useEffect(() => {
         const fetchData = async () => {
@@ -31,6 +32,12 @@ export default function TutorAttendanceHubPage() {
                 ]);
                 setLiveClasses(liveClassesRes?.data?.liveClasses || []);
                 setBatches(batchesRes?.data?.batches || batchesRes?.data?.data || []);
+                setStats({
+                    presentToday: liveClassesRes?.data?.presentToday || 0,
+                    absentToday: liveClassesRes?.data?.absentToday || 0,
+                    lateToday: liveClassesRes?.data?.lateToday || 0,
+                    averagePercentage: liveClassesRes?.data?.averagePercentage || 0
+                });
             } catch {
                 toast.error('Failed to load attendance data');
             } finally {
@@ -87,11 +94,12 @@ export default function TutorAttendanceHubPage() {
             </div>
 
             {/* ── Top Stats Row ─────────────────────────────────────────────── */}
+    
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in duration-500 delay-100">
-                <StatCard label="Present Today" value="42" icon={MdPeople} iconBg={C.successBg} iconColor={C.success} />
-                <StatCard label="Absent" value="8" icon={MdPeople} iconBg={C.dangerBg} iconColor={C.danger} />
-                <StatCard label="Late" value="5" icon={MdAccessTime} iconBg={C.warningBg} iconColor={C.warning} />
-                <StatCard label="Avg Attendance" value="87%" icon={MdEventAvailable} iconBg={C.iconBg} iconColor={C.btnPrimary} />
+                <StatCard label="Present Today" value={stats?.presentToday || 0} icon={MdPeople} iconBg={C.successBg} iconColor={C.success} />
+                <StatCard label="Absent" value={stats?.absentToday || 0} icon={MdPeople} iconBg={C.dangerBg} iconColor={C.danger} />
+                <StatCard label="Late" value={stats?.lateToday || 0} icon={MdAccessTime} iconBg={C.warningBg} iconColor={C.warning} />
+                <StatCard label="Avg Attendance" value={`${stats?.averagePercentage || 0}%`} icon={MdEventAvailable} iconBg={C.iconBg} iconColor={C.btnPrimary} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-500 delay-200">

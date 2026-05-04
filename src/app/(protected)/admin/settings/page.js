@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import {
-    Save, Loader2, Globe, Shield, Wrench, Palette,
-    GraduationCap, Users, CheckCircle, Sparkles,
-    RefreshCw, Lock
-} from 'lucide-react';
+    MdSave, MdHourglassEmpty, MdPublic, MdShield, MdBuild, MdPalette,
+    MdSchool, MdPeople, MdCheckCircle, MdAutoAwesome,
+    MdRefresh, MdLock, MdMemory, MdCreditCard, MdCalendarMonth
+} from 'react-icons/md';
 import { toast } from 'react-hot-toast';
 import api from '@/lib/axios';
+import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const FONTS = [
@@ -21,10 +22,24 @@ const FONTS = [
     { value: "system-ui, sans-serif", label: "System UI" },
 ];
 
+const inputStyle = {
+    width: '100%',
+    padding: '10px 16px',
+    backgroundColor: C.surfaceWhite,
+    border: `1px solid ${C.cardBorder}`,
+    borderRadius: '10px',
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.base,
+    fontWeight: T.weight.semibold,
+    outline: 'none',
+    transition: 'all 0.2s ease',
+};
+
 // ─── UI Atoms ───────────────────────────────────────────────────────────────
-function Card({ children, className = '' }) {
+function Card({ children, className = '', style = {} }) {
     return (
-        <div className={`bg-white rounded-2xl border border-slate-200 shadow-sm p-6 ${className}`}>
+        <div className={className} style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}`, padding: 24, ...style }}>
             {children}
         </div>
     );
@@ -33,10 +48,12 @@ function Card({ children, className = '' }) {
 function SectionHeader({ icon: Icon, color, title, desc }) {
     return (
         <div className="flex items-center gap-3 mb-6">
-            <div className={`p-2 rounded-xl ${color}`}><Icon className="w-5 h-5" /></div>
+            <div className="flex items-center justify-center shrink-0" style={{ width: 40, height: 40, backgroundColor: C.iconBg, borderRadius: '10px' }}>
+                <Icon style={{ width: 16, height: 16, color: C.iconColor }} />
+            </div>
             <div>
-                <h2 className="text-base font-black text-slate-800">{title}</h2>
-                {desc && <p className="text-xs text-slate-500 font-medium">{desc}</p>}
+                <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{title}</h2>
+                {desc && <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: '2px 0 0 0' }}>{desc}</p>}
             </div>
         </div>
     );
@@ -44,15 +61,16 @@ function SectionHeader({ icon: Icon, color, title, desc }) {
 
 function Toggle({ checked, onChange, label, desc }) {
     return (
-        <div className="flex items-center justify-between p-4 border border-slate-200 rounded-2xl bg-white hover:bg-slate-50 transition-colors">
+        <div className="flex items-center justify-between p-4 transition-colors group cursor-pointer" onClick={onChange} style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, borderRadius: '12px' }}
+             onMouseEnter={e => e.currentTarget.style.backgroundColor = C.innerBg}
+             onMouseLeave={e => e.currentTarget.style.backgroundColor = C.surfaceWhite}>
             <div>
-                <p className="text-sm font-bold text-slate-800">{label}</p>
-                {desc && <p className="text-xs text-slate-500 font-medium mt-0.5">{desc}</p>}
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{label}</p>
+                {desc && <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: '2px 0 0 0' }}>{desc}</p>}
             </div>
-            <button type="button" onClick={onChange}
-                className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ml-4 ${checked ? 'bg-indigo-600' : 'bg-slate-200'}`}>
-                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${checked ? 'translate-x-5' : 'translate-x-0.5'}`} />
-            </button>
+            <div className="relative shrink-0 ml-4" style={{ width: 44, height: 24, borderRadius: R.full, backgroundColor: checked ? C.btnPrimary : C.cardBorder, transition: 'background-color 0.2s' }}>
+                <div className="absolute top-0.5" style={{ width: 20, height: 20, borderRadius: R.full, backgroundColor: '#ffffff', boxShadow: S.card, transition: 'transform 0.2s', transform: checked ? 'translateX(22px)' : 'translateX(2px)' }} />
+            </div>
         </div>
     );
 }
@@ -61,13 +79,13 @@ function Toggle({ checked, onChange, label, desc }) {
 function ColorSwatch({ label, value }) {
     return (
         <div>
-            <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.06em] mb-1.5">{label}</label>
+            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 6 }}>{label}</label>
             <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl border border-slate-200 shrink-0" style={{ background: value || '#eee' }} />
-                <div className="flex-1 px-3 py-2 border border-slate-100 rounded-xl font-mono text-sm text-slate-400 bg-slate-50 uppercase select-none">
+                <div className="shrink-0" style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: value || '#eee', border: `1px solid ${C.cardBorder}` }} />
+                <div className="flex-1 flex items-center select-none" style={{ ...inputStyle, fontFamily: T.fontFamilyMono, fontSize: T.size.sm, color: C.textMuted, backgroundColor: C.innerBg }}>
                     {value || '—'}
                 </div>
-                <Lock className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                <MdLock style={{ width: 14, height: 14, color: C.textMuted, shrink: 0 }} />
             </div>
         </div>
     );
@@ -77,12 +95,14 @@ function ColorSwatch({ label, value }) {
 function ColorField({ label, name, value, onChange }) {
     return (
         <div>
-            <label className="block text-xs font-black text-slate-500 uppercase tracking-[0.06em] mb-1.5">{label}</label>
+            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 6 }}>{label}</label>
             <div className="flex items-center gap-2">
                 <input type="color" name={name} value={value || '#000000'} onChange={onChange}
-                    className="w-9 h-9 rounded-xl border border-slate-200 cursor-pointer p-0.5 bg-white shrink-0" />
+                    className="shrink-0 cursor-pointer p-0.5" style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}` }} />
                 <input type="text" name={name} value={value || ''} onChange={onChange} maxLength={7}
-                    className="flex-1 px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 font-mono text-sm text-slate-700 bg-white uppercase" />
+                    style={{ ...inputStyle, fontFamily: T.fontFamilyMono, fontSize: T.size.sm, textTransform: 'uppercase' }}
+                    onFocus={e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
+                    onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }} />
             </div>
         </div>
     );
@@ -91,26 +111,27 @@ function ColorField({ label, name, value, onChange }) {
 // ─── Mini Preview ────────────────────────────────────────────────────────────
 function ThemePreview({ primary, secondary, sidebar, accent, readonly = false }) {
     return (
-        <div className={`rounded-xl overflow-hidden border shadow-sm mb-4 ${readonly ? 'border-slate-100' : 'border-slate-200'}`}>
-            <div className={`text-[10px] font-black uppercase tracking-[0.08em] px-3 py-1.5 border-b flex items-center gap-1.5
-                ${readonly ? 'bg-slate-50 border-slate-100 text-slate-300' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
-                {readonly && <Lock className="w-2.5 h-2.5" />}
-                {readonly ? 'Set by SuperAdmin' : 'Live Preview'}
+        <div className="overflow-hidden mb-4" style={{ borderRadius: '12px', border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+            <div className="flex items-center gap-1.5" style={{ padding: '6px 12px', backgroundColor: C.innerBg, borderBottom: `1px solid ${C.cardBorder}` }}>
+                {readonly && <MdLock style={{ width: 10, height: 10, color: C.textMuted }} />}
+                <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
+                    {readonly ? 'Set by SuperAdmin' : 'Live Preview'}
+                </span>
             </div>
-            <div className="flex h-14">
-                <div className="w-10 flex flex-col items-center py-2 gap-1.5" style={{ background: sidebar || '#1e1b4b' }}>
+            <div className="flex" style={{ height: 56 }}>
+                <div className="flex flex-col items-center py-2 gap-1.5 shrink-0" style={{ width: 40, backgroundColor: sidebar || '#1e1b4b' }}>
                     {[0, 1, 2].map(i => (
-                        <div key={i} className={`w-5 h-1 rounded-full ${i === 0 ? 'opacity-100' : 'opacity-30'}`}
-                            style={{ background: accent || '#6366f1' }} />
+                        <div key={i} style={{ width: 20, height: 4, borderRadius: R.full, backgroundColor: accent || '#6366f1', opacity: i === 0 ? 1 : 0.3 }} />
                     ))}
                 </div>
-                <div className="flex-1 px-3 py-2 flex items-center gap-2" style={{ background: secondary || '#f8fafc' }}>
-                    <div className="flex-1 space-y-1">
-                        <div className="h-2 w-20 rounded-full" style={{ background: primary || '#4f46e5', opacity: 0.8 }} />
-                        <div className="h-1.5 w-12 rounded-full bg-slate-200" />
+                <div className="flex-1 flex items-center gap-2" style={{ padding: '8px 12px', backgroundColor: secondary || '#f8fafc' }}>
+                    <div className="flex-1 flex flex-col gap-1.5">
+                        <div style={{ height: 8, width: 80, borderRadius: R.full, backgroundColor: primary || '#4f46e5', opacity: 0.8 }} />
+                        <div style={{ height: 6, width: 48, borderRadius: R.full, backgroundColor: C.cardBorder }} />
                     </div>
-                    <div className="px-2 py-0.5 rounded-lg text-[9px] font-black text-white"
-                        style={{ background: primary || '#4f46e5' }}>Btn</div>
+                    <div className="flex items-center justify-center shrink-0" style={{ padding: '2px 8px', borderRadius: '6px', backgroundColor: primary || '#4f46e5' }}>
+                        <span style={{ fontFamily: T.fontFamily, fontSize: '9px', fontWeight: T.weight.bold, color: '#ffffff' }}>Btn</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -120,9 +141,9 @@ function ThemePreview({ primary, secondary, sidebar, accent, readonly = false })
 // ─── Global Theme — Read-only display ───────────────────────────────────────
 function GlobalThemePanel({ theme }) {
     if (!theme) return (
-        <div className="text-center py-10 space-y-2">
-            <Lock className="w-7 h-7 mx-auto text-slate-200" />
-            <p className="text-sm text-slate-400 font-medium">SuperAdmin hasn't configured a global theme yet.</p>
+        <div className="text-center py-10 flex flex-col items-center gap-2">
+            <MdLock style={{ width: 28, height: 28, color: C.cardBorder }} />
+            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>SuperAdmin hasn't configured a global theme yet.</p>
         </div>
     );
     return (
@@ -137,17 +158,17 @@ function GlobalThemePanel({ theme }) {
             </div>
             <div className="grid grid-cols-2 gap-3">
                 <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.06em] mb-1.5">Font</label>
-                    <div className="px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm text-slate-400 flex items-center justify-between">
+                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 6 }}>Font</label>
+                    <div className="flex items-center justify-between" style={{ ...inputStyle, backgroundColor: C.innerBg, color: C.textMuted }}>
                         <span>{FONTS.find(f => f.value === theme.fontFamily)?.label || theme.fontFamily || '—'}</span>
-                        <Lock className="w-3 h-3 text-slate-300" />
+                        <MdLock style={{ width: 12, height: 12, color: C.textMuted }} />
                     </div>
                 </div>
                 <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.06em] mb-1.5">Size</label>
-                    <div className="px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm text-slate-400 font-mono flex items-center justify-between">
+                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 6 }}>Size</label>
+                    <div className="flex items-center justify-between" style={{ ...inputStyle, fontFamily: T.fontFamilyMono, backgroundColor: C.innerBg, color: C.textMuted }}>
                         <span>{theme.fontSize || '—'}px</span>
-                        <Lock className="w-3 h-3 text-slate-300" />
+                        <MdLock style={{ width: 12, height: 12, color: C.textMuted }} />
                     </div>
                 </div>
             </div>
@@ -301,11 +322,11 @@ function PresetPicker({ presets, onApply }) {
     return (
         <div className="mb-4">
             <div className="flex items-center gap-2 mb-3">
-                <div className="w-5 h-5 rounded-md flex items-center justify-center"
-                    style={{ background: 'linear-gradient(135deg,#6366f1,#0ea5e9)' }}>
-                    <Sparkles className="w-3 h-3 text-white" />
+                <div className="flex items-center justify-center shrink-0"
+                    style={{ width: 20, height: 20, borderRadius: '6px', background: C.gradientBtn }}>
+                    <MdAutoAwesome style={{ width: 12, height: 12, color: '#ffffff' }} />
                 </div>
-                <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.07em]">
+                <span style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
                     Recommended Presets
                 </span>
             </div>
@@ -317,17 +338,17 @@ function PresetPicker({ presets, onApply }) {
                         onClick={() => onApply(p)}
                         onMouseEnter={() => setHoveredIdx(i)}
                         onMouseLeave={() => setHoveredIdx(null)}
-                        className="relative group text-left rounded-xl border transition-all duration-200 overflow-hidden"
+                        className="relative group text-left cursor-pointer transition-all duration-200 overflow-hidden"
                         style={{
-                            borderColor: hoveredIdx === i ? p.primaryColor : '#e2e8f0',
-                            boxShadow: hoveredIdx === i
-                                ? `0 4px 16px ${p.primaryColor}30`
-                                : '0 1px 3px rgba(0,0,0,0.06)',
+                            borderRadius: '12px',
+                            border: `1px solid ${hoveredIdx === i ? p.primaryColor : C.cardBorder}`,
+                            backgroundColor: C.surfaceWhite,
+                            boxShadow: hoveredIdx === i ? `0 4px 16px ${p.primaryColor}30` : S.card,
                             transform: hoveredIdx === i ? 'translateY(-1px)' : 'none',
                         }}
                     >
                         {/* Color bar */}
-                        <div className="flex h-[6px] w-full">
+                        <div className="flex w-full" style={{ height: 6 }}>
                             {p.preview.map((c, ci) => (
                                 <div key={ci} className="flex-1" style={{ background: c }} />
                             ))}
@@ -335,21 +356,20 @@ function PresetPicker({ presets, onApply }) {
                         {/* Content */}
                         <div className="p-2.5">
                             <div className="flex items-center justify-between mb-0.5">
-                                <span className="text-[11px] font-black text-slate-700 leading-tight">
+                                <span style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.heading, lineHeight: 1.2 }}>
                                     {p.name}
                                 </span>
-                                <div className="w-4 h-4 rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-110"
-                                    style={{ background: p.primaryColor }} />
+                                <div className="shrink-0 transition-transform group-hover:scale-110"
+                                    style={{ width: 16, height: 16, borderRadius: R.full, border: '2px solid #ffffff', background: p.primaryColor, boxShadow: S.card }} />
                             </div>
-                            <p className="text-[9.5px] text-slate-400 leading-tight line-clamp-2">
+                            <p className="line-clamp-2" style={{ fontFamily: T.fontFamily, fontSize: '9px', fontWeight: T.weight.medium, color: C.textMuted, lineHeight: 1.2, margin: 0 }}>
                                 {p.desc}
                             </p>
                         </div>
                         {/* Apply overlay on hover */}
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                             style={{ background: `${p.primaryColor}15` }}>
-                            <span className="text-[10px] font-black px-2 py-1 rounded-lg text-white"
-                                style={{ background: p.primaryColor }}>
+                            <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: '#ffffff', background: p.primaryColor, padding: '4px 8px', borderRadius: '8px' }}>
                                 Apply
                             </span>
                         </div>
@@ -381,9 +401,9 @@ function EditableThemePanel({ prefix, data, onChange }) {
 
             {/* ── Divider ── */}
             <div className="flex items-center gap-2">
-                <div className="flex-1 h-px bg-slate-100" />
-                <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.06em]">or customize manually</span>
-                <div className="flex-1 h-px bg-slate-100" />
+                <div className="flex-1" style={{ height: 1, backgroundColor: C.cardBorder }} />
+                <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>or customize manually</span>
+                <div className="flex-1" style={{ height: 1, backgroundColor: C.cardBorder }} />
             </div>
 
             {/* ── Live Preview + Manual Fields ── */}
@@ -397,17 +417,21 @@ function EditableThemePanel({ prefix, data, onChange }) {
             </div>
             <div className="grid grid-cols-2 gap-3">
                 <div>
-                    <label className="block text-xs font-black text-slate-500 uppercase tracking-[0.06em] mb-1.5">Font Family</label>
+                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 6 }}>Font Family</label>
                     <select name="fontFamily" value={get('fontFamily')} onChange={handle}
-                        className="w-full h-9 px-3 border border-slate-200 rounded-xl text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                        style={{ ...inputStyle, padding: '10px 16px', cursor: 'pointer' }}
+                        onFocus={e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
+                        onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}>
                         {FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
                     </select>
                 </div>
                 <div>
-                    <label className="block text-xs font-black text-slate-500 uppercase tracking-[0.06em] mb-1.5">Font Size (px)</label>
+                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 6 }}>Font Size (px)</label>
                     <input type="number" name="fontSize" value={get('fontSize')} onChange={handle}
                         min="12" max="20" placeholder="14"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 bg-white" />
+                        style={{ ...inputStyle, fontFamily: T.fontFamilyMono }}
+                        onFocus={e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
+                        onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }} />
                 </div>
             </div>
         </div>
@@ -434,7 +458,6 @@ export default function AdminSettingsPage() {
         contactEmail: '',
         logo: '',
         allowGlobalPublishingByInstituteTutors: false,
-        // When true → backend should use SuperAdmin's global theme for this institute's users
         useGlobalTheme: false,
         studentTheme: {
             primaryColor: '#4338ca',
@@ -471,18 +494,13 @@ export default function AdminSettingsPage() {
             const [settingsRes, instituteRes, globalRes] = await Promise.all([
                 api.get('/admin/settings'),
                 api.get('/user-institute/me'),
-                // SuperAdmin global theme — read-only reference for institute admin
                 api.get('/settings/global-theme').catch(() => ({ data: null })),
             ]);
 
             if (settingsRes.data?.success) setSettings(settingsRes.data.settings);
 
-            // ── Parse global theme response ───────────────────────────────────
-            // API returns: { theme: { globalTheme:{colors}, studentTheme:{colors}, tutorTheme:{colors},
-            //                         allowInstituteBranding, enforceGlobalTheme, enableDarkMode } }
             const gt = globalRes.data?.theme || null;
             if (gt) {
-                // gt.globalTheme has the actual color fields (primaryColor etc.)
                 setGlobalTheme(gt.globalTheme || null);
                 setGlobalMeta({
                     allowInstituteBranding: gt.allowInstituteBranding !== false,
@@ -529,16 +547,11 @@ export default function AdminSettingsPage() {
         }
     };
 
-    // Toggle ON  → marks institute to use SuperAdmin's global theme (backend enforces)
-    // Toggle OFF → institute uses its own student/tutor themes
-    // If enforceGlobalTheme=true from SuperAdmin → cannot turn OFF
     const handleUseGlobalToggle = (checked) => {
-        // SuperAdmin has enforced global theme — institute cannot override
         if (globalMeta.enforceGlobalTheme && !checked) return;
         setInstituteData(prev => ({
             ...prev,
             useGlobalTheme: checked,
-            // When turning ON: visually preview what global looks like
             ...(checked && globalTheme ? {
                 studentTheme: { ...globalTheme },
                 tutorTheme: { ...globalTheme },
@@ -546,7 +559,6 @@ export default function AdminSettingsPage() {
         }));
     };
 
-    // Copy global theme into one role (individual sync)
     const syncRoleToGlobal = (role) => {
         if (!globalTheme) { toast.error('Global theme not set by SuperAdmin yet'); return; }
         setInstituteData(prev => ({ ...prev, [role]: { ...globalTheme } }));
@@ -568,8 +580,6 @@ export default function AdminSettingsPage() {
                     tutorTheme: instituteData.tutorTheme,
                 }),
             ]);
-            // ── Clear institute cache so students/tutors get fresh theme ──────
-            // Without this, the old theme persists until cache TTL expires
             localStorage.removeItem('sapience_institute_cache');
             toast.success('Settings saved successfully!');
         } catch {
@@ -580,41 +590,56 @@ export default function AdminSettingsPage() {
     };
 
     const tabs = [
-        { key: 'general', label: 'General', icon: Globe },
-        { key: 'theme', label: 'Theme & Branding', icon: Palette },
-        { key: 'system', label: 'System', icon: Wrench },
-        { key: 'financial', label: 'Financial', icon: Shield },
+        { key: 'general', label: 'General', icon: MdPublic },
+        { key: 'theme', label: 'Theme & Branding', icon: MdPalette },
+        { key: 'system', label: 'System', icon: MdBuild },
+        { key: 'financial', label: 'Financial', icon: MdShield },
     ];
 
     if (loading) return (
-        <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+        <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
+            <div className="flex flex-col items-center gap-3">
+                <div className="relative w-12 h-12">
+                    <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                        style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                </div>
+            </div>
         </div>
     );
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 pb-24">
+        <div className="w-full mx-auto space-y-6 min-h-screen" style={{ ...pageStyle, backgroundColor: C.pageBg, paddingBottom: 100 }}>
 
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-black text-slate-900">Platform Settings</h1>
-                    <p className="text-sm text-slate-500 font-medium mt-0.5">Configure your institute's preferences</p>
+                    <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>Platform Settings</h1>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.textMuted, margin: '4px 0 0 0' }}>Configure your institute's preferences</p>
                 </div>
                 <button onClick={handleSave} disabled={saving}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-black rounded-xl transition-colors shadow-sm disabled:opacity-60">
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    className="flex items-center gap-2 transition-opacity cursor-pointer border-none disabled:opacity-60"
+                    style={{ padding: '12px 24px', backgroundColor: C.btnPrimary, color: '#ffffff', borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, boxShadow: S.btn }}>
+                    {saving ? <MdHourglassEmpty className="w-4 h-4 animate-spin" /> : <MdSave className="w-4 h-4" />}
                     Save Changes
                 </button>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-1 p-1 bg-slate-100 rounded-2xl w-fit">
+            <div className="flex p-1 w-fit overflow-x-auto" style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: '12px' }}>
                 {tabs.map(t => (
                     <button key={t.key} onClick={() => setActiveTab(t.key)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black transition-all
-                            ${activeTab === t.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-                        <t.icon className="w-4 h-4" />
+                        className="flex items-center gap-2 transition-all cursor-pointer border-none whitespace-nowrap"
+                        style={{
+                            padding: '8px 20px',
+                            borderRadius: '10px',
+                            fontFamily: T.fontFamily,
+                            fontSize: T.size.base,
+                            fontWeight: T.weight.bold,
+                            backgroundColor: activeTab === t.key ? C.surfaceWhite : 'transparent',
+                            color: activeTab === t.key ? C.heading : C.textMuted,
+                            boxShadow: activeTab === t.key ? S.active : 'none'
+                        }}>
+                        <t.icon style={{ width: 16, height: 16 }} />
                         <span className="hidden sm:inline">{t.label}</span>
                     </button>
                 ))}
@@ -622,10 +647,9 @@ export default function AdminSettingsPage() {
 
             {/* ── GENERAL ──────────────────────────────────────────────────── */}
             {activeTab === 'general' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Card>
-                        <SectionHeader icon={Globe} color="bg-indigo-100 text-indigo-600"
-                            title="Institute Information" desc="Basic info about your institute" />
+                        <SectionHeader icon={MdPublic} title="Institute Information" desc="Basic info about your institute" />
                         <div className="space-y-4">
                             {[
                                 { label: 'Institute Name', name: 'name', type: 'text' },
@@ -633,28 +657,31 @@ export default function AdminSettingsPage() {
                                 { label: 'Logo URL', name: 'logo', type: 'url', placeholder: 'https://…' },
                             ].map(f => (
                                 <div key={f.name}>
-                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-[0.06em] mb-1.5">{f.label}</label>
+                                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 6 }}>{f.label}</label>
                                     <input type={f.type} name={f.name} value={instituteData[f.name] || ''}
                                         onChange={handleInstituteChange} placeholder={f.placeholder || ''}
-                                        className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 bg-white" />
+                                        style={inputStyle}
+                                        onFocus={e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
+                                        onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }} />
                                 </div>
                             ))}
                             {instituteData.logo && (
-                                <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl flex justify-center">
-                                    <img src={instituteData.logo} alt="Logo" className="h-10 object-contain" />
+                                <div className="flex justify-center items-center" style={{ padding: 12, backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px' }}>
+                                    <img src={instituteData.logo} alt="Logo" style={{ height: 40, objectFit: 'contain' }} />
                                 </div>
                             )}
                         </div>
                     </Card>
 
                     <Card>
-                        <SectionHeader icon={Globe} color="bg-blue-100 text-blue-600"
-                            title="Platform Preferences" desc="Language and publishing" />
-                        <div className="space-y-3">
+                        <SectionHeader icon={MdPublic} title="Platform Preferences" desc="Language and publishing" />
+                        <div className="space-y-4">
                             <div>
-                                <label className="block text-xs font-black text-slate-500 uppercase tracking-[0.06em] mb-1.5">Default Language</label>
+                                <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 6 }}>Default Language</label>
                                 <select name="defaultLanguage" value={settings.defaultLanguage} onChange={handleSettingsChange}
-                                    className="w-full h-10 px-3 border border-slate-200 rounded-xl text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                                    style={{ ...inputStyle, cursor: 'pointer' }}
+                                    onFocus={e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
+                                    onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}>
                                     {['English', 'Hindi', 'Spanish', 'French'].map(l => <option key={l}>{l}</option>)}
                                 </select>
                             </div>
@@ -675,31 +702,31 @@ export default function AdminSettingsPage() {
 
             {/* ── THEME ────────────────────────────────────────────────────── */}
             {activeTab === 'theme' && (
-                <div className="space-y-5">
+                <div className="space-y-6">
 
                     {/* ── SuperAdmin enforcement banners ──────────────────── */}
                     {globalMeta.enforceGlobalTheme && (
-                        <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-2xl">
-                            <Lock className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                            <p className="text-sm text-red-800 font-medium leading-relaxed">
-                                <span className="font-black">SuperAdmin has enforced Global Theme</span> — all institute customization is disabled. Contact SuperAdmin to change.
+                        <div className="flex items-start gap-3 p-4" style={{ backgroundColor: C.dangerBg, border: `1px solid ${C.dangerBorder}`, borderRadius: '12px' }}>
+                            <MdLock style={{ width: 16, height: 16, color: C.danger, shrink: 0, marginTop: 2 }} />
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.danger, lineHeight: 1.5, margin: 0 }}>
+                                <span style={{ fontWeight: T.weight.bold }}>SuperAdmin has enforced Global Theme</span> — all institute customization is disabled. Contact SuperAdmin to change.
                             </p>
                         </div>
                     )}
                     {!globalMeta.enforceGlobalTheme && !globalMeta.allowInstituteBranding && (
-                        <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-2xl">
-                            <Lock className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                            <p className="text-sm text-orange-800 font-medium leading-relaxed">
-                                <span className="font-black">Custom Branding is disabled by SuperAdmin</span> — you cannot customize themes. Contact SuperAdmin to enable.
+                        <div className="flex items-start gap-3 p-4" style={{ backgroundColor: C.warningBg, border: `1px solid ${C.warningBorder}`, borderRadius: '12px' }}>
+                            <MdLock style={{ width: 16, height: 16, color: C.warning, shrink: 0, marginTop: 2 }} />
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.warning, lineHeight: 1.5, margin: 0 }}>
+                                <span style={{ fontWeight: T.weight.bold }}>Custom Branding is disabled by SuperAdmin</span> — you cannot customize themes. Contact SuperAdmin to enable.
                             </p>
                         </div>
                     )}
                     {!globalMeta.enforceGlobalTheme && globalMeta.allowInstituteBranding && (
-                        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-100 rounded-2xl">
-                            <Lock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                            <p className="text-sm text-amber-800 font-medium leading-relaxed">
-                                <span className="font-black">Global Theme is controlled by SuperAdmin</span> — shown for reference only.
-                                Customize <span className="font-black">Student</span> and <span className="font-black">Tutor</span> panels independently,
+                        <div className="flex items-start gap-3 p-4" style={{ backgroundColor: C.warningBg, border: `1px solid ${C.warningBorder}`, borderRadius: '12px' }}>
+                            <MdLock style={{ width: 16, height: 16, color: C.warning, shrink: 0, marginTop: 2 }} />
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.warning, lineHeight: 1.5, margin: 0 }}>
+                                <span style={{ fontWeight: T.weight.bold }}>Global Theme is controlled by SuperAdmin</span> — shown for reference only.
+                                Customize <span style={{ fontWeight: T.weight.bold }}>Student</span> and <span style={{ fontWeight: T.weight.bold }}>Tutor</span> panels independently,
                                 or enable the toggle below to inherit the global theme.
                             </p>
                         </div>
@@ -709,14 +736,14 @@ export default function AdminSettingsPage() {
                     <Card>
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center shrink-0">
-                                    <Sparkles className="w-5 h-5 text-white" />
+                                <div className="flex items-center justify-center shrink-0" style={{ width: 40, height: 40, borderRadius: '10px', background: C.gradientBtn }}>
+                                    <MdAutoAwesome style={{ width: 20, height: 20, color: '#ffffff' }} />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-black text-slate-800">Use Global Theme for All Roles</p>
-                                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>Use Global Theme for All Roles</p>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: '2px 0 0 0' }}>
                                         Student &amp; Tutor panels will inherit SuperAdmin's global theme automatically
-                                        {globalMeta.enforceGlobalTheme && <span className="ml-1 text-red-500 font-black">(Enforced by SuperAdmin)</span>}
+                                        {globalMeta.enforceGlobalTheme && <span style={{ marginLeft: 4, color: C.danger, fontWeight: T.weight.bold }}>(Enforced by SuperAdmin)</span>}
                                     </p>
                                 </div>
                             </div>
@@ -724,17 +751,24 @@ export default function AdminSettingsPage() {
                                 type="button"
                                 disabled={globalMeta.enforceGlobalTheme || !globalMeta.allowInstituteBranding}
                                 onClick={() => handleUseGlobalToggle(!instituteData.useGlobalTheme)}
-                                className={`relative w-12 h-6 rounded-full transition-colors shrink-0
-                                    ${(globalMeta.enforceGlobalTheme || !globalMeta.allowInstituteBranding) ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}
-                                    ${(instituteData.useGlobalTheme || globalMeta.enforceGlobalTheme) ? 'bg-indigo-600' : 'bg-slate-200'}`}>
-                                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform
-                                    ${(instituteData.useGlobalTheme || globalMeta.enforceGlobalTheme) ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                                className="relative shrink-0 border-none transition-colors"
+                                style={{
+                                    width: 44, height: 24, borderRadius: R.full,
+                                    cursor: (globalMeta.enforceGlobalTheme || !globalMeta.allowInstituteBranding) ? 'not-allowed' : 'pointer',
+                                    opacity: (globalMeta.enforceGlobalTheme || !globalMeta.allowInstituteBranding) ? 0.6 : 1,
+                                    backgroundColor: (instituteData.useGlobalTheme || globalMeta.enforceGlobalTheme) ? C.btnPrimary : C.cardBorder
+                                }}>
+                                <div className="absolute top-0.5 transition-transform"
+                                    style={{
+                                        width: 20, height: 20, borderRadius: R.full, backgroundColor: '#ffffff', boxShadow: S.card,
+                                        transform: (instituteData.useGlobalTheme || globalMeta.enforceGlobalTheme) ? 'translateX(22px)' : 'translateX(2px)'
+                                    }} />
                             </button>
                         </div>
                         {(instituteData.useGlobalTheme || globalMeta.enforceGlobalTheme) && (
-                            <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-xl">
-                                <CheckCircle className="w-4 h-4 text-indigo-500 shrink-0" />
-                                <p className="text-xs font-bold text-indigo-700">
+                            <div className="mt-4 flex items-center gap-2 p-3" style={{ backgroundColor: C.btnViewAllBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px' }}>
+                                <MdCheckCircle style={{ width: 16, height: 16, color: C.btnPrimary, shrink: 0 }} />
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.btnPrimary, margin: 0 }}>
                                     Both Student &amp; Tutor panels are using SuperAdmin's global theme. Custom editing is disabled.
                                 </p>
                             </div>
@@ -742,41 +776,42 @@ export default function AdminSettingsPage() {
                     </Card>
 
                     {/* 3 columns: Global (locked) | Student | Tutor */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                         {/* ── Global — READ ONLY ── */}
-                        <Card className="bg-slate-50 border-dashed border-slate-300">
+                        <Card style={{ backgroundColor: C.innerBg, borderStyle: 'dashed' }}>
                             <div className="flex items-center gap-2.5 mb-5">
-                                <div className="w-8 h-8 bg-slate-200 rounded-xl flex items-center justify-center">
-                                    <Globe className="w-4 h-4 text-slate-500" />
+                                <div className="flex items-center justify-center shrink-0" style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}` }}>
+                                    <MdPublic style={{ width: 16, height: 16, color: C.textMuted }} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-black text-slate-600">Global Theme</p>
-                                    <p className="text-[11px] text-slate-400 font-medium">SuperAdmin · Read-only</p>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>Global Theme</p>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>SuperAdmin · Read-only</p>
                                 </div>
-                                <span className="flex items-center gap-1 text-[10px] font-black text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded-full shrink-0">
-                                    <Lock className="w-2.5 h-2.5" /> Locked
+                                <span className="flex items-center gap-1 shrink-0" style={{ padding: '2px 8px', borderRadius: R.full, backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted }}>
+                                    <MdLock style={{ width: 10, height: 10 }} /> Locked
                                 </span>
                             </div>
                             <GlobalThemePanel theme={globalTheme} />
                         </Card>
 
                         {/* ── Student — locked if enforced OR branding disabled ── */}
-                        <Card className={`transition-opacity duration-200
-                            ${(instituteData.useGlobalTheme || globalMeta.enforceGlobalTheme || !globalMeta.allowInstituteBranding)
-                                ? 'opacity-40 pointer-events-none select-none' : 'ring-2 ring-indigo-100'}`}>
+                        <Card style={{ opacity: (instituteData.useGlobalTheme || globalMeta.enforceGlobalTheme || !globalMeta.allowInstituteBranding) ? 0.5 : 1, pointerEvents: (instituteData.useGlobalTheme || globalMeta.enforceGlobalTheme || !globalMeta.allowInstituteBranding) ? 'none' : 'auto', userSelect: (instituteData.useGlobalTheme || globalMeta.enforceGlobalTheme || !globalMeta.allowInstituteBranding) ? 'none' : 'auto' }}>
                             <div className="flex items-center gap-2.5 mb-5">
-                                <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-xl flex items-center justify-center">
-                                    <GraduationCap className="w-4 h-4 text-white" />
+                                <div className="flex items-center justify-center shrink-0" style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.btnViewAllBg }}>
+                                    <MdSchool style={{ width: 16, height: 16, color: C.btnPrimary }} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-black text-slate-800">Student Theme</p>
-                                    <p className="text-[11px] text-slate-400 font-medium">Student panel only</p>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>Student Theme</p>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>Student panel only</p>
                                 </div>
                                 {globalTheme && !instituteData.useGlobalTheme && globalMeta.allowInstituteBranding && !globalMeta.enforceGlobalTheme && (
                                     <button type="button" onClick={() => syncRoleToGlobal('studentTheme')}
-                                        className="flex items-center gap-1 text-[10px] font-black text-slate-400 hover:text-indigo-600 px-2 py-1 bg-slate-50 hover:bg-indigo-50 rounded-lg border border-slate-200 transition-colors shrink-0">
-                                        <RefreshCw className="w-3 h-3" /> Sync Global
+                                        className="flex items-center gap-1 transition-colors cursor-pointer border-none shrink-0"
+                                        style={{ padding: '4px 8px', borderRadius: '8px', backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted }}
+                                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; e.currentTarget.style.color = C.btnPrimary; }}
+                                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.surfaceWhite; e.currentTarget.style.color = C.textMuted; }}>
+                                        <MdRefresh style={{ width: 12, height: 12 }} /> Sync Global
                                     </button>
                                 )}
                             </div>
@@ -784,21 +819,22 @@ export default function AdminSettingsPage() {
                         </Card>
 
                         {/* ── Tutor — locked if enforced OR branding disabled ── */}
-                        <Card className={`transition-opacity duration-200
-                            ${(instituteData.useGlobalTheme || globalMeta.enforceGlobalTheme || !globalMeta.allowInstituteBranding)
-                                ? 'opacity-40 pointer-events-none select-none' : 'ring-2 ring-orange-100'}`}>
+                        <Card style={{ opacity: (instituteData.useGlobalTheme || globalMeta.enforceGlobalTheme || !globalMeta.allowInstituteBranding) ? 0.5 : 1, pointerEvents: (instituteData.useGlobalTheme || globalMeta.enforceGlobalTheme || !globalMeta.allowInstituteBranding) ? 'none' : 'auto', userSelect: (instituteData.useGlobalTheme || globalMeta.enforceGlobalTheme || !globalMeta.allowInstituteBranding) ? 'none' : 'auto' }}>
                             <div className="flex items-center gap-2.5 mb-5">
-                                <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center">
-                                    <Users className="w-4 h-4 text-white" />
+                                <div className="flex items-center justify-center shrink-0" style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.warningBg }}>
+                                    <MdPeople style={{ width: 16, height: 16, color: C.warning }} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-black text-slate-800">Tutor Theme</p>
-                                    <p className="text-[11px] text-slate-400 font-medium">Tutor panel only</p>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>Tutor Theme</p>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>Tutor panel only</p>
                                 </div>
                                 {globalTheme && !instituteData.useGlobalTheme && globalMeta.allowInstituteBranding && !globalMeta.enforceGlobalTheme && (
                                     <button type="button" onClick={() => syncRoleToGlobal('tutorTheme')}
-                                        className="flex items-center gap-1 text-[10px] font-black text-slate-400 hover:text-orange-600 px-2 py-1 bg-slate-50 hover:bg-orange-50 rounded-lg border border-slate-200 transition-colors shrink-0">
-                                        <RefreshCw className="w-3 h-3" /> Sync Global
+                                        className="flex items-center gap-1 transition-colors cursor-pointer border-none shrink-0"
+                                        style={{ padding: '4px 8px', borderRadius: '8px', backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted }}
+                                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.warningBg; e.currentTarget.style.color = C.warning; }}
+                                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.surfaceWhite; e.currentTarget.style.color = C.textMuted; }}>
+                                        <MdRefresh style={{ width: 12, height: 12 }} /> Sync Global
                                     </button>
                                 )}
                             </div>
@@ -811,9 +847,8 @@ export default function AdminSettingsPage() {
             {/* ── SYSTEM ───────────────────────────────────────────────────── */}
             {activeTab === 'system' && (
                 <Card>
-                    <SectionHeader icon={Wrench} color="bg-amber-100 text-amber-600"
-                        title="System Controls" desc="Platform-level access and feature toggles" />
-                    <div className="grid sm:grid-cols-2 gap-3">
+                    <SectionHeader icon={MdBuild} title="System Controls" desc="Platform-level access and feature toggles" />
+                    <div className="grid sm:grid-cols-2 gap-4">
                         {[
                             { name: 'allowRegistration', label: 'Allow Registration', desc: 'Enable new user signups' },
                             { name: 'autoApproveCourses', label: 'Auto-Approve Courses', desc: 'Publish tutor courses without review' },
@@ -834,39 +869,29 @@ export default function AdminSettingsPage() {
             {/* ── FINANCIAL ────────────────────────────────────────────────── */}
             {activeTab === 'financial' && (
                 <Card>
-                    <SectionHeader icon={Shield} color="bg-emerald-100 text-emerald-600"
-                        title="Financial & Security" desc="Revenue sharing and billing" />
-                    <div className="max-w-xs space-y-4">
+                    <SectionHeader icon={MdShield} title="Financial & Security" desc="Revenue sharing and billing" />
+                    <div className="max-w-xs space-y-5">
                         <div>
-                            <label className="block text-xs font-black text-slate-500 uppercase tracking-[0.06em] mb-1.5">Platform Commission (%)</label>
-                            <p className="text-xs text-slate-400 font-medium mb-2">Percentage cut from tutor/institute sales</p>
+                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 4 }}>Platform Commission (%)</label>
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: '0 0 8px 0' }}>Percentage cut from tutor/institute sales</p>
                             <input type="number" name="platformCommission" value={settings.platformCommission}
                                 onChange={handleSettingsChange} min="0" max="100"
-                                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm font-mono text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 bg-white" />
+                                style={{ ...inputStyle, fontFamily: T.fontFamilyMono }}
+                                onFocus={e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
+                                onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }} />
                         </div>
                         <div>
-                            <label className="block text-xs font-black text-slate-500 uppercase tracking-[0.06em] mb-1.5">Support Phone</label>
+                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 4 }}>Support Phone</label>
                             <input type="tel" name="supportPhone" value={settings.supportPhone || ''}
                                 onChange={handleSettingsChange} placeholder="+91 98765 43210"
-                                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 bg-white" />
+                                style={inputStyle}
+                                onFocus={e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
+                                onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }} />
                         </div>
                     </div>
                 </Card>
             )}
 
-            {/* Sticky save button */}
-            <div className="fixed bottom-6 right-6 z-50">
-                <button onClick={handleSave} disabled={saving}
-                    className="flex items-center gap-2.5 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-300/40 transition-all hover:scale-105 disabled:opacity-60 disabled:scale-100 text-sm">
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save All Changes
-                </button>
-            </div>
-            <div className='fixed bottom-6 right-6 z-50'>
-                <button onclick={handleSave} disabled={saving}
-                className='flex items-center gap-2.5 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black'
-                ></button>
-            </div>
         </div>
        
     );

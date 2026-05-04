@@ -11,6 +11,7 @@ import {
     MdAutoAwesome,
 } from 'react-icons/md';
 import { C, T, S, R, cx, pageStyle } from '@/constants/studentTokens';
+import toast from 'react-hot-toast';
 
 export default function WishlistPage() {
     const [wishlist, setWishlist] = useState([]);
@@ -29,8 +30,19 @@ export default function WishlistPage() {
         }
     };
 
-    const handleRemove = (courseId) => {
-        setWishlist(prev => prev.filter(item => item.course._id !== courseId));
+  const handleRemove = async (courseId) => {
+        try {
+ 
+            const res = await api.delete(`/wishlist/${courseId}`);
+            if (res.data?.success) {
+                // Update frontend state only if backend delete is successful
+                setWishlist(prev => prev.filter(item => item.course._id !== courseId));
+                toast.success('Course removed from wishlist');
+            }
+        } catch (error) {
+            console.error('Error removing from wishlist:', error);
+            toast.error('Failed to remove course from wishlist');
+        }
     };
 
     // ── Loading ──────────────────────────────────────────────────────────────

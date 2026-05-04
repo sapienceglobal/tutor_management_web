@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
-import { C, T, S, R, FX } from '@/constants/studentTokens';
+import { C, T, S, R } from '@/constants/studentTokens';
 import StatCard from '@/components/StatCard';
 import {
     MdAttachMoney, MdAccountBalanceWallet, MdAccessTime, MdCheckCircle,
@@ -34,7 +34,11 @@ const fmtDate = (value) => {
 const statusPillStyle = (status) => {
     if (status === 'paid') return { backgroundColor: C.successBg, borderColor: C.successBorder, color: C.success };
     if (status === 'rejected') return { backgroundColor: C.dangerBg, borderColor: C.dangerBorder, color: C.danger };
-    if (status === 'processing') return { backgroundColor: FX.primary08, borderColor: FX.primary20, color: C.btnPrimary };
+   if (status === 'processing') return { 
+        backgroundColor: `${C.btnPrimary}15`, // primary color with 15% opacity
+        borderColor: `${C.btnPrimary}30`,     // primary color with 30% opacity
+        color: C.btnPrimary 
+    };
     return { backgroundColor: C.warningBg, borderColor: C.warningBorder, color: C.warning };
 };
 

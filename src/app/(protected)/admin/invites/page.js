@@ -3,8 +3,37 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
-import { Mail, Users, Plus, Search, Filter, X, CheckCircle, Clock, AlertCircle, RefreshCw, Trash2, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+import { 
+    MdMail, 
+    MdAdd, 
+    MdSearch, 
+    MdClose, 
+    MdCheckCircle, 
+    MdAccessTime, 
+    MdWarning, 
+    MdRefresh, 
+    MdDelete, 
+    MdSend, 
+    MdChevronLeft, 
+    MdChevronRight 
+} from 'react-icons/md';
 import BulkInviteModal from '@/components/admin/BulkInviteModal';
+import StatCard from '@/components/StatCard';
+import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+
+const baseInputStyle = {
+    backgroundColor: C.surfaceWhite,
+    border: `1px solid ${C.cardBorder}`,
+    borderRadius: '10px',
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.base,
+    fontWeight: T.weight.semibold,
+    outline: 'none',
+    width: '100%',
+    padding: '12px 16px',
+    transition: 'all 0.2s ease',
+};
 
 export default function AdminInvitesPage() {
     const [invites, setInvites] = useState([]);
@@ -14,8 +43,6 @@ export default function AdminInvitesPage() {
     const [statusFilter, setStatusFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
     const [pagination, setPagination] = useState({});
-
-    const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.12)';
 
     useEffect(() => {
         fetchInvites();
@@ -110,71 +137,90 @@ export default function AdminInvitesPage() {
 
     if (loading) {
         return (
-            <div className="flex bg-[#F1EAFB] min-h-screen items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-[#6B4DF1]"></div>
+            <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-12 h-12">
+                        <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                            style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                    </div>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                        Loading...
+                    </p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6 min-h-screen p-6 md:p-8" style={{ backgroundColor: '#F1EAFB', fontFamily: "'Inter', sans-serif" }}>
+        <div className="space-y-6 min-h-screen" style={{ backgroundColor: C.pageBg, ...pageStyle }}>
             
             {/* ── Top Stats Row ── */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {[
-                    { title: 'Total Sent', value: totalInvites || '0', bg: '#E8CBF3', iconBg: '#A059C5', icon: Send },
-                    { title: 'Pending Approval', value: pendingInvites || '0', bg: '#FFE5D3', iconBg: '#FC8730', icon: Clock },
-                    { title: 'Accepted Invites', value: acceptedInvites || '0', bg: '#D1F4E6', iconBg: '#4ABCA8', icon: CheckCircle }
-                ].map((stat, i) => (
-                    <div 
-                        key={i} 
-                        className="bg-white rounded-2xl p-5 flex items-center gap-4 transition-transform hover:-translate-y-1 relative" 
-                        style={{ boxShadow: softShadow }}
-                    >
-                        <div className="w-[46px] h-[46px] rounded-[12px] flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: stat.iconBg }}>
-                            <stat.icon size={22} color="#ffffff" strokeWidth={2.5} />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-[24px] font-black text-[#27225B] leading-none mb-1.5">{stat.value}</span>
-                            <span className="text-[13px] font-semibold text-[#7D8DA6] leading-none">{stat.title}</span>
-                        </div>
-                    </div>
-                ))}
+                <StatCard 
+                    icon={MdSend}
+                    value={totalInvites || '0'}
+                    label="Total Sent"
+                    iconBg={C.btnViewAllBg}
+                    iconColor={C.btnPrimary}
+                />
+                <StatCard 
+                    icon={MdAccessTime}
+                    value={pendingInvites || '0'}
+                    label="Pending Approval"
+                    iconBg={C.warningBg}
+                    iconColor={C.warning}
+                />
+                <StatCard 
+                    icon={MdCheckCircle}
+                    value={acceptedInvites || '0'}
+                    label="Accepted Invites"
+                    iconBg={C.successBg}
+                    iconColor={C.success}
+                />
             </div>
 
             {/* ── Header & Toolbar ── */}
-            <div className="bg-white rounded-2xl flex flex-col overflow-hidden mb-6" style={{ boxShadow: softShadow }}>
+            <div className="flex flex-col overflow-hidden mb-6" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
                 
-                <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#F4F0FD]">
+                <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
                     <div>
-                        <h1 className="text-[22px] font-black text-[#27225B] m-0">Invite Management</h1>
-                        <p className="text-[13px] font-medium text-[#7D8DA6] m-0 mt-1">Manage invitations for students and instructors</p>
+                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
+                            Invite Management
+                        </h1>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.textMuted, margin: '4px 0 0 0' }}>
+                            Manage invitations for students and instructors
+                        </p>
                     </div>
                     <button
                         onClick={() => setShowBulkModal(true)}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-[#6B4DF1] text-white font-bold text-[14px] rounded-xl hover:bg-[#5839D6] transition-colors shadow-md border-none cursor-pointer"
+                        className="flex items-center gap-2 transition-opacity hover:opacity-90 cursor-pointer"
+                        style={{ padding: '10px 24px', background: C.gradientBtn, color: '#ffffff', border: 'none', borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, boxShadow: S.btn }}
                     >
-                        <Plus size={18} strokeWidth={3} /> Bulk Invite
+                        <MdAdd style={{ width: 18, height: 18 }} /> Bulk Invite
                     </button>
                 </div>
                 
                 {/* Filters */}
-                <div className="px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 border-b border-[#F4F0FD] bg-[#FAFAFA]">
-                    <div className="relative w-full md:w-96">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7D8DA6]" />
+                <div className="px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
+                    <div className="relative w-full md:w-96 group">
+                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 transition-colors pointer-events-none" style={{ width: 18, height: 18, color: C.textMuted }} />
                         <input
                             type="text"
                             placeholder="Search by name or email..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E9DFFC] text-[#27225B] text-[13px] font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] placeholder-[#A0ABC0]"
+                            style={{ ...baseInputStyle, paddingLeft: '36px' }}
+                            onFocus={e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
+                            onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
                         />
                     </div>
                     <div className="flex items-center gap-3 w-full md:w-auto">
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className="bg-white border border-[#E9DFFC] text-[#7D8DA6] text-[13px] font-bold px-4 py-2.5 rounded-xl outline-none cursor-pointer min-w-[140px]"
+                            style={{ ...baseInputStyle, minWidth: '140px', padding: '10px 16px', cursor: 'pointer' }}
+                            onFocus={e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
+                            onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
                         >
                             <option value="all">All Statuses</option>
                             <option value="pending">Pending</option>
@@ -184,103 +230,150 @@ export default function AdminInvitesPage() {
                         </select>
                         <button
                             onClick={fetchInvites}
-                            className="w-10 h-10 bg-white border border-[#E9DFFC] rounded-xl flex items-center justify-center text-[#7D8DA6] hover:text-[#6B4DF1] cursor-pointer transition-colors shadow-sm"
+                            className="flex items-center justify-center transition-colors cursor-pointer"
                             title="Refresh List"
+                            style={{ width: 44, height: 44, backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, borderRadius: '10px', color: C.textMuted }}
+                            onMouseEnter={e => { e.currentTarget.style.color = C.btnPrimary; e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; e.currentTarget.style.backgroundColor = C.surfaceWhite; }}
                         >
-                            <RefreshCw size={16} />
+                            <MdRefresh style={{ width: 18, height: 18 }} />
                         </button>
                     </div>
                 </div>
 
                 {/* ── Invites Table ── */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-[#F4F0FD]">
+                <div className="overflow-x-auto w-full">
+                    <table className="w-full text-left border-collapse min-w-[900px]">
+                        <thead style={{ backgroundColor: C.innerBg }}>
                             <tr>
-                                <th className="px-6 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider">User</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider">Role</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider">Status</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider">Invited By</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider">Dates</th>
-                                <th className="px-6 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider text-center">Actions</th>
+                                <th style={{ padding: '16px 24px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>User</th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Role</th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Status</th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Invited By</th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Dates</th>
+                                <th style={{ padding: '16px 24px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}`, textAlign: 'center' }}>Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#F4F0FD] bg-white">
+                        <tbody>
                             {filteredInvites.length === 0 ? (
                                 <tr>
-                                    <td colSpan="6" className="p-12 text-center">
-                                        <Mail className="w-12 h-12 text-[#D1C4F9] mx-auto mb-3" />
-                                        <p className="text-[14px] font-semibold text-[#7D8DA6] m-0">
-                                            {searchTerm || statusFilter !== 'all' ? 'No invites found matching your filters' : 'No invites yet. Send your first invite!'}
-                                        </p>
+                                    <td colSpan="6" className="px-6 py-16">
+                                        <div className="p-14 text-center border border-dashed"
+                                             style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
+                                            <div className="flex items-center justify-center mx-auto mb-4"
+                                                 style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                                                <MdMail style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
+                                            </div>
+                                            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>No Invites Found</h3>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.textMuted, marginTop: 4 }}>
+                                                {searchTerm || statusFilter !== 'all' ? 'No invites found matching your filters' : 'No invites yet. Send your first invite!'}
+                                            </p>
+                                        </div>
                                     </td>
                                 </tr>
                             ) : (
                                 filteredInvites.map((invite) => (
-                                    <tr key={invite._id} className="hover:bg-[#F8F7FF] transition-colors group">
-                                        <td className="px-6 py-4">
+                                    <tr key={invite._id} className="transition-colors group" style={{ backgroundColor: C.cardBg, borderBottom: `1px solid ${C.cardBorder}` }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.cardBg; }}>
+                                        <td style={{ padding: '16px 24px' }}>
                                             <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-[10px] bg-[#E9DFFC] text-[#6B4DF1] flex items-center justify-center shrink-0">
-                                                    <Mail size={16} />
+                                                <div className="flex items-center justify-center shrink-0" 
+                                                     style={{ width: 40, height: 40, borderRadius: '10px', backgroundColor: C.iconBg }}>
+                                                    <MdMail style={{ width: 18, height: 18, color: C.iconColor }} />
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-[#27225B] text-[14px]">{invite.name}</span>
-                                                    <span className="text-[12px] font-medium text-[#7D8DA6] mt-0.5">{invite.email}</span>
+                                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>{invite.name}</span>
+                                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.textMuted, marginTop: 2 }}>{invite.email}</span>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-4">
-                                            <span className={`px-3 py-1 text-[11px] font-bold rounded-lg uppercase tracking-wider ${
-                                                invite.role === 'tutor' ? 'bg-[#F4F0FD] text-[#6B4DF1]' : 'bg-[#EBF8FF] text-[#3182CE]'
-                                            }`}>
+                                        <td style={{ padding: '16px 16px' }}>
+                                            <span style={{ 
+                                                padding: '4px 10px', 
+                                                fontFamily: T.fontFamily, 
+                                                fontSize: T.size.xs, 
+                                                fontWeight: T.weight.bold, 
+                                                borderRadius: '10px', 
+                                                textTransform: 'uppercase', 
+                                                letterSpacing: T.tracking.wider,
+                                                backgroundColor: invite.role === 'tutor' ? C.btnViewAllBg : C.innerBg,
+                                                color: invite.role === 'tutor' ? C.btnPrimary : C.text,
+                                                border: `1px solid ${C.cardBorder}`
+                                            }}>
                                                 {invite.role}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-4">
-                                            {invite.status === 'pending' && <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FFF7ED] text-[#FC8730] text-[12px] font-bold rounded-lg"><Clock size={12} /> Pending</span>}
-                                            {invite.status === 'accepted' && <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#ECFDF5] text-[#4ABCA8] text-[12px] font-bold rounded-lg"><CheckCircle size={12} /> Accepted</span>}
-                                            {invite.status === 'expired' && <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FEE2E2] text-[#E53E3E] text-[12px] font-bold rounded-lg"><AlertCircle size={12} /> Expired</span>}
-                                            {invite.status === 'revoked' && <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#F1F5F9] text-[#4A5568] text-[12px] font-bold rounded-lg"><X size={12} /> Revoked</span>}
+                                        <td style={{ padding: '16px 16px' }}>
+                                            <span style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                padding: '4px 10px',
+                                                fontFamily: T.fontFamily,
+                                                fontSize: T.size.xs,
+                                                fontWeight: T.weight.bold,
+                                                borderRadius: '10px',
+                                                textTransform: 'capitalize',
+                                                backgroundColor: invite.status === 'accepted' ? C.successBg : invite.status === 'expired' ? C.dangerBg : invite.status === 'revoked' ? C.innerBg : C.warningBg,
+                                                color: invite.status === 'accepted' ? C.success : invite.status === 'expired' ? C.danger : invite.status === 'revoked' ? C.textMuted : C.warning,
+                                                border: `1px solid ${invite.status === 'accepted' ? C.successBorder : invite.status === 'expired' ? C.dangerBorder : invite.status === 'revoked' ? C.cardBorder : C.warningBorder}`
+                                            }}>
+                                                {invite.status === 'pending' && <MdAccessTime style={{ width: 14, height: 14 }} />}
+                                                {invite.status === 'accepted' && <MdCheckCircle style={{ width: 14, height: 14 }} />}
+                                                {invite.status === 'expired' && <MdWarning style={{ width: 14, height: 14 }} />}
+                                                {invite.status === 'revoked' && <MdClose style={{ width: 14, height: 14 }} />}
+                                                {invite.status}
+                                            </span>
                                         </td>
-                                        <td className="px-4 py-4">
+                                        <td style={{ padding: '16px 16px' }}>
                                             <div className="flex flex-col">
-                                                <span className="text-[13px] font-bold text-[#4A5568]">{invite.invitedBy?.name || 'Admin'}</span>
-                                                <span className="text-[11px] font-medium text-[#7D8DA6]">{invite.invitedBy?.email || 'admin@system.com'}</span>
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>{invite.invitedBy?.name || 'Admin'}</span>
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.textMuted, marginTop: 2 }}>{invite.invitedBy?.email || 'admin@system.com'}</span>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-4">
+                                        <td style={{ padding: '16px 16px' }}>
                                             <div className="flex flex-col gap-1">
-                                                <span className="text-[12px] font-semibold text-[#4A5568]">Sent: {new Date(invite.createdAt).toLocaleDateString()}</span>
-                                                <span className="text-[11px] font-medium text-[#A0ABC0]">Exp: {new Date(invite.expiresAt).toLocaleDateString()}</span>
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text }}>Sent: {new Date(invite.createdAt).toLocaleDateString()}</span>
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.semibold, color: C.textMuted }}>Exp: {new Date(invite.expiresAt).toLocaleDateString()}</span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td style={{ padding: '16px 24px', textAlign: 'center' }}>
                                             <div className="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 {invite.status === 'pending' && (
                                                     <>
                                                         <button
                                                             onClick={() => handleResendInvite(invite._id)}
-                                                            className="text-[#6B4DF1] hover:text-[#5839D6] bg-transparent border-none cursor-pointer"
+                                                            className="transition-colors border-none cursor-pointer"
                                                             title="Resend Invite"
+                                                            style={{ backgroundColor: 'transparent', color: C.btnPrimary }}
+                                                            onMouseEnter={e => e.currentTarget.style.color = '#5839D6'}
+                                                            onMouseLeave={e => e.currentTarget.style.color = C.btnPrimary}
                                                         >
-                                                            <Mail size={18} />
+                                                            <MdMail style={{ width: 20, height: 20 }} />
                                                         </button>
                                                         <button
                                                             onClick={() => handleRevokeInvite(invite._id)}
-                                                            className="text-[#A0ABC0] hover:text-[#E53E3E] bg-transparent border-none cursor-pointer"
+                                                            className="transition-colors border-none cursor-pointer"
                                                             title="Revoke Invite"
+                                                            style={{ backgroundColor: 'transparent', color: C.textMuted }}
+                                                            onMouseEnter={e => e.currentTarget.style.color = C.danger}
+                                                            onMouseLeave={e => e.currentTarget.style.color = C.textMuted}
                                                         >
-                                                            <Trash2 size={18} />
+                                                            <MdDelete style={{ width: 20, height: 20 }} />
                                                         </button>
                                                     </>
                                                 )}
                                                 {invite.status === 'expired' && (
                                                     <button
                                                         onClick={() => handleResendInvite(invite._id)}
-                                                        className="text-[#4ABCA8] hover:text-[#389E8D] bg-transparent border-none cursor-pointer"
+                                                        className="transition-colors border-none cursor-pointer"
                                                         title="Resend Invite"
+                                                        style={{ backgroundColor: 'transparent', color: C.success }}
+                                                        onMouseEnter={e => e.currentTarget.style.color = '#389E8D'}
+                                                        onMouseLeave={e => e.currentTarget.style.color = C.success}
                                                     >
-                                                        <RefreshCw size={18} />
+                                                        <MdRefresh style={{ width: 20, height: 20 }} />
                                                     </button>
                                                 )}
                                             </div>
@@ -293,27 +386,34 @@ export default function AdminInvitesPage() {
                 </div>
 
                 {/* Table Pagination */}
-                <div className="px-6 py-4 border-t border-[#F4F0FD] flex items-center justify-between bg-white">
-                    <span className="text-[13px] font-bold text-[#7D8DA6]">
+                <div className="px-6 py-4 flex items-center justify-between" style={{ backgroundColor: C.surfaceWhite, borderTop: `1px solid ${C.cardBorder}` }}>
+                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.textMuted }}>
                         Showing {filteredInvites.length > 0 ? ((pagination.page || 1) - 1) * (pagination.limit || 10) + 1 : 0} to {Math.min((pagination.page || 1) * (pagination.limit || 10), pagination.total || filteredInvites.length)} of {pagination.total || invites.length} invites
                     </span>
                     <div className="flex items-center gap-2">
                         <button 
                             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                             disabled={currentPage === 1}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-[#E9DFFC] text-[#7D8DA6] hover:text-[#6B4DF1] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, color: C.textMuted }}
+                            onMouseEnter={e => { if(currentPage !== 1) { e.currentTarget.style.color = C.btnPrimary; e.currentTarget.style.backgroundColor = C.btnViewAllBg; } }}
+                            onMouseLeave={e => { if(currentPage !== 1) { e.currentTarget.style.color = C.textMuted; e.currentTarget.style.backgroundColor = C.surfaceWhite; } }}
                         >
-                            <ChevronLeft size={16}/>
+                            <MdChevronLeft style={{ width: 20, height: 20 }} />
                         </button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#F4F0FD] text-[#6B4DF1] font-bold border-none cursor-default text-[13px]">
+                        <button className="flex items-center justify-center border-none cursor-default"
+                            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.btnViewAllBg, color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}>
                             {currentPage}
                         </button>
                         <button 
                             onClick={() => setCurrentPage(prev => prev + 1)}
                             disabled={currentPage === (pagination.pages || 1)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-[#E9DFFC] text-[#7D8DA6] hover:text-[#6B4DF1] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, color: C.textMuted }}
+                            onMouseEnter={e => { if(currentPage !== (pagination.pages || 1)) { e.currentTarget.style.color = C.btnPrimary; e.currentTarget.style.backgroundColor = C.btnViewAllBg; } }}
+                            onMouseLeave={e => { if(currentPage !== (pagination.pages || 1)) { e.currentTarget.style.color = C.textMuted; e.currentTarget.style.backgroundColor = C.surfaceWhite; } }}
                         >
-                            <ChevronRight size={16}/>
+                            <MdChevronRight style={{ width: 20, height: 20 }} />
                         </button>
                     </div>
                 </div>

@@ -2,12 +2,45 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Trash2, Search, BookOpen, Eye, CheckCircle, XCircle, AlertTriangle, Ban, Plus, Filter, LayoutGrid, Clock, UploadCloud, Download, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { 
+    MdMenuBook, 
+    MdCheckCircle, 
+    MdWarning, 
+    MdBlock, 
+    MdSearch, 
+    MdFilterList, 
+    MdAdd, 
+    MdVisibility, 
+    MdCancel, 
+    MdDelete, 
+    MdViewModule, 
+    MdAccessTime, 
+    MdCloudUpload, 
+    MdDownload, 
+    MdChevronLeft, 
+    MdChevronRight
+} from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 import Link from 'next/link';
 import AddCourseWizardModal from '@/components/admin/AddCourseWizardModal';
+import StatCard from '@/components/StatCard';
+import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+
+const baseInputStyle = {
+    backgroundColor: C.surfaceWhite,
+    border: `1px solid ${C.cardBorder}`,
+    borderRadius: '10px',
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.base,
+    fontWeight: T.weight.semibold,
+    outline: 'none',
+    width: '100%',
+    padding: '12px 16px',
+    transition: 'all 0.2s ease',
+};
 
 export default function AdminCoursesPage() {
     const router = useRouter();
@@ -20,8 +53,6 @@ export default function AdminCoursesPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCourse, setEditingCourse] = useState(null);
     const { confirmDialog } = useConfirm();
-
-    const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.12)';
 
     useEffect(() => {
         fetchCourses();
@@ -100,74 +131,91 @@ export default function AdminCoursesPage() {
         (course.tutorId && course.tutorId.name.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
-
-
     if (loading) {
         return (
-            <div className="flex bg-[#F1EAFB] min-h-screen items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#6B4DF1]" />
+            <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-12 h-12">
+                        <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                            style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                    </div>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                        Loading...
+                    </p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6 min-h-screen p-6 md:p-8" style={{ backgroundColor: '#F1EAFB', fontFamily: "'Inter', sans-serif" }}>
+        <div className="space-y-6 min-h-screen w-full" style={{ backgroundColor: C.pageBg, ...pageStyle }}>
             
             {/* ── Top Stats Row ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                {[
-                    { title: 'Total Courses', value: stats?.total || 0, bg: '#E8CBF3', iconBg: '#A059C5', icon: BookOpen },
-                    { title: 'Published Courses', value: stats?.published || 0, bg: '#D1F4E6', iconBg: '#4ABCA8', icon: CheckCircle },
-                    { title: 'Draft Courses', value: stats?.draft || 0, bg: '#FFE5D3', iconBg: '#FC8730', icon: AlertTriangle },
-                    { title: 'Inactive Courses', value: stats?.inactive || 0, bg: '#D9D5F1', iconBg: '#4F7BF0', icon: Ban }
-                ].map((stat, i) => (
-                    <div 
-                        key={i} 
-                        className="rounded-2xl p-4 flex items-center gap-4 transition-transform hover:-translate-y-1 relative cursor-pointer" 
-                        style={{ backgroundColor: stat.bg, boxShadow: softShadow }}
-                    >
-                        <div className="w-[46px] h-[46px] rounded-[12px] flex items-center justify-center shrink-0" style={{ backgroundColor: stat.iconBg }}>
-                            <stat.icon size={22} color="#ffffff" strokeWidth={2.5} />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-[26px] font-black text-[#27225B] leading-none mb-1.5">{stat.value}</span>
-                            <span className="text-[13px] font-semibold text-[#4A3E68] leading-none">{stat.title}</span>
-                        </div>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-40">
-                            <ChevronRight size={18} className="text-[#27225B]" strokeWidth={3} />
-                        </div>
-                    </div>
-                ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <StatCard 
+                    icon={MdMenuBook}
+                    value={stats?.total || 0}
+                    label="Total Courses"
+                    iconBg={C.btnViewAllBg}
+                    iconColor={C.btnPrimary}
+                />
+                <StatCard 
+                    icon={MdCheckCircle}
+                    value={stats?.published || 0}
+                    label="Published Courses"
+                    iconBg={C.successBg}
+                    iconColor={C.success}
+                />
+                <StatCard 
+                    icon={MdWarning}
+                    value={stats?.draft || 0}
+                    label="Draft Courses"
+                    iconBg={C.warningBg}
+                    iconColor={C.warning}
+                />
+                <StatCard 
+                    icon={MdBlock}
+                    value={stats?.inactive || 0}
+                    label="Inactive Courses"
+                    iconBg={C.dangerBg}
+                    iconColor={C.danger}
+                />
             </div>
 
             {/* ── Toolbar / Filters ── */}
-            <div className="bg-white rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ boxShadow: softShadow }}>
-                <div className="relative w-full sm:w-[300px]">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7D8DA6]" />
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                <div className="relative w-full sm:w-[300px] group">
+                    <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 transition-colors pointer-events-none" style={{ width: 18, height: 18, color: C.textMuted }} />
                     <input
                         type="text"
                         placeholder="Search courses..."
-                        className="pl-10 pr-4 py-2.5 bg-[#F4F0FD] border-none text-[#27225B] text-[14px] font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] w-full placeholder-[#A0ABC0]"
+                        style={{ ...baseInputStyle, paddingLeft: '36px' }}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        onFocus={e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
+                        onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
                     />
                 </div>
 
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <select className="bg-[#F4F0FD] text-[#27225B] text-[13px] font-bold px-4 py-2.5 rounded-xl border-none outline-none appearance-none cursor-pointer">
+                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <select style={{ ...baseInputStyle, width: 'auto', minWidth: '120px' }}>
                         <option>All Categories...</option>
                         <option>Computer Science</option>
                         <option>Business</option>
                         <option>Science</option>
                     </select>
-                    <button className="w-10 h-10 bg-[#F4F0FD] rounded-xl flex items-center justify-center text-[#7D8DA6] hover:text-[#6B4DF1] cursor-pointer border-none">
-                        <Filter size={16} />
+                    <button className="flex items-center justify-center transition-colors cursor-pointer border-none"
+                        style={{ width: 44, height: 44, backgroundColor: C.btnViewAllBg, color: C.btnPrimary, borderRadius: '10px' }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = C.innerBg}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = C.btnViewAllBg}>
+                        <MdFilterList style={{ width: 20, height: 20 }} />
                     </button>
                     <button
                         onClick={() => { setEditingCourse(null); setIsModalOpen(true); }}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-[#6B4DF1] text-white font-bold text-[14px] rounded-xl hover:bg-[#5839D6] transition-colors shadow-md border-none cursor-pointer"
+                        className="flex items-center gap-2 transition-opacity hover:opacity-90 cursor-pointer w-full sm:w-auto justify-center"
+                        style={{ padding: '10px 20px', background: C.gradientBtn, color: '#ffffff', border: 'none', borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, boxShadow: S.btn }}
                     >
-                        <Plus className="w-4 h-4" strokeWidth={3} /> Add Course
+                        <MdAdd style={{ width: 18, height: 18 }} /> Add Course
                     </button>
                 </div>
             </div>
@@ -176,84 +224,93 @@ export default function AdminCoursesPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
                 {filteredCourses.length > 0 ? (
                     filteredCourses.map((course) => (
-                        <div key={course._id} className="bg-white rounded-2xl overflow-hidden flex flex-col group relative transition-all hover:shadow-lg" style={{ boxShadow: softShadow }}>
+                        <div key={course._id} className="flex flex-col group relative transition-all overflow-hidden" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}
+                             onMouseEnter={e => e.currentTarget.style.boxShadow = S.cardHover}
+                             onMouseLeave={e => e.currentTarget.style.boxShadow = S.card}>
                             
                             {/* Thumbnail & Hover Overlay */}
-                            <div className="h-[130px] bg-[#E9DFFC] relative overflow-hidden shrink-0">
+                            <div className="h-[130px] relative overflow-hidden shrink-0" style={{ backgroundColor: C.innerBg }}>
                                 {course.thumbnail ? (
                                     <img src={course.thumbnail} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="Course Thumbnail" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-[#6B4DF1]">
-                                        <BookOpen size={40} className="opacity-50" />
+                                    <div className="w-full h-full flex items-center justify-center" style={{ color: C.btnPrimary }}>
+                                        <MdMenuBook style={{ width: 40, height: 40, opacity: 0.5 }} />
                                     </div>
                                 )}
                                 
                                 {/* Admin Action Overlay (Visible on Hover) */}
-                                <div className="absolute inset-0 bg-[#27225B]/80 flex flex-wrap items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity p-4">
-                                    <button onClick={() => { setEditingCourse(course); setIsModalOpen(true); }} className="w-8 h-8 rounded-full bg-white text-[#6B4DF1] flex items-center justify-center hover:scale-110 transition-transform border-none cursor-pointer" title="Edit Details">
-                                        <Eye size={15}/>
+                                <div className="absolute inset-0 flex flex-wrap items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity p-4" style={{ backgroundColor: 'rgba(21, 22, 86, 0.8)' }}>
+                                    <button onClick={() => { setEditingCourse(course); setIsModalOpen(true); }} className="rounded-full flex items-center justify-center transition-transform hover:scale-110 border-none cursor-pointer" title="Edit Details" style={{ width: 32, height: 32, backgroundColor: '#ffffff', color: C.btnPrimary }}>
+                                        <MdVisibility style={{ width: 16, height: 16 }} />
                                     </button>
 
                                     {(course.status === 'pending' || course.status === 'suspended' || course.status === 'rejected') && (
-                                        <button onClick={() => handleStatusChange(course._id, 'published')} className="w-8 h-8 rounded-full bg-[#4ABCA8] text-white flex items-center justify-center hover:scale-110 transition-transform border-none cursor-pointer" title="Approve & Publish">
-                                            <CheckCircle size={15}/>
+                                        <button onClick={() => handleStatusChange(course._id, 'published')} className="rounded-full flex items-center justify-center transition-transform hover:scale-110 border-none cursor-pointer" title="Approve & Publish" style={{ width: 32, height: 32, backgroundColor: C.success, color: '#ffffff' }}>
+                                            <MdCheckCircle style={{ width: 16, height: 16 }} />
                                         </button>
                                     )}
 
                                     {(course.status === 'pending' || course.status === 'published') && (
-                                        <button onClick={() => handleStatusChange(course._id, 'rejected')} className="w-8 h-8 rounded-full bg-[#FC8730] text-white flex items-center justify-center hover:scale-110 transition-transform border-none cursor-pointer" title="Reject Course">
-                                            <XCircle size={15}/>
+                                        <button onClick={() => handleStatusChange(course._id, 'rejected')} className="rounded-full flex items-center justify-center transition-transform hover:scale-110 border-none cursor-pointer" title="Reject Course" style={{ width: 32, height: 32, backgroundColor: C.warning, color: '#ffffff' }}>
+                                            <MdCancel style={{ width: 16, height: 16 }} />
                                         </button>
                                     )}
 
                                     {course.status === 'published' && (
-                                        <button onClick={() => handleStatusChange(course._id, 'suspended')} className="w-8 h-8 rounded-full bg-[#E53E3E] text-white flex items-center justify-center hover:scale-110 transition-transform border-none cursor-pointer" title="Suspend Course">
-                                            <Ban size={15}/>
+                                        <button onClick={() => handleStatusChange(course._id, 'suspended')} className="rounded-full flex items-center justify-center transition-transform hover:scale-110 border-none cursor-pointer" title="Suspend Course" style={{ width: 32, height: 32, backgroundColor: C.danger, color: '#ffffff' }}>
+                                            <MdBlock style={{ width: 16, height: 16 }} />
                                         </button>
                                     )}
 
-                                    <button onClick={() => handleDelete(course._id)} className="w-8 h-8 rounded-full bg-white text-red-500 flex items-center justify-center hover:scale-110 transition-transform border-none cursor-pointer" title="Delete Course">
-                                        <Trash2 size={15}/>
+                                    <button onClick={() => handleDelete(course._id)} className="rounded-full flex items-center justify-center transition-transform hover:scale-110 border-none cursor-pointer" title="Delete Course" style={{ width: 32, height: 32, backgroundColor: '#ffffff', color: C.danger }}>
+                                        <MdDelete style={{ width: 16, height: 16 }} />
                                     </button>
                                 </div>
                             </div>
 
                             {/* Content */}
                             <div className="p-4 flex flex-col flex-1">
-                                <h3 className="text-[14px] font-bold text-[#27225B] line-clamp-1 m-0 mb-2" title={course.title}>
+                                <h3 className="line-clamp-1 truncate" title={course.title} style={{ fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 8px 0' }}>
                                     {course.title}
                                 </h3>
                                 
                                 <div className="flex items-center justify-between mb-4">
-                                    <span className="text-[11px] font-semibold text-[#7D8DA6] truncate max-w-[60%]">
+                                    <span className="truncate max-w-[60%]" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.textMuted }}>
                                         {course.category || 'Computer Science'}
                                     </span>
-                                    <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wider
-                                        ${course.status === 'published' ? 'bg-[#ECFDF5] text-[#4ABCA8]' : 
-                                          course.status === 'draft' ? 'bg-[#F4F0FD] text-[#6B4DF1]' : 
-                                          'bg-[#FFF7ED] text-[#FC8730]'}`}>
+                                    <span style={{ 
+                                        padding: '2px 8px', 
+                                        borderRadius: '6px', 
+                                        fontFamily: T.fontFamily, 
+                                        fontSize: '10px', 
+                                        fontWeight: T.weight.bold, 
+                                        textTransform: 'uppercase', 
+                                        letterSpacing: T.tracking.wider,
+                                        backgroundColor: course.status === 'published' ? C.successBg : course.status === 'draft' ? C.btnViewAllBg : C.warningBg,
+                                        color: course.status === 'published' ? C.success : course.status === 'draft' ? C.btnPrimary : C.warning
+                                    }}>
                                         {course.status || 'Draft'}
                                     </span>
                                 </div>
 
                                 {/* Footer Stats */}
-                                <div className="mt-auto pt-3 border-t border-[#F4F0FD] flex items-center justify-between">
-                                    <div className="flex items-center gap-1.5 text-[#A0ABC0]">
-                                        <LayoutGrid size={12} />
-                                        <span className="text-[11px] font-bold">{course.modules?.length || Math.floor(Math.random() * 20) + 5} Modules</span>
+                                <div className="mt-auto pt-3 flex items-center justify-between" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+                                    <div className="flex items-center gap-1.5" style={{ color: C.textMuted }}>
+                                        <MdViewModule style={{ width: 14, height: 14 }} />
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>{course.modules?.length || Math.floor(Math.random() * 20) + 5} Modules</span>
                                     </div>
-                                    <div className="flex items-center gap-1.5 text-[#A0ABC0]">
-                                        <Clock size={12} />
-                                        <span className="text-[11px] font-bold">{course.duration || Math.floor(Math.random() * 60) + 10} Mins</span>
+                                    <div className="flex items-center gap-1.5" style={{ color: C.textMuted }}>
+                                        <MdAccessTime style={{ width: 14, height: 14 }} />
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}>{course.duration || Math.floor(Math.random() * 60) + 10} Mins</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     ))
                 ) : (
-                    <div className="col-span-full py-12 text-center bg-white rounded-2xl" style={{ boxShadow: softShadow }}>
-                        <BookOpen className="w-12 h-12 text-[#D1C4F9] mx-auto mb-3" />
-                        <p className="text-[14px] font-semibold text-[#7D8DA6] m-0">No courses found matching your search.</p>
+                    <div className="col-span-full py-12 text-center flex flex-col items-center justify-center" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                        <MdMenuBook style={{ width: 48, height: 48, color: C.btnPrimary, opacity: 0.3, marginBottom: 12 }} />
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.textMuted, margin: 0 }}>No courses found matching your search.</p>
                     </div>
                 )}
             </div>
@@ -261,12 +318,27 @@ export default function AdminCoursesPage() {
             {/* Pagination */}
             {filteredCourses.length > 0 && (
                 <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-semibold text-[#7D8DA6]">Showing 1 to {filteredCourses.length} of {courses.length} courses</span>
+                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.textMuted }}>
+                        Showing 1 to {filteredCourses.length} of {courses.length} courses
+                    </span>
                     <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-semibold text-[#7D8DA6] mr-2">Rows per page: 10 ▾</span>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-[#E9DFFC] text-[#7D8DA6] hover:text-[#6B4DF1] cursor-pointer"><ChevronLeft size={16}/></button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#6B4DF1] text-white font-bold border-none cursor-pointer text-[13px]">1</button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-[#E9DFFC] text-[#7D8DA6] hover:text-[#6B4DF1] cursor-pointer"><ChevronRight size={16}/></button>
+                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.textMuted, marginRight: 8 }}>Rows per page: 10 ▾</span>
+                        <button className="flex items-center justify-center transition-colors cursor-pointer"
+                            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, color: C.textMuted }}
+                            onMouseEnter={e => { e.currentTarget.style.color = C.btnPrimary; e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; e.currentTarget.style.backgroundColor = C.surfaceWhite; }}>
+                            <MdChevronLeft style={{ width: 20, height: 20 }} />
+                        </button>
+                        <button className="flex items-center justify-center border-none cursor-default"
+                            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.btnPrimary, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}>
+                            1
+                        </button>
+                        <button className="flex items-center justify-center transition-colors cursor-pointer"
+                            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, color: C.textMuted }}
+                            onMouseEnter={e => { e.currentTarget.style.color = C.btnPrimary; e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; e.currentTarget.style.backgroundColor = C.surfaceWhite; }}>
+                            <MdChevronRight style={{ width: 20, height: 20 }} />
+                        </button>
                     </div>
                 </div>
             )}
@@ -275,56 +347,66 @@ export default function AdminCoursesPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* Quick Actions */}
-                <div className="bg-white p-5 rounded-2xl flex flex-col" style={{ boxShadow: softShadow }}>
-                    <h3 className="text-[15px] font-black text-[#27225B] mb-4">Quick Actions</h3>
-                    <div className="flex gap-4">
-                        <button className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#6B4DF1] text-white font-bold text-[13px] border-none cursor-pointer hover:bg-[#5839D6] transition-colors shadow-sm">
-                            <UploadCloud size={16} /> Bulk Export
+                <div className="flex flex-col p-5" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 16px 0' }}>Quick Actions</h3>
+                    <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-3">
+                        <button className="flex-1 flex items-center justify-center gap-2 transition-opacity border-none cursor-pointer group" style={{ padding: '12px 16px', backgroundColor: C.btnViewAllBg, borderRadius: '10px' }}
+                            onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
+                            onMouseLeave={e => e.currentTarget.style.opacity = 1}>
+                            <MdCloudUpload style={{ width: 18, height: 18, color: C.btnPrimary }} />
+                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.btnPrimary }}>Bulk Export</span>
                         </button>
-                        <button className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[#DC7967] font-bold text-[13px] border-none cursor-pointer hover:opacity-90 transition-opacity shadow-sm" style={{ backgroundColor: '#FEE2E2' }}>
-                            <Download size={16} /> Bulk Import
+                        <button className="flex-1 flex items-center justify-center gap-2 transition-opacity border-none cursor-pointer group" style={{ padding: '12px 16px', backgroundColor: C.dangerBg, borderRadius: '10px' }}
+                            onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
+                            onMouseLeave={e => e.currentTarget.style.opacity = 1}>
+                            <MdDownload style={{ width: 18, height: 18, color: C.danger }} />
+                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.danger }}>Bulk Import</span>
                         </button>
                     </div>
                 </div>
 
                 {/* Recent Activities */}
-                <div className="bg-white p-5 rounded-2xl flex flex-col" style={{ boxShadow: softShadow }}>
-                    <h3 className="text-[15px] font-black text-[#27225B] mb-4">Recent Activities</h3>
+                <div className="flex flex-col p-5" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 16px 0' }}>Recent Activities</h3>
                     <div className="flex flex-col gap-3">
                         {recentActivities.map((activity, idx) => (
                             <div key={activity.id || idx} className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${activity.action === 'published' ? 'bg-[#ECFDF5] text-[#4ABCA8]' : 'bg-[#F4F0FD] text-[#6B4DF1]'}`}>
-                                        {activity.action === 'published' ? <CheckCircle size={14}/> : <Plus size={14}/>}
+                                    <div className="flex items-center justify-center shrink-0" style={{ width: 32, height: 32, borderRadius: '10px', backgroundColor: activity.action === 'published' ? C.successBg : C.btnViewAllBg, color: activity.action === 'published' ? C.success : C.btnPrimary }}>
+                                        {activity.action === 'published' ? <MdCheckCircle style={{ width: 16, height: 16 }}/> : <MdAdd style={{ width: 16, height: 16 }}/>}
                                     </div>
-                                    <p className="text-[13px] font-semibold text-[#4A5568] m-0"><span className="font-bold text-[#27225B] truncate max-w-[120px] inline-block align-bottom">{activity.title}</span> {activity.action}</p>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text, margin: 0, lineHeight: 1.3 }}>
+                                        <span style={{ fontWeight: T.weight.bold, color: C.heading, maxWidth: '120px', display: 'inline-block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }}>
+                                            {activity.title}
+                                        </span> {activity.action}
+                                    </p>
                                 </div>
-                                <span className="text-[11px] font-medium text-[#A0ABC0]">Recently</span>
+                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.textMuted }}>Recently</span>
                             </div>
                         ))}
                         {recentActivities.length === 0 && (
-                            <p className="text-[13px] font-medium text-[#A0ABC0] italic text-center">No recent course activities</p>
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, fontStyle: 'italic', textAlign: 'center', margin: 0 }}>No recent course activities.</p>
                         )}
                     </div>
                 </div>
 
                 {/* Notifications */}
-                <div className="bg-white p-5 rounded-2xl flex flex-col" style={{ boxShadow: softShadow }}>
-                    <h3 className="text-[15px] font-black text-[#27225B] mb-4">Notifications</h3>
+                <div className="flex flex-col p-5" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 16px 0' }}>Notifications</h3>
                     <div className="flex flex-col gap-3">
-                        <div className="flex items-center justify-between p-3 rounded-xl bg-[#F4F0FD]">
-                            <div className="flex items-center gap-3">
-                                <AlertTriangle size={16} className="text-[#6B4DF1]" />
-                                <span className="text-[13px] font-bold text-[#27225B]">{stats?.pending || 0} courses pending approval</span>
+                        <div className="flex items-center justify-between p-3" style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                            <div className="flex items-center gap-3 min-w-0">
+                                <MdWarning style={{ width: 16, height: 16, color: C.btnPrimary, shrink: 0 }} />
+                                <span className="truncate max-w-[200px]" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>{stats?.pending || 0} courses pending approval</span>
                             </div>
-                            <Link href="#" className="text-[12px] font-bold text-[#6B4DF1] no-underline">Review</Link>
+                            <Link href="#" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.btnPrimary, textDecoration: 'none', marginLeft: 8, shrink: 0 }}>Review</Link>
                         </div>
-                        <div className="flex items-center justify-between p-3 rounded-xl bg-[#F4F0FD]">
-                            <div className="flex items-center gap-3">
-                                <Ban size={16} className="text-[#6B4DF1]" />
-                                <span className="text-[13px] font-bold text-[#27225B] truncate w-40">{stats?.inactive || 0} inactive courses</span>
+                        <div className="flex items-center justify-between p-3" style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                            <div className="flex items-center gap-3 min-w-0">
+                                <MdBlock style={{ width: 16, height: 16, color: C.btnPrimary, shrink: 0 }} />
+                                <span className="truncate max-w-[200px]" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>{stats?.inactive || 0} inactive courses</span>
                             </div>
-                            <Link href="#" className="text-[12px] font-bold text-[#6B4DF1] no-underline">View</Link>
+                            <Link href="#" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.btnPrimary, textDecoration: 'none', marginLeft: 8, shrink: 0 }}>View</Link>
                         </div>
                     </div>
                 </div>

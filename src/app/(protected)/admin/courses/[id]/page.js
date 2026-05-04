@@ -1,10 +1,35 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Loader2, BookOpen, Users, DollarSign, Calendar, Clock, BarChart } from 'lucide-react';
+import { 
+    MdMenuBook, 
+    MdPeople, 
+    MdAttachMoney, 
+    MdVisibility,
+    MdHourglassEmpty,
+    MdSchool,
+    MdWarning
+} from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import StatCard from '@/components/StatCard';
+import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+
+// ─── Reusable Section Header Pattern ──────────────────────────────────────────
+function SectionHeader({ icon: Icon, title }) {
+    return (
+        <div className="flex items-center gap-2.5 mb-4">
+            <div className="flex items-center justify-center shrink-0"
+                style={{ width: 40, height: 40, backgroundColor: C.iconBg, borderRadius: '10px' }}>
+                <Icon style={{ width: 16, height: 16, color: C.iconColor }} />
+            </div>
+            <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
+                {title}
+            </h2>
+        </div>
+    );
+}
 
 export default function AdminCourseDetailPage({ params }) {
     const { id } = use(params);
@@ -36,47 +61,81 @@ export default function AdminCourseDetailPage({ params }) {
 
     if (loading) {
         return (
-            <div className="flex bg-slate-50 min-h-screen items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-12 h-12">
+                        <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                            style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                    </div>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                        Loading details...
+                    </p>
+                </div>
             </div>
         );
     }
 
     if (!course) {
         return (
-            <div className="p-6 text-center text-slate-500">
-                Course not found
+            <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg, ...pageStyle }}>
+                <div className="p-14 text-center border border-dashed" style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
+                    <div className="flex items-center justify-center mx-auto mb-4" style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                        <MdWarning style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
+                    </div>
+                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>Course Not Found</h3>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.textMuted, marginTop: 4 }}>The course you are looking for does not exist.</p>
+                    <button onClick={() => router.push('/admin/courses')} className="mt-6 transition-opacity hover:opacity-90 cursor-pointer"
+                        style={{ padding: '10px 24px', background: C.gradientBtn, color: '#ffffff', border: 'none', borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, boxShadow: S.btn }}>
+                        Back to Courses
+                    </button>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 min-h-screen w-full" style={{ backgroundColor: C.pageBg, ...pageStyle }}>
+            
             {/* Header / Course Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="relative h-48 bg-slate-900">
+            <div className="flex flex-col overflow-hidden" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                <div className="relative h-48" style={{ backgroundColor: C.heading }}>
                     {course.thumbnail && (
                         <>
-                            <img src={course.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover opacity-50" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
+                            <img src={course.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />
+                            <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(30, 27, 75, 0.9), transparent)' }}></div>
                         </>
                     )}
                     <div className="absolute bottom-0 left-0 p-6 w-full">
-                        <div className="flex justify-between items-end">
+                        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                             <div>
                                 <div className="flex items-center gap-2 mb-2">
-                                    <span className={`px-2 py-0.5 rounded text-xs font-semibold
-                                        ${course.status === 'published' ? 'bg-emerald-500 text-white' : 'bg-slate-500 text-white'}`}>
+                                    <span style={{ 
+                                        padding: '2px 8px', 
+                                        borderRadius: '10px', 
+                                        fontFamily: T.fontFamily, 
+                                        fontSize: T.size.xs, 
+                                        fontWeight: T.weight.bold, 
+                                        textTransform: 'uppercase', 
+                                        letterSpacing: T.tracking.wider,
+                                        backgroundColor: course.status === 'published' ? C.successBg : C.btnViewAllBg,
+                                        color: course.status === 'published' ? C.success : C.btnPrimary,
+                                        border: `1px solid ${course.status === 'published' ? C.successBorder : 'transparent'}`
+                                    }}>
                                         {course.status}
                                     </span>
-                                    <span className="text-slate-300 text-sm">• {course.level}</span>
+                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: '#ffffff', opacity: 0.8, textTransform: 'capitalize' }}>
+                                        • {course.level}
+                                    </span>
                                 </div>
-                                <h1 className="text-2xl font-bold text-white mb-2">{course.title}</h1>
-                                <p className="text-slate-300 text-sm line-clamp-1 max-w-2xl">{course.description}</p>
+                                <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.bold, color: '#ffffff', margin: '0 0 8px 0' }}>{course.title}</h1>
+                                <p className="line-clamp-1 max-w-2xl" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: '#ffffff', opacity: 0.8, margin: 0 }}>{course.description}</p>
                             </div>
                             <button
                                 onClick={() => router.push('/admin/courses')}
-                                className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white bg-white/10 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm"
+                                className="transition-colors cursor-pointer shrink-0"
+                                style={{ backgroundColor: C.surfaceWhite, color: C.heading, border: 'none', borderRadius: '10px', padding: '10px 20px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}
+                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; e.currentTarget.style.color = C.btnPrimary; }}
+                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.surfaceWhite; e.currentTarget.style.color = C.heading; }}
                             >
                                 Back to List
                             </button>
@@ -85,126 +144,153 @@ export default function AdminCourseDetailPage({ params }) {
                 </div>
 
                 <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <div onClick={() => router.push(`/admin/tutors/${course.tutorId?._id}`)} className="cursor-pointer group">
-                            <h3 className="text-sm font-medium text-slate-500 mb-1">Instructor</h3>
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-slate-100 overflow-hidden">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                        <div onClick={() => router.push(`/admin/tutors/${course.tutorId?._id}`)} className="cursor-pointer group flex flex-col p-4 transition-colors" 
+                             style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}
+                             onMouseEnter={e => e.currentTarget.style.backgroundColor = C.btnViewAllBg}
+                             onMouseLeave={e => e.currentTarget.style.backgroundColor = C.innerBg}>
+                            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wider, margin: '0 0 8px 0' }}>Instructor</h3>
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center justify-center shrink-0 overflow-hidden" style={{ width: 32, height: 32, borderRadius: '10px', backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}` }}>
                                     {course.tutorId?.profileImage ? (
                                         <img src={course.tutorId.profileImage} alt="" className="w-full h-full object-cover" />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-xs font-bold text-slate-400">
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.btnPrimary }}>
                                             {course.tutorId?.name?.charAt(0)}
-                                        </div>
+                                        </span>
                                     )}
                                 </div>
-                                <span className="font-medium text-slate-800 group-hover:text-indigo-600 transition-colors">
+                                <span className="truncate transition-colors" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
                                     {course.tutorId?.name || 'Unknown'}
                                 </span>
                             </div>
                         </div>
 
-                        <div>
-                            <h3 className="text-sm font-medium text-slate-500 mb-1">Price</h3>
-                            <div className="text-lg font-bold text-slate-800">
+                        <div className="flex flex-col p-4" style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wider, margin: '0 0 8px 0' }}>Price</h3>
+                            <div style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>
                                 {course.price > 0 ? `$${course.price}` : 'Free'}
                             </div>
                         </div>
 
-                        <div>
-                            <h3 className="text-sm font-medium text-slate-500 mb-1">Category</h3>
-                            <div className="text-slate-800">{course.category || 'General'}</div>
+                        <div className="flex flex-col p-4" style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wider, margin: '0 0 8px 0' }}>Category</h3>
+                            <div className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
+                                {course.category || 'General'}
+                            </div>
                         </div>
 
-                        <div>
-                            <h3 className="text-sm font-medium text-slate-500 mb-1">Created</h3>
-                            <div className="text-slate-800">{new Date(course.createdAt).toLocaleDateString()}</div>
+                        <div className="flex flex-col p-4" style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wider, margin: '0 0 8px 0' }}>Created Date</h3>
+                            <div style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
+                                {new Date(course.createdAt).toLocaleDateString()}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-indigo-100 rounded-lg text-indigo-600">
-                            <Users className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-500 font-medium">Enrolled Students</p>
-                            <h3 className="text-2xl font-bold text-slate-800">{stats?.totalStudents || 0}</h3>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-emerald-100 rounded-lg text-emerald-600">
-                            <DollarSign className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-slate-500 font-medium">Total Revenue</p>
-                            <h3 className="text-2xl font-bold text-slate-800">${stats?.totalRevenue || 0}</h3>
-                        </div>
-                    </div>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <StatCard 
+                    icon={MdMenuBook}
+                    value={stats?.totalCourses || 0}
+                    label="Total Courses"
+                    iconBg={C.btnViewAllBg}
+                    iconColor={C.btnPrimary}
+                />
+                <StatCard 
+                    icon={MdPeople}
+                    value={stats?.totalStudents || 0}
+                    label="Enrolled Students"
+                    iconBg={C.successBg}
+                    iconColor={C.success}
+                />
+                <StatCard 
+                    icon={MdAttachMoney}
+                    value={`$${stats?.totalEarnings || 0}`}
+                    label="Total Revenue"
+                    iconBg={C.warningBg}
+                    iconColor={C.warning}
+                />
             </div>
 
             {/* Students List */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-6 border-b border-slate-100">
-                    <h3 className="font-bold text-slate-800">Enrolled Students</h3>
+            <div className="flex flex-col overflow-hidden" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                <div className="p-6" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                    <SectionHeader icon={MdSchool} title="Enrolled Students" />
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-50 border-b border-slate-100">
+                <div className="overflow-x-auto w-full">
+                    <table className="w-full text-left border-collapse min-w-[700px]">
+                        <thead style={{ backgroundColor: C.innerBg }}>
                             <tr>
-                                <th className="px-6 py-4 font-semibold text-slate-600">Student Name</th>
-                                <th className="px-6 py-4 font-semibold text-slate-600">Email</th>
-                                <th className="px-6 py-4 font-semibold text-slate-600">Enrolled Date</th>
-                                <th className="px-6 py-4 font-semibold text-slate-600">Progress</th>
-                                <th className="px-6 py-4 font-semibold text-slate-600 text-right">Action</th>
+                                <th style={{ padding: '16px 24px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Student Name</th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Email</th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Enrolled Date</th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Progress</th>
+                                <th style={{ padding: '16px 24px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}`, textAlign: 'right' }}>Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody>
                             {students.length > 0 ? (
                                 students.map((student) => (
-                                    <tr key={student.id} className="hover:bg-slate-50/50">
-                                        <td className="px-6 py-4 font-medium text-slate-900">
-                                            {student.name}
+                                    <tr key={student.id} className="transition-colors group" style={{ backgroundColor: C.cardBg, borderBottom: `1px solid ${C.cardBorder}` }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.cardBg; }}>
+                                        <td style={{ padding: '16px 24px' }}>
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
+                                                {student.name}
+                                            </span>
                                         </td>
-                                        <td className="px-6 py-4 text-slate-600">
-                                            {student.email}
+                                        <td style={{ padding: '16px 16px' }}>
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.text }}>
+                                                {student.email}
+                                            </span>
                                         </td>
-                                        <td className="px-6 py-4 text-slate-600">
-                                            {new Date(student.enrolledAt).toLocaleDateString()}
+                                        <td style={{ padding: '16px 16px' }}>
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.text }}>
+                                                {new Date(student.enrolledAt).toLocaleDateString()}
+                                            </span>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-20 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                        <td style={{ padding: '16px 16px' }}>
+                                            <div className="flex items-center gap-3">
+                                                <div style={{ width: '80px', backgroundColor: C.innerBg, borderRadius: '10px', height: '8px', overflow: 'hidden' }}>
                                                     <div
-                                                        className="bg-indigo-500 h-full rounded-full"
-                                                        style={{ width: `${student.progress || 0}%` }}
+                                                        style={{ backgroundColor: C.success, height: '100%', borderRadius: '10px', width: `${student.progress || 0}%`, transition: 'width 0.5s ease' }}
                                                     ></div>
                                                 </div>
-                                                <span className="text-xs text-slate-500">{student.progress || 0}%</span>
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>{student.progress || 0}%</span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-right">
+                                        <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                                             <button
                                                 onClick={() => router.push(`/admin/students/${student._id}`)}
-                                                className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                                                className="transition-colors cursor-pointer border-none"
+                                                style={{ backgroundColor: 'transparent', color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold }}
+                                                onMouseEnter={e => e.currentTarget.style.color = '#5839D6'}
+                                                onMouseLeave={e => e.currentTarget.style.color = C.btnPrimary}
                                             >
-                                                View Profile
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <MdVisibility style={{ width: 16, height: 16 }} /> View Profile
+                                                </div>
                                             </button>
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
-                                        No students enrolled yet.
+                                    <td colSpan="5" className="px-6 py-16">
+                                        <div className="p-14 text-center border border-dashed"
+                                             style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
+                                            <div className="flex items-center justify-center mx-auto mb-4"
+                                                 style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                                                <MdPeople style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
+                                            </div>
+                                            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>No Students</h3>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.textMuted, marginTop: 4 }}>
+                                                No students enrolled yet.
+                                            </p>
+                                        </div>
                                     </td>
                                 </tr>
                             )}

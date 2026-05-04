@@ -2,113 +2,181 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
-import StatsCard from '@/components/widgets/StatsCard';
+import StatCard from '@/components/StatCard';
 import AnalyticsChart from '@/components/widgets/AnalyticsChart';
-import { Users, BookOpen, Layers, ChevronRight, Zap, UserPlus, FileCheck, Calendar, FileText, CheckCircle2, MoreVertical, CreditCard } from 'lucide-react';
+import {
+    MdPeople,
+    MdMenuBook,
+    MdLayers,
+    MdChevronRight,
+    MdBolt,
+    MdPersonAdd,
+    MdFactCheck,
+    MdCalendarMonth,
+    MdArticle,
+    MdMoreVert,
+    MdWarning,
+} from 'react-icons/md';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
+import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+
+// ─── Section Header ───────────────────────────────────────────────────────────
+function SectionHeader({ icon: Icon, title, linkHref, linkLabel = 'View All' }) {
+    return (
+        <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2.5">
+                <div
+                    className="flex items-center justify-center shrink-0"
+                    style={{ width: 40, height: 40, backgroundColor: C.iconBg, borderRadius: '10px' }}
+                >
+                    <Icon style={{ width: 16, height: 16, color: C.iconColor }} />
+                </div>
+                <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.semibold, color: C.heading, margin: 0 }}>
+                    {title}
+                </h2>
+            </div>
+            {linkHref && (
+                <Link
+                    href={linkHref}
+                    className="inline-flex items-center gap-1 transition-all hover:opacity-80"
+                    style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, borderRadius: '10px', border: `1px solid ${C.cardBorder}`, padding: '6px 12px' }}
+                >
+                    {linkLabel} <MdChevronRight style={{ width: 16, height: 16 }} />
+                </Link>
+            )}
+        </div>
+    );
+}
 
 export default function AdminDashboard() {
-    const [stats, setStats] = useState(null);
+    const [stats, setStats]   = useState(null);
     const [loading, setLoading] = useState(true);
 
     const fetchStats = async () => {
         setLoading(true);
         try {
             const res = await api.get('/admin/stats');
-            if (res.data.success) {
-                setStats(res.data.stats);
-            }
-        } catch (error) {
-            toast.error('Failed to load dashboard stats');
-        } finally {
-            setLoading(false);
-        }
+            if (res.data.success) setStats(res.data.stats);
+        } catch { toast.error('Failed to load dashboard stats'); }
+        finally { setLoading(false); }
     };
 
     useEffect(() => { fetchStats(); }, []);
 
-    if (loading && !stats) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-[#F1EAFB]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-[#6854F3]"></div>
+    if (loading && !stats) return (
+        <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
+            <div className="flex flex-col items-center gap-3">
+                <div
+                    className="rounded-full border-[3px] animate-spin"
+                    style={{ width: 48, height: 48, borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }}
+                />
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                    Loading...
+                </p>
             </div>
-        );
-    }
+        </div>
+    );
 
-    const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.15)';
     const formatTrend = (val) => val === null ? 'New' : `${val >= 0 ? '+' : ''}${Math.abs(val).toFixed(0)}%`;
 
     const statsData = [
-        { title: 'Total Students', value: stats?.totalStudents?.toLocaleString() || '0', trend: formatTrend(stats?.trends?.students), trendUp: true, icon: Users, iconColor: '#4F7BF0', iconBg: '#EFEFFC' },
-        { title: 'Total Instructors', value: stats?.totalTutors?.toLocaleString() || '0', trend: formatTrend(stats?.trends?.tutors), trendUp: true, icon: Users, iconColor: '#6854F3', iconBg: '#F4F0FD' },
-        { title: 'Total Courses', value: stats?.totalCourses?.toLocaleString() || '0', trend: formatTrend(stats?.trends?.courses), trendUp: true, icon: Layers, iconColor: '#FD9017', iconBg: '#FFF7ED' },
-        { title: 'Active Batches', value: stats?.activeBatches?.toLocaleString() || '0', trend: 'Running', trendUp: true, icon: BookOpen, iconColor: '#4ABCA8', iconBg: '#ECFDF5' }
+        { title: 'Total Students',     value: stats?.totalStudents?.toLocaleString()  || '0', trend: formatTrend(stats?.trends?.students), icon: MdPeople,    iconColor: C.btnPrimary, iconBg: C.btnViewAllBg },
+        { title: 'Total Instructors',  value: stats?.totalTutors?.toLocaleString()    || '0', trend: formatTrend(stats?.trends?.tutors),   icon: MdPersonAdd, iconColor: C.heading,    iconBg: C.innerBg },
+        { title: 'Total Courses',      value: stats?.totalCourses?.toLocaleString()   || '0', trend: formatTrend(stats?.trends?.courses),  icon: MdLayers,    iconColor: C.warning,    iconBg: C.warningBg },
+        { title: 'Active Batches',     value: stats?.activeBatches?.toLocaleString()  || '0', trend: 'Running',                            icon: MdMenuBook,  iconColor: C.success,    iconBg: C.successBg },
     ];
 
     return (
-        <div className="min-h-screen p-6 md:p-8" style={{ backgroundColor: '#F1EAFB', fontFamily: "'Inter', sans-serif" }}>
+        <div className="min-h-screen" style={{ backgroundColor: C.pageBg, ...pageStyle }}>
 
             {/* ── Header ── */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div className="flex items-center gap-4">
-                    <img src={stats?.adminImage || "https://api.dicebear.com/7.x/avataaars/svg?seed=AdminProfile"} alt="Admin" className="w-14 h-14 rounded-full border-[3px] border-white shadow-sm object-cover" />
+                    <img
+                        src={stats?.adminImage || 'https://api.dicebear.com/7.x/avataaars/svg?seed=AdminProfile'}
+                        alt="Admin"
+                        className="w-14 h-14 object-cover shrink-0"
+                        style={{ borderRadius: '10px', border: `2px solid ${C.btnPrimary}`, boxShadow: `0 0 0 3px ${C.btnViewAllBg}` }}
+                    />
                     <div>
-                        <h1 className="text-2xl font-black text-[#27225B] m-0 mb-1">
+                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0', lineHeight: T.leading.tight }}>
                             Welcome back, {stats?.adminName || 'Admin'} 👋
                         </h1>
-                        <p className="text-[14px] font-medium text-[#7D8DA6] m-0">
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.text, margin: 0 }}>
                             Here's an overview of your institute's performance and upcoming activities.
                         </p>
                     </div>
                 </div>
 
-                <button className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-white font-bold text-[15px] shadow-lg hover:opacity-90 transition-opacity border-none cursor-pointer"
-                    style={{ background: 'linear-gradient(90deg, #6D4FF1 0%, #5F41E3 100%)' }}>
-                    <Zap size={18} fill="white" /> Quick Actions <ChevronRight size={16} />
+                <button
+                    className="flex items-center gap-2 transition-all hover:opacity-90 cursor-pointer"
+                    style={{ background: C.gradientBtn, color: '#ffffff', border: 'none', borderRadius: '10px', padding: '12px 24px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, boxShadow: S.btn }}
+                >
+                    <MdBolt style={{ width: 18, height: 18 }} /> Quick Actions <MdChevronRight style={{ width: 18, height: 18 }} />
                 </button>
             </div>
 
-            {/* ── Main Split Layout (Left: 3/4 Width, Right: 1/4 Width) ── */}
+            {/* ── Main Split Layout ── */}
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
 
-                {/* =========================================
-                    LEFT SIDE (Main Dashboard Content)
-                ========================================= */}
+                {/* ── LEFT: Main content ── */}
                 <div className="xl:col-span-3 flex flex-col gap-6">
-                    
-                    {/* Row 1: 4 Stat Cards */}
+
+                    {/* Row 1: Stat Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {statsData.map((stat, index) => <StatsCard key={index} {...stat} />)}
+                        {statsData.map((stat, i) => (
+                            <StatCard
+                                key={i}
+                                icon={stat.icon}
+                                value={stat.value}
+                                label={stat.title}
+                                subtext={stat.trend}
+                                iconBg={stat.iconBg}
+                                iconColor={stat.iconColor}
+                            />
+                        ))}
                     </div>
 
-                    {/* Row 2: Course Perf (Spans 2/3) + Upcoming Classes (Spans 1/3) */}
+                    {/* Row 2: Analytics Chart + Upcoming Classes */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2">
                             <AnalyticsChart data={stats?.monthlyData} title="Course Performance" />
                         </div>
-                        
-                        <div className="lg:col-span-1 bg-white p-5 rounded-2xl flex flex-col" style={{ boxShadow: softShadow }}>
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-[16px] font-black text-[#27225B] m-0">Upcoming Classes</h3>
-                                <Link href="/admin/classes" className="text-[12px] font-bold text-[#6854F3] no-underline hover:underline">View All</Link>
-                            </div>
+
+                        <div
+                            className="lg:col-span-1 flex flex-col"
+                            style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], boxShadow: S.card, padding: 20 }}
+                        >
+                            <SectionHeader icon={MdCalendarMonth} title="Upcoming Classes" linkHref="/admin/classes" />
                             <div className="flex flex-col gap-4 flex-1">
                                 {stats?.upcomingClasses?.map((cls, i) => (
-                                    <div key={i} className="flex gap-3">
-                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: ['#EFEFFC', '#FFF7ED', '#ECFDF5', '#F4F0FD'][i % 4] }}>
-                                            <Calendar size={18} color={['#4F7BF0', '#FD9017', '#4ABCA8', '#6854F3'][i % 4]} />
+                                    <div
+                                        key={i}
+                                        className="flex gap-3 items-center transition-colors"
+                                        style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px', padding: 12 }}
+                                    >
+                                        <div className="flex items-center justify-center shrink-0" style={{ width: 40, height: 40, backgroundColor: C.cardBg, borderRadius: '10px' }}>
+                                            <MdCalendarMonth style={{ width: 18, height: 18, color: C.btnPrimary }} />
                                         </div>
-                                        <div className="flex-1">
+                                        <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between">
-                                                <h4 className="text-[14px] font-bold text-[#27225B] m-0">{cls.title}</h4>
+                                                <h4 className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
+                                                    {cls.title}
+                                                </h4>
                                                 {cls.status === 'Live' ? (
-                                                    <span className="text-[10px] font-bold text-[#6854F3] bg-[#F4F0FD] px-2 py-0.5 rounded-md uppercase tracking-wider">Live</span>
+                                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.btnPrimary, backgroundColor: C.btnViewAllBg, padding: '2px 8px', borderRadius: '10px', textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
+                                                        Live
+                                                    </span>
                                                 ) : (
-                                                    <span className="text-[11px] font-bold text-[#4ABCA8] bg-[#ECFDF5] px-2 py-0.5 rounded-md">+ 12%</span>
+                                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.success, backgroundColor: C.successBg, padding: '2px 8px', borderRadius: '10px' }}>
+                                                        Upcoming
+                                                    </span>
                                                 )}
                                             </div>
-                                            <p className="text-[12px] font-medium text-[#7D8DA6] m-0 mt-0.5">{cls.date} • {cls.time}</p>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.text, margin: '4px 0 0 0' }}>
+                                                {cls.date} • {cls.time}
+                                            </p>
                                         </div>
                                     </div>
                                 ))}
@@ -116,27 +184,40 @@ export default function AdminDashboard() {
                         </div>
                     </div>
 
-                    {/* Row 3: Recent Activities + Exams & Assessments + Fee Collection */}
+                    {/* Row 3: Recent Activity + Exams + Fee Collection */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        
+
                         {/* Recent Activity */}
-                        <div className="bg-white p-5 rounded-2xl flex flex-col" style={{ boxShadow: softShadow }}>
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-[16px] font-black text-[#27225B] m-0">Recent Activities</h3>
-                                <Link href="/admin/activity" className="text-[12px] font-bold text-[#6854F3] no-underline hover:underline">View All</Link>
-                            </div>
-                            <div className="flex flex-col gap-5">
+                        <div
+                            className="flex flex-col"
+                            style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], boxShadow: S.card, padding: 20 }}
+                        >
+                            <SectionHeader icon={MdFactCheck} title="Recent Activities" linkHref="/admin/activity" />
+                            <div className="flex flex-col gap-4">
                                 {stats?.recentActivity?.map((act, i) => (
-                                    <div key={i} className="flex gap-3 items-center">
-                                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} className="w-10 h-10 rounded-full bg-slate-100 shrink-0 border border-slate-200" />
+                                    <div
+                                        key={i}
+                                        className="flex gap-3 items-center transition-colors"
+                                        style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px', padding: 12 }}
+                                    >
+                                        <img
+                                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`}
+                                            alt="Avatar"
+                                            className="w-10 h-10 object-cover shrink-0"
+                                            style={{ borderRadius: '10px', backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}` }}
+                                        />
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between">
-                                                <p className="text-[13px] font-bold text-[#27225B] m-0 truncate pr-2">
+                                                <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
                                                     {act.text.split(':')[1] || 'User Name'}
                                                 </p>
-                                                <span className="text-[11px] font-semibold text-[#7D8DA6] whitespace-nowrap">{act.time}</span>
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.text, whiteSpace: 'nowrap' }}>
+                                                    {act.time}
+                                                </span>
                                             </div>
-                                            <p className="text-[12px] font-medium text-[#7D8DA6] m-0 truncate">{act.text.split(':')[0]}</p>
+                                            <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.text, margin: '2px 0 0 0' }}>
+                                                {act.text.split(':')[0]}
+                                            </p>
                                         </div>
                                     </div>
                                 ))}
@@ -144,97 +225,143 @@ export default function AdminDashboard() {
                         </div>
 
                         {/* Exams & Assessments */}
-                        <div className="bg-white p-5 rounded-2xl flex flex-col" style={{ boxShadow: softShadow }}>
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-[16px] font-black text-[#27225B] m-0">Exams & Assessments</h3>
-                                <Link href="/admin/exams" className="text-[12px] font-bold text-[#6854F3] no-underline hover:underline">View All</Link>
-                            </div>
+                        <div
+                            className="flex flex-col"
+                            style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], boxShadow: S.card, padding: 20 }}
+                        >
+                            <SectionHeader icon={MdArticle} title="Exams & Assessments" linkHref="/admin/exams" />
                             <div className="flex flex-col gap-4">
                                 {stats?.upcomingExams?.length > 0 ? (
                                     stats.upcomingExams.map((exam, i) => {
-                                        const badgeStyle = i === 0 ? { bg: '#FFF7ED', text: '#FC8730', label: 'Upcoming' } : 
-                                                           i === 1 ? { bg: '#ECFDF5', text: '#4ABCA8', label: 'Live' } : 
-                                                           { bg: '#F4F0FD', text: '#6854F3', label: 'Draft' };
+                                        const badge = i === 0
+                                            ? { bg: C.warningBg,    text: C.warning,    label: 'Upcoming' }
+                                            : i === 1
+                                                ? { bg: C.successBg,  text: C.success,    label: 'Live' }
+                                                : { bg: C.btnViewAllBg, text: C.btnPrimary, label: 'Draft' };
                                         return (
-                                            <div key={i} className="flex gap-3 items-center">
-                                                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-[#EFEFFC]">
-                                                    <FileText size={18} color="#4F7BF0" />
+                                            <div
+                                                key={i}
+                                                className="flex gap-3 items-center transition-colors"
+                                                style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px', padding: 12 }}
+                                            >
+                                                <div className="flex items-center justify-center shrink-0" style={{ width: 40, height: 40, backgroundColor: C.cardBg, borderRadius: '10px' }}>
+                                                    <MdArticle style={{ width: 18, height: 18, color: C.btnPrimary }} />
                                                 </div>
-                                                <div className="flex-1">
-                                                    <h4 className="text-[13px] font-bold text-[#27225B] m-0">{exam.title}</h4>
-                                                    <p className="text-[11px] font-medium text-[#7D8DA6] m-0 mt-0.5">{exam.date} • {exam.time}</p>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
+                                                        {exam.title}
+                                                    </h4>
+                                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.text, margin: '2px 0 0 0' }}>
+                                                        {exam.date} • {exam.time}
+                                                    </p>
                                                 </div>
-                                                <span className="text-[10px] font-bold px-2 py-1 rounded-md" style={{ backgroundColor: badgeStyle.bg, color: badgeStyle.text }}>
-                                                    {badgeStyle.label}
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, backgroundColor: badge.bg, color: badge.text, padding: '4px 8px', borderRadius: '10px', flexShrink: 0 }}>
+                                                    {badge.label}
                                                 </span>
                                             </div>
-                                        )
+                                        );
                                     })
                                 ) : (
-                                    <p className="text-[13px] text-[#7D8DA6] italic">No exams found.</p>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, fontStyle: 'italic', color: C.text, margin: 0 }}>
+                                        No exams found.
+                                    </p>
                                 )}
                             </div>
                         </div>
 
-                        {/* Fee Collection Summary (With Donut) */}
-                        <div className="bg-white p-5 rounded-2xl flex flex-col" style={{ boxShadow: softShadow }}>
+                        {/* Fee Collection */}
+                        <div
+                            className="flex flex-col"
+                            style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], boxShadow: S.card, padding: 20 }}
+                        >
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-[16px] font-black text-[#27225B] m-0">Fee Collection</h3>
-                                <span className="text-[12px] font-semibold text-[#7D8DA6]">This Month ▾</span>
+                                <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>Fee Collection</h3>
+                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.text }}>This Month ▾</span>
                             </div>
-                            
+
                             <div className="flex justify-between items-center mt-2">
                                 <div className="flex flex-col gap-4">
                                     <div>
-                                        <p className="text-[12px] font-semibold text-[#7D8DA6] m-0">Total Collected</p>
-                                        <p className="text-[18px] font-black text-[#27225B] m-0">₹{stats?.feeCollection?.collected?.toLocaleString() || '0'}</p>
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.text, margin: 0 }}>Total Collected</p>
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.bold, color: C.heading, margin: '2px 0 0 0' }}>
+                                            ₹{stats?.feeCollection?.collected?.toLocaleString() || '0'}
+                                        </p>
                                     </div>
                                     <div>
-                                        <p className="text-[12px] font-semibold text-[#7D8DA6] m-0">Pending Fees</p>
-                                        <p className="text-[15px] font-black text-[#27225B] m-0">₹{stats?.feeCollection?.pending?.toLocaleString() || '0'}</p>
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.text, margin: 0 }}>Pending Fees</p>
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '2px 0 0 0' }}>
+                                            ₹{stats?.feeCollection?.pending?.toLocaleString() || '0'}
+                                        </p>
                                     </div>
                                 </div>
 
-                                {/* Custom CSS Donut Chart */}
-                                <div className="relative w-[100px] h-[100px] rounded-full flex items-center justify-center"
-                                     style={{ background: `conic-gradient(#6854F3 ${stats?.feeCollection?.percentage || 0}%, #F4F0FD ${stats?.feeCollection?.percentage || 0}%)` }}>
-                                     <div className="w-[76px] h-[76px] bg-white rounded-full flex flex-col items-center justify-center">
-                                         <span className="text-[20px] font-black text-[#27225B] leading-none">{stats?.feeCollection?.percentage || 0}%</span>
-                                         <span className="text-[9px] font-bold text-[#7D8DA6] uppercase mt-1 tracking-wider">Collected</span>
-                                     </div>
+                                {/* Donut chart */}
+                                <div
+                                    className="relative flex items-center justify-center"
+                                    style={{
+                                        width: 100, height: 100,
+                                        borderRadius: R.full,
+                                        background: `conic-gradient(${C.btnPrimary} ${stats?.feeCollection?.percentage || 0}%, ${C.innerBg} ${stats?.feeCollection?.percentage || 0}%)`,
+                                    }}
+                                >
+                                    <div
+                                        className="flex flex-col items-center justify-center"
+                                        style={{ width: 76, height: 76, borderRadius: R.full, backgroundColor: C.cardBg }}
+                                    >
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.bold, color: C.heading, lineHeight: 1 }}>
+                                            {stats?.feeCollection?.percentage || 0}%
+                                        </span>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text, textTransform: 'uppercase', marginTop: 4, letterSpacing: T.tracking.wider }}>
+                                            Collected
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                            
+
                             <div className="flex items-center gap-4 mt-auto pt-4">
-                                <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#6854F3]"></span><span className="text-[11px] font-bold text-[#7D8DA6]">Collected</span></div>
-                                <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#F4F0FD]"></span><span className="text-[11px] font-bold text-[#7D8DA6]">Pending</span></div>
+                                <div className="flex items-center gap-1.5">
+                                    <span style={{ width: 8, height: 8, borderRadius: R.full, backgroundColor: C.btnPrimary, display: 'inline-block' }} />
+                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text }}>Collected</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <span style={{ width: 8, height: 8, borderRadius: R.full, backgroundColor: C.innerBg, display: 'inline-block' }} />
+                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text }}>Pending</span>
+                                </div>
                             </div>
                         </div>
-
                     </div>
 
-                    {/* Row 4: Extra Sections (Batch Overview & Pending Approvals) */}
+                    {/* Row 4: Batch Overview + Pending Approvals */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2 bg-white p-5 rounded-2xl flex flex-col" style={{ boxShadow: softShadow }}>
-                            <h3 className="text-[16px] font-black text-[#27225B] m-0 mb-4">Batch Overview</h3>
-                            <div className="w-full">
-                                <table className="w-full text-left">
+
+                        {/* Batch Overview Table */}
+                        <div
+                            className="lg:col-span-2 flex flex-col"
+                            style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], boxShadow: S.card, padding: 20 }}
+                        >
+                            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 16px 0' }}>Batch Overview</h3>
+                            <div className="w-full overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr>
-                                            <th className="pb-3 text-[12px] font-bold text-[#27225B]">Batch</th>
-                                            <th className="pb-3 text-[12px] font-bold text-[#27225B]">Students</th>
-                                            <th className="pb-3 text-[12px] font-bold text-[#27225B]">Progress</th>
-                                            <th className="pb-3 text-[12px] font-bold text-[#27225B]">Status</th>
+                                            {['Batch', 'Students', 'Progress', 'Status'].map(h => (
+                                                <th
+                                                    key={h}
+                                                    style={{ paddingBottom: 12, fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, borderBottom: `1px solid ${C.cardBorder}` }}
+                                                >
+                                                    {h}
+                                                </th>
+                                            ))}
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {stats?.batchOverview?.map((batch, i) => (
-                                            <tr key={i} className="border-t border-[#F4F0FD]">
-                                                <td className="py-3 text-[13px] font-semibold text-[#7D8DA6]">{batch.name}</td>
-                                                <td className="py-3 text-[13px] font-black text-[#27225B]">{batch.students}</td>
-                                                <td className="py-3 text-[13px] font-black text-[#4ABCA8]">{batch.progress}%</td>
-                                                <td className="py-3 text-[13px] font-semibold">
-                                                    <span className={batch.status === 'Active' ? 'text-[#4ABCA8]' : 'text-[#4F7BF0]'}>{batch.status}</span>
+                                            <tr key={i} style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                                                <td style={{ padding: '12px 0', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.text }}>{batch.name}</td>
+                                                <td style={{ padding: '12px 0', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>{batch.students}</td>
+                                                <td style={{ padding: '12px 0', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.success }}>{batch.progress}%</td>
+                                                <td style={{ padding: '12px 0', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold }}>
+                                                    <span style={{ color: batch.status === 'Active' ? C.success : C.btnPrimary }}>{batch.status}</span>
                                                 </td>
                                             </tr>
                                         ))}
@@ -242,150 +369,184 @@ export default function AdminDashboard() {
                                 </table>
                             </div>
                         </div>
-                        
-                        <div className="lg:col-span-1 bg-white p-5 rounded-2xl flex flex-col" style={{ boxShadow: softShadow }}>
-                            <h3 className="text-[16px] font-black text-[#27225B] m-0 mb-4">Pending Approvals</h3>
+
+                        {/* Pending Approvals */}
+                        <div
+                            className="lg:col-span-1 flex flex-col"
+                            style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], boxShadow: S.card, padding: 20 }}
+                        >
+                            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 16px 0' }}>Pending Approvals</h3>
                             <div className="flex flex-col gap-4 flex-1">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2"><UserPlus size={16} className="text-[#4F7BF0]" /><span className="text-[13px] font-bold text-[#27225B]">Instructors</span></div>
-                                    <span className="text-[11px] font-bold text-[#FC8730] bg-[#FFF7ED] px-2 py-0.5 rounded-md">{stats?.pendingApprovals?.instructors} Pending</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2"><Users size={16} className="text-[#6854F3]" /><span className="text-[13px] font-bold text-[#27225B]">Students</span></div>
-                                    <span className="text-[11px] font-bold text-[#6854F3] bg-[#F4F0FD] px-2 py-0.5 rounded-md">{stats?.pendingApprovals?.students} Pending</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2"><FileCheck size={16} className="text-[#4ABCA8]" /><span className="text-[13px] font-bold text-[#27225B]">Courses</span></div>
-                                    <span className="text-[11px] font-bold text-[#4ABCA8] bg-[#ECFDF5] px-2 py-0.5 rounded-md">{stats?.pendingApprovals?.courses} Pending</span>
-                                </div>
+                                {[
+                                    { icon: MdPersonAdd, label: 'Instructors', count: stats?.pendingApprovals?.instructors, color: C.warning,    bg: C.warningBg },
+                                    { icon: MdPeople,    label: 'Students',    count: stats?.pendingApprovals?.students,    color: C.btnPrimary, bg: C.btnViewAllBg },
+                                    { icon: MdMenuBook,  label: 'Courses',     count: stats?.pendingApprovals?.courses,     color: C.success,    bg: C.successBg },
+                                ].map(({ icon: Icon, label, count, color, bg }) => (
+                                    <div
+                                        key={label}
+                                        className="flex items-center justify-between"
+                                        style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px', padding: 12 }}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <Icon style={{ width: 18, height: 18, color }} />
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>{label}</span>
+                                        </div>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color, backgroundColor: bg, padding: '4px 8px', borderRadius: '10px' }}>
+                                            {count} Pending
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* =========================================
-                    RIGHT SIDEBAR (Quick Actions, AI Buddy)
-                ========================================= */}
+                {/* ── RIGHT SIDEBAR ── */}
                 <div className="xl:col-span-1 flex flex-col gap-6">
 
-                    {/* Quick Actions List */}
-                 
-                    <div className="bg-white p-5 rounded-2xl flex flex-col" style={{ boxShadow: softShadow }}>
-                        <h3 className="text-[16px] font-black text-[#27225B] m-0 mb-4 flex items-center gap-2">
-                           <Layers size={18} className="text-[#7D8DA6]" /> Quick Actions
-                        </h3>
+                    {/* Quick Actions */}
+                    <div
+                        className="flex flex-col"
+                        style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], boxShadow: S.card, padding: 20 }}
+                    >
+                        <SectionHeader icon={MdLayers} title="Quick Actions" />
                         <div className="flex flex-col gap-3">
                             {[
-                                { label: 'Add Student', icon: UserPlus, color: '#6854F3', link: '/admin/students' },
-                                { label: 'Create Batch', icon: Layers, color: '#4F7BF0', link: '/admin/batches' },
-                                { label: 'Schedule Class', icon: Calendar, color: '#FC8730', link: '/admin/classes' },
-                                { label: 'Create Exam', icon: FileText, color: '#4ABCA8', link: '/admin/exams' },
+                                { label: 'Add Student',    icon: MdPersonAdd,    link: '/admin/students' },
+                                { label: 'Create Batch',   icon: MdLayers,       link: '/admin/batches' },
+                                { label: 'Schedule Class', icon: MdCalendarMonth, link: '/admin/classes' },
+                                { label: 'Create Exam',    icon: MdArticle,      link: '/admin/exams' },
                             ].map((action, i) => (
-                                <Link 
-                                    href={action.link} 
-                                    key={i} 
-                                    className="flex items-center justify-between w-full p-3 rounded-xl transition-all cursor-pointer group no-underline border border-transparent hover:border-[#D1C4F9]"
-                                    style={{ backgroundColor: '#EDECFC' }}
+                                <Link
+                                    href={action.link}
+                                    key={i}
+                                    className="flex items-center justify-between w-full transition-all cursor-pointer group"
+                                    style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px', padding: 12 }}
+                                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}
                                 >
                                     <div className="flex items-center gap-3">
-                                        {/* Solid colored icon box with white icon inside */}
-                                        <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0" style={{ backgroundColor: action.color }}>
-                                            <action.icon size={18} color="#ffffff" strokeWidth={2.5} />
+                                        <div className="flex items-center justify-center shrink-0" style={{ width: 40, height: 40, backgroundColor: C.cardBg, borderRadius: '10px' }}>
+                                            <action.icon style={{ width: 18, height: 18, color: C.btnPrimary }} />
                                         </div>
-                                        <span className="text-[14px] font-bold text-[#27225B] group-hover:text-[#6854F3] transition-colors">{action.label}</span>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
+                                            {action.label}
+                                        </span>
                                     </div>
-                                    <ChevronRight size={18} className="text-[#7D8DA6] group-hover:text-[#6854F3] transition-colors" />
+                                    <MdChevronRight style={{ width: 18, height: 18, color: C.text }} />
                                 </Link>
                             ))}
                         </div>
                     </div>
 
-                    {/* AI Buddy */}
-                 
-                    <div className="bg-white p-6 rounded-2xl border-[1px] border-[#F4F0FD] relative overflow-hidden" 
-                         style={{ boxShadow: '0 8px 30px -10px rgba(95, 66, 228, 0.12)' }}>
-                        
-                        <div className="flex items-center justify-between mb-1 relative z-10">
+                    {/* AI Buddy dark card */}
+                    <div
+                        className="flex flex-col relative overflow-hidden"
+                        style={{ backgroundColor: C.darkCard, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], boxShadow: S.card, padding: 24 }}
+                    >
+                        <div className="flex items-center justify-between mb-2 relative z-10">
                             <div className="flex items-center gap-2.5">
-                                {/* Custom Robot Icon matching the image */}
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <rect width="24" height="24" rx="12" fill="#EEECFC" />
-                                    <path d="M12 7C9.23858 7 7 9.23858 7 12V14C7 15.6569 8.34315 17 10 17H14C15.6569 17 17 15.6569 17 14V12C17 9.23858 14.7614 7 12 7ZM10.5 12.5C10.5 13.3284 9.82843 14 9 14C8.17157 14 7.5 13.3284 7.5 12.5C7.5 11.6716 8.17157 11 9 11C9.82843 11 10.5 11.6716 10.5 12.5ZM16.5 12.5C16.5 13.3284 15.8284 14 15 14C14.1716 14 13.5 13.3284 13.5 12.5C13.5 11.6716 14.1716 11 15 11C15.8284 11 16.5 11.6716 16.5 12.5Z" fill="#3F22DF"/>
-                                    <circle cx="12" cy="15" r="1" fill="#3F22DF"/>
-                                </svg>
-                                <h3 className="text-[17px] font-black text-[#1A1549] m-0">
+                                <div className="flex items-center justify-center shrink-0" style={{ width: 36, height: 36, backgroundColor: C.cardBg, borderRadius: '10px' }}>
+                                    <MdFactCheck style={{ width: 20, height: 20, color: C.darkCard }} />
+                                </div>
+                                <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.darkCardText, margin: 0 }}>
                                     AI Buddy
                                 </h3>
-                                <span className="text-[10px] font-bold text-[#6854F3] bg-[#F4F0FD] px-2 py-0.5 rounded-[5px] uppercase tracking-wider">
+                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.darkCard, backgroundColor: C.cardBg, padding: '2px 8px', borderRadius: '10px', textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
                                     Beta
                                 </span>
                             </div>
-                            <MoreVertical size={18} className="text-[#A0ABC0] cursor-pointer" />
+                            <MdMoreVert style={{ width: 20, height: 20, color: C.darkCardMuted, cursor: 'pointer' }} />
                         </div>
-                        
-                        <p className="text-[14px] font-medium text-[#4A5568] mb-6 relative z-10">Smart insights to help you grow</p>
+
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.darkCardMuted, margin: '0 0 24px 0', position: 'relative', zIndex: 10 }}>
+                            Smart insights to help you grow
+                        </p>
 
                         <div className="flex flex-col gap-4 mb-7 relative z-10">
-                            {/* Alert/High Risk item (Red Check) */}
-                            <div className="flex items-center gap-3.5">
-                                <div className="w-[18px] h-[18px] rounded-full bg-[#FF6B6B] flex items-center justify-center shrink-0">
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {/* High risk alert */}
+                            <div className="flex items-center gap-3.5" style={{ backgroundColor: 'rgba(255,255,255,0.10)', borderRadius: '10px', padding: 12 }}>
+                                <div className="flex items-center justify-center shrink-0" style={{ width: 24, height: 24, backgroundColor: C.danger, borderRadius: R.full }}>
+                                    <MdWarning style={{ width: 14, height: 14, color: '#ffffff' }} />
                                 </div>
-                                <span className="text-[14px] font-bold text-[#1A1549]">{stats?.pendingApprovals?.instructors || 0} students are at high risk</span>
+                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.darkCardText }}>
+                                    {stats?.pendingApprovals?.instructors || 0} students are at high risk
+                                </span>
                             </div>
-                            
-                            {/* Action items (Yellow Plus) */}
+
+                            {/* Info items */}
                             {[
-                                `${stats?.pendingApprovals?.students || 0} instructor requests pending`,
-                                `${stats?.activeBatches || 0} active batches running smoothly`,
-                                `Fee collection pending: ₹${stats?.feeCollection?.pending?.toLocaleString() || '0'}`
+                                `${stats?.pendingApprovals?.students    || 0} instructor requests pending`,
+                                `${stats?.activeBatches                 || 0} active batches running smoothly`,
+                                `Fee collection pending: ₹${stats?.feeCollection?.pending?.toLocaleString() || '0'}`,
                             ].map((text, i) => (
-                                <div key={i} className="flex items-center gap-3.5">
-                                    <div className="w-[18px] h-[18px] rounded-full bg-[#FFB72B] flex items-center justify-center shrink-0">
-                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                <div key={i} className="flex items-center gap-3.5 px-3">
+                                    <div className="flex items-center justify-center shrink-0" style={{ width: 24, height: 24, backgroundColor: C.warning, borderRadius: R.full }}>
+                                        <MdFactCheck style={{ width: 14, height: 14, color: '#ffffff' }} />
                                     </div>
-                                    <span className="text-[14px] font-bold text-[#1A1549]">{text}</span>
+                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.darkCardText }}>
+                                        {text}
+                                    </span>
                                 </div>
                             ))}
                         </div>
 
-                        <button className="w-full py-[14px] rounded-xl text-white font-bold text-[15px] cursor-pointer border-none transition-opacity relative z-10"
-                            style={{ backgroundColor: '#6442E8', boxShadow: '0 4px 14px rgba(100, 66, 232, 0.3)' }}>
+                        <button
+                            className="w-full transition-all hover:opacity-90 cursor-pointer relative z-10"
+                            style={{ background: C.gradientBtn, color: '#ffffff', border: 'none', borderRadius: '10px', padding: 14, fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, boxShadow: S.btn }}
+                        >
                             Open AI Dashboard
                         </button>
-                        
                     </div>
 
                     {/* Upcoming Events */}
-                    <div className="bg-white p-5 rounded-2xl flex flex-col" style={{ boxShadow: softShadow }}>
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-[16px] font-black text-[#27225B] m-0">Upcoming Events</h3>
-                            <Link href="/admin/events" className="text-[12px] font-bold text-[#6854F3] no-underline hover:underline">View All</Link>
-                        </div>
+                    <div
+                        className="flex flex-col"
+                        style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], boxShadow: S.card, padding: 20 }}
+                    >
+                        <SectionHeader icon={MdCalendarMonth} title="Upcoming Events" linkHref="/admin/events" />
                         <div className="flex flex-col gap-4">
                             {(() => {
                                 const events = [
-                                    ...(stats?.upcomingExams?.map(e => ({ ...e, type: 'exam', color: '#4F7BF0', Icon: BookOpen })) || []),
-                                    ...(stats?.upcomingClasses?.map(c => ({ ...c, type: 'class', color: '#FD9017', Icon: Calendar })) || [])
-                                ].sort((a,b) => new Date(a.date) - new Date(b.date)).slice(0, 3);
+                                    ...(stats?.upcomingExams?.map(e   => ({ ...e, type: 'exam',  color: C.btnPrimary, Icon: MdMenuBook      })) || []),
+                                    ...(stats?.upcomingClasses?.map(c => ({ ...c, type: 'class', color: C.warning,    Icon: MdCalendarMonth })) || []),
+                                ].sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 3);
 
-                                if (events.length === 0) {
-                                    return <p className="text-[13px] text-[#7D8DA6] italic relative z-10 m-0">No upcoming events found.</p>;
-                                }
+                                if (events.length === 0) return (
+                                    <div
+                                        className="p-8 text-center border border-dashed"
+                                        style={{ backgroundColor: C.innerBg, borderColor: C.cardBorder, borderRadius: '10px' }}
+                                    >
+                                        <div className="flex items-center justify-center mx-auto mb-4" style={{ width: 48, height: 48, backgroundColor: C.cardBg, borderRadius: '10px' }}>
+                                            <MdCalendarMonth style={{ width: 24, height: 24, color: C.text }} />
+                                        </div>
+                                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>No Events</h3>
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, marginTop: 4 }}>You have no upcoming events.</p>
+                                    </div>
+                                );
 
                                 return events.map((event, i) => (
-                                    <div key={i} className="flex gap-3 relative z-10">
-                                        <event.Icon size={18} className={`mt-0.5 shrink-0`} style={{ color: event.color }} />
-                                        <div>
-                                            <h4 className="text-[13px] font-bold text-[#27225B] m-0 leading-tight">{event.title}</h4>
-                                            <p className="text-[12px] font-medium text-[#7D8DA6] m-0 mt-1">{event.date} • {event.time}</p>
+                                    <div
+                                        key={i}
+                                        className="flex gap-3 items-center transition-colors"
+                                        style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px', padding: 12 }}
+                                    >
+                                        <div className="flex items-center justify-center shrink-0" style={{ width: 40, height: 40, backgroundColor: C.cardBg, borderRadius: '10px' }}>
+                                            <event.Icon style={{ width: 18, height: 18, color: event.color }} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
+                                                {event.title}
+                                            </h4>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.text, margin: '2px 0 0 0' }}>
+                                                {event.date} • {event.time}
+                                            </p>
                                         </div>
                                     </div>
                                 ));
                             })()}
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>

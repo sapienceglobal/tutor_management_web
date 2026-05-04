@@ -2,12 +2,46 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Search, Eye, Edit, MoreHorizontal, Users, CheckSquare, AlertTriangle, Hourglass, UploadCloud, Plus, MessageSquare, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { 
+    MdSearch, 
+    MdVisibility, 
+    MdEdit, 
+    MdPeople, 
+    MdCheckCircle, 
+    MdWarning, 
+    MdHourglassEmpty, 
+    MdCloudUpload, 
+    MdAdd, 
+    MdChevronLeft, 
+    MdChevronRight, 
+    MdFilterList,
+    MdPersonRemove,
+    MdDelete,
+    MdDownload,
+    MdNotifications,
+    MdPeopleOutline
+} from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 import AddStudentWizardModal from '@/components/admin/AddStudentWizardModal';
 import Link from 'next/link';
+import StatCard from '@/components/StatCard';
+import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+
+const baseInputStyle = {
+    backgroundColor: C.surfaceWhite,
+    border: `1px solid ${C.cardBorder}`,
+    borderRadius: '10px',
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.base,
+    fontWeight: T.weight.semibold,
+    outline: 'none',
+    width: '100%',
+    padding: '12px 16px',
+    transition: 'all 0.2s ease',
+};
 
 export default function AdminStudentsPage() {
     const router = useRouter();
@@ -22,8 +56,6 @@ export default function AdminStudentsPage() {
     const [editingUser, setEditingUser] = useState(null);
     const [isImporting, setIsImporting] = useState(false);
     const fileInputRef = useRef(null);
-
-    const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.12)';
 
     useEffect(() => { fetchStudents(); }, []);
 
@@ -95,7 +127,6 @@ export default function AdminStudentsPage() {
                 const rows = text.split('\n').map(row => row.trim()).filter(row => row);
                 if (rows.length < 2) throw new Error("CSV file must contain a header row and at least one student data row.");
 
-                // Very simple CSV parser (Assumes: Name, Email, Phone format)
                 const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
                 const nameIdx = headers.findIndex(h => h.includes('name'));
                 const emailIdx = headers.findIndex(h => h.includes('email'));
@@ -114,11 +145,11 @@ export default function AdminStudentsPage() {
                         name: columns[nameIdx],
                         email: columns[emailIdx],
                         phone: phoneIdx !== -1 ? columns[phoneIdx] : '',
-                        password: 'Password@123', // Default bulk password
+                        password: 'Password@123',
                         role: 'student'
                     };
 
-                    if (!payload.name || !payload.email) continue; // Skip invalid rows
+                    if (!payload.name || !payload.email) continue;
 
                     try {
                         await api.post('/admin/users', payload);
@@ -129,7 +160,7 @@ export default function AdminStudentsPage() {
                 }
 
                 toast.success(`Bulk import completed: ${successCount} successful, ${failCount} failed.`);
-                fetchStudents(); // Refresh data
+                fetchStudents();
             } catch (err) {
                 toast.error(err.message || "Failed to process CSV file.");
             } finally {
@@ -140,6 +171,39 @@ export default function AdminStudentsPage() {
         reader.readAsText(file);
     };
 
+    const handleBlock = async (id, currentStatus) => {
+        const action = currentStatus ? "Unblock" : "Block";
+        const isConfirmed = await confirmDialog(`${action} Student`, `Are you sure you want to ${action.toLowerCase()} this student?`, { variant: currentStatus ? 'default' : 'destructive' });
+        if (!isConfirmed) return;
+
+        try {
+            await api.put(`/admin/users/${id}/status`, { isBlocked: !currentStatus });
+            setStudents(students.map(s => s._id === id ? { ...s, isBlocked: !currentStatus } : s));
+            toast.success(`Student ${action.toLowerCase()}ed successfully`);
+        } catch (error) {
+            console.error('Block error:', error);
+            toast.error(`Failed to ${action.toLowerCase()} student`);
+        }
+    };
+
+    const handleRemoveFromInstitute = async (id, name) => {
+        const isConfirmed = await confirmDialog(
+            "Remove from Institute", 
+            `Are you sure you want to remove ${name} from the institute?`, 
+            { variant: 'destructive' }
+        );
+        if (!isConfirmed) return;
+
+        try {
+            await api.delete(`/admin/users/${id}/remove-from-institute`);
+            setStudents(students.filter(s => s._id !== id));
+            toast.success(`${name} removed from institute successfully`);
+        } catch (error) {
+            console.error('Remove from institute error:', error);
+            toast.error(error.response?.data?.message || 'Failed to remove from institute');
+        }
+    };
+
     const filteredStudents = students.filter(student =>
         student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -147,169 +211,198 @@ export default function AdminStudentsPage() {
 
     if (loading) {
         return (
-            <div className="flex bg-[#F1EAFB] min-h-screen items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#6B4DF1]" />
+            <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-12 h-12">
+                        <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                            style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                    </div>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                        Loading...
+                    </p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6 min-h-screen p-6 md:p-8" style={{ backgroundColor: '#F1EAFB', fontFamily: "'Inter', sans-serif" }}>
+        <div className="space-y-6 min-h-screen w-full" style={{ backgroundColor: C.pageBg, ...pageStyle }}>
             
             {/* ── Top Stats Row ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                {[
-                    // Tumhare diye gaye specific background colors aur solid icon backgrounds
-                    { title: 'Total Students', value: stats?.total || 120, bg: '#E8CBF3', iconBg: '#A059C5', icon: Users },
-                    { title: 'Active Students', value: stats?.active || 94, bg: '#E9D6FC', iconBg: '#4ABCA8', icon: CheckSquare },
-                    { title: 'Inactive/In Review', value: stats?.inactive || 18, bg: '#D9D5F1', iconBg: '#FC8730', icon: AlertTriangle },
-                    { title: 'Pending Requests', value: stats?.pending || 7, bg: '#D6C3FC', iconBg: '#6B4DF1', icon: Hourglass }
-                ].map((stat, i) => (
-                    <div 
-                        key={i} 
-                        className="rounded-2xl p-4 flex items-center gap-4 transition-transform hover:-translate-y-1 relative cursor-pointer" 
-                        style={{ backgroundColor: stat.bg, boxShadow: softShadow }}
-                    >
-                        {/* Left: Solid Icon Box */}
-                        <div className="w-[46px] h-[46px] rounded-[12px] flex items-center justify-center shrink-0" 
-                             style={{ backgroundColor: stat.iconBg }}>
-                            <stat.icon size={22} color="#ffffff" strokeWidth={2.5} />
-                        </div>
-                        
-                        {/* Middle: Value & Title */}
-                        <div className="flex flex-col">
-                            <span className="text-[26px] font-black text-[#27225B] leading-none mb-1.5">{stat.value}</span>
-                            <span className="text-[13px] font-semibold text-[#4A3E68] leading-none">{stat.title}</span>
-                        </div>
-
-                        {/* Right: Chevron Arrow */}
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-40">
-                            <ChevronRight size={18} className="text-[#27225B]" strokeWidth={3} />
-                        </div>
-                    </div>
-                ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <StatCard 
+                    icon={MdPeople}
+                    value={stats?.total || 120}
+                    label="Total Students"
+                    iconBg={C.btnViewAllBg}
+                    iconColor={C.btnPrimary}
+                />
+                <StatCard 
+                    icon={MdCheckCircle}
+                    value={stats?.active || 94}
+                    label="Active Students"
+                    iconBg={C.successBg}
+                    iconColor={C.success}
+                />
+                <StatCard 
+                    icon={MdWarning}
+                    value={stats?.inactive || 18}
+                    label="Inactive/In Review"
+                    iconBg={C.warningBg}
+                    iconColor={C.warning}
+                />
+                <StatCard 
+                    icon={MdHourglassEmpty}
+                    value={stats?.pending || 7}
+                    label="Pending Requests"
+                    iconBg={C.dangerBg}
+                    iconColor={C.danger}
+                />
             </div>
 
             {/* ── Toolbar / Filters ── */}
-            <div className="bg-white rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ boxShadow: softShadow }}>
-                <div className="relative w-full sm:w-[300px]">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7D8DA6]" />
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                <div className="relative w-full sm:w-[300px] group">
+                    <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 transition-colors pointer-events-none" style={{ width: 18, height: 18, color: C.textMuted }} />
                     <input
                         type="text"
                         placeholder="Search students..."
-                        className="pl-10 pr-4 py-2.5 bg-[#F4F0FD] border-none text-[#27225B] text-[14px] font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] w-full placeholder-[#A0ABC0]"
+                        style={{ ...baseInputStyle, paddingLeft: '36px' }}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        onFocus={e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
+                        onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
                     />
                 </div>
 
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <select className="bg-[#F4F0FD] text-[#27225B] text-[13px] font-bold px-4 py-2.5 rounded-xl border-none outline-none appearance-none cursor-pointer">
+                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <select style={{ ...baseInputStyle, width: 'auto', minWidth: '120px' }}>
                         <option>All Status</option>
                         <option>Active</option>
                         <option>Inactive</option>
                     </select>
-                    <select className="bg-[#F4F0FD] text-[#27225B] text-[13px] font-bold px-4 py-2.5 rounded-xl border-none outline-none appearance-none cursor-pointer">
+                    <select style={{ ...baseInputStyle, width: 'auto', minWidth: '120px' }}>
                         <option>All Grades</option>
                         <option>Class 8</option>
                         <option>Class 9</option>
                         <option>Class 10</option>
                     </select>
-                    <button className="w-10 h-10 bg-[#F4F0FD] rounded-xl flex items-center justify-center text-[#7D8DA6] hover:text-[#6B4DF1] cursor-pointer border-none">
-                        <Filter size={16} />
+                    <button className="flex items-center justify-center transition-colors cursor-pointer border-none"
+                        style={{ width: 44, height: 44, backgroundColor: C.btnViewAllBg, color: C.btnPrimary, borderRadius: '10px' }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = C.innerBg}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = C.btnViewAllBg}>
+                        <MdFilterList style={{ width: 20, height: 20 }} />
                     </button>
                     <button
                         onClick={() => { setEditingUser(null); setIsModalOpen(true); }}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-[#6B4DF1] text-white font-bold text-[14px] rounded-xl hover:bg-[#5839D6] transition-colors shadow-md border-none cursor-pointer"
+                        className="flex items-center gap-2 transition-opacity hover:opacity-90 cursor-pointer w-full sm:w-auto justify-center"
+                        style={{ padding: '10px 20px', background: C.gradientBtn, color: '#ffffff', border: 'none', borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, boxShadow: S.btn }}
                     >
-                        <Plus className="w-4 h-4" strokeWidth={3} /> Add Student
+                        <MdAdd style={{ width: 18, height: 18 }} /> Add Student
                     </button>
                 </div>
             </div>
 
             {/* ── Students Table ── */}
-           {/* ── Students Table ── */}
-            <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: softShadow }}>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-[#F4F0FD] border-b border-[#E9DFFC]">
+            <div className="flex flex-col overflow-hidden" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                <div className="overflow-x-auto w-full">
+                    <table className="w-full text-left border-collapse min-w-[900px]">
+                        <thead style={{ backgroundColor: C.innerBg }}>
                             <tr>
-                                <th className="px-5 py-4 w-12"><input type="checkbox" className="rounded text-[#6B4DF1] focus:ring-[#6B4DF1] w-4 h-4 cursor-pointer" /></th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wider">Student Name</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wider">Email</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wider">Phone</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wider">Grade</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wider">Status</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wider text-center">Actions</th>
+                                <th style={{ padding: '16px 20px', width: '48px', borderBottom: `1px solid ${C.cardBorder}` }}>
+                                    <input type="checkbox" style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }} />
+                                </th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Student Name</th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Email</th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Phone</th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Grade</th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Status</th>
+                                <th style={{ padding: '16px 24px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}`, textAlign: 'center' }}>Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#F4F0FD]">
+                        <tbody>
                             {filteredStudents.length > 0 ? (
                                 filteredStudents.map((student) => (
-                                    <tr key={student._id} className="hover:bg-[#F8F7FF] transition-colors group">
-                                        <td className="px-5 py-3"><input type="checkbox" className="rounded text-[#6B4DF1] focus:ring-[#6B4DF1] w-4 h-4 cursor-pointer" /></td>
-                                        <td className="px-4 py-3">
+                                    <tr key={student._id} className="transition-colors group" style={{ backgroundColor: C.cardBg, borderBottom: `1px solid ${C.cardBorder}` }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.cardBg; }}>
+                                        <td style={{ padding: '16px 20px' }}>
+                                            <input type="checkbox" style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }} />
+                                        </td>
+                                        <td style={{ padding: '16px 16px' }}>
                                             <div className="flex items-center gap-3">
-                                                <img src={student.profileImage || `https://ui-avatars.com/api/?name=${student.name}&background=E9DFFC&color=6B4DF1`} alt="" className="w-10 h-10 rounded-lg object-cover" />
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-[#27225B] text-[14px] flex items-center gap-2">
+                                                <img src={student.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=random`} alt="" className="object-cover shrink-0" style={{ width: 40, height: 40, borderRadius: '10px' }} />
+                                                <div className="flex flex-col min-w-0">
+                                                    <span className="flex items-center gap-2 truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
                                                         {student.name}
                                                         {student.isBlocked && (
-                                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#FEE2E2] text-[#DC2626] uppercase">
+                                                            <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: T.weight.bold, backgroundColor: C.dangerBg, color: C.danger, textTransform: 'uppercase' }}>
                                                                 Blocked
                                                             </span>
                                                         )}
                                                     </span>
-                                                    <span className="text-[11px] font-medium text-[#A0ABC0] truncate w-32">{student._id}</span>
+                                                    <span className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.textMuted, marginTop: 2, maxWidth: '120px' }}>
+                                                        {student._id}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-[13px] font-semibold text-[#4A5568]">{student.email}</td>
-                                        <td className="px-4 py-3 text-[13px] font-semibold text-[#4A5568]">{student.phone || 'N/A'}</td>
-                                        <td className="px-4 py-3">
-                                            <span className="px-3 py-1 bg-[#F4F0FD] text-[#6B4DF1] text-[12px] font-bold rounded-lg">Class 9</span> 
+                                        <td style={{ padding: '16px 16px' }}>
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.text }}>{student.email}</span>
                                         </td>
-                                        <td className="px-4 py-3">
+                                        <td style={{ padding: '16px 16px' }}>
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.text }}>{student.phone || 'N/A'}</span>
+                                        </td>
+                                        <td style={{ padding: '16px 16px' }}>
+                                            <span style={{ padding: '4px 10px', backgroundColor: C.btnViewAllBg, color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, borderRadius: '10px', width: 'fit-content' }}>
+                                                Class 9
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '16px 16px' }}>
                                             {student.isBlocked ? (
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FFF7ED] text-[#FC8730] text-[12px] font-bold rounded-lg">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-[#FC8730]"></div> Inactive
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', backgroundColor: C.warningBg, color: C.warning, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, borderRadius: '10px', border: `1px solid ${C.warningBorder}` }}>
+                                                    <div style={{ width: 6, height: 6, borderRadius: R.full, backgroundColor: C.warning }}></div> Inactive
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#ECFDF5] text-[#4ABCA8] text-[12px] font-bold rounded-lg">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-[#4ABCA8]"></div> Active
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', backgroundColor: C.successBg, color: C.success, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, borderRadius: '10px', border: `1px solid ${C.successBorder}` }}>
+                                                    <div style={{ width: 6, height: 6, borderRadius: R.full, backgroundColor: C.success }}></div> Active
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="px-4 py-3">
-                                            {/* Action Buttons with Tooltips & Full Original Functionality */}
-                                            <div className="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                
-                                                {/* View Student */}
-                                                <button onClick={() => router.push(`/admin/students/${student._id}`)} className="text-[#6B4DF1] hover:text-[#5839D6] bg-transparent border-none cursor-pointer p-1" title="View Profile">
-                                                    <Eye size={18} />
+                                        <td style={{ padding: '16px 24px', textAlign: 'center' }}>
+                                            <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => router.push(`/admin/students/${student._id}`)} className="transition-colors border-none cursor-pointer" title="View Profile" style={{ backgroundColor: 'transparent', padding: '4px', color: C.btnPrimary }} onMouseEnter={e => e.currentTarget.style.color = '#5839D6'} onMouseLeave={e => e.currentTarget.style.color = C.btnPrimary}>
+                                                    <MdVisibility style={{ width: 18, height: 18 }} />
                                                 </button>
                                                 
-                                                {/* Edit Student */}
-                                                <button onClick={() => { setEditingUser(student); setIsModalOpen(true); }} className="text-[#4ABCA8] hover:text-[#389E8D] bg-transparent border-none cursor-pointer p-1" title="Edit Details">
-                                                    <Edit size={18} />
+                                                <button onClick={() => { setEditingUser(student); setIsModalOpen(true); }} className="transition-colors border-none cursor-pointer" title="Edit Details" style={{ backgroundColor: 'transparent', padding: '4px', color: C.success }} onMouseEnter={e => e.currentTarget.style.color = '#389E8D'} onMouseLeave={e => e.currentTarget.style.color = C.success}>
+                                                    <MdEdit style={{ width: 18, height: 18 }} />
                                                 </button>
 
-                                                {/* Block / Unblock Student */}
                                                 <button 
                                                     onClick={() => handleBlock(student._id, student.isBlocked)} 
-                                                    className={`bg-transparent border-none cursor-pointer p-1 ${student.isBlocked ? 'text-[#FC8730] hover:text-[#E07425]' : 'text-[#A0ABC0] hover:text-[#FC8730]'}`} 
+                                                    className="transition-colors border-none cursor-pointer"
+                                                    style={{ backgroundColor: 'transparent', padding: '4px', color: student.isBlocked ? C.warning : C.textMuted }}
                                                     title={student.isBlocked ? "Unblock Student" : "Block Student"}
+                                                    onMouseEnter={e => e.currentTarget.style.color = student.isBlocked ? '#E07425' : C.warning}
+                                                    onMouseLeave={e => e.currentTarget.style.color = student.isBlocked ? C.warning : C.textMuted}
                                                 >
-                                                    {student.isBlocked ? <CheckSquare size={18} /> : <AlertTriangle size={18} />}
+                                                    {student.isBlocked ? <MdCheckCircle style={{ width: 18, height: 18 }} /> : <MdWarning style={{ width: 18, height: 18 }} />}
                                                 </button>
 
-                                                {/* Dropdown Menu logic for Delete/Remove replaced with direct icons for quick access just like original */}
                                                 <button 
                                                     onClick={() => handleRemoveFromInstitute(student._id, student.name)} 
-                                                    className="text-[#A0ABC0] hover:text-[#E53E3E] bg-transparent border-none cursor-pointer p-1" 
+                                                    className="transition-colors border-none cursor-pointer"
+                                                    style={{ backgroundColor: 'transparent', padding: '4px', color: C.textMuted }}
                                                     title="Remove from Institute"
+                                                    onMouseEnter={e => e.currentTarget.style.color = C.danger}
+                                                    onMouseLeave={e => e.currentTarget.style.color = C.textMuted}
                                                 >
-                                                    <Users size={18} /> {/* Using Users icon as a proxy for remove/manage, or you can use UserX */}
+                                                    <MdPersonRemove style={{ width: 18, height: 18 }} />
+                                                </button>
+
+                                                <button onClick={() => handleDelete(student._id)} className="transition-colors border-none cursor-pointer" title="Delete User" style={{ backgroundColor: 'transparent', padding: '4px', color: C.textMuted }} onMouseEnter={e => e.currentTarget.style.color = C.danger} onMouseLeave={e => e.currentTarget.style.color = C.textMuted}>
+                                                    <MdDelete style={{ width: 18, height: 18 }} />
                                                 </button>
                                             </div>
                                         </td>
@@ -317,8 +410,18 @@ export default function AdminStudentsPage() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="7" className="px-6 py-12 text-center text-[#7D8DA6] font-medium">
-                                        No students found matching your search.
+                                    <td colSpan="7" className="px-6 py-16">
+                                        <div className="p-14 text-center border border-dashed"
+                                             style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
+                                            <div className="flex items-center justify-center mx-auto mb-4"
+                                                 style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                                                <MdPeopleOutline style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
+                                            </div>
+                                            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>No Students</h3>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.textMuted, marginTop: 4 }}>
+                                                No students found matching your search.
+                                            </p>
+                                        </div>
                                     </td>
                                 </tr>
                             )}
@@ -327,13 +430,28 @@ export default function AdminStudentsPage() {
                 </div>
                 
                 {/* Pagination */}
-                <div className="px-6 py-4 border-t border-[#F4F0FD] flex items-center justify-between bg-[#F8F7FF]">
-                    <span className="text-[13px] font-semibold text-[#7D8DA6]">Showing 1 to {filteredStudents.length} of {students.length} students</span>
+                <div className="px-6 py-4 flex items-center justify-between" style={{ backgroundColor: C.surfaceWhite, borderTop: `1px solid ${C.cardBorder}` }}>
+                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.textMuted }}>
+                        Showing 1 to {filteredStudents.length} of {students.length} students
+                    </span>
                     <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-semibold text-[#7D8DA6] mr-2">Rows per page: 10</span>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-[#E9DFFC] text-[#7D8DA6] hover:text-[#6B4DF1] cursor-pointer"><ChevronLeft size={16}/></button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#6B4DF1] text-white font-bold border-none cursor-pointer text-[13px]">1</button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-[#E9DFFC] text-[#7D8DA6] hover:text-[#6B4DF1] cursor-pointer"><ChevronRight size={16}/></button>
+                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.textMuted, marginRight: 8 }}>Rows per page: 10</span>
+                        <button className="flex items-center justify-center transition-colors cursor-pointer"
+                            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, color: C.textMuted }}
+                            onMouseEnter={e => { e.currentTarget.style.color = C.btnPrimary; e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; e.currentTarget.style.backgroundColor = C.surfaceWhite; }}>
+                            <MdChevronLeft style={{ width: 20, height: 20 }} />
+                        </button>
+                        <button className="flex items-center justify-center border-none cursor-default"
+                            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.btnPrimary, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}>
+                            1
+                        </button>
+                        <button className="flex items-center justify-center transition-colors cursor-pointer"
+                            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, color: C.textMuted }}
+                            onMouseEnter={e => { e.currentTarget.style.color = C.btnPrimary; e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = C.textMuted; e.currentTarget.style.backgroundColor = C.surfaceWhite; }}>
+                            <MdChevronRight style={{ width: 20, height: 20 }} />
+                        </button>
                     </div>
                 </div>
             </div>
@@ -342,53 +460,71 @@ export default function AdminStudentsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* Quick Actions */}
-                <div className="bg-white p-5 rounded-2xl flex flex-col" style={{ boxShadow: softShadow }}>
-                    <h3 className="text-[15px] font-black text-[#27225B] mb-4">Quick Actions</h3>
-                    <div className="flex gap-4">
-                        <button onClick={() => { setEditingUser(null); setIsModalOpen(true); }} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#6B4DF1] text-white font-bold text-[13px] border-none cursor-pointer hover:bg-[#5839D6] transition-colors shadow-sm">
-                            <UploadCloud size={16} /> Add New Student
+                <div className="flex flex-col p-5" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 16px 0' }}>Quick Actions</h3>
+                    <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-3">
+                        <button onClick={() => { setEditingUser(null); setIsModalOpen(true); }} className="flex-1 flex items-center justify-center gap-2 transition-colors border-none cursor-pointer group" style={{ padding: '12px 16px', backgroundColor: C.btnViewAllBg, borderRadius: '10px' }}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = C.innerBg}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = C.btnViewAllBg}>
+                            <MdAdd style={{ width: 18, height: 18, color: C.btnPrimary }} />
+                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.btnPrimary }}>Add Student</span>
                         </button>
-                        <button disabled={isImporting} onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[#DC7967] font-bold text-[13px] border-[#E09EBE] cursor-pointer hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50" style={{ backgroundColor: '#DDB1D2' }}>
-                            {isImporting ? <Loader2 size={16} className="animate-spin" /> : <Users size={16} />} 
-                            {isImporting ? 'Importing...' : 'Bulk Import'}
+                        <button disabled={isImporting} onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-2 transition-opacity border-none cursor-pointer disabled:opacity-50" style={{ padding: '12px 16px', backgroundColor: C.warningBg, borderRadius: '10px' }}
+                            onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
+                            onMouseLeave={e => e.currentTarget.style.opacity = 1}>
+                            {isImporting ? <MdHourglassEmpty style={{ width: 18, height: 18, color: C.warning }} className="animate-spin" /> : <MdCloudUpload style={{ width: 18, height: 18, color: C.warning }} />} 
+                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.warning }}>{isImporting ? 'Importing...' : 'Bulk Import'}</span>
+                        </button>
+                        <button className="flex-1 flex items-center justify-center gap-2 transition-opacity border-none cursor-pointer" style={{ padding: '12px 16px', backgroundColor: C.successBg, borderRadius: '10px' }}
+                            onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
+                            onMouseLeave={e => e.currentTarget.style.opacity = 1}>
+                            <MdDownload style={{ width: 18, height: 18, color: C.success }} />
+                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.success }}>Report</span>
                         </button>
                         <input type="file" accept=".csv" ref={fileInputRef} onChange={handleBulkImport} className="hidden" />
                     </div>
                 </div>
 
                 {/* Recent Activities */}
-                <div className="bg-white p-5 rounded-2xl flex flex-col" style={{ boxShadow: softShadow }}>
-                    <h3 className="text-[15px] font-black text-[#27225B] mb-4">Recent Activities</h3>
-                    <div className="flex flex-col gap-3">
+                <div className="flex flex-col p-5" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 16px 0' }}>Recent Activities</h3>
+                    <div className="flex flex-col gap-4">
                         {recentActivities.length > 0 ? recentActivities.map((act, i) => (
                             <div key={i} className="flex items-center gap-3">
                                 {act.image ? (
                                     <img src={act.image} className="w-8 h-8 rounded-lg object-cover flex-shrink-0" alt="" />
                                 ) : (
-                                    <div className="w-8 h-8 rounded-lg flex-shrink-0" style={{ backgroundColor: ['#FF8A8A', '#53B2FF', '#4ABCA8'][i % 3] }}></div>
+                                    <div className="w-8 h-8 rounded-lg flex-shrink-0" style={{ backgroundColor: [C.danger, C.btnPrimary, C.success][i % 3] }}></div>
                                 )}
-                                <p className="text-[13px] font-semibold text-[#4A5568] m-0"><span className="font-bold text-[#27225B]">{act.studentName}</span> enrolled in {act.courseTitle}</p>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text, margin: 0, lineHeight: 1.3 }}>
+                                    <span style={{ fontWeight: T.weight.bold, color: C.heading }}>{act.studentName}</span> enrolled in {act.courseTitle}
+                                </p>
                             </div>
                         )) : (
-                            <p className="text-[13px] font-medium text-[#A0ABC0] italic m-0">No recent activities.</p>
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, fontStyle: 'italic', margin: 0 }}>No recent activities.</p>
                         )}
                     </div>
                 </div>
 
                 {/* Notifications */}
-                <div className="bg-white p-5 rounded-2xl flex flex-col" style={{ boxShadow: softShadow }}>
-                    <h3 className="text-[15px] font-black text-[#27225B] mb-4">Notifications</h3>
+                <div className="flex flex-col p-5" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 16px 0' }}>Notifications</h3>
                     <div className="flex flex-col gap-3">
                         {notifications.length > 0 ? notifications.map((notif, i) => (
-                            <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-[#F4F0FD]">
-                                <div className="flex items-center gap-3">
-                                    <AlertTriangle size={16} className="text-[#6B4DF1]" />
-                                    <span className="text-[13px] font-bold text-[#27225B] truncate max-w-[200px]">{notif.text}</span>
+                            <div key={i} className="flex items-center justify-between p-3" style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <MdWarning style={{ width: 16, height: 16, color: C.btnPrimary, shrink: 0 }} />
+                                    <span className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>{notif.text}</span>
                                 </div>
-                                <Link href="#" className="text-[12px] font-bold text-[#6B4DF1] no-underline">View</Link>
+                                <Link href="#" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.btnPrimary, textDecoration: 'none', marginLeft: 8, shrink: 0 }}>View</Link>
                             </div>
                         )) : (
-                            <p className="text-[13px] font-medium text-[#A0ABC0] italic m-0">No new notifications.</p>
+                            <div className="flex items-center justify-between p-3" style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <MdNotifications style={{ width: 16, height: 16, color: C.btnPrimary, shrink: 0 }} />
+                                    <span className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>No new notifications</span>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>

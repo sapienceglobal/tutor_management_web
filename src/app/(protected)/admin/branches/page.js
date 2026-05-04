@@ -2,22 +2,49 @@
 
 import { useState, useEffect } from 'react';
 import {
-    Loader2, Plus, Edit, Trash2, Search, Eye,
-    CheckCircle2, ChevronLeft, ChevronRight,
-    UploadCloud, Download, Bell, Building2, AlertCircle, Clock,
-    FileText,
-    MoreHorizontal
-} from 'lucide-react';
+    MdHourglassEmpty,
+    MdAdd,
+    MdEdit,
+    MdDelete,
+    MdSearch,
+    MdVisibility,
+    MdCheckCircle,
+    MdChevronLeft,
+    MdChevronRight,
+    MdCloudUpload,
+    MdDownload,
+    MdNotifications,
+    MdBusiness,
+    MdErrorOutline,
+    MdAccessTime,
+    MdArticle,
+    MdMoreHoriz,
+    MdArrowForward
+} from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 import AddBranchWizardModal from '@/components/admin/AddBranchWizardModal';
+import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
 
 const ROWS_PER_PAGE = 10;
 
+const baseInputStyle = {
+    backgroundColor: C.surfaceWhite,
+    border: `1px solid ${C.cardBorder}`,
+    borderRadius: '10px',
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.base,
+    fontWeight: T.weight.semibold,
+    outline: 'none',
+    width: '100%',
+    padding: '10px 16px',
+    transition: 'all 0.2s ease',
+};
+
 export default function AdminBranchesPage() {
     const { confirmDialog } = useConfirm();
-    const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.12)';
 
     const [branches, setBranches] = useState([]);
     const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0, pending: 0 });
@@ -64,7 +91,6 @@ export default function AdminBranchesPage() {
         }
     };
 
-    // Filter & paginate
     const filtered = branches.filter(b => {
         const matchSearch = !searchTerm || b.campusName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             b.address?.city?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -77,9 +103,9 @@ export default function AdminBranchesPage() {
 
     const statusBadge = (status) => {
         const map = {
-            active: { bg: '#ECFDF5', color: '#059669', label: 'Active', icon: CheckCircle2 },
-            inactive: { bg: '#FFF7ED', color: '#D97706', label: 'Inactive', icon: AlertCircle },
-            pending: { bg: '#EFF6FF', color: '#2563EB', label: 'Pending', icon: Clock },
+            active: { bg: C.successBg, color: C.success, border: C.successBorder, label: 'Active', icon: MdCheckCircle },
+            inactive: { bg: C.warningBg, color: C.warning, border: C.warningBorder, label: 'Inactive', icon: MdErrorOutline },
+            pending: { bg: C.btnViewAllBg, color: C.btnPrimary, border: C.cardBorder, label: 'Pending', icon: MdAccessTime },
         };
         return map[status] || map['active'];
     };
@@ -89,213 +115,243 @@ export default function AdminBranchesPage() {
         const h = Math.floor(diff / 3600000);
         const d = Math.floor(diff / 86400000);
         if (h < 1) return 'Just now';
-        if (h < 24) return `${h} hour${h > 1 ? 's' : ''} ago`;
-        return `${d} day${d > 1 ? 's' : ''} ago`;
+        if (h < 24) return `${h}h ago`;
+        return `${d}d ago`;
     };
 
-    const CATEGORY_COLORS = ['#6B4DF1', '#3182CE', '#4ABCA8', '#FC8730', '#E53E3E', '#805AD5'];
+    const CATEGORY_COLORS = [C.btnPrimary, C.success, C.warning, C.danger, C.text, C.iconBg];
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-[#F1EAFB]">
-                <Loader2 className="w-8 h-8 animate-spin text-[#6B4DF1]" />
+            <div className="flex items-center justify-center min-h-screen w-full" style={{ backgroundColor: C.pageBg }}>
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-12 h-12">
+                        <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                            style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                    </div>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6 min-h-screen p-6 md:p-8" style={{ backgroundColor: '#F1EAFB', fontFamily: "'Inter', sans-serif" }}>
+        <div className="space-y-6 min-h-screen w-full" style={{ ...pageStyle, backgroundColor: C.pageBg }}>
 
-           {/* ── Main Integrated Branch Management Card ── */}
-            <div className="bg-white rounded-3xl flex flex-col overflow-hidden mb-6" style={{ boxShadow: softShadow }}>
+            {/* ── Main Management Card ── */}
+            <div className="flex flex-col overflow-hidden w-full" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
                 
-                {/* Header inside the card */}
-                <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#F4F0FD]">
-                    <h1 className="text-[22px] font-black text-[#27225B] m-0">Branch Management</h1>
+                <div className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                    <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>Branch Management</h1>
                     <button onClick={() => { setEditingBranch(null); setShowModal(true); }}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-[#6B4DF1] text-white font-bold text-[14px] rounded-xl hover:bg-[#5839D6] transition-colors shadow-md border-none cursor-pointer">
-                        <Plus size={18} strokeWidth={3} /> Add Branch
+                        className="flex items-center justify-center gap-2 transition-opacity hover:opacity-90 cursor-pointer border-none w-full sm:w-auto"
+                        style={{ padding: '10px 24px', background: C.gradientBtn, color: '#ffffff', borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, boxShadow: S.btn }}>
+                        <MdAdd style={{ width: 18, height: 18 }} /> Add Branch
                     </button>
                 </div>
                 
                 {/* Table Toolbar */}
-                <div className="px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 border-b border-[#F4F0FD]">
-                    <div className="relative w-full md:w-96">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7D8DA6]" />
-                        <input type="text" placeholder="Search branches..." className="pl-10 pr-4 py-2.5 bg-white border border-[#E9DFFC] text-[#27225B] text-[13px] font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] w-full placeholder-[#A0ABC0]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                <div className="px-4 sm:px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
+                    <div className="relative w-full md:w-96 group">
+                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 transition-colors pointer-events-none" style={{ width: 18, height: 18, color: C.textMuted }} />
+                        <input type="text" placeholder="Search branches..." style={{ ...baseInputStyle, paddingLeft: '36px' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} 
+                            onFocus={e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; }}
+                            onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; }}
+                        />
                     </div>
-                    <div className="flex items-center gap-3 w-full md:w-auto">
-                        <select className="bg-white border border-[#E9DFFC] text-[#7D8DA6] text-[13px] font-bold px-4 py-2.5 rounded-xl outline-none cursor-pointer min-w-[120px]">
-                            <option>All Status</option>
+                    <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ ...baseInputStyle, width: 'auto', minWidth: '120px', padding: '10px 16px', cursor: 'pointer' }}>
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
                         </select>
-                        <select className="bg-white border border-[#E9DFFC] text-[#7D8DA6] text-[13px] font-bold px-4 py-2.5 rounded-xl outline-none cursor-pointer min-w-[140px]">
+                        <select style={{ ...baseInputStyle, width: 'auto', minWidth: '140px', padding: '10px 16px', cursor: 'pointer' }}>
                             <option>All Categories</option>
                         </select>
-                        <button className="w-10 h-10 bg-white border border-[#E9DFFC] rounded-xl flex items-center justify-center text-[#7D8DA6] hover:text-[#6B4DF1] cursor-pointer">
-                            <span className="font-bold text-[14px]">→</span>
+                        <button className="flex items-center justify-center transition-colors cursor-pointer border-none"
+                            style={{ width: 44, height: 44, backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, borderRadius: '10px', color: C.textMuted }}
+                            onMouseEnter={e => e.currentTarget.style.color = C.btnPrimary}
+                            onMouseLeave={e => e.currentTarget.style.color = C.textMuted}>
+                            <MdArrowForward style={{ width: 18, height: 18 }} />
                         </button>
-                        <select className="bg-white border border-[#E9DFFC] text-[#7D8DA6] text-[13px] font-bold px-4 py-2.5 rounded-xl outline-none cursor-pointer min-w-[140px]">
+                        <select style={{ ...baseInputStyle, width: 'auto', minWidth: '140px', padding: '10px 16px', cursor: 'pointer' }}>
                             <option>Bulk Actions</option>
                         </select>
                     </div>
                 </div>
 
                 {/* Table */}
-                <div className="overflow-x-auto px-6 pb-2">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-[#F4F0FD] rounded-xl">
+                <div className="overflow-x-auto w-full">
+                    <table className="w-full text-left border-collapse min-w-[900px]">
+                        <thead style={{ backgroundColor: C.innerBg }}>
                             <tr>
-                                <th className="px-5 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider first:rounded-l-xl">Branch Name ▾</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider">Address</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider">Category</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider">Status</th>
-                                <th className="px-5 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider text-center last:rounded-r-xl">Actions</th>
+                                <th style={{ padding: '16px 24px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Branch Name ▾</th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Address</th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Category</th>
+                                <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Status</th>
+                                <th style={{ padding: '16px 24px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}`, textAlign: 'center' }}>Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#F4F0FD]">
-                            {branches.map((branch, i) => (
-                                <tr key={branch._id || i} className="hover:bg-[#F8F7FF] transition-colors group">
-                                    <td className="px-4 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-[10px] bg-[#6B4DF1] text-white flex items-center justify-center shrink-0">
-                                                <Building2 size={20} />
+                        <tbody>
+                            {paginated.map((branch, i) => {
+                                const badge = statusBadge(branch.status);
+                                return (
+                                    <tr key={branch._id || i} className="transition-colors group" style={{ backgroundColor: C.cardBg, borderBottom: `1px solid ${C.cardBorder}` }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.cardBg; }}>
+                                        <td style={{ padding: '16px 24px' }}>
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center justify-center shrink-0" style={{ width: 40, height: 40, backgroundColor: C.iconBg, borderRadius: '10px' }}>
+                                                    <MdBusiness style={{ width: 20, height: 20, color: C.iconColor }} />
+                                                </div>
+                                                <div className="flex flex-col min-w-0">
+                                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>{branch.campusName}</span>
+                                                    <span className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.textMuted, marginTop: 2, maxWidth: '200px' }}>
+                                                        {branch.address?.street}, {branch.address?.city}
+                                                    </span>
+                                                </div>
                                             </div>
+                                        </td>
+                                        <td style={{ padding: '16px 16px' }}>
                                             <div className="flex flex-col">
-                                                <span className="font-bold text-[#27225B] text-[14px]">{branch.campusName}</span>
-                                                <span className="text-[12px] font-medium text-[#7D8DA6] truncate w-48 mt-0.5">{branch.address?.street}, {branch.address?.city}, {branch.address?.state}</span>
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.text }}>{branch.address?.city}, {branch.address?.state}</span>
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.semibold, color: C.textMuted, marginTop: 2 }}>{branch.address?.zipCode}</span>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-4">
-                                        <div className="flex flex-col">
-                                            <span className="text-[13px] font-bold text-[#4A5568]">{branch.address?.street}, {branch.address?.city}, {branch.address?.state}:</span>
-                                            <span className="text-[13px] font-medium text-[#7D8DA6]">{branch.address?.zipCode}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-4">
-                                        <span className="text-[13px] font-semibold text-[#4A5568]">{branch.features?.[0]?.name || 'Engineering'}</span>
-                                    </td>
-                                    <td className="px-4 py-4">
-                                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ECFDF5] text-[#4ABCA8] text-[12px] font-bold rounded-lg border border-[#A7F3D0]">
-                                            <CheckCircle2 size={14} /> Active
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-4">
-                                        <div className="flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button className="text-[#6B4DF1] hover:text-[#5839D6] bg-transparent border-none cursor-pointer"><Eye size={18} strokeWidth={2.5} /></button>
-                                            <button className="text-[#6B4DF1] hover:text-[#5839D6] bg-transparent border-none cursor-pointer"><Edit size={16} strokeWidth={2.5} /></button>
-                                            <button onClick={() => handleDelete(branch._id)} className="text-[#A0ABC0] hover:text-[#27225B] bg-transparent border-none cursor-pointer"><MoreHorizontal size={18} strokeWidth={2.5} /></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                                        </td>
+                                        <td style={{ padding: '16px 16px' }}>
+                                            <span style={{ padding: '4px 10px', backgroundColor: C.btnViewAllBg, color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, borderRadius: '10px' }}>
+                                                {branch.features?.[0]?.name || 'Engineering'}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '16px 16px' }}>
+                                            <span style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                padding: '4px 10px',
+                                                fontFamily: T.fontFamily,
+                                                fontSize: T.size.xs,
+                                                fontWeight: T.weight.bold,
+                                                borderRadius: '10px',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: T.tracking.wider,
+                                                backgroundColor: badge.bg,
+                                                color: badge.color,
+                                                border: `1px solid ${badge.border}`
+                                            }}>
+                                                <badge.icon style={{ width: 14, height: 14 }} /> {badge.label}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', textAlign: 'center' }}>
+                                            <div className="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button className="transition-colors border-none cursor-pointer" style={{ backgroundColor: 'transparent', color: C.btnPrimary }}><MdVisibility style={{ width: 20, height: 20 }} /></button>
+                                                <button className="transition-colors border-none cursor-pointer" style={{ backgroundColor: 'transparent', color: C.success }}><MdEdit style={{ width: 18, height: 18 }} /></button>
+                                                <button onClick={() => handleDelete(branch._id)} className="transition-colors border-none cursor-pointer" style={{ backgroundColor: 'transparent', color: C.textMuted }} onMouseEnter={e => e.currentTarget.style.color = C.danger} onMouseLeave={e => e.currentTarget.style.color = C.textMuted}><MdMoreHoriz style={{ width: 18, height: 18 }} /></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
 
-                {/* Table Pagination */}
-                <div className="px-6 py-4 border-t border-[#F4F0FD] flex items-center justify-between bg-white mt-2">
-                    <span className="text-[13px] font-bold text-[#7D8DA6]">Showing {branches.length} of {branches.length} Branches</span>
+                {/* Pagination */}
+                <div className="px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ backgroundColor: C.surfaceWhite, borderTop: `1px solid ${C.cardBorder}` }}>
+                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.textMuted }}>Showing {paginated.length} of {filtered.length} Branches</span>
                     <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-bold text-[#7D8DA6] mr-2">Rows per page: 10 ▾</span>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-[#E9DFFC] text-[#7D8DA6] hover:text-[#6B4DF1] cursor-pointer"><ChevronLeft size={16}/></button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#F4F0FD] text-[#6B4DF1] font-bold border-none cursor-pointer text-[13px]">1</button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-[#E9DFFC] text-[#7D8DA6] hover:text-[#6B4DF1] cursor-pointer"><ChevronRight size={16}/></button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-[#E9DFFC] text-[#7D8DA6] hover:text-[#6B4DF1] cursor-pointer ml-2"><FileText size={14}/></button>
+                        <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
+                            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, color: C.textMuted }}>
+                            <MdChevronLeft style={{ width: 20, height: 20 }} />
+                        </button>
+                        <button className="flex items-center justify-center border-none cursor-default"
+                            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.btnViewAllBg, color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}>
+                            {currentPage}
+                        </button>
+                        <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
+                            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, color: C.textMuted }}>
+                            <MdChevronRight style={{ width: 20, height: 20 }} />
+                        </button>
+                        <button className="flex items-center justify-center transition-colors cursor-pointer ml-2"
+                            style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, color: C.textMuted }}>
+                            <MdArticle style={{ width: 16, height: 16 }} />
+                        </button>
                     </div>
                 </div>
             </div>
 
             {/* ── Bottom Grid ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-                {/* Left: Branch Overview + Recent Activities */}
-                <div className="flex flex-col gap-6">
-                    <div className="bg-white p-5 rounded-2xl" style={{ boxShadow: softShadow }}>
-                        <h3 className="text-[15px] font-black text-[#27225B] m-0 mb-4">Branch Overview</h3>
-                        <div className="grid grid-cols-2 gap-3">
-                            {[
-                                { label: 'Total\nBranches', value: stats.total, bg: '#F4F0FD', iconBg: '#6B4DF1', icon: Building2 },
-                                { label: 'Active\nBranches', value: stats.active, bg: '#ECFDF5', iconBg: '#4ABCA8', icon: CheckCircle2 },
-                                { label: 'Inactive\nBranches', value: stats.inactive, bg: '#FFF7ED', iconBg: '#FC8730', icon: AlertCircle },
-                                { label: 'Pending\nApproval', value: stats.pending, bg: '#EBF8FF', iconBg: '#3182CE', icon: Clock },
-                            ].map((s, i) => (
-                                <div key={i} className="rounded-xl p-3 flex flex-col items-center justify-center text-center h-28"
-                                    style={{ backgroundColor: s.bg }}>
-                                    <div className="w-8 h-8 rounded-full text-white flex items-center justify-center mb-2" style={{ backgroundColor: s.iconBg }}>
-                                        <s.icon size={14} />
-                                    </div>
-                                    <span className="text-[20px] font-black text-[#27225B] leading-none mb-1">{s.value}</span>
-                                    <span className="text-[10px] font-bold text-[#7D8DA6] uppercase leading-tight whitespace-pre">{s.label}</span>
+                {/* Left: Branch Overview */}
+                <div className="flex flex-col p-4 sm:p-5 w-full" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 16px 0' }}>Branch Overview</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                        {[
+                            { label: 'Total\nBranches', value: stats.total, bg: C.btnViewAllBg, iconColor: C.btnPrimary, icon: MdBusiness },
+                            { label: 'Active\nBranches', value: stats.active, bg: C.successBg, iconColor: C.success, icon: MdCheckCircle },
+                            { label: 'Inactive\nBranches', value: stats.inactive, bg: C.warningBg, iconColor: C.warning, icon: MdErrorOutline },
+                            { label: 'Pending\nApproval', value: stats.pending, bg: '#EFF6FF', iconColor: '#2563EB', icon: MdAccessTime },
+                        ].map((s, i) => (
+                            <div key={i} className="rounded-xl p-3 flex flex-col items-center justify-center text-center h-28"
+                                style={{ backgroundColor: s.bg, border: `1px solid ${C.cardBorder}` }}>
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center mb-2" style={{ backgroundColor: '#ffffff', boxShadow: S.active }}>
+                                    <s.icon style={{ width: 16, height: 16, color: s.iconColor }} />
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-5 rounded-2xl flex-1" style={{ boxShadow: softShadow }}>
-                        <h3 className="text-[15px] font-black text-[#27225B] m-0 mb-4">Recent Branch Activities</h3>
-                        {recentActivities.length === 0 ? (
-                            <p className="text-[12px] text-[#A0ABC0] font-medium">No recent activities yet.</p>
-                        ) : (
-                            <div className="flex flex-col gap-4">
-                                {recentActivities.map((act, i) => (
-                                    <div key={act.id || i} className="flex items-start justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-2 h-2 rounded-full bg-[#6B4DF1] mt-1 shrink-0" />
-                                            <p className="text-[12px] font-bold text-[#4A5568] m-0 leading-snug">{act.action}</p>
-                                        </div>
-                                        <span className="text-[10px] font-semibold text-[#A0ABC0] whitespace-nowrap ml-2">{timeAgo(act.time)}</span>
-                                    </div>
-                                ))}
+                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.bold, color: C.heading, lineHeight: 1, marginBottom: 4 }}>{s.value}</span>
+                                <span style={{ fontFamily: T.fontFamily, fontSize: '9px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wider, whiteSpace: 'pre' }}>{s.label}</span>
                             </div>
-                        )}
+                        ))}
                     </div>
                 </div>
 
-                {/* Middle: Top Branches + Categories */}
-                <div className="flex flex-col gap-6">
-                    <div className="bg-white p-5 rounded-2xl" style={{ boxShadow: softShadow }}>
-                        <h3 className="text-[15px] font-black text-[#27225B] m-0 mb-4">All Branches</h3>
+                {/* Middle: All Branches + Categories */}
+                <div className="flex flex-col gap-6 w-full">
+                    {/* All Branches Table */}
+                    <div className="flex flex-col p-4 sm:p-5" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 16px 0' }}>All Branches</h3>
                         {branches.length === 0 ? (
-                            <p className="text-[12px] text-[#A0ABC0] font-medium">No branches added yet.</p>
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, fontWeight: T.weight.medium, margin: 0 }}>No branches added yet.</p>
                         ) : (
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="border-b border-[#F4F0FD]">
-                                        <th className="pb-2 text-[12px] font-bold text-[#7D8DA6]">Branch Name</th>
-                                        <th className="pb-2 text-[12px] font-bold text-[#7D8DA6] text-right">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {branches.slice(0, 6).map(b => {
-                                        const badge = statusBadge(b.status);
-                                        return (
-                                            <tr key={b._id} className="border-b border-[#F4F0FD] last:border-0">
-                                                <td className="py-2.5 text-[13px] font-bold text-[#27225B]">{b.campusName}</td>
-                                                <td className="py-2.5 text-right">
-                                                    <span className="text-[11px] font-black px-2 py-0.5 rounded-full" style={{ backgroundColor: badge.bg, color: badge.color }}>
-                                                        {badge.label}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                            <div className="overflow-x-auto w-full">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                                            <th style={{ paddingBottom: 8, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel }}>Branch Name</th>
+                                            <th style={{ paddingBottom: 8, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textAlign: 'right' }}>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {branches.slice(0, 6).map(b => {
+                                            const badge = statusBadge(b.status);
+                                            return (
+                                                <tr key={b._id} style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                                                    <td className="truncate max-w-[120px]" style={{ padding: '10px 0', fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>{b.campusName}</td>
+                                                    <td style={{ padding: '10px 0', textAlign: 'right' }}>
+                                                        <span style={{ backgroundColor: badge.bg, color: badge.color, padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: T.weight.bold, textTransform: 'uppercase', border: `1px solid ${badge.border}` }}>
+                                                            {badge.label}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
                         )}
                     </div>
 
-                    <div className="bg-white p-5 rounded-2xl flex-1" style={{ boxShadow: softShadow }}>
-                        <h3 className="text-[15px] font-black text-[#27225B] m-0 mb-4">Branch Categories</h3>
+                    {/* Branch Categories */}
+                    <div className="flex flex-col p-4 sm:p-5" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 16px 0' }}>Branch Categories</h3>
                         {categoryBreakdown.length === 0 ? (
-                            <p className="text-[12px] text-[#A0ABC0] font-medium">No categories assigned yet.</p>
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, fontWeight: T.weight.medium, margin: 0 }}>No categories assigned yet.</p>
                         ) : (
                             <div className="flex flex-col gap-3">
                                 {categoryBreakdown.map((cat, i) => (
                                     <div key={cat.name} className="flex items-center gap-3">
-                                        <div className="w-3 h-3 rounded shrink-0" style={{ backgroundColor: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }} />
-                                        <span className="text-[12px] font-bold text-[#27225B] flex-1">{cat.name}</span>
-                                        <span className="text-[12px] font-semibold text-[#A0ABC0]">({cat.count})</span>
+                                        <div style={{ width: 12, height: 12, borderRadius: '4px', backgroundColor: CATEGORY_COLORS[i % CATEGORY_COLORS.length], flexShrink: 0 }} />
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, flex: 1 }}>{cat.name}</span>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.textMuted }}>({cat.count})</span>
                                     </div>
                                 ))}
                             </div>
@@ -303,65 +359,73 @@ export default function AdminBranchesPage() {
                     </div>
                 </div>
 
-                {/* Right: Quick Actions + Notifications */}
-                <div className="flex flex-col gap-6">
-                    <div className="bg-white p-5 rounded-2xl" style={{ boxShadow: softShadow }}>
-                        <h3 className="text-[15px] font-black text-[#27225B] m-0 mb-4">Quick Actions</h3>
+                {/* Right: Quick Actions & Notifications */}
+                <div className="flex flex-col gap-6 w-full">
+                    {/* Quick Actions */}
+                    <div className="flex flex-col p-4 sm:p-5" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 16px 0' }}>Quick Actions</h3>
                         <div className="flex flex-col gap-3">
                             <button onClick={() => { setEditingBranch(null); setShowModal(true); }}
-                                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-[#F4F0FD] border-none cursor-pointer hover:bg-[#E9DFFC] transition-colors">
-                                <div className="w-8 h-8 rounded-full bg-[#6B4DF1] text-white flex items-center justify-center">
-                                    <Plus size={16} strokeWidth={3} />
+                                className="w-full flex items-center gap-3 px-4 py-3 transition-colors border-none cursor-pointer group" style={{ backgroundColor: C.btnViewAllBg, borderRadius: '12px' }}
+                                onMouseEnter={e => e.currentTarget.style.backgroundColor = C.innerBg}
+                                onMouseLeave={e => e.currentTarget.style.backgroundColor = C.btnViewAllBg}>
+                                <div className="w-8 h-8 rounded-full bg-[#ffffff] flex items-center justify-center shadow-sm">
+                                    <MdAdd style={{ width: 18, height: 18, color: C.btnPrimary }} />
                                 </div>
-                                <span className="text-[13px] font-bold text-[#6B4DF1]">Add New Branch</span>
+                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.btnPrimary }}>Add New Branch</span>
                             </button>
-                            <button className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-[#FFF7ED] border-none cursor-pointer hover:bg-[#FFEDD5] transition-colors">
-                                <div className="w-8 h-8 rounded-full bg-[#FC8730] text-white flex items-center justify-center">
-                                    <UploadCloud size={16} />
+                            <button className="w-full flex items-center gap-3 px-4 py-3 transition-colors border-none cursor-pointer" style={{ backgroundColor: C.warningBg, borderRadius: '12px' }}
+                                onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
+                                onMouseLeave={e => e.currentTarget.style.opacity = 1}>
+                                <div className="w-8 h-8 rounded-full bg-[#ffffff] flex items-center justify-center shadow-sm">
+                                    <MdCloudUpload style={{ width: 16, height: 16, color: C.warning }} />
                                 </div>
-                                <span className="text-[13px] font-bold text-[#FC8730]">Import Branches</span>
+                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.warning }}>Import Branches</span>
                             </button>
-                            <button className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-[#ECFDF5] border-none cursor-pointer hover:bg-[#D1FAE5] transition-colors">
-                                <div className="w-8 h-8 rounded-full bg-[#4ABCA8] text-white flex items-center justify-center">
-                                    <Download size={16} />
+                            <button className="w-full flex items-center gap-3 px-4 py-3 transition-colors border-none cursor-pointer" style={{ backgroundColor: C.successBg, borderRadius: '12px' }}
+                                onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
+                                onMouseLeave={e => e.currentTarget.style.opacity = 1}>
+                                <div className="w-8 h-8 rounded-full bg-[#ffffff] flex items-center justify-center shadow-sm">
+                                    <MdDownload style={{ width: 16, height: 16, color: C.success }} />
                                 </div>
-                                <span className="text-[13px] font-bold text-[#4ABCA8]">Download Branch Report</span>
+                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.success }}>Download Branch Report</span>
                             </button>
                         </div>
                     </div>
 
-                    <div className="bg-white p-5 rounded-2xl flex-1" style={{ boxShadow: softShadow }}>
-                        <h3 className="text-[15px] font-black text-[#27225B] m-0 mb-4">Notifications</h3>
+                    {/* Notifications */}
+                    <div className="flex flex-col p-4 sm:p-5" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], boxShadow: S.card, border: `1px solid ${C.cardBorder}` }}>
+                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 16px 0' }}>Notifications</h3>
                         <div className="flex flex-col gap-4">
                             {stats.pending > 0 && (
                                 <>
                                     <div className="flex items-start justify-between gap-3">
-                                        <Bell size={16} className="text-[#6B4DF1] mt-0.5 shrink-0" />
-                                        <span className="text-[12px] font-bold text-[#4A5568] flex-1 leading-snug">
+                                        <MdNotifications style={{ width: 16, height: 16, color: C.btnPrimary, marginTop: 2, flexShrink: 0 }} />
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, flex: 1, lineHeight: 1.4 }}>
                                             {stats.pending} branch{stats.pending > 1 ? 'es are' : ' is'} pending verification
                                         </span>
                                     </div>
-                                    <hr className="border-t border-[#F4F0FD] m-0" />
+                                    <hr style={{ borderTop: `1px solid ${C.cardBorder}`, margin: 0 }} />
                                 </>
                             )}
                             {stats.inactive > 0 && (
                                 <>
                                     <div className="flex items-start justify-between gap-3">
-                                        <Bell size={16} className="text-[#6B4DF1] mt-0.5 shrink-0" />
-                                        <span className="text-[12px] font-bold text-[#4A5568] flex-1 leading-snug">
+                                        <MdNotifications style={{ width: 16, height: 16, color: C.btnPrimary, marginTop: 2, flexShrink: 0 }} />
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, flex: 1, lineHeight: 1.4 }}>
                                             {stats.inactive} branch{stats.inactive > 1 ? 'es have' : ' has'} inactive status
                                         </span>
                                     </div>
-                                    <hr className="border-t border-[#F4F0FD] m-0" />
+                                    <hr style={{ borderTop: `1px solid ${C.cardBorder}`, margin: 0 }} />
                                 </>
                             )}
                             {stats.total === 0 && (
-                                <p className="text-[12px] text-[#A0ABC0] font-medium">No notifications at this time.</p>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, fontWeight: T.weight.medium, margin: 0 }}>No notifications at this time.</p>
                             )}
                             {stats.total > 0 && (
                                 <div className="flex items-start justify-between gap-3">
-                                    <Bell size={16} className="text-[#6B4DF1] mt-0.5 shrink-0" />
-                                    <span className="text-[12px] font-bold text-[#4A5568] flex-1 leading-snug">
+                                    <MdNotifications style={{ width: 16, height: 16, color: C.btnPrimary, marginTop: 2, flexShrink: 0 }} />
+                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, flex: 1, lineHeight: 1.4 }}>
                                         {stats.total} total branch{stats.total > 1 ? 'es' : ''} registered
                                     </span>
                                 </div>

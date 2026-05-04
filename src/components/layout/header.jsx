@@ -1,7 +1,25 @@
-import { Search, Bell, Mail, Grid, Maximize, User, LogOut, Menu, PanelLeftClose, PanelLeftOpen, ChevronDown, Settings } from 'lucide-react';
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
+import {
+    MdSearch, MdNotifications, MdMail, MdGridView, MdFullscreen,
+    MdPerson, MdLogout, MdMenu, MdChevronLeft, MdChevronRight,
+    MdKeyboardArrowDown, MdSettings
+} from 'react-icons/md';
+import { C, T, R, S } from '@/constants/studentTokens'; // Sourced from single truth
+
+// ─── Image Resolver for VPS/Hostinger Bug ─────────────────────────────────────
+const resolveImageUrl = (path) => {
+    if (!path) return "/default-avatar.svg";
+    if (path.startsWith("http")) return path; 
+    
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    const baseUrl = apiUrl.replace(/\/api\/?$/, ""); 
+    
+    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
 
 export function Header({ onMenuClick, onSidebarCollapse, isSidebarCollapsed, institute }) {
     const router = useRouter();
@@ -48,7 +66,6 @@ export function Header({ onMenuClick, onSidebarCollapse, isSidebarCollapsed, ins
         student: 'Student',
     }[userRole] || userRole;
 
-    // Role-aware dropdown destinations
     const profilePath = userRole === 'tutor' ? '/tutor/settings' : '/admin/profile';
     const settingsPath = userRole === 'tutor' ? '/tutor/settings' : '/admin/settings';
     const dashboardPath = userRole === 'tutor'
@@ -58,157 +75,214 @@ export function Header({ onMenuClick, onSidebarCollapse, isSidebarCollapsed, ins
             : '/admin/dashboard';
 
     return (
-        <header className="h-[60px] bg-[#FAFAFD] backdrop-blur-sm border-b border-slate-200/70 flex items-center px-4 lg:px-5 sticky top-0 z-40 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] gap-3">
+        <header className="sticky top-0 z-40 w-full backdrop-blur-sm shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]"
+            style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderBottom: `1px solid ${C.cardBorder}`, height: '60px' }}>
+            <div className="h-full flex items-center justify-between px-4 lg:px-5 gap-3">
 
-            {/* Left */}
-            <div className="flex items-center gap-1 flex-shrink-0">
-                <button onClick={onMenuClick}
-                    className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors lg:hidden">
-                    <Menu className="w-5 h-5" />
-                </button>
-                <button onClick={onSidebarCollapse}
-                    title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                    className="hidden lg:flex p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 rounded-lg transition-colors">
-                    {isSidebarCollapsed
-                        ? <PanelLeftOpen className="w-[18px] h-[18px]" />
-                        : <PanelLeftClose className="w-[18px] h-[18px]" />}
-                </button>
-            </div>
-
-            {/* Search */}
-            <div className="hidden md:flex items-center relative flex-shrink-0">
-                <input
-                    type="text"
-                    placeholder="Search courses, tests..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="w-56 lg:w-72 h-9 pl-4 pr-9 bg-slate-50 border border-slate-200 rounded-xl text-sm
-                        text-slate-700 placeholder:text-slate-400 focus:outline-none focus:bg-white
-                        focus:border-[var(--theme-primary)]/40 focus:ring-2 focus:ring-[var(--theme-primary)]/10
-                        transition-all"
-                />
-                <Search className="absolute right-3 w-4 h-4 text-slate-400 pointer-events-none" />
-            </div>
-
-            {/* Right */}
-            <div className="flex items-center gap-1 ml-auto">
-
-                <button onClick={handleFullscreen} title="Toggle fullscreen"
-                    className="hidden lg:flex items-center justify-center w-9 h-9 text-slate-500 hover:bg-slate-100 hover:text-slate-700 rounded-lg transition-colors">
-                    <Maximize className="w-[17px] h-[17px]" />
-                </button>
-
-                <button className="hidden lg:flex items-center gap-1.5 px-2.5 h-9 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-                    <img src="https://flagcdn.com/w20/us.png" alt="English" className="w-4 h-3 object-cover rounded-sm" />
-                    <span className="text-[13px] font-medium">EN</span>
-                </button>
-
-                {/* Mail */}
-                <div className="relative hidden sm:block">
-                    <button className="flex items-center justify-center w-9 h-9 text-slate-500 hover:bg-slate-100 hover:text-slate-700 rounded-lg transition-colors">
-                        <Mail className="w-[17px] h-[17px]" />
-                        <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-[1.5px] border-white"
-                            style={{ backgroundColor: 'var(--theme-primary)' }} />
+                {/* Left */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    <button onClick={onMenuClick}
+                        className="p-2 transition-colors lg:hidden border-none cursor-pointer"
+                        style={{ backgroundColor: 'transparent', color: C.textMuted, borderRadius: '10px' }}
+                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
+                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
+                        <MdMenu style={{ width: 20, height: 20 }} />
                     </button>
+                    <button onClick={onSidebarCollapse}
+                        title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                        className="hidden lg:flex p-2 transition-colors border-none cursor-pointer"
+                        style={{ backgroundColor: 'transparent', color: C.textMuted, borderRadius: '10px' }}
+                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
+                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
+                        {isSidebarCollapsed ? <MdChevronRight style={{ width: 20, height: 20 }} /> : <MdChevronLeft style={{ width: 20, height: 20 }} />}
+                    </button>
+                    <h1 className="hidden sm:block tracking-tight"
+                        style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
+                        Management Panel
+                    </h1>
                 </div>
 
-                {/* Bell */}
-                <div className="relative">
-                    <button className="flex items-center justify-center w-9 h-9 text-slate-500 hover:bg-slate-100 hover:text-slate-700 rounded-lg transition-colors">
-                        <Bell className="w-[17px] h-[17px]" />
-                        <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-[1.5px] border-white"
-                            style={{ backgroundColor: 'var(--theme-primary)' }} />
-                    </button>
+                {/* Search */}
+                <div className="hidden md:block flex-1 max-w-[420px] ml-4">
+                    <div className="relative group">
+                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 transition-colors pointer-events-none" 
+                            style={{ width: 18, height: 18, color: C.textMuted }} />
+                        <input
+                            type="text"
+                            placeholder="Search courses, tests..."
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            style={{
+                                width: '100%',
+                                height: '38px',
+                                paddingLeft: '36px',
+                                paddingRight: '16px',
+                                backgroundColor: C.innerBg,
+                                border: `1px solid ${C.cardBorder}`,
+                                borderRadius: '10px',
+                                color: C.heading,
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.base,
+                                fontWeight: T.weight.semibold,
+                                outline: 'none',
+                                transition: 'all 0.2s ease'
+                            }}
+                            onFocus={e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; e.target.style.backgroundColor = C.cardBg; }}
+                            onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; e.target.style.backgroundColor = C.innerBg; }}
+                        />
+                    </div>
                 </div>
 
-                <button className="hidden lg:flex items-center justify-center w-9 h-9 text-slate-500 hover:bg-slate-100 hover:text-slate-700 rounded-lg transition-colors">
-                    <Grid className="w-[17px] h-[17px]" />
-                </button>
+                {/* Right */}
+                <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto">
 
-                <div className="w-px h-6 bg-slate-200 mx-1 hidden sm:block" />
-
-                {/* Profile Dropdown */}
-                <div className="relative" ref={dropdownRef}>
-                    <button
-                        onClick={() => setIsProfileOpen(v => !v)}
-                        className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-xl hover:bg-slate-100 transition-colors group"
-                    >
-                        <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0"
-                            style={{ boxShadow: '0 0 0 2px color-mix(in srgb, var(--theme-primary) 35%, white)' }}>
-                            <img
-                                src={user?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random`}
-                                alt="Profile" className="w-full h-full object-cover"
-                            />
-                        </div>
-                        <div className="hidden sm:flex flex-col items-start min-w-0" suppressHydrationWarning>
-                            <span className="text-[13px] font-semibold text-slate-700 max-w-[100px] truncate leading-tight">
-                                {user?.name || 'Admin'}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-medium leading-tight capitalize">
-                                {roleLabel}
-                            </span>
-                        </div>
-                        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 hidden sm:block transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
+                    <button onClick={handleFullscreen} title="Toggle fullscreen"
+                        className="hidden lg:flex items-center justify-center p-2 transition-colors border-none cursor-pointer"
+                        style={{ backgroundColor: 'transparent', color: C.textMuted, borderRadius: '10px' }}
+                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
+                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
+                        <MdFullscreen style={{ width: 20, height: 20 }} />
                     </button>
 
-                    {isProfileOpen && (
-                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                            {/* Info block */}
-                            <div className="px-3 py-2.5 border-b border-slate-100">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0"
-                                        style={{ boxShadow: '0 0 0 2px color-mix(in srgb, var(--theme-primary) 25%, white)' }}>
-                                        <img
-                                            src={user?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random`}
-                                            alt="" className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-sm font-bold text-slate-800 truncate">{user?.name}</p>
-                                        <p className="text-xs text-slate-500 truncate">{user?.email}</p>
-                                        {institute ? (
-                                            <div className="flex items-center gap-1 mt-0.5">
-                                                {institute.logo && (
-                                                    <img src={institute.logo} alt="" className="w-3.5 h-3.5 rounded object-cover" />
-                                                )}
-                                                <p className="text-[10px] font-semibold truncate"
-                                                    style={{ color: 'var(--theme-primary)' }}>
-                                                    {institute.name}
-                                                </p>
-                                            </div>
-                                        ) : (
-                                            <p className="text-[10px] text-slate-400 mt-0.5">No institute assigned</p>
-                                        )}
+                    <button className="hidden lg:flex items-center gap-1.5 px-2.5 h-9 transition-colors border-none cursor-pointer"
+                        style={{ backgroundColor: 'transparent', color: C.textMuted, borderRadius: '10px' }}
+                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
+                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
+                        <img src="https://flagcdn.com/w20/us.png" alt="English" className="w-4 h-3 object-cover rounded-sm" />
+                        <span style={{ fontFamily: T.fontFamily, fontSize: '13px', fontWeight: T.weight.medium }}>EN</span>
+                    </button>
+
+                    {/* Mail */}
+                    <div className="relative hidden sm:block">
+                        <button className="flex items-center justify-center p-2 transition-colors border-none cursor-pointer"
+                            style={{ backgroundColor: 'transparent', color: C.textMuted, borderRadius: '10px' }}
+                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
+                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
+                            <MdMail style={{ width: 20, height: 20 }} />
+                            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-[1.5px] border-white"
+                                style={{ backgroundColor: C.btnPrimary }} />
+                        </button>
+                    </div>
+
+                    {/* Bell */}
+                    <div className="relative">
+                        <button className="flex items-center justify-center p-2 transition-colors border-none cursor-pointer"
+                            style={{ backgroundColor: 'transparent', color: C.textMuted, borderRadius: '10px' }}
+                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
+                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
+                            <MdNotifications style={{ width: 20, height: 20 }} />
+                            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-[1.5px] border-white"
+                                style={{ backgroundColor: C.btnPrimary }} />
+                        </button>
+                    </div>
+
+                    <button className="hidden lg:flex items-center justify-center p-2 transition-colors border-none cursor-pointer"
+                        style={{ backgroundColor: 'transparent', color: C.textMuted, borderRadius: '10px' }}
+                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
+                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
+                        <MdGridView style={{ width: 20, height: 20 }} />
+                    </button>
+
+                    <div className="w-px h-6 mx-1 hidden sm:block" style={{ backgroundColor: C.cardBorder }} />
+
+                    {/* Profile Dropdown */}
+                    <div className="relative" ref={dropdownRef}>
+                        <button
+                            onClick={() => setIsProfileOpen(v => !v)}
+                            className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 transition-colors border-none cursor-pointer group"
+                            style={{ backgroundColor: 'transparent', borderRadius: '10px' }}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = C.innerBg}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                            <div className="w-8 h-8 overflow-hidden flex-shrink-0" style={{ borderRadius: '10px', border: `2px solid ${C.btnPrimary}80` }}>
+                                <img
+                                    src={resolveImageUrl(user?.profileImage)}
+                                    alt="Profile" className="w-full h-full object-cover"
+                                />
+                            </div>
+                            <div className="hidden sm:flex flex-col items-start min-w-0" suppressHydrationWarning>
+                                <span className="max-w-[100px] truncate leading-tight" style={{ fontFamily: T.fontFamily, fontSize: '13px', fontWeight: T.weight.bold, color: C.heading }}>
+                                    {user?.name || 'Admin'}
+                                </span>
+                                <span className="leading-tight capitalize" style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.semibold, color: C.textMuted }}>
+                                    {roleLabel}
+                                </span>
+                            </div>
+                            <MdKeyboardArrowDown className={`hidden sm:block transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} style={{ width: 16, height: 16, color: C.textMuted }} />
+                        </button>
+
+                        {isProfileOpen && (
+                            <div className="absolute right-0 mt-2 w-56 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+                                 style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], boxShadow: S.card }}>
+                                {/* Info block */}
+                                <div className="px-4 py-3" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 overflow-hidden flex-shrink-0" style={{ borderRadius: '10px', border: `2px solid ${C.btnPrimary}` }}>
+                                            <img
+                                                src={resolveImageUrl(user?.profileImage)}
+                                                alt="" className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 2px 0' }}>{user?.name || 'Admin'}</p>
+                                            <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, margin: 0 }}>{user?.email || 'admin@example.com'}</p>
+                                            {institute ? (
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    {institute.logo && (
+                                                        <img src={resolveImageUrl(institute.logo)} alt="" className="w-3.5 h-3.5 rounded object-cover" />
+                                                    )}
+                                                    <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.btnPrimary, margin: 0 }}>
+                                                        {institute.name}
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, margin: '2px 0 0 0' }}>No institute assigned</p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Actions */}
-                            <div className="py-1 px-1">
-                                <button
-                                    onClick={() => { router.push(profilePath); setIsProfileOpen(false); }}
-                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors">
-                                    <User className="w-4 h-4 text-slate-400" /> Profile
-                                </button>
-                                <button
-                                    onClick={() => { router.push(settingsPath); setIsProfileOpen(false); }}
-                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors">
-                                    <Settings className="w-4 h-4 text-slate-400" /> Settings
-                                </button>
-                                <button
-                                    onClick={() => { router.push(dashboardPath); setIsProfileOpen(false); }}
-                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors">
-                                    <Grid className="w-4 h-4 text-slate-400" /> Dashboard
-                                </button>
-                                <div className="border-t border-slate-100 my-1" />
-                                <button
-                                    onClick={handleLogout}
-                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors">
-                                    <LogOut className="w-4 h-4" /> Logout
-                                </button>
+                                {/* Actions */}
+                                <div className="py-1">
+                                    <button
+                                        onClick={() => { router.push(profilePath); setIsProfileOpen(false); }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 cursor-pointer border-none text-left"
+                                        style={{ backgroundColor: 'transparent', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.text }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = C.innerBg}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                        <MdPerson style={{ width: 18, height: 18, color: C.textMuted }} /> Profile
+                                    </button>
+                                    <button
+                                        onClick={() => { router.push(settingsPath); setIsProfileOpen(false); }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 cursor-pointer border-none text-left"
+                                        style={{ backgroundColor: 'transparent', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.text }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = C.innerBg}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                        <MdSettings style={{ width: 18, height: 18, color: C.textMuted }} /> Settings
+                                    </button>
+                                    <button
+                                        onClick={() => { router.push(dashboardPath); setIsProfileOpen(false); }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 cursor-pointer border-none text-left"
+                                        style={{ backgroundColor: 'transparent', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.text }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = C.innerBg}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                        <MdGridView style={{ width: 18, height: 18, color: C.textMuted }} /> Dashboard
+                                    </button>
+                                    
+                                    <div style={{ height: '1px', backgroundColor: C.cardBorder, margin: '4px 0' }} />
+                                    
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full flex items-center gap-2 px-4 py-2 cursor-pointer border-none text-left"
+                                        style={{ backgroundColor: 'transparent', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.danger }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = C.dangerBg}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                        <MdLogout style={{ width: 18, height: 18 }} /> Log out
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
         </header>
