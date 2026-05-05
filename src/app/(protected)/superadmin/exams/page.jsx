@@ -1,12 +1,30 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-    Loader2, FileCheck, Search, Building2, CheckCircle2, 
-    AlertTriangle, ShieldAlert, BookOpen, Clock, Target, Eye
-} from 'lucide-react';
+import {
+    MdHourglassEmpty, MdArticle, MdSearch, MdWarning, MdSchool,
+    MdBusiness, MdCheckCircle, MdBlock, MdTrackChanges, MdMenuBook,
+    MdAccessTime
+} from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
+import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+import StatCard from '@/components/StatCard';
+
+// ─── Base Input Style ─────────────────────────────────────────────────────────
+const baseInputStyle = {
+    backgroundColor: C.cardBg,
+    border: `1px solid ${C.cardBorder}`,
+    borderRadius: '10px',
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.base,
+    fontWeight: T.weight.semibold,
+    outline: 'none',
+    width: '100%',
+    padding: '12px 16px',
+    transition: 'all 0.2s ease',
+};
 
 export default function SuperAdminExamsPage() {
     const [exams, setExams] = useState([]);
@@ -14,8 +32,6 @@ export default function SuperAdminExamsPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
-
-    const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.12)';
 
     useEffect(() => {
         fetchExams();
@@ -44,129 +60,212 @@ export default function SuperAdminExamsPage() {
         fetchExams();
     };
 
+    const handleStatusChange = async (id, currentStatus, title) => {
+        const newStatus = currentStatus === 'suspended' ? 'published' : 'suspended';
+        const actionText = newStatus === 'suspended' ? 'SUSPEND' : 'RESTORE';
+
+        if (!confirm(`🚨 Are you sure you want to ${actionText} the course: "${title}"?`)) return;
+
+        try {
+            const res = await api.patch(`/superadmin/courses/${id}/status`, { status: newStatus });
+            if (res.data.success) {
+                setExams(exams.map(c => c._id === id ? { ...c, status: newStatus } : c));
+                toast.success(`Course successfully ${newStatus}`);
+            }
+        } catch (error) {
+            toast.error('Failed to update course status');
+        }
+    };
+
+    const getStatusConfig = (status) => {
+        switch (status) {
+            case 'published': return { color: C.success, bg: C.successBg, border: `1px solid ${C.successBorder}`, icon: MdCheckCircle, label: 'Published' };
+            case 'suspended': return { color: C.danger, bg: C.dangerBg, border: `1px solid ${C.dangerBorder}`, icon: MdWarning, label: 'Suspended' };
+            case 'pending': return { color: C.warning, bg: C.warningBg, border: `1px solid ${C.warningBorder}`, icon: MdAccessTime, label: 'Pending Review' };
+            default: return { color: C.textMuted, bg: C.innerBg, border: `1px solid ${C.cardBorder}`, icon: MdMenuBook, label: status };
+        }
+    };
+
     return (
-        <div className="min-h-screen p-6 md:p-8 space-y-6" style={{ backgroundColor: '#F4EEFD', fontFamily: "'Inter', sans-serif" }}>
+        <div className="min-h-screen space-y-6 pb-8" style={{ backgroundColor: C.pageBg, ...pageStyle }}>
             
             {/* ── Header ── */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center border border-[#E9DFFC] shadow-sm">
-                        <FileCheck className="w-6 h-6 text-[#6B4DF1]" />
+                    <div className="flex items-center justify-center shrink-0" 
+                        style={{ width: 56, height: 56, borderRadius: '10px', backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <MdArticle style={{ width: 24, height: 24, color: C.btnPrimary }} />
                     </div>
                     <div>
-                        <h1 className="text-[24px] font-black text-[#27225B] m-0">Global Exams & Proctoring</h1>
-                        <p className="text-[13px] font-medium text-[#7D8DA6] m-0 mt-1">Monitor all assessments and AI-detected cheating alerts across the platform.</p>
+                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+                            Global Exams & Proctoring
+                        </h1>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.textMuted, margin: 0, marginTop: 4 }}>
+                            Monitor all assessments and AI-detected cheating alerts across the platform.
+                        </p>
                     </div>
                 </div>
             </div>
 
             {/* ── KPIs ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-                <div className="bg-white rounded-[20px] p-5 border border-[#E9DFFC] shadow-sm flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-[#F4F0FD] text-[#6B4DF1] flex items-center justify-center shrink-0"><FileCheck size={20}/></div>
-                    <div><p className="text-[11px] font-bold text-[#7D8DA6] uppercase tracking-wider m-0 mb-1">Total Exams</p><h3 className="text-[24px] font-black text-[#27225B] m-0">{kpis.totalExams}</h3></div>
-                </div>
-                <div className="bg-white rounded-[20px] p-5 border border-[#E9DFFC] shadow-sm flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-[#ECFDF5] text-[#10B981] flex items-center justify-center shrink-0"><CheckCircle2 size={20}/></div>
-                    <div><p className="text-[11px] font-bold text-[#7D8DA6] uppercase tracking-wider m-0 mb-1">Active / Live</p><h3 className="text-[24px] font-black text-[#10B981] m-0">{kpis.activeExams}</h3></div>
-                </div>
-                <div className="bg-white rounded-[20px] p-5 border border-[#E9DFFC] shadow-sm flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-[#EBF8FF] text-[#3182CE] flex items-center justify-center shrink-0"><Target size={20}/></div>
-                    <div><p className="text-[11px] font-bold text-[#7D8DA6] uppercase tracking-wider m-0 mb-1">Total Attempts</p><h3 className="text-[24px] font-black text-[#3182CE] m-0">{kpis.totalGlobalAttempts.toLocaleString()}</h3></div>
-                </div>
-                
-                {/* 🚨 Global Cheating Radar */}
-                <div className={`rounded-[20px] p-5 shadow-lg relative overflow-hidden flex items-start gap-4 border ${kpis.globalCheatingAlerts > 0 ? 'bg-[#27225B] border-[#1e1a48]' : 'bg-white border-[#E9DFFC]'}`}>
-                    {kpis.globalCheatingAlerts > 0 && <div className="absolute right-0 top-0 w-16 h-16 bg-[#EF4444] opacity-20 rounded-bl-full blur-xl animate-pulse"></div>}
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 relative z-10 ${kpis.globalCheatingAlerts > 0 ? 'bg-[#EF4444]/20 text-[#EF4444]' : 'bg-[#F8F6FC] text-[#A0ABC0]'}`}>
-                        <ShieldAlert size={20}/>
-                    </div>
-                    <div className="relative z-10">
-                        <p className={`text-[11px] font-bold uppercase tracking-wider m-0 mb-1 ${kpis.globalCheatingAlerts > 0 ? 'text-[#A0ABC0]' : 'text-[#7D8DA6]'}`}>AI Proctor Flags</p>
-                        <h3 className={`text-[24px] font-black m-0 ${kpis.globalCheatingAlerts > 0 ? 'text-white' : 'text-[#27225B]'}`}>{kpis.globalCheatingAlerts.toLocaleString()}</h3>
-                    </div>
-                </div>
+                <StatCard 
+                    icon={MdArticle} 
+                    value={kpis.totalExams} 
+                    label="Total Exams" 
+                    iconBg="#EEF2FF" 
+                    iconColor="#4F46E5" 
+                />
+                <StatCard 
+                    icon={MdCheckCircle} 
+                    value={kpis.activeExams} 
+                    label="Active / Live" 
+                    iconBg="#ECFDF5" 
+                    iconColor="#10B981" 
+                />
+                <StatCard 
+                    icon={MdTrackChanges} 
+                    value={kpis.totalGlobalAttempts.toLocaleString()} 
+                    label="Total Attempts" 
+                    iconBg="#EBF8FF" 
+                    iconColor="#3182CE" 
+                />
+                <StatCard 
+                    icon={MdWarning} 
+                    value={kpis.globalCheatingAlerts.toLocaleString()} 
+                    label="AI Proctor Flags" 
+                    iconBg={kpis.globalCheatingAlerts > 0 ? C.dangerBg : C.innerBg} 
+                    iconColor={kpis.globalCheatingAlerts > 0 ? C.danger : C.textFaint} 
+                />
             </div>
 
             {/* ── Toolbar ── */}
-            <div className="bg-white rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between gap-4 border border-[#E9DFFC]/50" style={{ boxShadow: softShadow }}>
-                <div className="flex bg-[#F4F0FD] p-1.5 rounded-xl w-full xl:w-auto overflow-x-auto">
+            <div className="flex flex-col xl:flex-row items-center justify-between gap-4 p-4" 
+                style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                
+                <div className="flex p-1.5 w-full xl:w-auto overflow-x-auto" style={{ backgroundColor: C.innerBg, borderRadius: '10px' }}>
                     {['all', 'published', 'draft'].map(status => (
-                        <button key={status} onClick={() => setStatusFilter(status)} className={`px-5 py-2.5 text-[13px] font-bold rounded-lg transition-all capitalize whitespace-nowrap border-none cursor-pointer ${statusFilter === status ? 'bg-white text-[#6B4DF1] shadow-sm' : 'bg-transparent text-[#7D8DA6] hover:text-[#27225B]'}`}>
+                        <button 
+                            key={status} 
+                            onClick={() => setStatusFilter(status)} 
+                            className="transition-all capitalize whitespace-nowrap border-none cursor-pointer"
+                            style={{
+                                padding: '10px 20px',
+                                borderRadius: '10px',
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.base,
+                                fontWeight: T.weight.bold,
+                                backgroundColor: statusFilter === status ? C.surfaceWhite : 'transparent',
+                                color: statusFilter === status ? C.btnPrimary : C.textFaint,
+                                boxShadow: statusFilter === status ? S.active : 'none'
+                            }}
+                        >
                             {status === 'all' ? 'All Exams' : status}
                         </button>
                     ))}
                 </div>
-                <form onSubmit={handleSearch} className="relative w-full xl:w-80">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#A0ABC0]" />
-                    <input type="text" placeholder="Search exam title..." className="w-full pl-10 pr-4 py-3 bg-white border border-[#E9DFFC] text-[#27225B] text-[13px] font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] placeholder-[#A0ABC0]" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                
+                <form onSubmit={handleSearch} className="relative w-full xl:w-[320px]">
+                    <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2" style={{ width: 18, height: 18, color: C.textFaint }} />
+                    <input 
+                        type="text" 
+                        placeholder="Search exam title..." 
+                        style={{ ...baseInputStyle, paddingLeft: '44px' }}
+                        value={searchTerm} 
+                        onChange={e => setSearchTerm(e.target.value)} 
+                    />
                 </form>
             </div>
 
             {/* ── Exams List ── */}
             {loading ? (
-                <div className="flex items-center justify-center h-64"><Loader2 className="w-10 h-10 animate-spin text-[#6B4DF1]" /></div>
+                <div className="flex items-center justify-center min-h-[50vh]">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="relative w-12 h-12">
+                            <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                                style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                        </div>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                            Loading exams...
+                        </p>
+                    </div>
+                </div>
             ) : exams.length === 0 ? (
-                <div className="bg-white rounded-3xl border border-[#E9DFFC] p-16 text-center shadow-sm">
-                    <FileCheck className="w-14 h-14 text-[#D1C4F9] mx-auto mb-4" />
-                    <h3 className="text-[18px] font-black text-[#27225B] m-0">No exams found</h3>
-                    <p className="text-[13px] text-[#7D8DA6] mt-2 m-0">No records match your search or filter.</p>
+                <div className="p-14 text-center border border-dashed m-8" style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
+                    <div className="flex items-center justify-center mx-auto mb-4" style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                        <MdArticle style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
+                    </div>
+                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>No exams found</h3>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, marginTop: 4 }}>No records match your search or filter.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {exams.map((exam, idx) => {
                         const isPublished = exam.status === 'published';
-                        const totalAttempts = exam.stats.totalAttempts;
-                        const alerts = exam.stats.suspiciousAttempts;
-                        
+                        const totalAttempts = exam.stats?.totalAttempts || 0;
+                        const alerts = exam.stats?.suspiciousAttempts || 0;
+                        const statusData = getStatusConfig(exam.status);
+                        const StatusIcon = statusData.icon;
+
                         return (
-                            <div key={exam._id || idx} className={`bg-white rounded-[24px] border overflow-hidden hover:-translate-y-1 transition-transform flex flex-col group shadow-sm ${alerts > 0 ? 'border-[#FECACA]' : 'border-[#E9DFFC]'}`}>
+                            <div key={exam._id || idx} className="flex flex-col transition-transform hover:-translate-y-1 overflow-hidden group" 
+                                style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${alerts > 0 ? C.dangerBorder : C.cardBorder}`, boxShadow: S.card }}
+                                onMouseEnter={(e) => e.currentTarget.style.boxShadow = S.cardHover}
+                                onMouseLeave={(e) => e.currentTarget.style.boxShadow = S.card}
+                            >
                                 
                                 {/* Header */}
-                                <div className={`px-5 py-4 border-b flex items-start justify-between gap-2 ${alerts > 0 ? 'bg-[#FEF2F2] border-[#FECACA]' : 'bg-[#FDFBFF] border-[#F4F0FD]'}`}>
+                                <div className="px-5 py-4 flex items-start justify-between gap-2" 
+                                    style={{ backgroundColor: alerts > 0 ? C.dangerBg : C.innerBg, borderBottom: `1px solid ${alerts > 0 ? C.dangerBorder : C.cardBorder}`, borderTopLeftRadius: R['2xl'], borderTopRightRadius: R['2xl'] }}>
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="font-black text-[16px] text-[#27225B] m-0 line-clamp-1">{exam.title}</h3>
-                                            {exam.isProctoringEnabled && <ShieldAlert size={14} className="text-[#6B4DF1]" title="Proctoring Enabled"/>}
+                                            <h3 className="line-clamp-1" style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>{exam.title}</h3>
+                                            {exam.isProctoringEnabled && <MdWarning style={{ width: 14, height: 14, color: C.btnPrimary }} title="Proctoring Enabled"/>}
                                         </div>
-                                        <div className="flex items-center gap-1.5 text-[12px] font-bold text-[#6B4DF1]">
-                                            <BookOpen size={14}/> <span className="line-clamp-1">{exam.courseId?.title || 'Unknown Course'}</span>
+                                        <div className="flex items-center gap-1.5" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.btnPrimary }}>
+                                            <MdMenuBook style={{ width: 14, height: 14 }}/> <span className="line-clamp-1">{exam.courseId?.title || 'Unknown Course'}</span>
                                         </div>
                                     </div>
-                                    <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider shrink-0 border ${isPublished ? 'bg-[#ECFDF5] text-[#10B981] border-[#D1FAE5]' : 'bg-[#F8F6FC] text-[#7D8DA6] border-[#E9DFFC]'}`}>
+                                    <span className="flex items-center justify-center shrink-0" 
+                                        style={{ 
+                                            padding: '4px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: T.weight.black, 
+                                            textTransform: 'uppercase', letterSpacing: T.tracking.wider,
+                                            backgroundColor: statusData.bg, color: statusData.color, border: statusData.border 
+                                        }}>
                                         {exam.status}
                                     </span>
                                 </div>
 
                                 {/* Body */}
                                 <div className="p-5 flex-1 flex flex-col">
+                                    
                                     {/* Stats Grid */}
                                     <div className="grid grid-cols-2 gap-3 mb-4">
-                                        <div className="bg-[#F8F6FC] p-3 rounded-xl border border-[#E9DFFC]">
-                                            <p className="text-[10px] font-bold text-[#A0ABC0] uppercase tracking-wider m-0 mb-1">Total Attempts</p>
-                                            <h4 className="text-[20px] font-black text-[#27225B] m-0">{totalAttempts}</h4>
+                                        <div style={{ padding: '12px', borderRadius: '10px', backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, margin: 0, marginBottom: '4px' }}>Total Attempts</p>
+                                            <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>{totalAttempts}</h4>
                                         </div>
-                                        <div className={`p-3 rounded-xl border ${alerts > 0 ? 'bg-[#FFF5F5] border-[#FECACA]' : 'bg-[#F8F6FC] border-[#E9DFFC]'}`}>
-                                            <p className={`text-[10px] font-bold uppercase tracking-wider m-0 mb-1 ${alerts > 0 ? 'text-[#E53E3E]' : 'text-[#A0ABC0]'}`}>AI Alerts</p>
-                                            <h4 className={`text-[20px] font-black m-0 flex items-center gap-1.5 ${alerts > 0 ? 'text-[#E53E3E]' : 'text-[#27225B]'}`}>
-                                                {alerts} {alerts > 0 && <AlertTriangle size={14} className="animate-pulse"/>}
+                                        <div style={{ padding: '12px', borderRadius: '10px', backgroundColor: alerts > 0 ? C.dangerBg : C.innerBg, border: `1px solid ${alerts > 0 ? C.dangerBorder : C.cardBorder}` }}>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: T.tracking.wider, margin: 0, marginBottom: '4px', color: alerts > 0 ? C.danger : C.statLabel }}>AI Alerts</p>
+                                            <h4 className="flex items-center gap-1.5" style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.black, margin: 0, color: alerts > 0 ? C.danger : C.heading }}>
+                                                {alerts} {alerts > 0 && <MdWarning style={{ width: 14, height: 14 }} className="animate-pulse"/>}
                                             </h4>
                                         </div>
                                     </div>
 
                                     {/* Details */}
-                                    <div className="space-y-2 mt-auto text-[12px] font-bold text-[#4A5568]">
-                                        <div className="flex justify-between border-b border-[#F4F0FD] pb-2">
-                                            <span className="flex items-center gap-1.5 text-[#A0ABC0]"><Clock size={14}/> Duration</span>
-                                            <span className="text-[#27225B]">{exam.duration} mins</span>
+                                    <div className="space-y-2 mt-auto" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text }}>
+                                        <div className="flex justify-between pb-2" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                                            <span className="flex items-center gap-1.5" style={{ color: C.textMuted }}><MdAccessTime style={{ width: 14, height: 14 }}/> Duration</span>
+                                            <span style={{ color: C.heading }}>{exam.duration} mins</span>
                                         </div>
-                                        <div className="flex justify-between border-b border-[#F4F0FD] pb-2">
-                                            <span className="flex items-center gap-1.5 text-[#A0ABC0]"><Target size={14}/> Total Marks</span>
-                                            <span className="text-[#27225B]">{exam.totalMarks} (Pass: {exam.passingMarks || `${exam.passingPercentage}%`})</span>
+                                        <div className="flex justify-between pb-2" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+                                            <span className="flex items-center gap-1.5" style={{ color: C.textMuted }}><MdTrackChanges style={{ width: 14, height: 14 }}/> Total Marks</span>
+                                            <span style={{ color: C.heading }}>{exam.totalMarks} (Pass: {exam.passingMarks || `${exam.passingPercentage}%`})</span>
                                         </div>
                                         <div className="flex justify-between pt-1">
-                                            <span className="flex items-center gap-1.5 text-[#A0ABC0]"><Building2 size={14}/> Context</span>
-                                            <span className="text-[#6B4DF1] truncate max-w-[150px] text-right">{exam.instituteId ? exam.instituteId.name : 'Global Master'}</span>
+                                            <span className="flex items-center gap-1.5" style={{ color: C.textMuted }}><MdBusiness style={{ width: 14, height: 14 }}/> Context</span>
+                                            <span className="truncate max-w-[150px] text-right" style={{ color: C.btnPrimary }}>{exam.instituteId ? exam.instituteId.name : 'Global Master'}</span>
                                         </div>
                                     </div>
                                 </div>

@@ -190,7 +190,7 @@ export default function TutorBatchesPage() {
                                                 <button
                                                     onClick={() => { setEditingBatch(batch); setShowModal(true); }}
                                                     className="flex items-center justify-center gap-1.5 px-4 py-2 cursor-pointer transition-colors border-none shadow-sm"
-                                                    style={{ backgroundColor: C.iconBg, color: C.btnPrimary, borderRadius: '8px', fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}
+                                                    style={{ backgroundColor: C.iconBg, color:'#ffffff', borderRadius: '8px', fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}
                                                     onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnPrimary; e.currentTarget.style.color = '#fff'; }}
                                                     onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.iconBg; e.currentTarget.style.color = C.btnPrimary; }}>
                                                     <MdEdit size={14} /> Edit

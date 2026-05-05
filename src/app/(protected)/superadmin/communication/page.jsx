@@ -2,11 +2,46 @@
 
 import { useState, useEffect } from 'react';
 import { 
-    Loader2, MessageSquare, BellRing, Mail, Send, 
-    Smartphone, BarChart3, Users, Plus, Target
-} from 'lucide-react';
+    MdMessage, MdNotificationsActive, MdEmail, MdSend, 
+    MdSmartphone, MdBarChart, MdPeople, MdAdd, MdTrackChanges, MdHourglassEmpty
+} from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
+import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+import StatCard from '@/components/StatCard';
+
+// ─── Base Input Style ─────────────────────────────────────────────────────────
+const baseInputStyle = {
+    backgroundColor: C.cardBg,
+    border: `1px solid ${C.cardBorder}`,
+    borderRadius: '10px',
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.base,
+    fontWeight: T.weight.semibold,
+    outline: 'none',
+    width: '100%',
+    padding: '12px 16px',
+    transition: 'all 0.2s ease',
+};
+
+// ─── Section Header Component ─────────────────────────────────────────────────
+function SectionHeader({ icon: Icon, title }) {
+    return (
+        <div className="flex items-center gap-2.5 mb-4">
+            <div className="flex items-center justify-center rounded-lg shrink-0"
+                style={{ width: 40, height: 40, backgroundColor: C.iconBg }}>
+                <Icon style={{ width: 16, height: 16, color: C.iconColor }} />
+            </div>
+            <h2 style={{
+                fontFamily: T.fontFamily, fontSize: T.size.xl,
+                fontWeight: T.weight.semibold, color: C.heading, margin: 0
+            }}>
+                {title}
+            </h2>
+        </div>
+    );
+}
 
 export default function SuperAdminCommunicationPage() {
     const [activeTab, setActiveTab] = useState('announcement');
@@ -30,8 +65,6 @@ export default function SuperAdminCommunicationPage() {
         body: '',
         status: 'draft'
     });
-
-    const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.12)';
 
     useEffect(() => {
         fetchData();
@@ -86,93 +119,163 @@ export default function SuperAdminCommunicationPage() {
     };
 
     const getCampaignBadge = (type) => {
-        if(type === 'email') return <span className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-md text-[11px] font-bold uppercase"><Mail size={12}/> Email</span>;
-        if(type === 'sms') return <span className="flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 text-purple-600 rounded-md text-[11px] font-bold uppercase"><Smartphone size={12}/> SMS</span>;
-        if(type === 'whatsapp') return <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-md text-[11px] font-bold uppercase"><MessageSquare size={12}/> WhatsApp</span>;
+        const baseBadgeStyle = {
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            padding: '4px 10px', borderRadius: '10px',
+            fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold,
+            textTransform: 'uppercase', letterSpacing: T.tracking.wider
+        };
+        
+        if(type === 'email') return <span style={{ ...baseBadgeStyle, backgroundColor: C.innerBg, color: C.btnPrimary, border: `1px solid ${C.cardBorder}` }}><MdEmail size={12}/> Email</span>;
+        if(type === 'sms') return <span style={{ ...baseBadgeStyle, backgroundColor: C.warningBg, color: C.warning, border: `1px solid ${C.warningBorder}` }}><MdSmartphone size={12}/> SMS</span>;
+        if(type === 'whatsapp') return <span style={{ ...baseBadgeStyle, backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}` }}><MdMessage size={12}/> WhatsApp</span>;
         return null;
     };
 
-    if (loading) return <div className="flex h-screen items-center justify-center bg-[#F4EEFD]"><Loader2 className="w-10 h-10 animate-spin text-[#6B4DF1]" /></div>;
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-12 h-12">
+                        <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                            style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                    </div>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                        Loading communication data...
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen p-6 md:p-8 space-y-6" style={{ backgroundColor: '#F4EEFD', fontFamily: "'Inter', sans-serif" }}>
+        <div className="min-h-screen space-y-6 pb-8" style={{ backgroundColor: C.pageBg, ...pageStyle }}>
             
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center border border-[#E9DFFC] shadow-sm">
-                        <MessageSquare className="w-6 h-6 text-[#6B4DF1]" />
+                    <div className="flex items-center justify-center shrink-0" 
+                        style={{ width: 56, height: 56, borderRadius: '10px', backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <MdMessage style={{ width: 24, height: 24, color: C.btnPrimary }} />
                     </div>
                     <div>
-                        <h1 className="text-[24px] font-black text-[#27225B] m-0">Global Communication</h1>
-                        <p className="text-[13px] font-medium text-[#7D8DA6] m-0 mt-1">Broadcast in-app announcements and manage marketing campaigns.</p>
+                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+                            Global Communication
+                        </h1>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.textMuted, margin: 0, marginTop: 4 }}>
+                            Broadcast in-app announcements and manage marketing campaigns.
+                        </p>
                     </div>
                 </div>
             </div>
 
             {/* KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="bg-white rounded-2xl p-5 border border-[#E9DFFC] shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-[#F4F0FD] text-[#6B4DF1] flex items-center justify-center"><Target size={24}/></div>
-                    <div><p className="text-[11px] font-bold text-[#7D8DA6] uppercase m-0 mb-1">Total Campaigns</p><h3 className="text-[24px] font-black text-[#27225B] m-0">{kpis.totalCampaigns}</h3></div>
-                </div>
-                <div className="bg-white rounded-2xl p-5 border border-[#E9DFFC] shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-[#EBF8FF] text-[#3182CE] flex items-center justify-center"><Send size={24}/></div>
-                    <div><p className="text-[11px] font-bold text-[#7D8DA6] uppercase m-0 mb-1">Messages Sent</p><h3 className="text-[24px] font-black text-[#27225B] m-0">{kpis.totalSent.toLocaleString()}</h3></div>
-                </div>
-                <div className="bg-[#27225B] rounded-2xl p-5 border border-[#1e1a48] shadow-lg relative overflow-hidden flex items-center gap-4">
-                    <div className="absolute right-0 top-0 w-20 h-20 bg-[#6B4DF1] opacity-20 rounded-bl-full blur-xl"></div>
-                    <div className="w-12 h-12 rounded-xl bg-[#6B4DF1]/20 text-white flex items-center justify-center relative z-10"><BarChart3 size={24}/></div>
-                    <div className="relative z-10"><p className="text-[11px] font-bold text-[#A0ABC0] uppercase m-0 mb-1">Avg Open Rate</p><h3 className="text-[24px] font-black text-white m-0">{kpis.avgOpenRate}%</h3></div>
-                </div>
+                <StatCard icon={MdTrackChanges} value={kpis.totalCampaigns} label="Total Campaigns" iconBg="#EEF2FF" iconColor="#4F46E5" />
+                <StatCard icon={MdSend} value={kpis.totalSent.toLocaleString()} label="Messages Sent" iconBg="#EBF8FF" iconColor="#3182CE" />
+                <StatCard icon={MdBarChart} value={`${kpis.avgOpenRate}%`} label="Avg Open Rate" iconBg="#F4F0FD" iconColor="#6B4DF1" />
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex bg-white p-1.5 rounded-2xl border border-[#E9DFFC] w-full md:w-max shadow-sm">
-                <button onClick={() => setActiveTab('announcement')} className={`flex items-center gap-2 px-6 py-2.5 text-[13px] font-bold rounded-xl transition-all border-none cursor-pointer ${activeTab === 'announcement' ? 'bg-[#F4F0FD] text-[#6B4DF1]' : 'bg-transparent text-[#7D8DA6] hover:text-[#27225B]'}`}>
-                    <BellRing size={16}/> In-App Announcement
-                </button>
-                <button onClick={() => setActiveTab('campaign')} className={`flex items-center gap-2 px-6 py-2.5 text-[13px] font-bold rounded-xl transition-all border-none cursor-pointer ${activeTab === 'campaign' ? 'bg-[#F4F0FD] text-[#6B4DF1]' : 'bg-transparent text-[#7D8DA6] hover:text-[#27225B]'}`}>
-                    <Plus size={16}/> New Campaign
-                </button>
-                <button onClick={() => setActiveTab('campaigns_list')} className={`flex items-center gap-2 px-6 py-2.5 text-[13px] font-bold rounded-xl transition-all border-none cursor-pointer ${activeTab === 'campaigns_list' ? 'bg-[#F4F0FD] text-[#6B4DF1]' : 'bg-transparent text-[#7D8DA6] hover:text-[#27225B]'}`}>
-                    <Mail size={16}/> Campaign History
-                </button>
+            <div className="flex p-1.5 w-full md:w-max overflow-x-auto" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                {[
+                    { key: 'announcement', label: 'In-App Announcement', icon: MdNotificationsActive },
+                    { key: 'campaign', label: 'New Campaign', icon: MdAdd },
+                    { key: 'campaigns_list', label: 'Campaign History', icon: MdEmail }
+                ].map(tab => {
+                    const isActive = activeTab === tab.key;
+                    const Icon = tab.icon;
+                    return (
+                        <button 
+                            key={tab.key}
+                            onClick={() => setActiveTab(tab.key)} 
+                            className="flex items-center gap-2 transition-all whitespace-nowrap border-none cursor-pointer"
+                            style={{
+                                padding: '10px 20px',
+                                borderRadius: '10px',
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.base,
+                                fontWeight: T.weight.bold,
+                                backgroundColor: isActive ? C.innerBg : 'transparent',
+                                color: isActive ? C.btnPrimary : C.textFaint
+                            }}
+                        >
+                            <Icon style={{ width: 16, height: 16 }} /> {tab.label}
+                        </button>
+                    );
+                })}
             </div>
 
             {/* Main Workspace */}
-            <div className="bg-white rounded-[24px] border border-[#E9DFFC] overflow-hidden" style={{ boxShadow: softShadow }}>
+            <div className="overflow-hidden" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 
                 {/* ── 1. In-App Announcement ── */}
                 {activeTab === 'announcement' && (
-                    <div className="p-8 animate-in fade-in max-w-3xl">
-                        <div className="mb-6">
-                            <h2 className="text-[18px] font-black text-[#27225B] flex items-center gap-2 m-0"><BellRing className="text-[#6B4DF1]"/> Broadcast Alert</h2>
-                            <p className="text-[13px] text-[#7D8DA6] font-medium mt-1 m-0">Send a push notification directly to the user's dashboard bell icon.</p>
-                        </div>
+                    <div className="p-8 max-w-3xl animate-in fade-in duration-500">
+                        <SectionHeader icon={MdNotificationsActive} title="Broadcast Alert" />
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.textMuted, marginBottom: '24px', marginTop: '-8px', marginLeft: '50px' }}>
+                            Send a push notification directly to the user's dashboard bell icon.
+                        </p>
 
-                        <form onSubmit={handleSendAnnouncement} className="space-y-5">
+                        <form onSubmit={handleSendAnnouncement} className="space-y-6">
                             <div>
-                                <label className="block text-[12px] font-bold text-[#4A5568] uppercase tracking-wider mb-2">Target Audience</label>
-                                <div className="grid grid-cols-3 gap-4">
+                                <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '8px' }}>
+                                    Target Audience
+                                </label>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     {['all', 'students', 'tutors'].map((aud) => (
-                                        <label key={aud} className={`flex items-center justify-center gap-2 p-3 rounded-xl border cursor-pointer font-bold text-[13px] transition-colors ${announceData.targetAudience === aud ? 'bg-[#F4F0FD] border-[#6B4DF1] text-[#6B4DF1]' : 'bg-white border-[#E9DFFC] text-[#7D8DA6] hover:bg-gray-50'}`}>
+                                        <label 
+                                            key={aud} 
+                                            className="flex items-center justify-center gap-2 transition-colors"
+                                            style={{
+                                                padding: '12px',
+                                                borderRadius: '10px',
+                                                cursor: 'pointer',
+                                                fontFamily: T.fontFamily,
+                                                fontSize: T.size.base,
+                                                fontWeight: T.weight.bold,
+                                                backgroundColor: announceData.targetAudience === aud ? C.innerBg : C.cardBg,
+                                                border: `1px solid ${announceData.targetAudience === aud ? C.btnPrimary : C.cardBorder}`,
+                                                color: announceData.targetAudience === aud ? C.btnPrimary : C.textFaint
+                                            }}
+                                        >
                                             <input type="radio" name="audience" value={aud} checked={announceData.targetAudience === aud} onChange={(e) => setAnnounceData({...announceData, targetAudience: e.target.value})} className="hidden"/>
-                                            <Users size={16}/> {aud.charAt(0).toUpperCase() + aud.slice(1)}
+                                            <MdPeople style={{ width: 18, height: 18 }} /> {aud.charAt(0).toUpperCase() + aud.slice(1)}
                                         </label>
                                     ))}
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-[12px] font-bold text-[#4A5568] uppercase tracking-wider mb-2">Alert Title</label>
-                                <input type="text" required value={announceData.title} onChange={e => setAnnounceData({...announceData, title: e.target.value})} placeholder="e.g. Scheduled Maintenance Notice" className="w-full px-4 py-3 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl text-[13px] font-semibold text-[#27225B] focus:outline-none focus:ring-2 focus:ring-[#6B4DF1]" />
+                                <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '8px' }}>
+                                    Alert Title
+                                </label>
+                                <input type="text" required value={announceData.title} onChange={e => setAnnounceData({...announceData, title: e.target.value})} placeholder="e.g. Scheduled Maintenance Notice" style={baseInputStyle} />
                             </div>
                             <div>
-                                <label className="block text-[12px] font-bold text-[#4A5568] uppercase tracking-wider mb-2">Message Body</label>
-                                <textarea required value={announceData.message} onChange={e => setAnnounceData({...announceData, message: e.target.value})} placeholder="Type your announcement here..." className="w-full px-4 py-3 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl text-[13px] font-semibold text-[#27225B] focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] min-h-[120px] resize-none" />
+                                <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '8px' }}>
+                                    Message Body
+                                </label>
+                                <textarea required value={announceData.message} onChange={e => setAnnounceData({...announceData, message: e.target.value})} placeholder="Type your announcement here..." style={{ ...baseInputStyle, minHeight: '120px', resize: 'none' }} />
                             </div>
-                            <button type="submit" disabled={sending} className="flex items-center gap-2 px-8 py-3 bg-[#6B4DF1] hover:bg-[#5839D6] text-white text-[14px] font-bold rounded-xl transition-all shadow-md disabled:opacity-60 border-none cursor-pointer">
-                                {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />} Push Notification
+                            <button 
+                                type="submit" 
+                                disabled={sending} 
+                                className="flex items-center gap-2 transition-opacity"
+                                style={{
+                                    background: sending ? C.cardBorder : C.gradientBtn,
+                                    color: '#ffffff',
+                                    fontFamily: T.fontFamily,
+                                    fontSize: T.size.base,
+                                    fontWeight: T.weight.bold,
+                                    borderRadius: '10px',
+                                    border: 'none',
+                                    padding: '12px 32px',
+                                    cursor: sending ? 'not-allowed' : 'pointer',
+                                    boxShadow: sending ? 'none' : S.btn
+                                }}
+                            >
+                                {sending ? <MdHourglassEmpty style={{ width: 18, height: 18 }} className="animate-spin" /> : <MdSend style={{ width: 18, height: 18 }} />} 
+                                Push Notification
                             </button>
                         </form>
                     </div>
@@ -180,21 +283,25 @@ export default function SuperAdminCommunicationPage() {
 
                 {/* ── 2. Create Campaign ── */}
                 {activeTab === 'campaign' && (
-                    <div className="p-8 animate-in fade-in max-w-3xl">
-                        <div className="mb-6">
-                            <h2 className="text-[18px] font-black text-[#27225B] flex items-center gap-2 m-0"><Mail className="text-[#6B4DF1]"/> Setup External Campaign</h2>
-                            <p className="text-[13px] text-[#7D8DA6] font-medium mt-1 m-0">Draft emails or SMS to be sent to leads and registered users.</p>
-                        </div>
+                    <div className="p-8 max-w-3xl animate-in fade-in duration-500">
+                        <SectionHeader icon={MdEmail} title="Setup External Campaign" />
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.textMuted, marginBottom: '24px', marginTop: '-8px', marginLeft: '50px' }}>
+                            Draft emails or SMS to be sent to leads and registered users.
+                        </p>
 
-                        <form onSubmit={handleCreateCampaign} className="space-y-5">
-                            <div className="grid grid-cols-2 gap-5">
+                        <form onSubmit={handleCreateCampaign} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
-                                    <label className="block text-[12px] font-bold text-[#4A5568] uppercase tracking-wider mb-2">Campaign Title</label>
-                                    <input type="text" required value={campaignData.title} onChange={e => setCampaignData({...campaignData, title: e.target.value})} placeholder="e.g. Diwali Mega Sale 50% Off" className="w-full px-4 py-3 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl text-[13px] font-semibold text-[#27225B] focus:outline-none focus:ring-2 focus:ring-[#6B4DF1]" />
+                                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '8px' }}>
+                                        Campaign Title
+                                    </label>
+                                    <input type="text" required value={campaignData.title} onChange={e => setCampaignData({...campaignData, title: e.target.value})} placeholder="e.g. Diwali Mega Sale 50% Off" style={baseInputStyle} />
                                 </div>
                                 <div>
-                                    <label className="block text-[12px] font-bold text-[#4A5568] uppercase tracking-wider mb-2">Channel</label>
-                                    <select value={campaignData.type} onChange={e => setCampaignData({...campaignData, type: e.target.value})} className="w-full px-4 py-3 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl text-[13px] font-bold text-[#27225B] focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] outline-none">
+                                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '8px' }}>
+                                        Channel
+                                    </label>
+                                    <select value={campaignData.type} onChange={e => setCampaignData({...campaignData, type: e.target.value})} style={baseInputStyle}>
                                         <option value="email">📧 Email Blast</option>
                                         <option value="sms">📱 SMS Alert</option>
                                         <option value="whatsapp">💬 WhatsApp Message</option>
@@ -204,21 +311,59 @@ export default function SuperAdminCommunicationPage() {
 
                             {campaignData.type === 'email' && (
                                 <div>
-                                    <label className="block text-[12px] font-bold text-[#4A5568] uppercase tracking-wider mb-2">Email Subject Line</label>
-                                    <input type="text" required value={campaignData.subject} onChange={e => setCampaignData({...campaignData, subject: e.target.value})} placeholder="Don't miss out on this offer!" className="w-full px-4 py-3 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl text-[13px] font-semibold text-[#27225B] focus:outline-none focus:ring-2 focus:ring-[#6B4DF1]" />
+                                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '8px' }}>
+                                        Email Subject Line
+                                    </label>
+                                    <input type="text" required value={campaignData.subject} onChange={e => setCampaignData({...campaignData, subject: e.target.value})} placeholder="Don't miss out on this offer!" style={baseInputStyle} />
                                 </div>
                             )}
 
                             <div>
-                                <label className="block text-[12px] font-bold text-[#4A5568] uppercase tracking-wider mb-2">Message Body</label>
-                                <textarea required value={campaignData.body} onChange={e => setCampaignData({...campaignData, body: e.target.value})} placeholder="Hello {{name}}, we have a special offer for you..." className="w-full px-4 py-3 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl text-[13px] font-semibold text-[#27225B] focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] min-h-[160px] resize-none font-mono" />
+                                <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '8px' }}>
+                                    Message Body
+                                </label>
+                                <textarea required value={campaignData.body} onChange={e => setCampaignData({...campaignData, body: e.target.value})} placeholder="Hello {{name}}, we have a special offer for you..." style={{ ...baseInputStyle, minHeight: '160px', resize: 'none', fontFamily: T.fontFamilyMono }} />
                             </div>
 
-                            <div className="flex items-center gap-3 pt-2">
-                                <button type="submit" disabled={sending} onClick={() => setCampaignData({...campaignData, status: 'scheduled'})} className="px-6 py-3 bg-[#10B981] hover:bg-[#059669] text-white text-[13px] font-bold rounded-xl transition-all shadow-md disabled:opacity-60 border-none cursor-pointer flex items-center gap-2">
-                                    {sending ? <Loader2 size={16} className="animate-spin"/> : <Send size={16}/>} Schedule & Send
+                            <div className="flex flex-wrap items-center gap-3 pt-2">
+                                <button 
+                                    type="submit" 
+                                    disabled={sending} 
+                                    onClick={() => setCampaignData({...campaignData, status: 'scheduled'})} 
+                                    className="flex items-center gap-2 transition-opacity"
+                                    style={{
+                                        background: sending ? C.cardBorder : C.gradientBtn,
+                                        color: '#ffffff',
+                                        fontFamily: T.fontFamily,
+                                        fontSize: T.size.base,
+                                        fontWeight: T.weight.bold,
+                                        borderRadius: '10px',
+                                        border: 'none',
+                                        padding: '12px 24px',
+                                        cursor: sending ? 'not-allowed' : 'pointer',
+                                        boxShadow: sending ? 'none' : S.btn
+                                    }}
+                                >
+                                    {sending ? <MdHourglassEmpty style={{ width: 16, height: 16 }} className="animate-spin"/> : <MdSend style={{ width: 16, height: 16 }}/>} 
+                                    Schedule & Send
                                 </button>
-                                <button type="submit" disabled={sending} onClick={() => setCampaignData({...campaignData, status: 'draft'})} className="px-6 py-3 bg-white border border-[#E9DFFC] text-[#27225B] hover:bg-[#F9F7FC] text-[13px] font-bold rounded-xl transition-all disabled:opacity-60 cursor-pointer">
+                                <button 
+                                    type="submit" 
+                                    disabled={sending} 
+                                    onClick={() => setCampaignData({...campaignData, status: 'draft'})} 
+                                    className="transition-colors"
+                                    style={{
+                                        backgroundColor: C.btnViewAllBg,
+                                        color: C.btnViewAllText,
+                                        fontFamily: T.fontFamily,
+                                        fontSize: T.size.base,
+                                        fontWeight: T.weight.bold,
+                                        borderRadius: '10px',
+                                        border: `1px solid ${C.cardBorder}`,
+                                        padding: '12px 24px',
+                                        cursor: sending ? 'not-allowed' : 'pointer'
+                                    }}
+                                >
                                     Save as Draft
                                 </button>
                             </div>
@@ -228,35 +373,60 @@ export default function SuperAdminCommunicationPage() {
 
                 {/* ── 3. Campaign History Table ── */}
                 {activeTab === 'campaigns_list' && (
-                    <div className="overflow-x-auto animate-in fade-in">
+                    <div className="overflow-x-auto animate-in fade-in duration-500 min-h-[400px]">
                         {campaigns.length === 0 ? (
-                            <div className="p-16 text-center">
-                                <Mail className="w-14 h-14 text-[#D1C4F9] mx-auto mb-4" />
-                                <h3 className="text-[18px] font-black text-[#27225B] m-0">No campaigns found</h3>
+                            <div className="p-14 text-center border border-dashed m-8" style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
+                                <div className="flex items-center justify-center mx-auto mb-4" style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                                    <MdEmail style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
+                                </div>
+                                <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>No campaigns found</h3>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, marginTop: 4 }}>You haven't created any campaigns yet.</p>
                             </div>
                         ) : (
-                            <table className="w-full text-left border-collapse">
-                                <thead className="bg-[#FDFBFF] border-b border-[#F4F0FD]">
+                            <table className="w-full text-left border-collapse min-w-[800px]">
+                                <thead style={{ backgroundColor: C.innerBg }}>
                                     <tr>
-                                        <th className="px-6 py-4 text-[11px] font-black text-[#A0ABC0] uppercase tracking-wider">Campaign Name</th>
-                                        <th className="px-6 py-4 text-[11px] font-black text-[#A0ABC0] uppercase tracking-wider">Channel</th>
-                                        <th className="px-6 py-4 text-[11px] font-black text-[#A0ABC0] uppercase tracking-wider">Sent Count</th>
-                                        <th className="px-6 py-4 text-[11px] font-black text-[#A0ABC0] uppercase tracking-wider">Opened</th>
-                                        <th className="px-6 py-4 text-[11px] font-black text-[#A0ABC0] uppercase tracking-wider">Status</th>
+                                        {['Campaign Name', 'Channel', 'Sent Count', 'Opened', 'Status'].map((header, idx) => (
+                                            <th key={idx} style={{
+                                                fontFamily: T.fontFamily,
+                                                fontSize: T.size.xs,
+                                                fontWeight: T.weight.bold,
+                                                color: C.statLabel,
+                                                textTransform: 'uppercase',
+                                                letterSpacing: T.tracking.wider,
+                                                padding: '16px 24px',
+                                                borderBottom: `1px solid ${C.cardBorder}`
+                                            }}>
+                                                {header}
+                                            </th>
+                                        ))}
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[#F4F0FD]">
+                                <tbody>
                                     {campaigns.map((camp) => (
-                                        <tr key={camp._id} className="hover:bg-[#F9F7FC] transition-colors">
+                                        <tr key={camp._id} className="transition-colors"
+                                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                            style={{ borderBottom: `1px solid ${C.cardBorder}` }}
+                                        >
                                             <td className="px-6 py-4">
-                                                <p className="text-[14px] font-bold text-[#27225B] m-0">{camp.title}</p>
-                                                <p className="text-[11px] font-medium text-[#7D8DA6] m-0 mt-0.5">By {camp.createdBy?.name || 'Admin'}</p>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{camp.title}</p>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.textMuted, margin: 0, marginTop: 4 }}>By {camp.createdBy?.name || 'Admin'}</p>
                                             </td>
                                             <td className="px-6 py-4">{getCampaignBadge(camp.type)}</td>
-                                            <td className="px-6 py-4 text-[14px] font-black text-[#27225B]">{camp.totalSent.toLocaleString()}</td>
-                                            <td className="px-6 py-4 text-[14px] font-bold text-[#10B981]">{camp.totalOpened.toLocaleString()}</td>
+                                            <td className="px-6 py-4" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.black, color: C.heading }}>
+                                                {camp.totalSent.toLocaleString()}
+                                            </td>
+                                            <td className="px-6 py-4" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.success }}>
+                                                {camp.totalOpened.toLocaleString()}
+                                            </td>
                                             <td className="px-6 py-4">
-                                                <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${camp.status === 'sent' ? 'bg-[#ECFDF5] text-[#10B981]' : camp.status === 'draft' ? 'bg-[#F8F6FC] text-[#7D8DA6]' : 'bg-[#FFF7ED] text-[#EA580C]'}`}>
+                                                <span style={{
+                                                    padding: '4px 10px', borderRadius: '10px', fontSize: T.size.xs, fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: T.tracking.wider,
+                                                    ...(camp.status === 'sent' ? { backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}` } :
+                                                       camp.status === 'draft' ? { backgroundColor: C.innerBg, color: C.textMuted, border: `1px solid ${C.cardBorder}` } :
+                                                       { backgroundColor: C.warningBg, color: C.warning, border: `1px solid ${C.warningBorder}` })
+                                                }}>
                                                     {camp.status}
                                                 </span>
                                             </td>

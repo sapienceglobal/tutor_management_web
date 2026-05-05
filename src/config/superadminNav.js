@@ -1,50 +1,49 @@
 import {
-    LayoutDashboard,
-    Building2,
-    Users,
-    BookOpen,
-    Layers,
-    MonitorPlay,
-    ClipboardCheck,
-    FileText,
-    Wallet,
-    MessageSquare,
-    Headset,
-    Settings,
-    BrainCircuit,
-    CreditCard,
-    Receipt,
-    LayoutTemplate,
-    Network,
-    Activity,
-    ShieldCheck,
-    IndianRupee,
-    ShieldAlert,
-    Radar,
-    ListTree,
-    Server,
-      Zap
-
-} from 'lucide-react';
+    MdDashboard,
+    MdBusiness,
+    MdPeople,
+    MdMenuBook,
+    MdLayers,
+    MdVideocam,
+    MdAssignmentTurnedIn,
+    MdArticle,
+    MdAccountBalanceWallet,
+    MdMessage,
+    MdHeadset,
+    MdSettings,
+    MdAutoAwesome,
+    MdCreditCard,
+    MdReceipt,
+    MdWeb,
+    MdHub,
+    MdTimeline,
+    MdSecurity,
+    MdCurrencyRupee,
+    MdGppMaybe,
+    MdTrackChanges,
+    MdFormatListBulleted,
+    MdDns,
+    MdBolt
+} from 'react-icons/md';
 
 export const superadminNavItems = [
     // ─── CORE OPERATIONS ───
     {
         title: 'Dashboard',
         href: '/superadmin',
-        icon: LayoutDashboard,
+        icon: MdDashboard,
         type: 'link'
     },
     {
         title: 'Institutes (Tenants)',
         href: '/superadmin/institutes',
-        icon: Building2,
+        icon: MdBusiness,
         type: 'link'
     },
     {
         title: 'Global Users',
         href: '/superadmin/users',
-        icon: Users,
+        icon: MdPeople,
         type: 'link'
     },
 
@@ -52,19 +51,19 @@ export const superadminNavItems = [
     {
         title: 'Subscription & Billing',
         type: 'section',
-        icon: CreditCard,
+        icon: MdCreditCard,
         children: [
-            { title: 'Total Subscriptions', href: '/superadmin/subscriptions', icon: CreditCard },
-            { title: 'Subscription Plans', href: '/superadmin/subscription-plans', icon: Receipt }
+            { title: 'Total Subscriptions', href: '/superadmin/subscriptions', icon: MdCreditCard },
+            { title: 'Subscription Plans', href: '/superadmin/subscription-plans', icon: MdReceipt }
         ]
     },
     {
         title: 'Finance & Payouts',
         type: 'section',
-        icon: Wallet,
+        icon: MdAccountBalanceWallet,
         children: [
-            { title: 'Revenue Overview', href: '/superadmin/finance', icon: Wallet },
-            { title: 'Tutor Settlements', href: '/superadmin/payouts', icon: IndianRupee },
+            { title: 'Revenue Overview', href: '/superadmin/finance', icon: MdAccountBalanceWallet },
+            { title: 'Tutor Settlements', href: '/superadmin/payouts', icon: MdCurrencyRupee },
         ]
     },
 
@@ -72,14 +71,14 @@ export const superadminNavItems = [
     {
         title: 'Platform Radar',
         type: 'section',
-        icon: Radar,
+        icon: MdTrackChanges,
         children: [
-            { title: 'Live Classes', href: '/superadmin/live-classes', icon: MonitorPlay },
-            { title: 'Active Courses', href: '/superadmin/courses', icon: BookOpen },
-            { title: 'Global Batches', href: '/superadmin/batches', icon: Layers },
-            { title: 'Exams & Proctoring', href: '/superadmin/exams', icon: FileText },
-            { title: 'Assignments', href: '/superadmin/assignments', icon: FileText },
-            { title: 'Attendance Stats', href: '/superadmin/attendance', icon: ClipboardCheck },
+            { title: 'Live Classes', href: '/superadmin/live-classes', icon: MdVideocam },
+            { title: 'Active Courses', href: '/superadmin/courses', icon: MdMenuBook },
+            { title: 'Global Batches', href: '/superadmin/batches', icon: MdLayers },
+            { title: 'Exams & Proctoring', href: '/superadmin/exams', icon: MdArticle },
+            { title: 'Assignments', href: '/superadmin/assignments', icon: MdArticle },
+            { title: 'Attendance Stats', href: '/superadmin/attendance', icon: MdAssignmentTurnedIn },
         ]
     },
 
@@ -87,13 +86,12 @@ export const superadminNavItems = [
     {
         title: 'Trust & System Health',
         type: 'section',
-        icon: ShieldCheck,
+        icon: MdSecurity,
         children: [
-            { title: 'Abuse Reports', href: '/superadmin/reports', icon: ShieldAlert },
-            { title: 'Audit Logs (Tech)', href: '/superadmin/security', icon: ShieldCheck },
-            { title: 'Activity Timeline', href: '/superadmin/activity', icon: ListTree },
-            // 👇 YE RAHA TUMHARA MONITORING ROUTE!
-            { title: 'System Monitoring', href: '/superadmin/monitoring', icon: Server }
+            { title: 'Abuse Reports', href: '/superadmin/reports', icon: MdGppMaybe },
+            { title: 'Audit Logs (Tech)', href: '/superadmin/security', icon: MdSecurity },
+            { title: 'Activity Timeline', href: '/superadmin/activity', icon: MdFormatListBulleted },
+            { title: 'System Monitoring', href: '/superadmin/monitoring', icon: MdDns }
         ]
     },
 
@@ -101,54 +99,53 @@ export const superadminNavItems = [
     {
         title: 'Website & CMS',
         type: 'section',
-        icon: LayoutTemplate,
+        icon: MdWeb,
         children: [
-            { title: 'Pages', href: '/superadmin/cms/pages', icon: LayoutTemplate },
-            { title: 'Blogs', href: '/superadmin/cms/blogs', icon: FileText }
+            { title: 'Pages', href: '/superadmin/cms/pages', icon: MdWeb },
+            { title: 'Blogs', href: '/superadmin/cms/blogs', icon: MdArticle }
         ]
     },
     {
         title: 'CRM & Leads',
         href: '/superadmin/crm',
-        icon: Headset,
+        icon: MdHeadset,
         type: 'link'
     },
     {
         title: 'Communication',
         href: '/superadmin/communication',
-        icon: MessageSquare,
+        icon: MdMessage,
         type: 'link'
     },
-
 
     // ─── AI INTELLIGENCE HUB ───
     {
         title: 'AI Intelligence',
         type: 'section',
-        icon: BrainCircuit,
+        icon: MdAutoAwesome,
         children: [
             {
                 title: 'Live Chat (God Mode)',
                 href: '/superadmin/ai-coordinator',
-                icon: MessageSquare
+                icon: MdMessage
             },
             {
                 title: 'Daily Briefings',
                 href: '/superadmin/ai-coordinator/briefings',
-                icon: Zap
+                icon: MdBolt
             }
         ]
     },
     {
         title: 'API Integrations',
         href: '/superadmin/integrations',
-        icon: Network,
+        icon: MdHub,
         type: 'link'
     },
     {
         title: 'Platform Settings',
         href: '/superadmin/settings',
-        icon: Settings,
+        icon: MdSettings,
         type: 'link'
     }
 ];

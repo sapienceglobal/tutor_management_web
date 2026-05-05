@@ -2,11 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import { 
-    Loader2, Users, Search, Building2, Calendar, 
-    BookOpen, CheckCircle2, Clock, AlertCircle, UserCog 
-} from 'lucide-react';
+    MdHourglassEmpty, MdPeople, MdSearch, MdBusiness, MdCalendarMonth, 
+    MdMenuBook, MdCheckCircle, MdAccessTime, MdWarning, MdPerson
+} from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
+import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+import StatCard from '@/components/StatCard';
+
+// ─── Base Input Style ─────────────────────────────────────────────────────────
+const baseInputStyle = {
+    backgroundColor: C.cardBg,
+    border: `1px solid ${C.cardBorder}`,
+    borderRadius: '10px',
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.base,
+    fontWeight: T.weight.semibold,
+    outline: 'none',
+    width: '100%',
+    padding: '12px 16px',
+    transition: 'all 0.2s ease',
+};
 
 export default function SuperAdminBatchesPage() {
     const [batches, setBatches] = useState([]);
@@ -14,8 +31,6 @@ export default function SuperAdminBatchesPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
-
-    const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.12)';
 
     useEffect(() => {
         fetchBatches();
@@ -46,72 +61,124 @@ export default function SuperAdminBatchesPage() {
 
     const getStatusConfig = (status) => {
         switch(status) {
-            case 'active': return { color: 'text-[#10B981]', bg: 'bg-[#ECFDF5]', border: 'border-[#D1FAE5]', icon: CheckCircle2, label: 'Active Now' };
-            case 'upcoming': return { color: 'text-[#F59E0B]', bg: 'bg-[#FFF7ED]', border: 'border-[#FFEDD5]', icon: Clock, label: 'Upcoming' };
-            case 'completed': return { color: 'text-[#6B4DF1]', bg: 'bg-[#F4F0FD]', border: 'border-[#E9DFFC]', icon: CheckCircle2, label: 'Completed' };
-            default: return { color: 'text-[#7D8DA6]', bg: 'bg-[#F8F6FC]', border: 'border-[#E9DFFC]', icon: AlertCircle, label: status };
+            case 'active': return { color: C.success, bg: C.successBg, border: `1px solid ${C.successBorder}`, icon: MdCheckCircle, label: 'Active Now' };
+            case 'upcoming': return { color: C.warning, bg: C.warningBg, border: `1px solid ${C.warningBorder}`, icon: MdAccessTime, label: 'Upcoming' };
+            case 'completed': return { color: C.btnPrimary, bg: C.innerBg, border: `1px solid ${C.cardBorder}`, icon: MdCheckCircle, label: 'Completed' };
+            default: return { color: C.textMuted, bg: C.innerBg, border: `1px solid ${C.cardBorder}`, icon: MdWarning, label: status };
         }
     };
 
     return (
-        <div className="min-h-screen p-6 md:p-8 space-y-6" style={{ backgroundColor: '#F4EEFD', fontFamily: "'Inter', sans-serif" }}>
+        <div className="min-h-screen space-y-6 pb-8" style={{ backgroundColor: C.pageBg, ...pageStyle }}>
             
             {/* ── Header ── */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center border border-[#E9DFFC] shadow-sm">
-                        <Users className="w-6 h-6 text-[#6B4DF1]" />
+                    <div className="flex items-center justify-center shrink-0" 
+                        style={{ width: 56, height: 56, borderRadius: '10px', backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <MdPeople style={{ width: 24, height: 24, color: C.btnPrimary }} />
                     </div>
                     <div>
-                        <h1 className="text-[24px] font-black text-[#27225B] m-0">Global Batches Directory</h1>
-                        <p className="text-[13px] font-medium text-[#7D8DA6] m-0 mt-1">Read-only oversight of all course batches and student distributions across the platform.</p>
+                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+                            Global Batches Directory
+                        </h1>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.textMuted, margin: 0, marginTop: 4 }}>
+                            Read-only oversight of all course batches and student distributions across the platform.
+                        </p>
                     </div>
                 </div>
             </div>
 
             {/* ── KPIs ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-                <div className="bg-white rounded-2xl p-5 border border-[#E9DFFC] shadow-sm flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-[#F4F0FD] text-[#6B4DF1] flex items-center justify-center shrink-0"><Users size={20}/></div>
-                    <div><p className="text-[11px] font-bold text-[#7D8DA6] uppercase tracking-wider m-0 mb-1">Total Batches</p><h3 className="text-[24px] font-black text-[#27225B] m-0">{kpis.totalBatches}</h3></div>
-                </div>
-                <div className="bg-white rounded-2xl p-5 border border-[#E9DFFC] shadow-sm flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-[#ECFDF5] text-[#10B981] flex items-center justify-center shrink-0"><CheckCircle2 size={20}/></div>
-                    <div><p className="text-[11px] font-bold text-[#7D8DA6] uppercase tracking-wider m-0 mb-1">Active Batches</p><h3 className="text-[24px] font-black text-[#10B981] m-0">{kpis.activeBatches}</h3></div>
-                </div>
-                <div className="bg-white rounded-2xl p-5 border border-[#E9DFFC] shadow-sm flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-[#FFF7ED] text-[#EA580C] flex items-center justify-center shrink-0"><UserCog size={20}/></div>
-                    <div><p className="text-[11px] font-bold text-[#7D8DA6] uppercase tracking-wider m-0 mb-1">Avg Students / Batch</p><h3 className="text-[24px] font-black text-[#27225B] m-0">{kpis.avgStudentsPerBatch}</h3></div>
-                </div>
-                <div className="bg-white rounded-2xl p-5 border border-[#E9DFFC] shadow-sm flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-[#EBF8FF] text-[#3182CE] flex items-center justify-center shrink-0"><BookOpen size={20}/></div>
-                    <div><p className="text-[11px] font-bold text-[#7D8DA6] uppercase tracking-wider m-0 mb-1">Total Batched Students</p><h3 className="text-[24px] font-black text-[#27225B] m-0">{kpis.totalStudentsInBatches.toLocaleString()}</h3></div>
-                </div>
+                <StatCard 
+                    icon={MdPeople} 
+                    value={kpis.totalBatches} 
+                    label="Total Batches" 
+                    iconBg="#EEF2FF" 
+                    iconColor="#4F46E5" 
+                />
+                <StatCard 
+                    icon={MdCheckCircle} 
+                    value={kpis.activeBatches} 
+                    label="Active Batches" 
+                    iconBg="#ECFDF5" 
+                    iconColor="#10B981" 
+                />
+                <StatCard 
+                    icon={MdPerson} 
+                    value={kpis.avgStudentsPerBatch} 
+                    label="Avg Students / Batch" 
+                    iconBg="#FFF7ED" 
+                    iconColor="#F59E0B" 
+                />
+                <StatCard 
+                    icon={MdMenuBook} 
+                    value={kpis.totalStudentsInBatches.toLocaleString()} 
+                    label="Total Batched Students" 
+                    iconBg="#EBF8FF" 
+                    iconColor="#3182CE" 
+                />
             </div>
 
             {/* ── Toolbar ── */}
-            <div className="bg-white rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between gap-4 border border-[#E9DFFC]/50" style={{ boxShadow: softShadow }}>
-                <div className="flex bg-[#F4F0FD] p-1.5 rounded-xl w-full xl:w-auto overflow-x-auto">
+            <div className="flex flex-col xl:flex-row items-center justify-between gap-4 p-4" 
+                style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                
+                <div className="flex p-1.5 w-full xl:w-auto overflow-x-auto" style={{ backgroundColor: C.innerBg, borderRadius: '10px' }}>
                     {['all', 'active', 'upcoming', 'completed'].map(status => (
-                        <button key={status} onClick={() => setStatusFilter(status)} className={`px-5 py-2.5 text-[13px] font-bold rounded-lg transition-all capitalize whitespace-nowrap border-none cursor-pointer ${statusFilter === status ? 'bg-white text-[#6B4DF1] shadow-sm' : 'bg-transparent text-[#7D8DA6] hover:text-[#27225B]'}`}>
+                        <button 
+                            key={status} 
+                            onClick={() => setStatusFilter(status)} 
+                            className="transition-all capitalize whitespace-nowrap border-none cursor-pointer"
+                            style={{
+                                padding: '10px 20px',
+                                borderRadius: '10px',
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.base,
+                                fontWeight: T.weight.bold,
+                                backgroundColor: statusFilter === status ? C.surfaceWhite : 'transparent',
+                                color: statusFilter === status ? C.btnPrimary : C.textFaint,
+                                boxShadow: statusFilter === status ? S.active : 'none'
+                            }}
+                        >
                             {status === 'all' ? 'All Batches' : status}
                         </button>
                     ))}
                 </div>
-                <form onSubmit={handleSearch} className="relative w-full xl:w-80">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#A0ABC0]" />
-                    <input type="text" placeholder="Search by batch name..." className="w-full pl-10 pr-4 py-3 bg-white border border-[#E9DFFC] text-[#27225B] text-[13px] font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] placeholder-[#A0ABC0]" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                
+                <form onSubmit={handleSearch} className="relative w-full xl:w-[320px]">
+                    <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2" style={{ width: 18, height: 18, color: C.textFaint }} />
+                    <input 
+                        type="text" 
+                        placeholder="Search by batch name..." 
+                        style={{ ...baseInputStyle, paddingLeft: '44px' }}
+                        value={searchTerm} 
+                        onChange={e => setSearchTerm(e.target.value)} 
+                    />
                 </form>
             </div>
 
             {/* ── Batches List ── */}
             {loading ? (
-                <div className="flex items-center justify-center h-64"><Loader2 className="w-10 h-10 animate-spin text-[#6B4DF1]" /></div>
+                <div className="flex items-center justify-center min-h-[50vh]">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="relative w-12 h-12">
+                            <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                                style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                        </div>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                            Loading batches...
+                        </p>
+                    </div>
+                </div>
             ) : batches.length === 0 ? (
-                <div className="bg-white rounded-3xl border border-[#E9DFFC] p-16 text-center shadow-sm">
-                    <Users className="w-14 h-14 text-[#D1C4F9] mx-auto mb-4" />
-                    <h3 className="text-[18px] font-black text-[#27225B] m-0">No batches found</h3>
-                    <p className="text-[13px] text-[#7D8DA6] mt-2 m-0">No records match your current filters.</p>
+                <div className="p-14 text-center border border-dashed m-8" style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
+                    <div className="flex items-center justify-center mx-auto mb-4" style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                        <MdPeople style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
+                    </div>
+                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>No batches found</h3>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, marginTop: 4 }}>No records match your current filters.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -121,31 +188,49 @@ export default function SuperAdminBatchesPage() {
                         const studentCount = batch.students?.length || 0;
 
                         return (
-                            <div key={batch._id} className="bg-white rounded-[24px] border border-[#E9DFFC] overflow-hidden hover:-translate-y-1 transition-transform flex flex-col group shadow-sm">
+                            <div key={batch._id} className="flex flex-col transition-transform hover:-translate-y-1 group" 
+                                style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}
+                                onMouseEnter={(e) => e.currentTarget.style.boxShadow = S.cardHover}
+                                onMouseLeave={(e) => e.currentTarget.style.boxShadow = S.card}
+                            >
                                 
                                 {/* Card Body */}
-                                <div className="p-5 flex-1 flex flex-col">
+                                <div className="flex-1 flex flex-col" style={{ padding: '20px' }}>
                                     <div className="flex items-center justify-between mb-4">
-                                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm border ${statusData.bg} ${statusData.color} ${statusData.border}`}>
-                                            <StatusIcon size={10}/> {statusData.label}
+                                        <span className="flex items-center gap-1" 
+                                            style={{ 
+                                                padding: '4px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: T.weight.black, 
+                                                textTransform: 'uppercase', letterSpacing: T.tracking.wider,
+                                                backgroundColor: statusData.bg, color: statusData.color, border: statusData.border 
+                                            }}>
+                                            <StatusIcon style={{ width: 12, height: 12 }}/> {statusData.label}
                                         </span>
-                                        <div className="flex items-center gap-1.5 text-[12px] font-bold text-[#27225B] bg-[#F8F6FC] px-2 py-1 rounded-lg border border-[#E9DFFC]">
-                                            <Users size={14} className="text-[#6B4DF1]"/> {studentCount} Students
+                                        <div className="flex items-center gap-1.5" style={{ padding: '4px 8px', borderRadius: '10px', fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
+                                            <MdPeople style={{ width: 14, height: 14, color: C.btnPrimary }}/> {studentCount} Students
                                         </div>
                                     </div>
                                     
-                                    <h3 className="font-black text-[16px] text-[#27225B] mb-1 leading-snug">{batch.name}</h3>
-                                    <p className="text-[12px] font-bold text-[#6B4DF1] m-0 mb-4 line-clamp-1">{batch.courseId?.title || 'Unknown Course'}</p>
+                                    <h3 className="line-clamp-2 leading-snug" style={{ fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0, marginBottom: '8px' }}>
+                                        {batch.name}
+                                    </h3>
+                                    <p className="line-clamp-1" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.btnPrimary, margin: 0, marginBottom: '16px' }}>
+                                        {batch.courseId?.title || 'Unknown Course'}
+                                    </p>
                                     
                                     {/* Context Details */}
-                                    <div className="space-y-3 mt-auto bg-[#F9F7FC] p-3 rounded-xl border border-[#E9DFFC]/50">
-                                        <div className="flex items-center gap-2 text-[12px] font-semibold text-[#4A5568]">
-                                            <Building2 size={14} className="text-[#A0ABC0] shrink-0" />
+                                    <div className="space-y-3 mt-auto" style={{ backgroundColor: C.innerBg, padding: '12px', borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                                        <div className="flex items-center gap-2" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.text }}>
+                                            <MdBusiness style={{ width: 14, height: 14, color: C.textFaint, flexShrink: 0 }} />
                                             <span className="truncate">{batch.instituteId ? batch.instituteId.name : 'Global Platform'}</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-[12px] font-semibold text-[#4A5568]">
-                                            <div className="w-4 h-4 rounded-full bg-[#E9DFFC] flex items-center justify-center overflow-hidden shrink-0">
-                                                {batch.tutorId?.profileImage ? <img src={batch.tutorId.profileImage} className="w-full h-full object-cover"/> : <span className="text-[8px] font-bold text-[#6B4DF1]">T</span>}
+                                        <div className="flex items-center gap-2" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.text }}>
+                                            <div className="flex items-center justify-center shrink-0 overflow-hidden" 
+                                                style={{ width: 16, height: 16, borderRadius: R.full, backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}` }}>
+                                                {batch.tutorId?.profileImage ? (
+                                                    <img src={batch.tutorId.profileImage} className="w-full h-full object-cover"/>
+                                                ) : (
+                                                    <span style={{ fontSize: '8px', fontWeight: T.weight.bold, color: C.btnPrimary }}>T</span>
+                                                )}
                                             </div>
                                             <span className="truncate">{batch.tutorId?.name || 'Unknown Tutor'}</span>
                                         </div>
@@ -153,9 +238,9 @@ export default function SuperAdminBatchesPage() {
                                 </div>
 
                                 {/* Footer Dates */}
-                                <div className="p-4 border-t border-[#F4F0FD] bg-[#FDFBFF] flex items-center justify-between gap-3 text-[11px] font-bold text-[#7D8DA6]">
-                                    <span className="flex items-center gap-1.5">
-                                        <Calendar size={14} className="text-[#A0ABC0]"/>
+                                <div className="flex items-center justify-between gap-3" style={{ padding: '16px 20px', borderTop: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg, borderBottomLeftRadius: R['2xl'], borderBottomRightRadius: R['2xl'] }}>
+                                    <span className="flex items-center gap-1.5" style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.textFaint }}>
+                                        <MdCalendarMonth style={{ width: 14, height: 14 }}/>
                                         {new Date(batch.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} 
                                         {batch.endDate ? ` - ${new Date(batch.endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ' (Ongoing)'}
                                     </span>

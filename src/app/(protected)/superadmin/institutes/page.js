@@ -3,26 +3,40 @@
 import { useState, useEffect } from 'react';
 import { getInstitutes, createInstitute, updateInstituteStatus, getSubscriptionPlans, deleteInstitute } from '@/services/superadminService';
 import {
-    Plus, Search, MoreHorizontal, Building2, Shield, PowerOff, Eye,
-    CheckCircle2, Ban, Trash2, Filter, ChevronDown, Users, BookOpen, Edit, CheckSquare, Clock, GraduationCap,
-    ChevronRight, AlertCircle
-} from 'lucide-react';
+    MdAdd, MdSearch, MdMoreHoriz, MdBusiness, MdSecurity, MdPowerSettingsNew, MdVisibility,
+    MdCheckCircle, MdBlock, MdDelete, MdFilterList, MdKeyboardArrowDown, MdPeople, MdMenuBook, MdEdit, MdCheckBox, MdAccessTime, MdSchool,
+    MdChevronRight, MdErrorOutline
+} from 'react-icons/md';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import { C, T, S, R, cx, pageStyle } from '@/constants/studentTokens';
+import StatCard from '@/components/StatCard';
+
+// ─── Input Base Style ────────────────────────────────────────────────────────
+const baseInputStyle = {
+    backgroundColor: C.cardBg,
+    border: `1px solid ${C.cardBorder}`,
+    borderRadius: '10px',
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.base,
+    fontWeight: T.weight.semibold,
+    outline: 'none',
+    width: '100%',
+    padding: '12px 16px',
+    transition: 'all 0.2s ease',
+};
 
 export default function InstitutesPage() {
     const [institutes, setInstitutes] = useState([]);
-    const [availablePlans, setAvailablePlans] = useState([]); // 🌟 Naya state plans ke liye
+    const [availablePlans, setAvailablePlans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [openMenuId, setOpenMenuId] = useState(null);
     const router = useRouter();
 
-    const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.12)';
-
-    // Form State (planId null rakha hai initially)
     const [formData, setFormData] = useState({
         name: '',
         subdomain: '',
@@ -38,7 +52,6 @@ export default function InstitutesPage() {
     const loadData = async () => {
         try {
             setLoading(true);
-            // 🌟 Ek saath Institutes aur Plans dono fetch karenge
             const [instData, plansData] = await Promise.all([
                 getInstitutes(),
                 getSubscriptionPlans()
@@ -49,7 +62,6 @@ export default function InstitutesPage() {
             }
             if (plansData.success) {
                 setAvailablePlans(plansData.plans || []);
-                // Default pehla plan set kar do agar plans hain toh
                 if (plansData.plans?.length > 0) {
                     const firstPlan = plansData.plans[0];
                     setFormData(prev => ({
@@ -112,12 +124,12 @@ export default function InstitutesPage() {
             const data = await deleteInstitute(id);
             if (data.success) {
                 toast.success('Institute permanently deleted');
-                loadData(); // Table refresh karne ke liye
+                loadData();
             }
         } catch (error) {
             toast.error(error.message || 'Error deleting institute');
         }
-        setOpenMenuId(null); // Dropdown band karne ke liye
+        setOpenMenuId(null);
     };
 
     const filteredInstitutes = institutes.filter(inst =>
@@ -125,104 +137,112 @@ export default function InstitutesPage() {
         inst.subdomain?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // 🌟 Dynamic Theme Helper for Plans (Taki naye aur purane dono plans sundar dikhein)
     const getPlanBadge = (planName) => {
-        if (!planName) return 'bg-[#F4F0FD] text-[#6B4DF1]';
+        if (!planName) return { backgroundColor: C.innerBg, color: C.btnPrimary, border: 'none' };
         const name = planName.toLowerCase();
-        if (name.includes('enterprise')) return 'bg-[#6B4DF1] text-white';
-        if (name.includes('pro')) return 'bg-[#EBF8FF] text-[#3182CE]';
-        if (name.includes('basic')) return 'bg-[#F4F0FD] text-[#6B4DF1]';
-        // Generic fallback for custom plans (like Platinum, Gold, etc)
-        return 'bg-[#FFF7ED] text-[#FC8730] border border-[#FDBA74]';
+        if (name.includes('enterprise')) return { backgroundColor: C.btnPrimary, color: '#ffffff', border: 'none' };
+        if (name.includes('pro')) return { backgroundColor: '#EBF8FF', color: '#3182CE', border: 'none' };
+        if (name.includes('basic')) return { backgroundColor: C.innerBg, color: C.btnPrimary, border: 'none' };
+        return { backgroundColor: C.warningBg, color: C.warning, border: `1px solid ${C.warningBorder}` };
     };
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-[#F4EEFD]">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-[#6B4DF1]"></div>
+            <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-12 h-12">
+                        <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                            style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                    </div>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                        Loading...
+                    </p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen p-6 md:p-8 space-y-6" style={{ backgroundColor: '#F4EEFD', fontFamily: "'Inter', sans-serif" }}>
+        <div className="min-h-screen space-y-6 pb-8" style={{ backgroundColor: C.pageBg, ...pageStyle }}>
 
             {/* ── Header ── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-[24px] font-black text-[#27225B] m-0">Institutes Management</h1>
-                    <p className="text-[13px] font-medium text-[#7D8DA6] m-0 mt-1">Manage all registered institutes, approvals & subscriptions.</p>
+                    <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+                        Institutes Management
+                    </h1>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.textMuted, marginTop: 4, margin: 0 }}>
+                        Manage all registered institutes, approvals & subscriptions.
+                    </p>
                 </div>
                 <button
                     onClick={() => setIsAddModalOpen(true)}
-                    className="flex items-center gap-2 px-6 py-3 bg-[#6B4DF1] text-white font-bold text-[14px] rounded-xl hover:bg-[#5839D6] transition-colors shadow-md border-none cursor-pointer"
+                    className="flex items-center gap-2 transition-opacity hover:opacity-90"
+                    style={{
+                        background: C.gradientBtn,
+                        color: '#ffffff',
+                        fontFamily: T.fontFamily,
+                        fontSize: T.size.base,
+                        fontWeight: T.weight.bold,
+                        borderRadius: '10px',
+                        boxShadow: S.btn,
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '12px 20px',
+                    }}
                 >
-                    <Plus size={18} strokeWidth={3} /> Create Institute <ChevronRight size={16} className="ml-1 opacity-70" />
+                    <MdAdd style={{ width: 18, height: 18 }} /> Create Institute <MdChevronRight style={{ width: 16, height: 16, opacity: 0.7 }} />
                 </button>
             </div>
 
             {/* ── Top KPI Stats Row ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div className="bg-white rounded-2xl p-5 border border-[#E9DFFC]/50 relative hover:-translate-y-1 transition-transform" style={{ boxShadow: softShadow }}>
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#F4F0FD] text-[#6B4DF1] flex items-center justify-center"><Building2 size={16} strokeWidth={2.5} /></div>
-                        <span className="text-[14px] font-bold text-[#4A5568]">Total Institutes</span>
-                    </div>
-                    <div className="flex items-end justify-between">
-                        <span className="text-[28px] font-black text-[#27225B] leading-none">{institutes.length}</span>
-                        <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-bold text-[#4ABCA8] bg-[#ECFDF5] px-2 py-0.5 rounded-md">+ 10.2%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-2xl p-5 border border-[#E9DFFC]/50 relative hover:-translate-y-1 transition-transform" style={{ boxShadow: softShadow }}>
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#ECFDF5] text-[#4ABCA8] flex items-center justify-center"><CheckCircle2 size={16} strokeWidth={2.5} /></div>
-                        <span className="text-[14px] font-bold text-[#4A5568]">Active Institutes</span>
-                    </div>
-                    <div className="flex items-end justify-between">
-                        <span className="text-[28px] font-black text-[#27225B] leading-none">{institutes.filter(i => i.isActive).length}</span>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-2xl p-5 border border-[#E9DFFC]/50 relative hover:-translate-y-1 transition-transform" style={{ boxShadow: softShadow }}>
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#FFF7ED] text-[#FC8730] flex items-center justify-center"><Clock size={16} strokeWidth={2.5} /></div>
-                        <span className="text-[14px] font-bold text-[#4A5568]">Pending Approvals</span>
-                    </div>
-                    <div className="flex items-end justify-between">
-                        <span className="text-[28px] font-black text-[#FC8730] leading-none">{institutes.filter(i => i.approvalStatus === 'pending').length || 0}</span>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-2xl p-5 border border-[#E9DFFC]/50 relative hover:-translate-y-1 transition-transform" style={{ boxShadow: softShadow }}>
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#FEE2E2] text-[#E53E3E] flex items-center justify-center"><Ban size={16} strokeWidth={2.5} /></div>
-                        <span className="text-[14px] font-bold text-[#4A5568]">Suspended Institutes</span>
-                    </div>
-                    <div className="flex items-end justify-between">
-                        <span className="text-[28px] font-black text-[#E53E3E] leading-none">{institutes.filter(i => !i.isActive && i.approvalStatus !== 'pending').length}</span>
-                    </div>
-                </div>
+                <StatCard
+                    icon={MdBusiness}
+                    value={institutes.length}
+                    label="Total Institutes"
+                    iconBg="#EEF2FF"
+                    iconColor="#4F46E5"
+                />
+                <StatCard
+                    icon={MdCheckCircle}
+                    value={institutes.filter(i => i.isActive).length}
+                    label="Active Institutes"
+                    iconBg="#ECFDF5"
+                    iconColor="#10B981"
+                />
+                <StatCard
+                    icon={MdAccessTime}
+                    value={institutes.filter(i => i.approvalStatus === 'pending').length || 0}
+                    label="Pending Approvals"
+                    iconBg="#FFF7ED"
+                    iconColor="#F59E0B"
+                />
+                <StatCard
+                    icon={MdBlock}
+                    value={institutes.filter(i => !i.isActive && i.approvalStatus !== 'pending').length}
+                    label="Suspended Institutes"
+                    iconBg={C.dangerBg}
+                    iconColor={C.danger}
+                />
             </div>
 
             {/* ── Main Table Area ── */}
-            <div className="bg-white rounded-3xl flex flex-col border border-[#E9DFFC]/50" style={{ boxShadow: softShadow }}>
+            <div className="flex flex-col" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
 
                 {/* Table Toolbar */}
-                <div className="px-6 py-5 flex flex-col xl:flex-row items-center justify-between gap-4 border-b border-[#F4F0FD] bg-[#FDFBFF] rounded-t-3xl">
+                <div className="px-6 py-5 flex flex-col xl:flex-row items-center justify-between gap-4 border-b" style={{ borderColor: C.cardBorder, backgroundColor: C.innerBg, borderTopLeftRadius: R['2xl'], borderTopRightRadius: R['2xl'] }}>
                     <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
-                        {/* Status Filters */}
+                        {/* Status Filters - kept empty structurally based on original code */}
                     </div>
 
                     <div className="flex items-center gap-3 w-full xl:w-auto">
                         <div className="relative flex-1 xl:w-80">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#A0ABC0]" />
+                            <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2" style={{ width: 18, height: 18, color: C.textFaint }} />
                             <input
                                 type="text"
                                 placeholder="Search institutes..."
-                                className="pl-9 pr-4 py-2 bg-white border border-[#E9DFFC] text-[#27225B] text-[13px] font-semibold rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] w-full"
+                                style={{ ...baseInputStyle, paddingLeft: '40px' }}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -232,71 +252,105 @@ export default function InstitutesPage() {
 
                 {/* Table Container */}
                 <div className="overflow-x-auto px-4 pb-4 min-h-[350px]">
-                    <table className="w-full text-left border-collapse min-w-[1000px]">
-                        <thead className="bg-[#F9F7FC] rounded-xl">
+                    <table className="w-full text-left border-collapse min-w-[1000px] mt-4">
+                        <thead style={{ backgroundColor: C.innerBg }}>
                             <tr>
-                                <th className="px-2 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider pl-6">Institute Name ▾</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider">Domain ^</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider">Institute Type</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider">Subscription Plan</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider text-center">Tutors</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider text-center">Students</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider">Created</th>
-                                <th className="px-4 py-4 text-[12px] font-bold text-[#7D8DA6] tracking-wider last:rounded-r-xl">Actions</th>
+                                {['Institute Name ▾', 'Domain ^', 'Institute Type', 'Subscription Plan', 'Tutors', 'Students', 'Created', 'Actions'].map((header, idx) => (
+                                    <th key={idx} style={{
+                                        fontFamily: T.fontFamily,
+                                        fontSize: T.size.xs,
+                                        fontWeight: T.weight.bold,
+                                        color: C.statLabel,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: T.tracking.wider,
+                                        padding: '16px',
+                                        borderBottom: `1px solid ${C.cardBorder}`,
+                                        textAlign: (header === 'Tutors' || header === 'Students') ? 'center' : 'left',
+                                        borderTopLeftRadius: idx === 0 ? '10px' : '0',
+                                        borderBottomLeftRadius: idx === 0 ? '10px' : '0',
+                                        borderTopRightRadius: idx === 7 ? '10px' : '0',
+                                        borderBottomRightRadius: idx === 7 ? '10px' : '0'
+                                    }}>
+                                        {header}
+                                    </th>
+                                ))}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#F4F0FD]">
+                        <tbody>
                             {filteredInstitutes.length === 0 ? (
-                                <tr><td colSpan="8" className="p-8 text-center text-[#7D8DA6] font-medium">No institutes found.</td></tr>
+                                <tr>
+                                    <td colSpan="8" className="p-8">
+                                        <div className="p-14 text-center border border-dashed" style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
+                                            <div className="flex items-center justify-center mx-auto mb-4" style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                                                <MdBusiness style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
+                                            </div>
+                                            <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>No Institutes Found</h3>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, marginTop: 4 }}>Try adjusting your search criteria.</p>
+                                        </div>
+                                    </td>
+                                </tr>
                             ) : filteredInstitutes.map((inst, i) => (
-                                <tr key={inst._id} className="hover:bg-[#F8F7FF] transition-colors relative">
-                                    <td className="px-2 py-4 pl-6">
+                                <tr key={inst._id} className="transition-colors relative"
+                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                    style={{ borderBottom: `1px solid ${C.cardBorder}` }}
+                                >
+                                    <td className="px-4 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className={`w-9 h-9 rounded-[8px] text-white flex items-center justify-center font-bold text-[14px] shrink-0 shadow-sm ${i % 3 === 0 ? 'bg-[#6B4DF1]' : i % 3 === 1 ? 'bg-[#FC8730]' : 'bg-[#4ABCA8]'
-                                                }`}>
-                                                <Building2 size={16} />
+                                            <div className="flex items-center justify-center shrink-0"
+                                                style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: i % 3 === 0 ? C.btnPrimary : i % 3 === 1 ? C.warning : C.success, color: '#ffffff' }}>
+                                                <MdBusiness style={{ width: 16, height: 16 }} />
                                             </div>
                                             <div className="flex flex-col">
-                                                <p className="text-[13px] font-black text-[#27225B] m-0 leading-tight">{inst.name}</p>
-                                                <p className="text-[11px] font-bold text-[#A0ABC0] m-0 mt-0.5">#{inst._id.slice(-8).toUpperCase()}</p>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: 0, lineHeight: 1.2 }}>{inst.name}</p>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, margin: 0, marginTop: 2 }}>#{inst._id.slice(-8).toUpperCase()}</p>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-4 py-4">
-                                        <span className="text-[13px] font-bold text-[#6B4DF1] underline cursor-pointer">{inst.subdomain || 'domain'}</span>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.btnPrimary, textDecoration: 'underline', cursor: 'pointer' }}>
+                                            {inst.subdomain || 'domain'}
+                                        </span>
                                     </td>
                                     <td className="px-4 py-4">
-                                        <span className="text-[13px] font-semibold text-[#4A5568]">{inst.instituteType || 'Coaching'}</span>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.text }}>
+                                            {inst.instituteType || 'Coaching'}
+                                        </span>
                                     </td>
                                     <td className="px-4 py-4">
-                                        {/* 🌟 Dynamic Plan Badge */}
-                                        <span className={`px-2.5 py-1 text-[11px] font-black rounded-md capitalize ${getPlanBadge(inst.subscriptionPlan)}`}>
+                                        <span style={{
+                                            fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, padding: '4px 10px', borderRadius: '10px', textTransform: 'capitalize',
+                                            ...getPlanBadge(inst.subscriptionPlan)
+                                        }}>
                                             {inst.subscriptionPlan || 'No Plan'}
                                         </span>
                                     </td>
                                     <td className="px-4 py-4 text-center">
-                                        <span className="inline-flex items-center gap-1.5 text-[13px] font-black text-[#4A5568] bg-[#F4F0FD] px-2 py-0.5 rounded-md border border-[#E9DFFC]">
-                                            <GraduationCap size={14} className="text-[#6B4DF1]" /> {(inst.tutorsCount || 0).toLocaleString()}
+                                        <span className="inline-flex items-center gap-1.5" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.text, backgroundColor: C.innerBg, padding: '4px 10px', borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                                            <MdSchool style={{ width: 14, height: 14, color: C.btnPrimary }} /> {(inst.tutorsCount || 0).toLocaleString()}
                                         </span>
                                     </td>
                                     <td className="px-4 py-4 text-center">
-                                        <span className="inline-flex items-center gap-1.5 text-[13px] font-black text-[#4A5568] bg-[#ECFDF5] px-2 py-0.5 rounded-md border border-[#A7F3D0]">
-                                            <Users size={14} className="text-[#4ABCA8]" /> {(inst.studentsCount || inst.userCount || 0).toLocaleString()}
+                                        <span className="inline-flex items-center gap-1.5" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.text, backgroundColor: C.successBg, padding: '4px 10px', borderRadius: '10px', border: `1px solid ${C.successBorder}` }}>
+                                            <MdPeople style={{ width: 14, height: 14, color: C.success }} /> {(inst.studentsCount || inst.userCount || 0).toLocaleString()}
                                         </span>
                                     </td>
                                     <td className="px-4 py-4">
-                                        <span className="text-[12px] font-semibold text-[#7D8DA6]">
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.textMuted }}>
                                             {new Date(inst.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-4">
-                                        <div className="flex items-center justify-start gap-4 relative">
+                                    <td className="px-4 py-4 relative">
+                                        <div className="flex items-center gap-2">
                                             <button
                                                 onClick={() => router.push(`/superadmin/institutes/${inst._id}`)}
-                                                className="w-7 h-7 rounded-md text-[#6B4DF1] hover:text-[#5839D6] hover:bg-[#F4F0FD] flex items-center justify-center transition-colors cursor-pointer border-none bg-transparent"
+                                                className="flex items-center justify-center transition-colors border-none bg-transparent cursor-pointer"
+                                                style={{ width: 28, height: 28, borderRadius: '10px', color: C.btnPrimary }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                                                 title="View Profile"
                                             >
-                                                <Eye size={16} strokeWidth={2.5} />
+                                                <MdVisibility style={{ width: 16, height: 16 }} />
                                             </button>
 
                                             <button
@@ -306,22 +360,38 @@ export default function InstitutesPage() {
                                                     e.nativeEvent.stopImmediatePropagation();
                                                     setOpenMenuId(openMenuId === inst._id ? null : inst._id);
                                                 }}
-                                                className="w-7 h-7 rounded-md text-[#A0ABC0] hover:text-[#27225B] hover:bg-[#F4F0FD] flex items-center justify-center transition-colors cursor-pointer border-none bg-transparent"
+                                                className="flex items-center justify-center transition-colors border-none bg-transparent cursor-pointer"
+                                                style={{ width: 28, height: 28, borderRadius: '10px', color: C.textMuted }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}
                                             >
-                                                <MoreHorizontal size={16} />
+                                                <MdMoreHoriz style={{ width: 16, height: 16 }} />
                                             </button>
 
                                             {openMenuId === inst._id && (
                                                 <div
-                                                    className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(107,77,241,0.2)] border border-[#E9DFFC] z-[9999] py-2"
+                                                    className="absolute right-0 top-full mt-1 w-48 z-[9999] py-2"
+                                                    style={{ backgroundColor: C.cardBg, borderRadius: '10px', boxShadow: S.cardHover, border: `1px solid ${C.cardBorder}` }}
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
-                                                    <button onClick={() => { toggleStatus(inst._id, inst.isActive); setOpenMenuId(null); }} className={`w-full text-left px-4 py-2 text-[12px] font-bold flex items-center gap-3 transition-colors border-none bg-transparent cursor-pointer ${inst.isActive ? 'text-[#E53E3E] hover:bg-[#FEE2E2]' : 'text-[#4ABCA8] hover:bg-[#ECFDF5]'}`}>
-                                                        {inst.isActive ? <Ban size={14} /> : <CheckSquare size={14} />}
+                                                    <button
+                                                        onClick={() => { toggleStatus(inst._id, inst.isActive); setOpenMenuId(null); }}
+                                                        className="w-full text-left px-4 py-2 flex items-center gap-3 transition-colors border-none bg-transparent cursor-pointer"
+                                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: inst.isActive ? C.danger : C.success }}
+                                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = inst.isActive ? C.dangerBg : C.successBg; }}
+                                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                                    >
+                                                        {inst.isActive ? <MdBlock style={{ width: 16, height: 16 }} /> : <MdCheckBox style={{ width: 16, height: 16 }} />}
                                                         {inst.isActive ? 'Suspend Institute' : 'Activate Institute'}
                                                     </button>
-                                                    <button onClick={() => handleDeleteInstitute(inst._id)} className="w-full text-left px-4 py-2 text-[12px] font-bold text-[#E53E3E] hover:bg-[#FEE2E2] flex items-center gap-3 transition-colors border-none bg-transparent cursor-pointer mt-1 border-t border-slate-100 pt-2">
-                                                        <Trash2 size={14} /> Delete Permanently
+                                                    <button
+                                                        onClick={() => handleDeleteInstitute(inst._id)}
+                                                        className="w-full text-left px-4 py-2 flex items-center gap-3 transition-colors border-none bg-transparent cursor-pointer mt-1 pt-2"
+                                                        style={{ borderTop: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.danger }}
+                                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.dangerBg; }}
+                                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                                    >
+                                                        <MdDelete style={{ width: 16, height: 16 }} /> Delete Permanently
                                                     </button>
                                                 </div>
                                             )}
@@ -336,35 +406,44 @@ export default function InstitutesPage() {
 
             {/* ── Add Modal ── */}
             {isAddModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1e103c]/40 backdrop-blur-md">
-                    <div className="bg-white rounded-[24px] w-full max-w-2xl shadow-2xl overflow-hidden border border-[#D5C2F6] max-h-[90vh] flex flex-col">
-                        <div className="px-6 py-5 border-b border-[#F4F0FD] bg-[#FDFBFF] flex justify-between items-center shrink-0">
-                            <h2 className="text-[18px] font-black text-[#27225B] flex items-center gap-2 m-0">
-                                <Building2 className="w-5 h-5 text-[#6B4DF1]" /> Onboard New Institute
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
+                    <div className="w-full max-w-2xl overflow-hidden flex flex-col" style={{ backgroundColor: C.pageBg, borderRadius: R['2xl'], boxShadow: S.cardHover, border: `1px solid ${C.cardBorder}`, maxHeight: '90vh' }}>
+                        <div className="px-6 py-5 flex justify-between items-center shrink-0" style={{ backgroundColor: C.cardBg, borderBottom: `1px solid ${C.cardBorder}` }}>
+                            <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.bold, color: C.heading, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                                <MdBusiness style={{ width: 20, height: 20, color: C.btnPrimary }} /> Onboard New Institute
                             </h2>
-                            <button onClick={() => setIsAddModalOpen(false)} className="text-[#A0ABC0] hover:text-[#E53E3E] bg-transparent border-none cursor-pointer p-1 rounded-full hover:bg-[#FEE2E2] transition-colors">
-                                <PowerOff size={20} className="rotate-45" />
+                            <button onClick={() => setIsAddModalOpen(false)} className="bg-transparent border-none cursor-pointer p-1 transition-colors"
+                                style={{ color: C.textMuted, borderRadius: '10px' }}
+                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.dangerBg; e.currentTarget.style.color = C.danger; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}
+                            >
+                                <MdPowerSettingsNew style={{ width: 20, height: 20, transform: 'rotate(45deg)' }} />
                             </button>
                         </div>
 
-                        <div className="overflow-y-auto p-6 custom-scrollbar bg-[#FAFAFA]">
+                        <div className="overflow-y-auto p-6" style={{ backgroundColor: C.pageBg }}>
                             <form id="add-inst-form" onSubmit={handleCreate} className="space-y-6">
 
                                 {/* Organization Details */}
-                                <div className="bg-white p-5 rounded-2xl border border-[#E9DFFC] shadow-sm">
-                                    <h3 className="text-[13px] font-black text-[#6B4DF1] uppercase tracking-wider mb-4">Organization Details</h3>
+                                <div style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], padding: '20px', boxShadow: S.card }}>
+                                    <div className="flex items-center gap-2.5 mb-4">
+                                        <div className="flex items-center justify-center shrink-0" style={{ width: 32, height: 32, backgroundColor: C.iconBg, borderRadius: '10px' }}>
+                                            <MdBusiness style={{ width: 14, height: 14, color: C.iconColor }} />
+                                        </div>
+                                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>Organization Details</h3>
+                                    </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         <div>
-                                            <label className="block text-[13px] font-bold text-[#27225B] mb-1.5">Institute Name</label>
-                                            <input required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} type="text" className="w-full p-2.5 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] text-[13px] font-semibold text-[#27225B]" placeholder="e.g. Acme Academy" />
+                                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, marginBottom: '6px' }}>Institute Name</label>
+                                            <input required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} type="text" style={baseInputStyle} placeholder="e.g. Acme Academy" />
                                         </div>
                                         <div>
-                                            <label className="block text-[13px] font-bold text-[#27225B] mb-1.5">Subdomain</label>
-                                            <input required value={formData.subdomain} onChange={(e) => setFormData({ ...formData, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} type="text" className="w-full p-2.5 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] font-mono text-[13px] font-bold text-[#6B4DF1]" placeholder="acme" />
+                                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, marginBottom: '6px' }}>Subdomain</label>
+                                            <input required value={formData.subdomain} onChange={(e) => setFormData({ ...formData, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} type="text" style={{ ...baseInputStyle, fontFamily: T.fontFamilyMono, color: C.btnPrimary }} placeholder="acme" />
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="block text-[13px] font-bold text-[#27225B] mb-1.5">Institute Type</label>
-                                            <select value={formData.instituteType} onChange={(e) => setFormData({ ...formData, instituteType: e.target.value })} className="w-full p-2.5 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] text-[13px] font-semibold text-[#27225B] outline-none">
+                                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, marginBottom: '6px' }}>Institute Type</label>
+                                            <select value={formData.instituteType} onChange={(e) => setFormData({ ...formData, instituteType: e.target.value })} style={baseInputStyle}>
                                                 <option>Coaching</option>
                                                 <option>School</option>
                                                 <option>College</option>
@@ -375,39 +454,46 @@ export default function InstitutesPage() {
                                 </div>
 
                                 {/* Admin Account */}
-                                <div className="bg-white p-5 rounded-2xl border border-[#E9DFFC] shadow-sm">
-                                    <h3 className="text-[13px] font-black text-[#6B4DF1] uppercase tracking-wider flex items-center gap-2 mb-4">
-                                        <Shield className="w-4 h-4" /> Admin Account
-                                    </h3>
+                                <div style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], padding: '20px', boxShadow: S.card }}>
+                                    <div className="flex items-center gap-2.5 mb-4">
+                                        <div className="flex items-center justify-center shrink-0" style={{ width: 32, height: 32, backgroundColor: C.iconBg, borderRadius: '10px' }}>
+                                            <MdSecurity style={{ width: 14, height: 14, color: C.iconColor }} />
+                                        </div>
+                                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>Admin Account</h3>
+                                    </div>
                                     <div className="grid grid-cols-1 gap-5">
                                         <div>
-                                            <label className="block text-[13px] font-bold text-[#27225B] mb-1.5">Admin Full Name</label>
-                                            <input required value={formData.adminName} onChange={(e) => setFormData({ ...formData, adminName: e.target.value })} type="text" className="w-full p-2.5 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] text-[13px] font-semibold text-[#27225B]" placeholder="John Doe" />
+                                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, marginBottom: '6px' }}>Admin Full Name</label>
+                                            <input required value={formData.adminName} onChange={(e) => setFormData({ ...formData, adminName: e.target.value })} type="text" style={baseInputStyle} placeholder="John Doe" />
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                             <div>
-                                                <label className="block text-[13px] font-bold text-[#27225B] mb-1.5">Admin Email</label>
-                                                <input required value={formData.adminEmail} onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })} type="email" className="w-full p-2.5 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] text-[13px] font-semibold text-[#27225B]" placeholder="admin@acme.edu" />
+                                                <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, marginBottom: '6px' }}>Admin Email</label>
+                                                <input required value={formData.adminEmail} onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })} type="email" style={baseInputStyle} placeholder="admin@acme.edu" />
                                             </div>
                                             <div>
-                                                <label className="block text-[13px] font-bold text-[#27225B] mb-1.5">Temporary Password</label>
-                                                <input required value={formData.adminPassword} onChange={(e) => setFormData({ ...formData, adminPassword: e.target.value })} type="text" className="w-full p-2.5 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] text-[13px] font-semibold text-[#27225B] tracking-widest" placeholder="••••••••" />
+                                                <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, marginBottom: '6px' }}>Temporary Password</label>
+                                                <input required value={formData.adminPassword} onChange={(e) => setFormData({ ...formData, adminPassword: e.target.value })} type="text" style={{ ...baseInputStyle, letterSpacing: T.tracking.wider }} placeholder="••••••••" />
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Subscription Plan - 🌟 NOW DYNAMIC */}
-                             {/* Subscription Plan - 🌟 NOW DYNAMIC & CUSTOMIZABLE */}
-                                <div className="bg-white p-5 rounded-2xl border border-[#E9DFFC] shadow-sm">
-                                    <h3 className="text-[13px] font-black text-[#6B4DF1] uppercase tracking-wider mb-4">Subscription Plan & Limits</h3>
+                                {/* Subscription Plan & Limits */}
+                                <div style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], padding: '20px', boxShadow: S.card }}>
+                                    <div className="flex items-center gap-2.5 mb-4">
+                                        <div className="flex items-center justify-center shrink-0" style={{ width: 32, height: 32, backgroundColor: C.iconBg, borderRadius: '10px' }}>
+                                            <MdMenuBook style={{ width: 14, height: 14, color: C.iconColor }} />
+                                        </div>
+                                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>Subscription Plan & Limits</h3>
+                                    </div>
 
                                     {availablePlans.length === 0 ? (
-                                        <div className="bg-[#FFF7ED] border border-[#FDBA74] rounded-xl p-4 flex flex-col items-center justify-center text-center">
-                                            <AlertCircle className="w-6 h-6 text-[#FC8730] mb-2" />
-                                            <h4 className="text-[14px] font-bold text-[#9A3412] m-0">No Premium Plans Configured</h4>
-                                            <p className="text-[12px] text-[#C05621] mt-1 mb-3">You can create the institute with a free default plan, or setup premium plans first.</p>
-                                            <Link href="/superadmin/subscription-plans" className="text-[13px] font-bold text-white bg-[#FC8730] px-4 py-2 rounded-lg hover:bg-[#EA580C] transition-colors text-decoration-none">
+                                        <div className="flex flex-col items-center justify-center text-center p-4" style={{ backgroundColor: C.warningBg, border: `1px solid ${C.warningBorder}`, borderRadius: '10px' }}>
+                                            <MdErrorOutline style={{ width: 24, height: 24, color: C.warning, marginBottom: '8px' }} />
+                                            <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.warning, margin: 0 }}>No Premium Plans Configured</h4>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.heading, marginTop: '4px', marginBottom: '12px' }}>You can create the institute with a free default plan, or setup premium plans first.</p>
+                                            <Link href="/superadmin/subscription-plans" className="text-decoration-none" style={{ backgroundColor: C.warning, color: '#ffffff', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, padding: '8px 16px', borderRadius: '10px' }}>
                                                 Manage Plans
                                             </Link>
                                         </div>
@@ -415,34 +501,27 @@ export default function InstitutesPage() {
 
                                     <div className="space-y-4 mt-4">
                                         <div>
-                                            <label className="block text-[13px] font-bold text-[#27225B] mb-2">Select Base Plan</label>
+                                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, marginBottom: '6px' }}>Select Base Plan</label>
                                             <select
                                                 value={formData.planId || 'free'}
                                                 onChange={(e) => {
                                                     const selectedId = e.target.value;
                                                     if (selectedId === 'free') {
                                                         setFormData({
-                                                            ...formData,
-                                                            planId: '',
-                                                            maxTutors: 5,
-                                                            maxStudents: 50,
-                                                            storageLimitGB: 5,
-                                                            aiCreditsPerMonth: 0
+                                                            ...formData, planId: '', maxTutors: 5, maxStudents: 50, storageLimitGB: 5, aiCreditsPerMonth: 0
                                                         });
                                                         return;
                                                     }
-                                                    
                                                     const selectedPlan = availablePlans.find(p => p._id === selectedId);
                                                     setFormData({
-                                                        ...formData,
-                                                        planId: selectedId,
+                                                        ...formData, planId: selectedId,
                                                         maxTutors: selectedPlan?.features?.maxTutors === -1 ? 1000 : (selectedPlan?.features?.maxTutors || 5),
                                                         maxStudents: selectedPlan?.features?.maxStudents === -1 ? 10000 : (selectedPlan?.features?.maxStudents || 50),
                                                         storageLimitGB: selectedPlan?.features?.storageLimitGB || 10,
                                                         aiCreditsPerMonth: selectedPlan?.features?.aiCreditsPerMonth || 0
                                                     });
                                                 }}
-                                                className="w-full p-3 bg-[#F9F7FC] border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] text-[13px] font-bold text-[#27225B] outline-none cursor-pointer"
+                                                style={baseInputStyle}
                                             >
                                                 <option value="free">No Plan (Free / Default Limits)</option>
                                                 {availablePlans.map(plan => (
@@ -453,24 +532,24 @@ export default function InstitutesPage() {
                                             </select>
                                         </div>
 
-                                        <div className="bg-[#F8F6FC] p-4 rounded-xl border border-purple-100/50">
-                                            <p className="text-[10px] font-bold text-gray-500 uppercase mb-3">Custom Limit Overrides</p>
+                                        <div style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px', padding: '16px' }}>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', marginBottom: '12px', letterSpacing: T.tracking.wider }}>Custom Limit Overrides</p>
                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                                 <div>
-                                                    <label className="block text-[11px] font-bold text-[#27225B] mb-1.5">Max Tutors</label>
-                                                    <input type="number" min="1" value={formData.maxTutors} onChange={(e) => setFormData({ ...formData, maxTutors: parseInt(e.target.value) || 5 })} className="w-full p-2.5 bg-white border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#6B4DF1] text-[13px] font-bold text-[#27225B]" />
+                                                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, marginBottom: '6px' }}>Max Tutors</label>
+                                                    <input type="number" min="1" value={formData.maxTutors} onChange={(e) => setFormData({ ...formData, maxTutors: parseInt(e.target.value) || 5 })} style={baseInputStyle} />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[11px] font-bold text-[#27225B] mb-1.5">Max Students</label>
-                                                    <input type="number" min="1" value={formData.maxStudents} onChange={(e) => setFormData({ ...formData, maxStudents: parseInt(e.target.value) || 50 })} className="w-full p-2.5 bg-white border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#6B4DF1] text-[13px] font-bold text-[#27225B]" />
+                                                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, marginBottom: '6px' }}>Max Students</label>
+                                                    <input type="number" min="1" value={formData.maxStudents} onChange={(e) => setFormData({ ...formData, maxStudents: parseInt(e.target.value) || 50 })} style={baseInputStyle} />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[11px] font-bold text-[#27225B] mb-1.5">Storage (GB)</label>
-                                                    <input type="number" min="1" value={formData.storageLimitGB || 5} onChange={(e) => setFormData({ ...formData, storageLimitGB: parseInt(e.target.value) || 5 })} className="w-full p-2.5 bg-white border border-[#E9DFFC] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#6B4DF1] text-[13px] font-bold text-[#27225B]" />
+                                                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading, marginBottom: '6px' }}>Storage (GB)</label>
+                                                    <input type="number" min="1" value={formData.storageLimitGB || 5} onChange={(e) => setFormData({ ...formData, storageLimitGB: parseInt(e.target.value) || 5 })} style={baseInputStyle} />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[11px] font-bold text-[#8B5CF6] mb-1.5">AI Credits/Mo</label>
-                                                    <input type="number" min="0" value={formData.aiCreditsPerMonth || 0} onChange={(e) => setFormData({ ...formData, aiCreditsPerMonth: parseInt(e.target.value) || 0 })} className="w-full p-2.5 bg-white border border-purple-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#6B4DF1] text-[13px] font-black text-[#8B5CF6] shadow-sm" />
+                                                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.btnPrimary, marginBottom: '6px' }}>AI Credits/Mo</label>
+                                                    <input type="number" min="0" value={formData.aiCreditsPerMonth || 0} onChange={(e) => setFormData({ ...formData, aiCreditsPerMonth: parseInt(e.target.value) || 0 })} style={{ ...baseInputStyle, color: C.btnPrimary }} />
                                                 </div>
                                             </div>
                                         </div>
@@ -479,13 +558,21 @@ export default function InstitutesPage() {
                             </form>
                         </div>
 
-                        <div className="p-5 border-t border-[#F4F0FD] bg-white flex justify-end gap-3 shrink-0">
-                            <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-6 py-2.5 bg-white border border-[#E9DFFC] text-[#7A6C9B] font-bold text-[13px] rounded-xl cursor-pointer hover:bg-[#F9F7FC] transition-colors">Cancel</button>
-                           <button
+                        <div className="p-5 flex justify-end gap-3 shrink-0" style={{ backgroundColor: C.cardBg, borderTop: `1px solid ${C.cardBorder}` }}>
+                            <button type="button" onClick={() => setIsAddModalOpen(false)}
+                                style={{
+                                    backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, border: `1px solid ${C.cardBorder}`,
+                                    fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, borderRadius: '10px', padding: '10px 24px', cursor: 'pointer'
+                                }}
+                            >Cancel</button>
+                            <button
                                 type="submit"
                                 form="add-inst-form"
-                                disabled={loading} // 🌟 Disabled hata diya taaki Free par bhi create ho sake
-                                className="px-8 py-2.5 bg-[#6B4DF1] text-white font-bold text-[13px] rounded-xl hover:bg-[#5839D6] disabled:bg-[#D1C4F9] transition-colors shadow-md border-none cursor-pointer"
+                                disabled={loading}
+                                style={{
+                                    background: loading ? C.cardBorder : C.gradientBtn, color: '#ffffff', border: 'none', boxShadow: loading ? 'none' : S.btn,
+                                    fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, borderRadius: '10px', padding: '10px 32px', cursor: loading ? 'not-allowed' : 'pointer'
+                                }}
                             >
                                 {loading ? 'Creating...' : 'Create Institute'}
                             </button>

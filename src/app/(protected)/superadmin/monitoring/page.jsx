@@ -2,11 +2,31 @@
 
 import { useState, useEffect } from 'react';
 import { 
-    Loader2, Activity, Server, AlertTriangle, Database, 
-    Cpu, Clock, AlertOctagon, BrainCircuit, ShieldAlert, FileText 
-} from 'lucide-react';
+    MdHourglassEmpty, MdShowChart, MdDns, MdWarning, MdStorage, 
+    MdMemory, MdAccessTime, MdErrorOutline, MdAutoAwesome, MdGppMaybe, MdArticle 
+} from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
+import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+import StatCard from '@/components/StatCard';
+
+// ─── Section Header Component ─────────────────────────────────────────────────
+function SectionHeader({ icon: Icon, title }) {
+    return (
+        <div className="flex items-center gap-2.5 mb-4">
+            <div className="flex items-center justify-center rounded-lg shrink-0"
+                style={{ width: 40, height: 40, backgroundColor: C.iconBg }}>
+                <Icon style={{ width: 16, height: 16, color: C.iconColor }} />
+            </div>
+            <h2 style={{
+                fontFamily: T.fontFamily, fontSize: T.size.xl,
+                fontWeight: T.weight.semibold, color: C.heading, margin: 0
+            }}>
+                {title}
+            </h2>
+        </div>
+    );
+}
 
 export default function SystemMonitoringPage() {
     const [loading, setLoading] = useState(true);
@@ -17,8 +37,6 @@ export default function SystemMonitoringPage() {
         ai: { totalTokensUsed: 0 },
         moderation: { pendingReports: 0 }
     });
-
-    const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.12)';
 
     useEffect(() => {
         fetchMonitoringData();
@@ -49,138 +67,158 @@ export default function SystemMonitoringPage() {
     };
 
     if (loading && !sysData.server.uptimeSeconds) {
-        return <div className="flex h-screen items-center justify-center bg-[#F4EEFD]"><Loader2 className="w-10 h-10 animate-spin text-[#6B4DF1]" /></div>;
+        return (
+            <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-12 h-12">
+                        <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                            style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                    </div>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                        Loading system metrics...
+                    </p>
+                </div>
+            </div>
+        );
     }
 
     const { server, apiHealth, storage, ai, moderation } = sysData;
 
     return (
-        <div className="min-h-screen p-6 md:p-8 space-y-6" style={{ backgroundColor: '#F4EEFD', fontFamily: "'Inter', sans-serif" }}>
+        <div className="min-h-screen space-y-6 pb-8" style={{ backgroundColor: C.pageBg, ...pageStyle }}>
             
             {/* ── Header ── */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center border border-[#E9DFFC] shadow-sm">
-                        <Activity className="w-6 h-6 text-[#EF4444]" />
+                    <div className="flex items-center justify-center shrink-0" 
+                        style={{ width: 56, height: 56, borderRadius: '10px', backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <MdShowChart style={{ width: 24, height: 24, color: C.danger }} />
                     </div>
                     <div>
-                        <h1 className="text-[24px] font-black text-[#27225B] m-0">System Health & Monitoring</h1>
-                        <p className="text-[13px] font-medium text-[#7D8DA6] m-0 mt-1">Live infrastructure metrics, API errors, and storage usage.</p>
+                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
+                            System Health & Monitoring
+                        </h1>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.textMuted, margin: 0, marginTop: 4 }}>
+                            Live infrastructure metrics, API errors, and storage usage.
+                        </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button onClick={fetchMonitoringData} className="bg-white px-5 py-2.5 rounded-xl border border-[#E9DFFC] text-[#27225B] text-[13px] font-bold flex items-center gap-2 shadow-sm hover:bg-[#F9F7FC] transition-colors cursor-pointer border-none">
-                        <Activity size={16} className="text-[#6B4DF1]"/> Refresh Pulse
+                    <button onClick={fetchMonitoringData} className="flex items-center gap-2 transition-colors cursor-pointer"
+                        style={{
+                            backgroundColor: C.cardBg,
+                            color: C.heading,
+                            border: `1px solid ${C.cardBorder}`,
+                            borderRadius: '10px',
+                            padding: '10px 20px',
+                            fontFamily: T.fontFamily,
+                            fontSize: T.size.base,
+                            fontWeight: T.weight.bold,
+                            boxShadow: S.cardHover
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.innerBg}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.cardBg}
+                    >
+                        <MdShowChart style={{ width: 18, height: 18, color: C.btnPrimary }}/> Refresh Pulse
                     </button>
                 </div>
             </div>
 
             {/* ── Top Level Infrastructure KPIs ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                
-                {/* Server Uptime */}
-                <div className="bg-[#27225B] rounded-[20px] p-6 border border-[#1e1a48] relative overflow-hidden shadow-lg flex flex-col justify-between">
-                    <div className="absolute right-0 top-0 w-24 h-24 bg-[#6B4DF1] opacity-20 rounded-bl-full filter blur-xl"></div>
-                    <div className="flex items-center gap-2 mb-4 relative z-10">
-                        <Server size={18} className="text-[#A0ABC0]" />
-                        <span className="text-[12px] font-bold text-[#A0ABC0] uppercase tracking-wider">Node.js Uptime</span>
-                    </div>
-                    <div className="relative z-10 flex items-end justify-between">
-                        <h3 className="text-[28px] font-black text-white leading-none m-0">{formatUptime(server.uptimeSeconds)}</h3>
-                        <span className="flex items-center gap-1 text-[10px] font-black bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-md uppercase tracking-wider"><div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div> Online</span>
-                    </div>
-                </div>
-
-                {/* API Error Rate */}
-                <div className="bg-white rounded-[20px] p-6 border border-[#E9DFFC] relative overflow-hidden" style={{ boxShadow: softShadow }}>
-                    <div className="flex items-center gap-2 mb-4">
-                        <AlertTriangle size={18} className="text-[#7D8DA6]" />
-                        <span className="text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wider">API Error Rate (24h)</span>
-                    </div>
-                    <div className="flex items-end justify-between">
-                        <h3 className={`text-[28px] font-black leading-none m-0 ${apiHealth.errorRate > 5 ? 'text-[#EF4444]' : 'text-[#10B981]'}`}>
-                            {apiHealth.errorRate}%
-                        </h3>
-                        <span className="text-[11px] font-bold text-[#A0ABC0]">{apiHealth.failedRequests24h} Fails</span>
-                    </div>
-                </div>
-
-                {/* RAM Usage */}
-                <div className="bg-white rounded-[20px] p-6 border border-[#E9DFFC] relative overflow-hidden flex flex-col" style={{ boxShadow: softShadow }}>
-                    <div className="flex items-center gap-2 mb-3">
-                        <Cpu size={18} className="text-[#7D8DA6]" />
-                        <span className="text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wider">Memory Usage</span>
-                    </div>
-                    <div className="flex-1 flex flex-col justify-end">
-                        <div className="flex items-end justify-between mb-2">
-                            <h3 className="text-[24px] font-black text-[#27225B] leading-none m-0">{server.memoryUsagePercent}%</h3>
-                            <span className="text-[11px] font-bold text-[#A0ABC0]">{server.usedMemoryMB} / {server.totalMemoryMB} MB</span>
-                        </div>
-                        {/* Progress Bar */}
-                        <div className="w-full h-2 bg-[#F4F0FD] rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full ${server.memoryUsagePercent > 80 ? 'bg-[#EF4444]' : 'bg-[#6B4DF1]'}`} style={{ width: `${server.memoryUsagePercent}%` }}></div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Database Storage (Docs) */}
-                <div className="bg-white rounded-[20px] p-6 border border-[#E9DFFC] relative overflow-hidden" style={{ boxShadow: softShadow }}>
-                    <div className="flex items-center gap-2 mb-4">
-                        <Database size={18} className="text-[#7D8DA6]" />
-                        <span className="text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wider">DB File Storage</span>
-                    </div>
-                    <div className="flex items-end justify-between">
-                        <h3 className="text-[28px] font-black text-[#FC8730] leading-none m-0">{storage.documentStorageMB} <span className="text-[16px]">MB</span></h3>
-                        <span className="text-[11px] font-bold text-[#A0ABC0]">Lessons Data</span>
-                    </div>
-                </div>
+                <StatCard 
+                    icon={MdDns} 
+                    value={formatUptime(server.uptimeSeconds)} 
+                    label="Node.js Uptime" 
+                    iconBg="#EEF2FF" 
+                    iconColor="#4F46E5" 
+                />
+                <StatCard 
+                    icon={MdWarning} 
+                    value={`${apiHealth.errorRate}%`} 
+                    label="API Error Rate (24h)" 
+                    subtext={`${apiHealth.failedRequests24h} Fails`}
+                    iconBg={apiHealth.errorRate > 5 ? C.dangerBg : "#ECFDF5"} 
+                    iconColor={apiHealth.errorRate > 5 ? C.danger : "#10B981"} 
+                />
+                <StatCard 
+                    icon={MdMemory} 
+                    value={`${server.memoryUsagePercent}%`} 
+                    label="Memory Usage" 
+                    subtext={`${server.usedMemoryMB} / ${server.totalMemoryMB} MB`}
+                    iconBg="#FFF7ED" 
+                    iconColor="#EA580C" 
+                />
+                <StatCard 
+                    icon={MdStorage} 
+                    value={`${storage.documentStorageMB} MB`} 
+                    label="DB File Storage" 
+                    subtext="Lessons Data"
+                    iconBg="#EBF8FF" 
+                    iconColor="#3182CE" 
+                />
             </div>
 
             {/* ── Detailed Sections ── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* Left: API Error Logs */}
-                <div className="lg:col-span-2 bg-white rounded-[24px] border border-[#E9DFFC] flex flex-col" style={{ boxShadow: softShadow }}>
-                    <div className="px-6 py-5 border-b border-[#F4F0FD] bg-[#FDFBFF] rounded-t-[24px] flex justify-between items-center">
-                        <h2 className="text-[16px] font-black text-[#27225B] m-0 flex items-center gap-2">
-                            <AlertOctagon size={18} className="text-[#EF4444]"/> Failed API Requests
-                        </h2>
-                        <span className="text-[11px] font-bold text-[#A0ABC0] bg-white px-2 py-1 rounded border border-[#E9DFFC]">Last 5 Errors</span>
+                <div className="lg:col-span-2 flex flex-col overflow-hidden" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <div className="px-6 pt-5 pb-1 flex justify-between items-start" style={{ backgroundColor: C.innerBg, borderBottom: `1px solid ${C.cardBorder}` }}>
+                        <SectionHeader icon={MdErrorOutline} title="Failed API Requests" />
+                        <span style={{ padding: '4px 10px', borderRadius: '10px', fontSize: T.size.xs, fontWeight: T.weight.bold, backgroundColor: C.surfaceWhite, color: C.textMuted, border: `1px solid ${C.cardBorder}` }}>
+                            Last 5 Errors
+                        </span>
                     </div>
-                    <div className="p-0 overflow-x-auto">
+                    <div className="overflow-x-auto min-h-[300px]">
                         <table className="w-full text-left border-collapse">
-                            <thead className="bg-[#F9F7FC]/50">
+                            <thead style={{ backgroundColor: C.innerBg }}>
                                 <tr>
-                                    <th className="px-6 py-4 text-[11px] font-black text-[#A0ABC0] uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-4 text-[11px] font-black text-[#A0ABC0] uppercase tracking-wider">Method & Path</th>
-                                    <th className="px-6 py-4 text-[11px] font-black text-[#A0ABC0] uppercase tracking-wider">Action Name</th>
-                                    <th className="px-6 py-4 text-[11px] font-black text-[#A0ABC0] uppercase tracking-wider text-right">Time & IP</th>
+                                    <th style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, padding: '16px 24px', borderBottom: `1px solid ${C.cardBorder}` }}>Status</th>
+                                    <th style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, padding: '16px 24px', borderBottom: `1px solid ${C.cardBorder}` }}>Method & Path</th>
+                                    <th style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, padding: '16px 24px', borderBottom: `1px solid ${C.cardBorder}` }}>Action Name</th>
+                                    <th style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, padding: '16px 24px', borderBottom: `1px solid ${C.cardBorder}`, textAlign: 'right' }}>Time & IP</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[#F4F0FD]">
                                 {apiHealth.recentErrors.length === 0 ? (
-                                    <tr><td colSpan="4" className="p-12 text-center text-[#A0ABC0] font-medium">No errors detected recently. System is clean!</td></tr>
+                                    <tr>
+                                        <td colSpan="4" className="p-8">
+                                            <div className="p-14 text-center border border-dashed" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
+                                                <div className="flex items-center justify-center mx-auto mb-4" style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                                                    <MdErrorOutline style={{ width: 28, height: 28, color: C.success, opacity: 0.5 }} />
+                                                </div>
+                                                <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>No errors detected recently</h3>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, margin: 0, marginTop: 4 }}>System is clean!</p>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 ) : apiHealth.recentErrors.map((err, idx) => (
-                                    <tr key={idx} className="hover:bg-[#F9F7FC] transition-colors">
+                                    <tr key={idx} className="transition-colors" style={{ backgroundColor: 'transparent', borderBottom: `1px solid ${C.cardBorder}` }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
                                         <td className="px-6 py-4">
-                                            <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-[#FEE2E2] text-[#E53E3E]">
+                                            <span style={{ padding: '4px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: T.weight.bold, backgroundColor: C.dangerBg, color: C.danger, textTransform: 'uppercase', letterSpacing: T.tracking.wider, border: `1px solid ${C.dangerBorder}` }}>
                                                 {err.statusCode || '500'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
-                                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${err.method === 'GET' ? 'bg-blue-100 text-blue-700' : err.method === 'POST' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                <span style={{ 
+                                                    fontSize: '10px', fontWeight: T.weight.bold, padding: '2px 6px', borderRadius: '4px',
+                                                    backgroundColor: err.method === 'GET' ? '#EBF8FF' : err.method === 'POST' ? C.successBg : C.warningBg,
+                                                    color: err.method === 'GET' ? '#3182CE' : err.method === 'POST' ? C.success : C.warning,
+                                                    border: `1px solid ${err.method === 'GET' ? '#BEE3F8' : err.method === 'POST' ? C.successBorder : C.warningBorder}`
+                                                }}>
                                                     {err.method || 'REQ'}
                                                 </span>
-                                                <span className="text-[13px] font-mono font-bold text-[#4A5568]">{err.path || '/unknown/route'}</span>
+                                                <span style={{ fontFamily: T.fontFamilyMono, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.text }}>{err.path || '/unknown/route'}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="text-[13px] font-bold text-[#27225B]">{err.action}</span>
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>{err.action}</span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <p className="text-[12px] font-bold text-[#27225B] m-0">{new Date(err.createdAt).toLocaleTimeString()}</p>
-                                            <p className="text-[10px] font-medium text-[#A0ABC0] m-0">{err.ip || 'Unknown IP'}</p>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{new Date(err.createdAt).toLocaleTimeString()}</p>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: 0, marginTop: 4 }}>{err.ip || 'Unknown IP'}</p>
                                         </td>
                                     </tr>
                                 ))}
@@ -193,38 +231,24 @@ export default function SystemMonitoringPage() {
                 <div className="flex flex-col gap-6">
                     
                     {/* Moderation & Reports */}
-                    <div className="bg-white rounded-[24px] border border-[#E9DFFC] p-6" style={{ boxShadow: softShadow }}>
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 rounded-xl bg-[#FFF7ED] text-[#EA580C] flex items-center justify-center border border-[#FFEDD5]">
-                                <ShieldAlert size={20} />
-                            </div>
-                            <div>
-                                <h3 className="text-[15px] font-black text-[#27225B] m-0">Content Moderation</h3>
-                                <p className="text-[11px] font-medium text-[#7D8DA6] m-0 mt-0.5">User generated reports</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center justify-between bg-[#F8F6FC] p-4 rounded-xl border border-[#E9DFFC]">
-                            <span className="text-[13px] font-bold text-[#4A5568]">Pending Reports</span>
-                            <span className={`text-[14px] font-black ${moderation.pendingReports > 0 ? 'text-[#E53E3E]' : 'text-[#10B981]'}`}>
+                    <div style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, padding: '24px', boxShadow: S.card }}>
+                        <SectionHeader icon={MdGppMaybe} title="Content Moderation" />
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: 0, marginTop: '-12px', marginBottom: '16px', marginLeft: '50px' }}>User generated reports</p>
+                        <div className="flex items-center justify-between" style={{ backgroundColor: C.innerBg, padding: '16px', borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>Pending Reports</span>
+                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: moderation.pendingReports > 0 ? C.danger : C.success }}>
                                 {moderation.pendingReports} Active
                             </span>
                         </div>
                     </div>
 
                     {/* AI Usage Log */}
-                    <div className="bg-white rounded-[24px] border border-[#E9DFFC] p-6" style={{ boxShadow: softShadow }}>
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 rounded-xl bg-[#F4F0FD] text-[#6B4DF1] flex items-center justify-center border border-[#E9DFFC]">
-                                <BrainCircuit size={20} />
-                            </div>
-                            <div>
-                                <h3 className="text-[15px] font-black text-[#27225B] m-0">AI API Usage</h3>
-                                <p className="text-[11px] font-medium text-[#7D8DA6] m-0 mt-0.5">Global tokens consumed</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center justify-between bg-[#F8F6FC] p-4 rounded-xl border border-[#E9DFFC]">
-                            <span className="text-[13px] font-bold text-[#4A5568]">Total Tokens Used</span>
-                            <span className="text-[14px] font-black text-[#6B4DF1]">
+                    <div style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, padding: '24px', boxShadow: S.card }}>
+                        <SectionHeader icon={MdAutoAwesome} title="AI API Usage" />
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: 0, marginTop: '-12px', marginBottom: '16px', marginLeft: '50px' }}>Global tokens consumed</p>
+                        <div className="flex items-center justify-between" style={{ backgroundColor: C.innerBg, padding: '16px', borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>Total Tokens Used</span>
+                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.btnPrimary }}>
                                 {ai.totalTokensUsed.toLocaleString()}
                             </span>
                         </div>

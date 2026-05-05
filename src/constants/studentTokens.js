@@ -1,5 +1,5 @@
 /**
- * studentTokens.js — Single Source of Truth for ALL Student UI
+ * studentTokens.js — Single Source of Truth for ALL Student, tutor ,admin, superadmin UI
  *
  * ─── HOW IT WORKS ────────────────────────────────────────────────────────────
  *

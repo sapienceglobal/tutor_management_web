@@ -2,11 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import { 
-    Loader2, Flag, AlertTriangle, ShieldAlert, CheckCircle2, 
-    XCircle, Search, User, BookOpen, MessageSquareQuote, Eye 
-} from 'lucide-react';
+    MdHourglassEmpty, MdFlag, MdWarning, MdSecurity, MdCheckCircle, 
+    MdCancel, MdSearch, MdPerson, MdMenuBook, MdMessage, MdVisibility 
+} from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
+import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+import StatCard from '@/components/StatCard';
+
+// ─── Base Input Style ─────────────────────────────────────────────────────────
+const baseInputStyle = {
+    backgroundColor: C.cardBg,
+    border: `1px solid ${C.cardBorder}`,
+    borderRadius: '10px',
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.base,
+    fontWeight: T.weight.semibold,
+    outline: 'none',
+    width: '100%',
+    padding: '12px 16px',
+    transition: 'all 0.2s ease',
+};
 
 export default function SuperAdminReportsPage() {
     const [reports, setReports] = useState([]);
@@ -14,8 +31,6 @@ export default function SuperAdminReportsPage() {
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
-
-    const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.12)';
 
     useEffect(() => {
         fetchReports();
@@ -53,19 +68,19 @@ export default function SuperAdminReportsPage() {
 
     const getReasonConfig = (reason) => {
         switch(reason) {
-            case 'Spam': return 'bg-[#FFF7ED] text-[#EA580C] border-[#FFEDD5]';
-            case 'Harassment': return 'bg-[#FEF2F2] text-[#E53E3E] border-[#FECACA]';
-            case 'Inappropriate Content': return 'bg-[#FFF5F5] text-[#E53E3E] border-[#FECACA]';
-            case 'Misleading Information': return 'bg-[#F4F0FD] text-[#6B4DF1] border-[#E9DFFC]';
-            default: return 'bg-[#F8F6FC] text-[#7D8DA6] border-[#E9DFFC]';
+            case 'Spam': return { bg: C.warningBg, color: C.warning, border: `1px solid ${C.warningBorder}` };
+            case 'Harassment': return { bg: C.dangerBg, color: C.danger, border: `1px solid ${C.dangerBorder}` };
+            case 'Inappropriate Content': return { bg: C.dangerBg, color: C.danger, border: `1px solid ${C.dangerBorder}` };
+            case 'Misleading Information': return { bg: C.innerBg, color: C.btnPrimary, border: `1px solid ${C.cardBorder}` };
+            default: return { bg: C.innerBg, color: C.textMuted, border: `1px solid ${C.cardBorder}` };
         }
     };
 
     const getTargetIcon = (type) => {
-        if (type === 'Course') return <BookOpen size={14} className="text-[#6B4DF1]" />;
-        if (type === 'Tutor') return <User size={14} className="text-[#10B981]" />;
-        if (type === 'Review') return <MessageSquareQuote size={14} className="text-[#F59E0B]" />;
-        return <Flag size={14} />;
+        if (type === 'Course') return <MdMenuBook style={{ width: 14, height: 14, color: C.btnPrimary }} />;
+        if (type === 'Tutor') return <MdPerson style={{ width: 14, height: 14, color: C.success }} />;
+        if (type === 'Review') return <MdMessage style={{ width: 14, height: 14, color: C.warning }} />;
+        return <MdFlag style={{ width: 14, height: 14, color: C.textMuted }} />;
     };
 
     const filteredReports = reports.filter(r => 
@@ -74,129 +89,215 @@ export default function SuperAdminReportsPage() {
     );
 
     return (
-        <div className="min-h-screen p-6 md:p-8 space-y-6" style={{ backgroundColor: '#F4EEFD', fontFamily: "'Inter', sans-serif" }}>
+        <div className="min-h-screen space-y-6 pb-8" style={{ backgroundColor: C.pageBg, ...pageStyle }}>
             
             {/* ── Header ── */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center border border-[#E9DFFC] shadow-sm">
-                        <ShieldAlert className="w-6 h-6 text-[#E53E3E]" />
+                    <div className="flex items-center justify-center shrink-0" 
+                        style={{ width: 56, height: 56, borderRadius: '10px', backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <MdSecurity style={{ width: 24, height: 24, color: C.danger }} />
                     </div>
                     <div>
-                        <h1 className="text-[24px] font-black text-[#27225B] m-0">Content Moderation & Reports</h1>
-                        <p className="text-[13px] font-medium text-[#7D8DA6] m-0 mt-1">Review flagged users, courses, and handle platform abuse.</p>
+                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+                            Content Moderation & Reports
+                        </h1>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.textMuted, margin: 0, marginTop: 4 }}>
+                            Review flagged users, courses, and handle platform abuse.
+                        </p>
                     </div>
                 </div>
             </div>
 
             {/* ── KPIs ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-                <div className={`bg-white rounded-[20px] p-5 shadow-sm border flex items-start gap-4 transition-all ${kpis.pendingCount > 0 ? 'border-[#FECACA] bg-[#FEF2F2]' : 'border-[#E9DFFC]'}`}>
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${kpis.pendingCount > 0 ? 'bg-[#FEE2E2] text-[#E53E3E]' : 'bg-[#F4F0FD] text-[#6B4DF1]'}`}>
-                        <AlertTriangle size={20} className={kpis.pendingCount > 0 ? 'animate-pulse' : ''} />
-                    </div>
-                    <div>
-                        <p className={`text-[11px] font-bold uppercase tracking-wider m-0 mb-1 ${kpis.pendingCount > 0 ? 'text-[#E53E3E]' : 'text-[#7D8DA6]'}`}>Pending Action</p>
-                        <h3 className={`text-[24px] font-black m-0 ${kpis.pendingCount > 0 ? 'text-[#E53E3E]' : 'text-[#27225B]'}`}>{kpis.pendingCount}</h3>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-[20px] p-5 shadow-sm border border-[#E9DFFC] flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-[#FFF7ED] text-[#EA580C] flex items-center justify-center shrink-0"><Eye size={20}/></div>
-                    <div><p className="text-[11px] font-bold text-[#7D8DA6] uppercase tracking-wider m-0 mb-1">Under Review</p><h3 className="text-[24px] font-black text-[#27225B] m-0">{kpis.reviewedCount}</h3></div>
-                </div>
-
-                <div className="bg-white rounded-[20px] p-5 shadow-sm border border-[#E9DFFC] flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-[#ECFDF5] text-[#10B981] flex items-center justify-center shrink-0"><CheckCircle2 size={20}/></div>
-                    <div><p className="text-[11px] font-bold text-[#7D8DA6] uppercase tracking-wider m-0 mb-1">Resolved Valid</p><h3 className="text-[24px] font-black text-[#10B981] m-0">{kpis.resolvedCount}</h3></div>
-                </div>
-
-                <div className="bg-white rounded-[20px] p-5 shadow-sm border border-[#E9DFFC] flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-[#F8F6FC] text-[#A0ABC0] flex items-center justify-center shrink-0"><XCircle size={20}/></div>
-                    <div><p className="text-[11px] font-bold text-[#7D8DA6] uppercase tracking-wider m-0 mb-1">Dismissed Fake</p><h3 className="text-[24px] font-black text-[#A0ABC0] m-0">{kpis.dismissedCount}</h3></div>
-                </div>
+                <StatCard 
+                    icon={MdWarning} 
+                    value={kpis.pendingCount} 
+                    label="Pending Action" 
+                    iconBg={kpis.pendingCount > 0 ? C.dangerBg : C.innerBg} 
+                    iconColor={kpis.pendingCount > 0 ? C.danger : C.btnPrimary} 
+                />
+                <StatCard 
+                    icon={MdVisibility} 
+                    value={kpis.reviewedCount} 
+                    label="Under Review" 
+                    iconBg="#FFF7ED" 
+                    iconColor="#EA580C" 
+                />
+                <StatCard 
+                    icon={MdCheckCircle} 
+                    value={kpis.resolvedCount} 
+                    label="Resolved Valid" 
+                    iconBg={C.successBg} 
+                    iconColor={C.success} 
+                />
+                <StatCard 
+                    icon={MdCancel} 
+                    value={kpis.dismissedCount} 
+                    label="Dismissed Fake" 
+                    iconBg={C.innerBg} 
+                    iconColor={C.textMuted} 
+                />
             </div>
 
             {/* ── Toolbar ── */}
-            <div className="bg-white rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between gap-4 border border-[#E9DFFC]/50" style={{ boxShadow: softShadow }}>
-                <div className="flex bg-[#F4F0FD] p-1.5 rounded-xl w-full xl:w-auto overflow-x-auto">
+            <div className="flex flex-col xl:flex-row items-center justify-between gap-4 p-4" 
+                style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                
+                <div className="flex p-1.5 w-full xl:w-auto overflow-x-auto" style={{ backgroundColor: C.innerBg, borderRadius: '10px' }}>
                     {['all', 'pending', 'reviewed', 'resolved', 'dismissed'].map(status => (
-                        <button key={status} onClick={() => setStatusFilter(status)} className={`px-5 py-2.5 text-[13px] font-bold rounded-lg transition-all capitalize whitespace-nowrap border-none cursor-pointer ${statusFilter === status ? 'bg-white text-[#6B4DF1] shadow-sm' : 'bg-transparent text-[#7D8DA6] hover:text-[#27225B]'}`}>
+                        <button 
+                            key={status} 
+                            onClick={() => setStatusFilter(status)} 
+                            className="transition-all capitalize whitespace-nowrap border-none cursor-pointer"
+                            style={{
+                                padding: '10px 20px',
+                                borderRadius: '10px',
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.base,
+                                fontWeight: T.weight.bold,
+                                backgroundColor: statusFilter === status ? C.surfaceWhite : 'transparent',
+                                color: statusFilter === status ? C.btnPrimary : C.textFaint,
+                                boxShadow: statusFilter === status ? S.active : 'none'
+                            }}
+                        >
                             {status === 'all' ? 'All Reports' : status}
                         </button>
                     ))}
                 </div>
-                <div className="relative w-full xl:w-80">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#A0ABC0]" />
-                    <input type="text" placeholder="Search reporter or target..." className="w-full pl-10 pr-4 py-3 bg-white border border-[#E9DFFC] text-[#27225B] text-[13px] font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1]" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                </div>
+                
+                <form onSubmit={handleSearch} className="relative w-full xl:w-[320px]">
+                    <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2" style={{ width: 18, height: 18, color: C.textFaint }} />
+                    <input 
+                        type="text" 
+                        placeholder="Search reporter or target..." 
+                        style={{ ...baseInputStyle, paddingLeft: '44px' }}
+                        value={searchTerm} 
+                        onChange={e => setSearchTerm(e.target.value)} 
+                    />
+                </form>
             </div>
 
             {/* ── Reports Grid ── */}
             {loading ? (
-                <div className="flex items-center justify-center h-64"><Loader2 className="w-10 h-10 animate-spin text-[#6B4DF1]" /></div>
+                <div className="flex items-center justify-center min-h-[50vh]">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="relative w-12 h-12">
+                            <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                                style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                        </div>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                            Loading reports...
+                        </p>
+                    </div>
+                </div>
             ) : filteredReports.length === 0 ? (
-                <div className="bg-white rounded-3xl border border-[#E9DFFC] p-16 text-center shadow-sm">
-                    <ShieldAlert className="w-14 h-14 text-[#D1C4F9] mx-auto mb-4" />
-                    <h3 className="text-[18px] font-black text-[#27225B] m-0">No reports found</h3>
-                    <p className="text-[13px] text-[#7D8DA6] mt-2 m-0">The platform is currently clean and safe.</p>
+                <div className="p-14 text-center border border-dashed m-8" style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
+                    <div className="flex items-center justify-center mx-auto mb-4" style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                        <MdSecurity style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
+                    </div>
+                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>No reports found</h3>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, marginTop: 4 }}>The platform is currently clean and safe.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     {filteredReports.map((report) => (
-                        <div key={report._id} className={`bg-white rounded-[24px] border overflow-hidden hover:-translate-y-1 transition-transform flex flex-col group shadow-sm ${report.status === 'Pending' ? 'border-[#FECACA]' : 'border-[#E9DFFC]'}`}>
+                        <div key={report._id} className="flex flex-col transition-transform hover:-translate-y-1 overflow-hidden group" 
+                            style={{ 
+                                backgroundColor: C.cardBg, 
+                                borderRadius: R['2xl'], 
+                                border: `1px solid ${report.status === 'Pending' ? C.dangerBorder : C.cardBorder}`, 
+                                boxShadow: S.card 
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.boxShadow = S.cardHover}
+                            onMouseLeave={(e) => e.currentTarget.style.boxShadow = S.card}
+                        >
                             
                             {/* Card Header */}
-                            <div className="px-5 py-4 border-b border-[#F4F0FD] bg-[#FDFBFF] flex items-start justify-between">
+                            <div className="px-5 py-4 flex items-start justify-between" 
+                                style={{ backgroundColor: report.status === 'Pending' ? C.dangerBg : C.innerBg, borderBottom: `1px solid ${report.status === 'Pending' ? C.dangerBorder : C.cardBorder}`, borderTopLeftRadius: R['2xl'], borderTopRightRadius: R['2xl'] }}>
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-[#E9DFFC] flex items-center justify-center overflow-hidden shrink-0 border border-[#D5C2F6]">
-                                        {report.reporter?.profileImage ? <img src={report.reporter.profileImage} className="w-full h-full object-cover"/> : <User size={16} className="text-[#6B4DF1]"/>}
+                                    <div className="flex items-center justify-center overflow-hidden shrink-0" 
+                                        style={{ width: 40, height: 40, borderRadius: R.full, backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}` }}>
+                                        {report.reporter?.profileImage ? (
+                                            <img src={report.reporter.profileImage} className="w-full h-full object-cover"/>
+                                        ) : (
+                                            <MdPerson style={{ width: 20, height: 20, color: C.btnPrimary }}/>
+                                        )}
                                     </div>
                                     <div>
-                                        <p className="text-[11px] font-bold text-[#A0ABC0] uppercase tracking-wider m-0">Reported By</p>
-                                        <p className="text-[14px] font-bold text-[#27225B] m-0 leading-tight">{report.reporter?.name || 'Unknown'}</p>
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, margin: 0, marginBottom: '2px' }}>Reported By</p>
+                                        <p className="line-clamp-1" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{report.reporter?.name || 'Unknown'}</p>
                                     </div>
                                 </div>
-                                <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border ${getReasonConfig(report.reason)}`}>
-                                    {report.reason}
-                                </span>
+                                {(() => {
+                                    const rConf = getReasonConfig(report.reason);
+                                    return (
+                                        <span style={{ 
+                                            padding: '4px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: T.weight.black, 
+                                            textTransform: 'uppercase', letterSpacing: T.tracking.wider,
+                                            backgroundColor: rConf.bg, color: rConf.color, border: rConf.border 
+                                        }}>
+                                            {report.reason}
+                                        </span>
+                                    );
+                                })()}
                             </div>
 
                             {/* Card Body */}
                             <div className="p-5 flex-1 flex flex-col">
                                 {/* Target Info */}
-                                <div className="bg-[#F8F6FC] rounded-xl p-3 border border-[#E9DFFC] mb-4">
-                                    <div className="flex items-center gap-2 text-[12px] font-black text-[#6B4DF1] uppercase tracking-wider mb-1">
+                                <div className="mb-4" style={{ backgroundColor: C.innerBg, padding: '12px', borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                                    <div className="flex items-center gap-2 mb-1" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: C.btnPrimary, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
                                         {getTargetIcon(report.targetType)} Target: {report.targetType}
                                     </div>
-                                    <p className="text-[14px] font-bold text-[#27225B] m-0 line-clamp-1" title={report.targetName}>{report.targetName}</p>
-                                    <p className="text-[10px] font-mono text-[#A0ABC0] m-0 mt-0.5">ID: {report.targetId}</p>
+                                    <p className="line-clamp-1" title={report.targetName} style={{ fontFamily: T.fontFamily, fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: 0, marginBottom: '4px' }}>
+                                        {report.targetName}
+                                    </p>
+                                    <p style={{ fontFamily: T.fontFamilyMono, fontSize: '10px', color: C.textMuted, margin: 0 }}>
+                                        ID: {report.targetId}
+                                    </p>
                                 </div>
 
                                 {/* Description */}
                                 <div>
-                                    <p className="text-[11px] font-bold text-[#A0ABC0] uppercase tracking-wider m-0 mb-1">Reporter Comments</p>
-                                    <p className="text-[13px] font-medium text-[#4A5568] m-0 italic border-l-2 border-[#D1C4F9] pl-3 py-1 bg-[#FDFBFF]">
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, margin: 0, marginBottom: '4px' }}>
+                                        Reporter Comments
+                                    </p>
+                                    <p style={{ 
+                                        fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text, 
+                                        margin: 0, fontStyle: 'italic', borderLeft: `3px solid ${C.btnPrimary}`, paddingLeft: '12px', 
+                                        paddingTop: '4px', paddingBottom: '4px', backgroundColor: C.surfaceWhite, borderRadius: '0 8px 8px 0' 
+                                    }}>
                                         "{report.description || 'No additional context provided.'}"
                                     </p>
                                 </div>
                             </div>
 
                             {/* Card Footer Actions */}
-                            <div className="p-4 border-t border-[#F4F0FD] flex items-center justify-between gap-3 bg-[#FDFBFF]">
-                                <span className="text-[11px] font-bold text-[#7D8DA6]">
-                                    {new Date(report.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                            <div className="p-4 flex items-center justify-between gap-3" style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg, borderBottomLeftRadius: R['2xl'], borderBottomRightRadius: R['2xl'] }}>
+                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>
+                                    {new Date(report.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                                 </span>
                                 
                                 <select 
                                     value={report.status} 
                                     onChange={(e) => handleStatusChange(report._id, e.target.value)}
-                                    className={`px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider border-none cursor-pointer outline-none shadow-sm transition-colors ${
-                                        report.status === 'Pending' ? 'bg-[#FEE2E2] text-[#E53E3E]' :
-                                        report.status === 'Reviewed' ? 'bg-[#FFF7ED] text-[#EA580C]' :
-                                        report.status === 'Resolved' ? 'bg-[#ECFDF5] text-[#10B981]' :
-                                        'bg-[#F8F6FC] text-[#A0ABC0]'
-                                    }`}
+                                    style={{ 
+                                        ...baseInputStyle, 
+                                        padding: '6px 12px', 
+                                        fontSize: '11px', 
+                                        fontWeight: T.weight.black, 
+                                        textTransform: 'uppercase', 
+                                        letterSpacing: T.tracking.wider, 
+                                        width: 'auto', 
+                                        cursor: 'pointer',
+                                        ...(report.status === 'Pending' ? { backgroundColor: C.dangerBg, color: C.danger, border: `1px solid ${C.dangerBorder}` } :
+                                            report.status === 'Reviewed' ? { backgroundColor: C.warningBg, color: C.warning, border: `1px solid ${C.warningBorder}` } :
+                                            report.status === 'Resolved' ? { backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}` } :
+                                            { backgroundColor: C.cardBg, color: C.textMuted, border: `1px solid ${C.cardBorder}` })
+                                    }}
                                 >
                                     <option value="Pending">🚨 Pending</option>
                                     <option value="Reviewed">👀 Under Review</option>

@@ -1,10 +1,31 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileText, Plus, Search, Edit2, Trash2, Globe, EyeOff, Loader2, Image as ImageIcon, Clock, CalendarDays, Tag, MoreHorizontal, LayoutTemplate } from 'lucide-react';
+import { 
+    MdArticle, MdAdd, MdSearch, MdEdit, MdDelete, MdPublic, 
+    MdVisibilityOff, MdHourglassEmpty, MdImage, MdAccessTime, 
+    MdCalendarMonth, MdTag, MdMoreHoriz, MdDashboard, MdClose,
+    MdSettings, MdNotes, MdLink, MdCategory, MdChevronRight
+} from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+
+// ─── Base Input Style ─────────────────────────────────────────────────────────
+const baseInputStyle = {
+    backgroundColor: C.cardBg,
+    border: `1px solid ${C.cardBorder}`,
+    borderRadius: '10px',
+    color: C.heading,
+    fontFamily: T.fontFamily,
+    fontSize: T.size.base,
+    fontWeight: T.weight.semibold,
+    outline: 'none',
+    width: '100%',
+    padding: '12px 16px',
+    transition: 'all 0.2s ease',
+};
 
 export default function CMSBlogs() {
     const [blogs, setBlogs] = useState([]);
@@ -22,8 +43,6 @@ export default function CMSBlogs() {
         isPublished: true, tags: '', scheduledPublishAt: '', category: 'General',
         seoMeta: { title: '', description: '', keywords: '' }
     });
-
-    const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.12)';
 
     useEffect(() => { fetchBlogs(); }, []);
 
@@ -111,37 +130,105 @@ export default function CMSBlogs() {
         return matchSearch && matchCategory;
     });
 
-    if (loading) return <div className="flex items-center justify-center min-h-screen bg-[#F4EEFD]"><Loader2 className="w-10 h-10 animate-spin text-[#6B4DF1]" /></div>;
+    if (loading) return (
+        <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
+            <div className="flex flex-col items-center gap-3">
+                <div className="relative w-12 h-12">
+                    <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                        style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                </div>
+                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>Loading blogs...</p>
+            </div>
+        </div>
+    );
 
     return (
-        <div className="min-h-screen p-6 md:p-8 space-y-6" style={{ backgroundColor: '#F4EEFD', fontFamily: "'Inter', sans-serif" }}>
+        <div className="min-h-screen space-y-6 pb-8" style={{ backgroundColor: C.pageBg, ...pageStyle }}>
             
             {/* ── Header ── */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h1 className="text-[24px] font-black text-[#27225B] m-0">Blog Manager</h1>
-                    <p className="text-[13px] font-medium text-[#7D8DA6] m-0 mt-1">Write, schedule, and manage articles and announcements.</p>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center shrink-0" 
+                        style={{ width: 56, height: 56, borderRadius: '10px', backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <MdArticle style={{ width: 24, height: 24, color: C.btnPrimary }} />
+                    </div>
+                    <div>
+                        <h1 style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
+                            Blog Manager
+                        </h1>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.textMuted, margin: 0, marginTop: 4 }}>
+                            Write, schedule, and manage articles and announcements.
+                        </p>
+                    </div>
                 </div>
-                <button onClick={() => openModal()} className="flex items-center gap-2 px-6 py-3 bg-[#6B4DF1] text-white font-bold text-[14px] rounded-xl hover:bg-[#5839D6] transition-all shadow-[0_4px_14px_rgba(107,77,241,0.3)] border-none cursor-pointer">
-                    <Plus size={18} strokeWidth={3} /> Write New Blog
+                <button 
+                    onClick={() => openModal()} 
+                    className="flex items-center gap-2 transition-opacity border-none cursor-pointer"
+                    style={{
+                        background: C.gradientBtn,
+                        color: '#ffffff',
+                        padding: '12px 24px',
+                        borderRadius: '10px',
+                        fontFamily: T.fontFamily,
+                        fontSize: T.size.base,
+                        fontWeight: T.weight.bold,
+                        boxShadow: S.btn
+                    }}
+                >
+                    <MdAdd style={{ width: 18, height: 18 }} /> Write New Blog
                 </button>
             </div>
 
             {/* ── Toolbar ── */}
-            <div className="bg-white rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between gap-4 border border-[#E9DFFC]/50" style={{ boxShadow: softShadow }}>
-                <div className="flex gap-2 w-full xl:w-auto overflow-x-auto pb-2 xl:pb-0">
-                    <button onClick={() => setSelectedCategory('All')} className={`px-4 py-2 rounded-lg text-[13px] font-bold whitespace-nowrap border-none cursor-pointer transition-colors ${selectedCategory === 'All' ? 'bg-[#F4F0FD] text-[#6B4DF1]' : 'bg-transparent text-[#7D8DA6] hover:bg-gray-50'}`}>All Categories</button>
+            <div className="flex flex-col xl:flex-row items-center justify-between gap-4 p-4" 
+                style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                
+                <div className="flex p-1.5 w-full xl:w-auto overflow-x-auto" style={{ backgroundColor: C.innerBg, borderRadius: '10px' }}>
+                    <button 
+                        onClick={() => setSelectedCategory('All')} 
+                        className="transition-all whitespace-nowrap border-none cursor-pointer"
+                        style={{
+                            padding: '10px 20px',
+                            borderRadius: '10px',
+                            fontFamily: T.fontFamily,
+                            fontSize: T.size.base,
+                            fontWeight: T.weight.bold,
+                            backgroundColor: selectedCategory === 'All' ? C.surfaceWhite : 'transparent',
+                            color: selectedCategory === 'All' ? C.btnPrimary : C.textFaint,
+                            boxShadow: selectedCategory === 'All' ? S.active : 'none'
+                        }}
+                    >
+                        All Categories
+                    </button>
                     {categories.map(cat => (
-                        <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-4 py-2 rounded-lg text-[13px] font-bold whitespace-nowrap border-none cursor-pointer transition-colors ${selectedCategory === cat ? 'bg-[#F4F0FD] text-[#6B4DF1]' : 'bg-transparent text-[#7D8DA6] hover:bg-gray-50'}`}>
+                        <button 
+                            key={cat} 
+                            onClick={() => setSelectedCategory(cat)} 
+                            className="transition-all whitespace-nowrap border-none cursor-pointer"
+                            style={{
+                                padding: '10px 20px',
+                                borderRadius: '10px',
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.base,
+                                fontWeight: T.weight.bold,
+                                backgroundColor: selectedCategory === cat ? C.surfaceWhite : 'transparent',
+                                color: selectedCategory === cat ? C.btnPrimary : C.textFaint,
+                                boxShadow: selectedCategory === cat ? S.active : 'none'
+                            }}
+                        >
                             {cat}
                         </button>
                     ))}
                 </div>
+
                 <div className="relative w-full xl:w-[350px]">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#A0ABC0]" />
+                    <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2" style={{ width: 18, height: 18, color: C.textFaint }} />
                     <input
-                        type="text" placeholder="Search articles..." value={search} onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-white border border-[#E9DFFC] text-[#27225B] text-[13px] font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6B4DF1] placeholder-[#A0ABC0]"
+                        type="text" 
+                        placeholder="Search articles..." 
+                        style={{ ...baseInputStyle, paddingLeft: '44px' }}
+                        value={search} 
+                        onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
             </div>
@@ -149,56 +236,95 @@ export default function CMSBlogs() {
             {/* ── Grid ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredBlogs.map(blog => (
-                    <div key={blog._id} className="bg-white rounded-[24px] border border-[#E9DFFC]/50 overflow-hidden hover:-translate-y-1 transition-transform flex flex-col group" style={{ boxShadow: softShadow }}>
+                    <div key={blog._id} className="flex flex-col transition-transform hover:-translate-y-1 overflow-hidden group" 
+                        style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}
+                        onMouseEnter={(e) => e.currentTarget.style.boxShadow = S.cardHover}
+                        onMouseLeave={(e) => e.currentTarget.style.boxShadow = S.card}
+                    >
                         
                         {/* Thumbnail Container */}
-                        <div className="h-44 w-full bg-[#F4F0FD] relative overflow-hidden border-b border-[#E9DFFC]">
+                        <div className="relative overflow-hidden" style={{ height: '176px', backgroundColor: C.innerBg, borderBottom: `1px solid ${C.cardBorder}` }}>
                             {blog.thumbnail ? (
-                                <img src={blog.thumbnail} alt={blog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                <img src={blog.thumbnail} alt={blog.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                             ) : (
-                                <div className="flex items-center justify-center w-full h-full text-[#D1C4F9]">
-                                    <ImageIcon size={48} strokeWidth={1.5} />
+                                <div className="flex items-center justify-center w-full h-full" style={{ color: C.textFaint }}>
+                                    <MdImage style={{ width: 48, height: 48, opacity: 0.5 }} />
                                 </div>
                             )}
                             
                             {/* Badges */}
                             <div className="absolute top-3 left-3 flex gap-2">
-                                <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1 ${blog.isPublished ? 'bg-[#ECFDF5] text-[#10B981]' : 'bg-slate-800 text-white'}`}>
-                                    {blog.isPublished ? <Globe size={10} /> : <EyeOff size={10} />}
+                                <span className="flex items-center gap-1 shadow-sm" 
+                                    style={{ 
+                                        padding: '4px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: T.weight.black, 
+                                        textTransform: 'uppercase', letterSpacing: T.tracking.wider,
+                                        backgroundColor: blog.isPublished ? C.successBg : C.heading, 
+                                        color: blog.isPublished ? C.success : '#ffffff', 
+                                        border: `1px solid ${blog.isPublished ? C.successBorder : C.heading}` 
+                                    }}>
+                                    {blog.isPublished ? <MdPublic style={{ width: 12, height: 12 }} /> : <MdVisibilityOff style={{ width: 12, height: 12 }} />}
                                     {blog.isPublished ? 'Published' : 'Draft'}
                                 </span>
                             </div>
-                            <button onClick={() => togglePublish(blog)} className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-white/80 backdrop-blur-sm text-[#27225B] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-white border-none cursor-pointer shadow-sm" title="Toggle Visibility">
-                                <MoreHorizontal size={16} />
+                            <button 
+                                onClick={() => togglePublish(blog)} 
+                                className="absolute top-3 right-3 flex items-center justify-center transition-all border-none cursor-pointer shadow-sm group-hover:opacity-100" 
+                                style={{ width: 32, height: 32, borderRadius: '10px', backgroundColor: 'rgba(255,255,255,0.9)', color: C.heading, opacity: 0 }}
+                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.9)'; }}
+                                title="Toggle Visibility"
+                            >
+                                <MdMoreHoriz style={{ width: 18, height: 18 }} />
                             </button>
                         </div>
 
                         {/* Content */}
                         <div className="p-5 flex-1 flex flex-col">
-                            <span className="text-[10px] font-bold text-[#6B4DF1] uppercase tracking-wider mb-2">{blog.category || 'General'}</span>
-                            <h3 className="font-black text-[16px] text-[#27225B] mb-2 line-clamp-2 leading-snug">{blog.title}</h3>
-                            <p className="text-[13px] font-medium text-[#7D8DA6] mb-4 line-clamp-2 flex-1">{blog.excerpt}</p>
+                            <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.btnPrimary, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '8px', display: 'block' }}>
+                                {blog.category || 'General'}
+                            </span>
+                            <h3 className="line-clamp-2 leading-snug" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.black, color: C.heading, margin: 0, marginBottom: '8px' }}>
+                                {blog.title}
+                            </h3>
+                            <p className="line-clamp-2" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.textMuted, margin: 0, marginBottom: '16px', flex: 1 }}>
+                                {blog.excerpt}
+                            </p>
 
                             {/* Meta */}
-                            <div className="flex flex-col gap-2 pt-4 border-t border-[#F4F0FD]">
-                                <div className="flex items-center justify-between text-[11px] font-bold text-[#A0ABC0]">
-                                    <span className="flex items-center gap-1"><CalendarDays size={12}/> {new Date(blog.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                                    <span>{blog.author?.name || 'Admin'}</span>
+                            <div className="pt-4 space-y-2" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+                                <div className="flex items-center justify-between" style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.textFaint }}>
+                                    <span className="flex items-center gap-1.5">
+                                        <MdCalendarMonth style={{ width: 14, height: 14 }}/> 
+                                        {new Date(blog.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                    </span>
+                                    <span style={{ color: C.heading }}>{blog.author?.name || 'Admin'}</span>
                                 </div>
                                 {blog.status === 'scheduled' && (
-                                    <span className="px-2 py-1 bg-[#FFF7ED] text-[#EA580C] rounded-md flex items-center gap-1 text-[10px] font-black uppercase w-max">
-                                        <Clock size={10} /> Scheduled: {new Date(blog.scheduledPublishAt).toLocaleDateString()}
+                                    <span className="flex items-center gap-1.5" style={{ padding: '4px 8px', backgroundColor: C.warningBg, color: C.warning, borderRadius: '8px', fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', width: 'fit-content' }}>
+                                        <MdAccessTime style={{ width: 12, height: 12 }} /> Scheduled: {new Date(blog.scheduledPublishAt).toLocaleDateString()}
                                     </span>
                                 )}
                             </div>
 
                             {/* Actions */}
-                            <div className="flex gap-2 mt-4 pt-4 border-t border-[#F4F0FD]">
-                                <button onClick={() => openModal(blog)} className="flex-1 py-2 bg-[#F9F7FC] text-[#6B4DF1] rounded-xl text-[12px] font-bold flex items-center justify-center gap-1.5 hover:bg-[#F4F0FD] transition-colors border-none cursor-pointer">
-                                    <Edit2 size={14} /> Edit
+                            <div className="flex gap-2 mt-4 pt-4" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+                                <button 
+                                    onClick={() => openModal(blog)} 
+                                    className="flex-1 flex items-center justify-center gap-1.5 transition-colors border-none cursor-pointer"
+                                    style={{ padding: '8px 0', backgroundColor: C.innerBg, color: C.btnPrimary, borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.btnViewAllBg}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.innerBg}
+                                >
+                                    <MdEdit style={{ width: 14, height: 14 }} /> Edit
                                 </button>
-                                <button onClick={() => handleDelete(blog._id)} className="w-10 bg-white border border-[#E9DFFC] text-[#A0ABC0] rounded-xl flex items-center justify-center hover:bg-[#FEE2E2] hover:text-[#E53E3E] transition-colors cursor-pointer shrink-0">
-                                    <Trash2 size={14} />
+                                <button 
+                                    onClick={() => handleDelete(blog._id)} 
+                                    className="flex items-center justify-center transition-colors border-none cursor-pointer"
+                                    style={{ width: 40, backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, color: C.textFaint, borderRadius: '10px' }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.dangerBg; e.currentTarget.style.color = C.danger; e.currentTarget.style.borderColor = C.dangerBorder; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.surfaceWhite; e.currentTarget.style.color = C.textFaint; e.currentTarget.style.borderColor = C.cardBorder; }}
+                                >
+                                    <MdDelete style={{ width: 16, height: 16 }} />
                                 </button>
                             </div>
                         </div>
@@ -206,92 +332,113 @@ export default function CMSBlogs() {
                 ))}
                 
                 {filteredBlogs.length === 0 && (
-                    <div className="col-span-full py-20 flex flex-col items-center justify-center border-2 border-dashed border-[#D5C2F6] rounded-[24px] bg-white/40">
-                        <FileText className="w-12 h-12 text-[#D1C4F9] mb-4" />
-                        <h3 className="text-[18px] font-black text-[#27225B] m-0">No articles found</h3>
-                        <p className="text-[13px] text-[#7D8DA6] mt-1">Start writing your first blog to engage your audience.</p>
+                    <div className="col-span-full py-20 flex flex-col items-center justify-center border-2 border-dashed" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
+                        <MdArticle style={{ width: 48, height: 48, color: C.textFaint, marginBottom: '16px' }} />
+                        <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>No articles found</h3>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.textMuted, marginTop: 4, margin: 0 }}>Start writing your first blog to engage your audience.</p>
                     </div>
                 )}
             </div>
 
             {/* ── Editor Modal ── */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-none bg-transparent shadow-none">
-                    <div className="bg-white rounded-[32px] overflow-hidden flex flex-col">
-                        <div className="bg-[#27225B] p-8 text-white relative">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-[#6B4DF1] rounded-full mix-blend-screen filter blur-[60px] opacity-40"></div>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-none bg-transparent shadow-none" style={{ borderRadius: R['3xl'] }}>
+                    <div className="flex flex-col overflow-hidden" style={{ backgroundColor: C.cardBg, borderRadius: R['3xl'] }}>
+                        <div className="relative p-8" style={{ backgroundColor: C.darkCard, color: '#ffffff' }}>
+                            <div className="absolute top-0 right-0 opacity-40 rounded-full filter blur-[60px]" style={{ width: 256, height: 256, backgroundColor: C.btnPrimary, mixBlendMode: 'screen' }}></div>
                             <DialogHeader className="relative z-10 text-left">
-                                <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center mb-3 border border-white/20">
-                                    <LayoutTemplate className="text-[#E9DFFC] w-5 h-5" />
+                                <div className="flex items-center justify-center mb-3 border border-white/20" style={{ width: 40, height: 40, borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)' }}>
+                                    <MdDashboard style={{ color: '#E9DFFC', width: 20, height: 20 }} />
                                 </div>
-                                <DialogTitle className="text-[22px] font-black text-white m-0">{editingBlog ? 'Edit Blog Article' : 'Draft New Article'}</DialogTitle>
-                                <DialogDescription className="text-[#A0ABC0] text-[13px] font-medium m-0 mt-1">Publish content directly to the institute's frontend website.</DialogDescription>
+                                <DialogTitle style={{ fontFamily: T.fontFamily, fontSize: '22px', fontWeight: T.weight.black, color: '#ffffff', margin: 0 }}>
+                                    {editingBlog ? 'Edit Blog Article' : 'Draft New Article'}
+                                </DialogTitle>
+                                <DialogDescription style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.darkCardMuted, margin: 0, marginTop: 4 }}>
+                                    Publish content directly to the platform's frontend registry.
+                                </DialogDescription>
                             </DialogHeader>
                         </div>
                         
-                        <div className="p-8">
+                        <div className="p-8" style={{ backgroundColor: C.pageBg }}>
                             <form onSubmit={handleSave} className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div>
-                                        <label className="text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wide mb-1.5 block">Article Title <span className="text-red-500">*</span></label>
-                                        <input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required className="w-full bg-[#F8F6FC] border border-[#E9DFFC] p-3.5 rounded-xl font-semibold text-[#27225B] text-[14px] outline-none focus:ring-2 focus:ring-[#6B4DF1] transition-all" placeholder="e.g. 5 Tips to Learn Faster" />
+                                        <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '6px' }}>Article Title <span className="text-red-500">*</span></label>
+                                        <input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required style={baseInputStyle} placeholder="e.g. 5 Tips to Learn Faster" />
                                     </div>
                                     <div>
-                                        <label className="text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wide mb-1.5 block">URL Slug <span className="text-red-500">*</span></label>
-                                        <input value={formData.slug} onChange={e => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })} required className="w-full bg-[#F8F6FC] border border-[#E9DFFC] p-3.5 rounded-xl font-semibold text-[#6B4DF1] text-[14px] outline-none focus:ring-2 focus:ring-[#6B4DF1] transition-all" placeholder="5-tips-to-learn-faster" />
+                                        <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '6px' }}>URL Slug <span className="text-red-500">*</span></label>
+                                        <input value={formData.slug} onChange={e => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })} required style={{ ...baseInputStyle, color: C.btnPrimary }} placeholder="5-tips-to-learn-faster" />
                                     </div>
                                     <div>
-                                        <label className="text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wide mb-1.5 block">Thumbnail Image URL</label>
-                                        <input value={formData.thumbnail} onChange={e => setFormData({ ...formData, thumbnail: e.target.value })} className="w-full bg-[#F8F6FC] border border-[#E9DFFC] p-3.5 rounded-xl font-semibold text-[#27225B] text-[14px] outline-none focus:ring-2 focus:ring-[#6B4DF1] transition-all" placeholder="https://..." />
+                                        <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '6px' }}>Thumbnail Image URL</label>
+                                        <input value={formData.thumbnail} onChange={e => setFormData({ ...formData, thumbnail: e.target.value })} style={baseInputStyle} placeholder="https://..." />
                                     </div>
                                     <div>
-                                        <label className="text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wide mb-1.5 block">Tags (Comma Separated)</label>
-                                        <input value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} className="w-full bg-[#F8F6FC] border border-[#E9DFFC] p-3.5 rounded-xl font-semibold text-[#27225B] text-[14px] outline-none focus:ring-2 focus:ring-[#6B4DF1] transition-all" placeholder="study, tech, news" />
+                                        <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '6px' }}>Tags (Comma Separated)</label>
+                                        <input value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} style={baseInputStyle} placeholder="study, tech, news" />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wide mb-1.5 block flex items-center gap-1"><Tag size={12}/> Category</label>
-                                    <input value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} list="categories" className="w-full bg-[#F8F6FC] border border-[#E9DFFC] p-3.5 rounded-xl font-semibold text-[#27225B] text-[14px] outline-none focus:ring-2 focus:ring-[#6B4DF1] transition-all" placeholder="General" />
+                                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <MdCategory style={{ width: 14, height: 14 }}/> Category
+                                    </label>
+                                    <input value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} list="categories" style={baseInputStyle} placeholder="General" />
                                     <datalist id="categories">{categories.map(c => <option key={c} value={c} />)}</datalist>
                                 </div>
 
                                 <div>
-                                    <label className="text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wide mb-1.5 block">Short Excerpt</label>
-                                    <textarea value={formData.excerpt} onChange={e => setFormData({ ...formData, excerpt: e.target.value })} className="w-full bg-[#F8F6FC] border border-[#E9DFFC] p-3.5 rounded-xl font-semibold text-[#27225B] text-[14px] outline-none focus:ring-2 focus:ring-[#6B4DF1] transition-all min-h-[80px] resize-y" placeholder="Brief summary..."></textarea>
+                                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '6px' }}>Short Excerpt</label>
+                                    <textarea value={formData.excerpt} onChange={e => setFormData({ ...formData, excerpt: e.target.value })} style={{ ...baseInputStyle, minHeight: '80px', resize: 'vertical' }} placeholder="Brief summary..."></textarea>
                                 </div>
 
                                 <div>
-                                    <label className="text-[12px] font-bold text-[#7D8DA6] uppercase tracking-wide mb-1.5 block">Main Content (HTML/Markdown) <span className="text-red-500">*</span></label>
-                                    <textarea value={formData.content} onChange={e => setFormData({ ...formData, content: e.target.value })} required className="w-full bg-[#F8F6FC] border border-[#E9DFFC] p-4 rounded-xl font-mono text-[#27225B] text-[13px] outline-none focus:ring-2 focus:ring-[#6B4DF1] transition-all min-h-[250px] resize-y leading-relaxed" placeholder="<h1>Hello World</h1>"></textarea>
+                                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '6px' }}>Main Content (HTML/Markdown) <span className="text-red-500">*</span></label>
+                                    <textarea value={formData.content} onChange={e => setFormData({ ...formData, content: e.target.value })} required style={{ ...baseInputStyle, fontFamily: T.fontFamilyMono, minHeight: '250px', resize: 'vertical', lineHeight: T.leading.relaxed, padding: '20px' }} placeholder="<h1>Hello World</h1>"></textarea>
                                 </div>
 
-                                <div className="p-5 bg-[#FFF7ED] border border-[#FFEDD5] rounded-2xl">
-                                    <h4 className="text-[13px] font-black text-[#EA580C] mb-2 flex items-center gap-1.5"><CalendarDays size={14}/> Schedule Publishing</h4>
-                                    <p className="text-[12px] font-medium text-[#C2410C] mb-3">Leave empty to publish immediately.</p>
-                                    <input type="datetime-local" value={formData.scheduledPublishAt} onChange={e => setFormData({ ...formData, scheduledPublishAt: e.target.value })} className="bg-white border border-[#FDBA74] p-2.5 rounded-lg text-[13px] font-bold text-[#9A3412] outline-none focus:ring-2 focus:ring-[#EA580C]" />
+                                <div style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: R.xl, padding: '20px' }}>
+                                    <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.black, color: C.heading, margin: 0, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <MdCalendarMonth style={{ width: 18, height: 18, color: C.warning }}/> Schedule Publishing
+                                    </h4>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted, margin: 0, marginBottom: '12px' }}>Leave empty to publish immediately.</p>
+                                    <input type="datetime-local" value={formData.scheduledPublishAt} onChange={e => setFormData({ ...formData, scheduledPublishAt: e.target.value })} 
+                                        style={{ ...baseInputStyle, width: 'auto', backgroundColor: '#ffffff', borderColor: C.warningBorder, color: C.warning }} />
                                 </div>
 
-                                <div className="p-5 bg-gray-50 border border-gray-200 rounded-2xl space-y-4">
-                                    <h4 className="text-[13px] font-black text-gray-700 mb-2">SEO Settings</h4>
-                                    <div>
-                                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1 block">Meta Title</label>
-                                        <input value={formData.seoMeta.title} onChange={e => setFormData({ ...formData, seoMeta: { ...formData.seoMeta, title: e.target.value } })} className="w-full bg-white border border-gray-200 p-2.5 rounded-lg font-semibold text-gray-700 text-[13px] outline-none focus:ring-2 focus:ring-[#6B4DF1]" />
-                                    </div>
-                                    <div>
-                                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1 block">Meta Description</label>
-                                        <textarea value={formData.seoMeta.description} onChange={e => setFormData({ ...formData, seoMeta: { ...formData.seoMeta, description: e.target.value } })} className="w-full bg-white border border-gray-200 p-2.5 rounded-lg font-semibold text-gray-700 text-[13px] outline-none focus:ring-2 focus:ring-[#6B4DF1] min-h-[60px]"></textarea>
-                                    </div>
-                                    <div>
-                                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1 block">Keywords</label>
-                                        <input value={formData.seoMeta.keywords} onChange={e => setFormData({ ...formData, seoMeta: { ...formData.seoMeta, keywords: e.target.value } })} className="w-full bg-white border border-gray-200 p-2.5 rounded-lg font-semibold text-gray-700 text-[13px] outline-none focus:ring-2 focus:ring-[#6B4DF1]" placeholder="course, learning" />
+                                <div style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, borderRadius: R.xl, padding: '20px' }}>
+                                    <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.black, color: C.heading, margin: 0, marginBottom: '16px' }}>SEO Settings</h4>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '4px' }}>Meta Title</label>
+                                            <input value={formData.seoMeta.title} onChange={e => setFormData({ ...formData, seoMeta: { ...formData.seoMeta, title: e.target.value } })} style={baseInputStyle} />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '4px' }}>Meta Description</label>
+                                            <textarea value={formData.seoMeta.description} onChange={e => setFormData({ ...formData, seoMeta: { ...formData.seoMeta, description: e.target.value } })} style={{ ...baseInputStyle, minHeight: '60px' }}></textarea>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '4px' }}>Keywords</label>
+                                            <input value={formData.seoMeta.keywords} onChange={e => setFormData({ ...formData, seoMeta: { ...formData.seoMeta, keywords: e.target.value } })} style={baseInputStyle} placeholder="course, learning" />
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="flex justify-end gap-3 pt-4">
-                                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 bg-white border border-[#E9DFFC] text-[#7D8DA6] font-bold text-[13px] rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">Cancel</button>
-                                    <button type="submit" disabled={isSaving} className="flex items-center gap-2 px-8 py-3 bg-[#6B4DF1] text-white font-bold text-[13px] rounded-xl hover:bg-[#5839D6] transition-colors border-none shadow-md disabled:opacity-50 cursor-pointer">
-                                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe size={16} />}
+                                <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: C.cardBorder }}>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setIsModalOpen(false)} 
+                                        className="transition-colors cursor-pointer"
+                                        style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, border: `1px solid ${C.cardBorder}`, borderRadius: '10px', padding: '12px 24px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}
+                                    >Cancel</button>
+                                    <button 
+                                        type="submit" 
+                                        disabled={isSaving} 
+                                        className="flex items-center gap-2 transition-opacity cursor-pointer border-none"
+                                        style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: '10px', padding: '12px 32px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, boxShadow: S.btn, opacity: isSaving ? 0.6 : 1 }}
+                                    >
+                                        {isSaving ? <MdHourglassEmpty style={{ width: 18, height: 18 }} className="animate-spin" /> : <MdPublic style={{ width: 18, height: 18 }} />}
                                         {editingBlog ? 'Update Article' : 'Publish Article'}
                                     </button>
                                 </div>

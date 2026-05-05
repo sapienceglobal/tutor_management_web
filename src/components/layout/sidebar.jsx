@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MdChevronRight, MdClose, MdSchool } from 'react-icons/md';
@@ -11,7 +11,7 @@ import Cookies from 'js-cookie';
 import { useSettings } from '@/components/providers/SettingsProvider';
 import useInstitute from '@/hooks/useInstitute';
 import { useTenant } from '@/components/providers/TenantProvider';
-import { T } from '@/constants/studentTokens'; // Sourced from single truth
+import { C, T, S } from '@/constants/studentTokens';
 
 // ─── Role config ────────────────────────────────────────────────────────────
 const roleConfig = {
@@ -28,17 +28,6 @@ function truncateName(name, maxLen = 18) {
     if (words.length === 2) return words[0] + ' ' + words[1].slice(0, maxLen - words[0].length - 1) + '.';
     return name.slice(0, maxLen - 1) + '…';
 }
-
-// ─── Sidebar-specific color constants (Matched to Student Sidebar) ──────────
-const SB = {
-    bg: 'rgb(253,252,255)',
-    activeBg: '#5A72D4',
-    activeText: '#ffffff',
-    inactiveText: '#242661',
-    hoverBg: 'rgba(90,114,212,0.12)',
-    sectionLabel: 'rgba(36,38,97,0.45)',
-    divider: 'rgba(71,72,170,0.15)',
-};
 
 export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
     const pathname = usePathname();
@@ -61,6 +50,47 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
 
     const activePath = mounted ? pathname : '';
 
+    // ─── BUG FIX: Bulletproof Active Path Logic ───
+    // Get all registered hrefs for the current role
+    const allCurrentHrefs = useMemo(() => {
+        if (!mounted || !role) return [];
+        let items = tutorNavItems;
+        if (role === 'admin') items = adminNavItems;
+        if (role === 'superadmin') items = superadminNavItems;
+
+        const getHrefs = (navArray) => {
+            let hrefs = [];
+            navArray.forEach(item => {
+                if (item.href) hrefs.push(item.href);
+                if (item.children) hrefs.push(...getHrefs(item.children));
+                if (item.submenu) hrefs.push(...getHrefs(item.submenu));
+            });
+            return hrefs;
+        };
+        return getHrefs(items);
+    }, [mounted, role]);
+
+    const isItemActive = (href) => {
+        if (!href || !mounted) return false;
+        
+        // Exact match ALWAYS wins
+        if (activePath === href) return true;
+
+        // Root Dashboard paths should NEVER trigger sub-highlights
+        if (['/superadmin', '/admin', '/tutor', '/student'].includes(href)) {
+            return activePath === href;
+        }
+
+        // Longest Match Logic for sub-routes (Fixes the double highlight issue)
+        if (activePath.startsWith(href + '/')) {
+            const matchingHrefs = allCurrentHrefs.filter(h => activePath === h || activePath.startsWith(h + '/'));
+            const longestMatch = matchingHrefs.reduce((a, b) => a.length > b.length ? a : b, "");
+            return href === longestMatch;
+        }
+
+        return false;
+    };
+
     useEffect(() => {
         if (!mounted || !role) return;
         let currentNavItems = tutorNavItems;
@@ -70,13 +100,14 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
         currentNavItems.forEach(section => {
             if (section.type === 'section') {
                 section.children?.forEach(child => {
-                    if (child.submenu?.some(sub => activePath === sub.href || activePath.startsWith(sub.href + '/'))) {
+                    if (child.submenu?.some(sub => isItemActive(sub.href))) {
                         setExpandedMenu(child.title);
                     }
                 });
             }
         });
-    }, [activePath, mounted, role]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activePath, mounted, role]); 
 
     if (!role) return null;
 
@@ -94,12 +125,12 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
     const cfg = roleConfig[role] || roleConfig.admin;
     const instituteLogo = mounted ? institute?.logo : null;
 
-    // ── Item style helpers ────────────────────────────────────────────────────
+    // ─── Token-based Link Styles ────────────────────────────────────────────
     const activeLinkStyle = {
-        backgroundColor: SB.activeBg,
-        color: SB.activeText,
+        backgroundColor: C.btnPrimary,
+        color: '#ffffff',
         borderRadius: '10px',
-        boxShadow: '0 4px 12px rgba(90,114,212,0.35)',
+        boxShadow: S.btn,
         fontFamily: T.fontFamily,
         fontSize: '15px',
         fontWeight: T.weight.bold,
@@ -107,7 +138,7 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
 
     const inactiveLinkStyle = {
         backgroundColor: 'transparent',
-        color: SB.inactiveText,
+        color: C.text,
         borderRadius: '10px',
         fontFamily: T.fontFamily,
         fontSize: '15px',
@@ -116,8 +147,8 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
     };
 
     const expandedBtnStyle = {
-        backgroundColor: SB.hoverBg,
-        color: SB.inactiveText,
+        backgroundColor: C.innerBg,
+        color: C.heading,
         borderRadius: '10px',
         fontFamily: T.fontFamily,
         fontSize: '15px',
@@ -125,15 +156,15 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
     };
 
     const onEnterInactive = (e) => {
-        e.currentTarget.style.backgroundColor = SB.hoverBg;
+        e.currentTarget.style.backgroundColor = C.innerBg;
         e.currentTarget.style.opacity = '1';
     };
     const onLeaveInactive = (e) => {
         e.currentTarget.style.backgroundColor = 'transparent';
         e.currentTarget.style.opacity = '0.85';
     };
-    const onEnterExpanded = (e) => { e.currentTarget.style.backgroundColor = 'rgba(90,114,212,0.20)'; };
-    const onLeaveExpanded = (e) => { e.currentTarget.style.backgroundColor = SB.hoverBg; };
+    const onEnterExpanded = (e) => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; };
+    const onLeaveExpanded = (e) => { e.currentTarget.style.backgroundColor = C.innerBg; };
 
     return (
         <>
@@ -154,20 +185,21 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                     ${showFull ? 'w-[256px]' : 'w-[72px]'} 
                 `}
                 style={{
-                    backgroundColor: SB.bg,
-                    boxShadow: '4px 0 16px rgba(71,72,170,0.18)',
+                    backgroundColor: C.cardBg,
+                    boxShadow: S.card,
+                    borderRight: `1px solid ${C.cardBorder}`
                 }}>
 
                 {/* ── Logo / Brand ── */}
                 <div className="h-[72px] flex items-center px-4 flex-shrink-0 overflow-hidden"
-                     style={{ borderBottom: `1px solid ${SB.divider}` }}>
+                     style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div className="w-10 h-10 flex-shrink-0">
                             {instituteLogo ? (
                                 <img src={instituteLogo} alt="Logo" className="w-10 h-10 object-contain rounded-xl shadow-sm bg-white" />
                             ) : (
                                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
-                                    style={{ backgroundColor: SB.activeBg }}>
+                                    style={{ backgroundColor: C.btnPrimary }}>
                                     <MdSchool style={{ width: 24, height: 24, color: '#ffffff' }} />
                                 </div>
                             )}
@@ -178,19 +210,19 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                             title={rawName !== displayName ? rawName : undefined}>
                             <span style={{
                                 fontFamily: T.fontFamily,
-                                fontSize: T.size.md,
+                                fontSize: T.size.base,
                                 fontWeight: T.weight.bold,
-                                color: SB.inactiveText,
+                                color: C.heading,
                                 lineHeight: T.leading.snug,
                             }} className="truncate">
                                 {displayName}
                             </span>
                             <span style={{
                                 fontFamily: T.fontFamily,
-                                fontSize: '10px',
+                                fontSize: T.size.xs,
                                 fontWeight: T.weight.bold,
-                                letterSpacing: T.tracking.widest,
-                                color: 'rgba(36,38,97,0.5)',
+                                letterSpacing: T.tracking.wider,
+                                color: C.textMuted,
                                 textTransform: 'uppercase',
                             }} className="truncate mt-0.5">
                                 {cfg.subtitle}
@@ -201,9 +233,9 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                     {showFull && (
                         <button onClick={() => setIsOpen(false)}
                             className="ml-2 lg:hidden p-1.5 rounded-lg transition-all flex-shrink-0 cursor-pointer border-none bg-transparent"
-                            style={{ color: 'rgba(36,38,97,0.5)' }}
-                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = SB.hoverBg; e.currentTarget.style.color = SB.inactiveText; }}
-                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'rgba(36,38,97,0.5)'; }}>
+                            style={{ color: C.textMuted }}
+                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
+                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
                             <MdClose style={{ width: 18, height: 18 }} />
                         </button>
                     )}
@@ -216,7 +248,7 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                         {/* Direct (non-section) links */}
                         <div className="space-y-1">
                             {navItems.filter(item => item.type !== 'section').map(item => {
-                                const isActive = activePath === item.href || activePath.startsWith(item.href + '/');
+                                const isActive = isItemActive(item.href);
                                 const Icon = item.icon;
                                 return (
                                     <div key={item.href}>
@@ -228,12 +260,12 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                                             onMouseEnter={e => { if (!isActive) onEnterInactive(e); }}
                                             onMouseLeave={e => { if (!isActive) onLeaveInactive(e); }}>
                                             
-                                            <Icon className="shrink-0" style={{ width: 24, height: 24, color: isActive ? '#fff' : 'rgb(98, 103, 233)', opacity: 1 }} />
+                                            <Icon className="shrink-0" style={{ width: 22, height: 22, color: isActive ? '#ffffff' : C.btnPrimary, opacity: 1 }} />
                                             
                                             {showFull && <span className="truncate">{item.title}</span>}
                                         </Link>
 
-                                        <div style={{ height: '1px', backgroundColor: SB.divider, margin: '6px 12px' }} />
+                                        <div style={{ height: '1px', backgroundColor: C.cardBorder, margin: '6px 12px' }} />
                                     </div>
                                 );
                             })}
@@ -246,17 +278,17 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                                     <h3 className="px-3 pt-4 pb-2 truncate"
                                         style={{
                                             fontFamily: T.fontFamily,
-                                            fontSize: '11px',
+                                            fontSize: T.size.xs,
                                             fontWeight: T.weight.bold,
-                                            letterSpacing: '1px',
+                                            letterSpacing: T.tracking.wider,
                                             textTransform: 'uppercase',
-                                            color: SB.sectionLabel,
+                                            color: C.textFaint,
                                             margin: 0
                                         }}>
                                         {section.title}
                                     </h3>
                                 ) : (
-                                    <div className="mx-2 my-4" style={{ borderTop: `1px solid ${SB.divider}` }} />
+                                    <div className="mx-2 my-4" style={{ borderTop: `1px solid ${C.cardBorder}` }} />
                                 )}
 
                                 <div className="space-y-1">
@@ -264,9 +296,8 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                                         const Icon = child.icon;
                                         const hasSubmenu = child.submenu?.length > 0;
                                         const isExpanded = expandedMenu === child.title;
-                                        const isSubActive = hasSubmenu && child.submenu.some(sub =>
-                                            activePath === sub.href || activePath.startsWith(sub.href + '/'));
-                                        const isActive = (child.href && (activePath === child.href || activePath.startsWith(child.href + '/'))) || isSubActive;
+                                        const isSubActive = hasSubmenu && child.submenu.some(sub => isItemActive(sub.href));
+                                        const isActive = isItemActive(child.href) || isSubActive;
 
                                         return (
                                             <div key={child.title}>
@@ -278,14 +309,14 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                                                         onMouseEnter={e => { if (isActive) return; isExpanded ? onEnterExpanded(e) : onEnterInactive(e); }}
                                                         onMouseLeave={e => { if (isActive) return; isExpanded ? onLeaveExpanded(e) : onLeaveInactive(e); }}>
                                                         
-                                                        <Icon className="shrink-0" style={{ width: 24, height: 24, color: isActive ? '#fff' : 'rgb(98, 103, 233)', opacity: 1 }} />
+                                                        <Icon className="shrink-0" style={{ width: 22, height: 22, color: isActive ? '#ffffff' : C.btnPrimary, opacity: 1 }} />
                                                         
                                                         {showFull && (
                                                             <>
                                                                 <span className="flex-1 text-left truncate">{child.title}</span>
                                                                 <MdChevronRight
                                                                     className={`flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
-                                                                    style={{ width: 20, height: 20, color: isActive ? 'rgba(255,255,255,0.70)' : 'rgba(36,38,97,0.40)' }} />
+                                                                    style={{ width: 20, height: 20, color: isActive ? 'rgba(255,255,255,0.70)' : C.textMuted }} />
                                                             </>
                                                         )}
                                                     </button>
@@ -298,7 +329,7 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                                                         onMouseEnter={e => { if (!isActive) onEnterInactive(e); }}
                                                         onMouseLeave={e => { if (!isActive) onLeaveInactive(e); }}>
                                                         
-                                                        <Icon className="shrink-0" style={{ width: 24, height: 24, color: isActive ? '#fff' : 'rgb(98, 103, 233)', opacity: 1 }} />
+                                                        <Icon className="shrink-0" style={{ width: 22, height: 22, color: isActive ? '#ffffff' : C.btnPrimary, opacity: 1 }} />
                                                         
                                                         {showFull && <span className="truncate">{child.title}</span>}
                                                     </Link>
@@ -307,9 +338,9 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                                                 {/* Submenu */}
                                                 <div className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
                                                     ${hasSubmenu && isExpanded && showFull ? 'max-h-96 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
-                                                    <div className="ml-[22px] space-y-1 pl-4" style={{ borderLeft: '1px solid #cde6ff' }}>
+                                                    <div className="ml-[22px] space-y-1 pl-4" style={{ borderLeft: `1px solid ${C.cardBorder}` }}>
                                                         {child.submenu?.map(sub => {
-                                                            const subActive = activePath === sub.href || activePath.startsWith(sub.href + '/');
+                                                            const subActive = isItemActive(sub.href);
                                                             return (
                                                                 <Link key={sub.title} href={sub.href}
                                                                     onClick={() => setIsOpen(false)}
@@ -317,32 +348,32 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                                                                     style={subActive
                                                                         ? {
                                                                             backgroundColor: 'transparent',
-                                                                            color: SB.activeBg,
+                                                                            color: C.btnPrimary,
                                                                             fontWeight: T.weight.bold,
                                                                             fontFamily: T.fontFamily,
-                                                                            fontSize: '13px'
+                                                                            fontSize: '13px' 
                                                                         }
                                                                         : {
                                                                             backgroundColor: 'transparent',
-                                                                            color: SB.inactiveText,
-                                                                            opacity: 0.75,
+                                                                            color: C.textMuted,
+                                                                            opacity: 0.85,
                                                                             fontFamily: T.fontFamily,
-                                                                            fontSize: '13px',
+                                                                            fontSize: '13px', 
                                                                             fontWeight: T.weight.semibold
                                                                         }
                                                                     }
                                                                     onMouseEnter={e => {
                                                                         if (!subActive) {
                                                                             e.currentTarget.style.backgroundColor = 'transparent';
-                                                                            e.currentTarget.style.color = SB.activeBg;
+                                                                            e.currentTarget.style.color = C.heading;
                                                                             e.currentTarget.style.opacity = '1';
                                                                         }
                                                                     }}
                                                                     onMouseLeave={e => {
                                                                         if (!subActive) {
                                                                             e.currentTarget.style.backgroundColor = 'transparent';
-                                                                            e.currentTarget.style.color = SB.inactiveText;
-                                                                            e.currentTarget.style.opacity = '0.75';
+                                                                            e.currentTarget.style.color = C.textMuted;
+                                                                            e.currentTarget.style.opacity = '0.85';
                                                                         }
                                                                     }}>
                                                                     <span className="truncate">{sub.title}</span>
@@ -353,7 +384,7 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
                                                 </div>
 
                                                 {/* Separator Line */}
-                                                <div style={{ height: '1px', backgroundColor: "#ececec", margin: '6px 12px' }} />
+                                                <div style={{ height: '1px', backgroundColor: C.cardBorder, margin: '6px 12px' }} />
                                             </div>
                                         );
                                     })}
