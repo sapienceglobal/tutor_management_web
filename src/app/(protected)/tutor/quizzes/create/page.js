@@ -2568,645 +2568,438 @@ function CreateExamPageClient() {
       </Modal>
 
       {/* ── Add/Edit Question Modal ── */}
-      <Modal
-        isOpen={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        title={editingIndex >= 0 ? "Edit Question" : "Add New Question"}
-        className="max-w-4xl"
-      >
-        <div
-          className="space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar"
-          style={{
-            backgroundColor: C.cardBg,
-            padding: 24,
-            borderRadius: R["2xl"],
-          }}
-        >
-          <div className="space-y-3">
-            <label
-              style={{
-                fontFamily: T.fontFamily,
-                fontSize: T.size.base,
-                fontWeight: T.weight.bold,
-                color: C.heading,
-                display: "block",
-              }}
-            >
-              Question Content
-            </label>
-            <RichTextEditor
-              value={currentQuestion.question}
-              onChange={(html) =>
-                setCurrentQuestion({ ...currentQuestion, question: html })
-              }
-            />
-          </div>
-          {(currentQuestion.questionType === "mcq" ||
-            currentQuestion.type === "mcq" ||
-            !currentQuestion.type) && (
-            <div
-              className="space-y-4 p-6"
-              style={{
-                backgroundColor: C.innerBg,
-                borderRadius: R["2xl"],
-                border: `1px solid ${C.cardBorder}`,
-              }}
-            >
-              <label
-                style={{
-                  fontFamily: T.fontFamily,
-                  fontSize: T.size.base,
-                  fontWeight: T.weight.bold,
-                  color: C.heading,
-                  display: "block",
-                }}
-              >
-                Answer Options
-              </label>
-              {currentQuestion.options.map((opt, idx) => (
-                <div key={idx} className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-8">
+    {/* ── Add/Edit Question Modal ── */}
+<Modal
+    isOpen={isAddOpen}
+    onClose={() => setIsAddOpen(false)}
+    title={editingIndex >= 0 ? "Edit Question" : "Add New Question"}
+    className="max-w-4xl p-0 overflow-hidden" // Removed default padding to handle layout perfectly
+>
+    <div className="flex flex-col w-full" style={{ maxHeight: '85vh', backgroundColor: C.cardBg, borderRadius: R['2xl'] }}>
+        
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+            
+            {/* Top Row: Type & Points */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                    <label style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, display: 'block' }}>
+                        Question Type
+                    </label>
+                    <select
+                        value={currentQuestion.questionType || currentQuestion.type || "mcq"}
+                        onChange={(e) => setCurrentQuestion({ ...currentQuestion, questionType: e.target.value, type: e.target.value })}
+                        style={{ ...baseInputStyle, cursor: 'pointer' }}
+                        onFocus={onFocusHandler}
+                        onBlur={onBlurHandler}
+                    >
+                        <option value="mcq">Multiple Choice (MCQ)</option>
+                        <option value="subjective">Subjective (Long Answer)</option>
+                        <option value="numeric">Numeric Answer</option>
+                    </select>
+                </div>
+                <div className="space-y-2">
+                    <label style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, display: 'block' }}>
+                        Points / Marks
+                    </label>
                     <input
-                      type="radio"
-                      name="correctAnswer"
-                      checked={opt.isCorrect}
-                      onChange={() => handleCorrectSelect(idx)}
-                      style={{ width: 20, height: 20, cursor: "pointer" }}
+                        type="number"
+                        min="1"
+                        value={currentQuestion.points}
+                        onChange={(e) => setCurrentQuestion({ ...currentQuestion, points: parseFloat(e.target.value) || 1 })}
+                        style={baseInputStyle}
+                        onFocus={onFocusHandler}
+                        onBlur={onBlurHandler}
                     />
-                  </div>
-                  <input
-                    value={opt.text}
-                    onChange={(e) => handleOptionChange(idx, e.target.value)}
-                    placeholder={`Option ${String.fromCharCode(65 + idx)}`}
-                    style={{
-                      ...baseInputStyle,
-                      backgroundColor: opt.isCorrect ? C.successBg : C.cardBg,
-                      borderColor: opt.isCorrect ? C.success : C.cardBorder,
-                    }}
-                    onFocus={onFocusHandler}
-                    onBlur={onBlurHandler}
-                  />
-                  {currentQuestion.options.length > 2 && (
-                    <button
-                      onClick={() => handleRemoveOption(idx)}
-                      className="flex items-center justify-center shrink-0 cursor-pointer transition-all hover:opacity-70"
-                      style={{
-                        width: 40,
-                        height: 40,
-                        backgroundColor: C.cardBg,
-                        border: `1px solid ${C.cardBorder}`,
-                        borderRadius: "10px",
-                      }}
-                    >
-                      <MdDelete
-                        style={{ width: 16, height: 16, color: C.danger }}
-                      />
-                    </button>
-                  )}
                 </div>
-              ))}
-              {currentQuestion.options.length < 6 && (
-                <div className="pl-12 pt-2">
-                  <button
-                    onClick={handleAddOption}
-                    className="flex items-center justify-center gap-2 cursor-pointer hover:opacity-70 transition-all"
-                    style={{
-                      border: `1px dashed ${C.cardBorder}`,
-                      borderRadius: "10px",
-                      color: C.text,
-                      fontFamily: T.fontFamily,
-                      fontSize: T.size.xs,
-                      fontWeight: T.weight.bold,
-                      background: "transparent",
-                      height: 36,
-                      padding: "0 16px",
-                    }}
-                  >
-                    <MdAdd style={{ width: 14, height: 14 }} /> Add Another
-                    Option
-                  </button>
-                </div>
-              )}
             </div>
-          )}
-          <div className="space-y-3 mb-6">
-            <label
-              style={{
-                fontFamily: T.fontFamily,
-                fontSize: T.size.base,
-                fontWeight: T.weight.bold,
-                color: C.heading,
-                display: "block",
-              }}
-            >
-              Question Type
-            </label>
-            <select
-              value={
-                currentQuestion.questionType || currentQuestion.type || "mcq"
-              }
-              onChange={(e) =>
-                setCurrentQuestion({
-                  ...currentQuestion,
-                  questionType: e.target.value,
-                  type: e.target.value,
-                })
-              }
-              style={baseInputStyle}
-              onFocus={onFocusHandler}
-              onBlur={onBlurHandler}
-            >
-              <option value="mcq">Multiple Choice (MCQ)</option>
-              <option value="subjective">Subjective (Long Answer)</option>
-              <option value="numeric">Numeric Answer</option>
-            </select>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <label
-              style={{
-                fontFamily: T.fontFamily,
-                fontSize: T.size.base,
-                fontWeight: T.weight.bold,
-                color: C.heading,
-                display: "block",
-              }}
-            >
-              Points / Marks
-            </label>
-            <input
-              type="number"
-              min="1"
-              value={currentQuestion.points}
-              onChange={(e) =>
-                setCurrentQuestion({
-                  ...currentQuestion,
-                  points: parseFloat(e.target.value) || 1,
-                })
-              }
-              style={baseInputStyle}
-              onFocus={onFocusHandler}
-              onBlur={onBlurHandler}
-            />
-          </div>
-          <div className="space-y-3">
-            <label
-              style={{
-                fontFamily: T.fontFamily,
-                fontSize: T.size.base,
-                fontWeight: T.weight.bold,
-                color: C.heading,
-                display: "block",
-              }}
-            >
-              Explanation (Optional)
-            </label>
-            <textarea
-              value={currentQuestion.explanation}
-              onChange={(e) =>
-                setCurrentQuestion({
-                  ...currentQuestion,
-                  explanation: e.target.value,
-                })
-              }
-              placeholder="Explain why the selected answer is correct..."
-              style={{ ...baseInputStyle, minHeight: 100, resize: "vertical" }}
-              onFocus={onFocusHandler}
-              onBlur={onBlurHandler}
-            />
-          </div>
-          <div
-            className="flex justify-end gap-3 pt-6"
-            style={{ borderTop: `1px solid ${C.cardBorder}` }}
-          >
-            <button
-              onClick={() => setIsAddOpen(false)}
-              className="cursor-pointer hover:opacity-70 transition-all"
-              style={{
-                color: C.text,
-                fontFamily: T.fontFamily,
-                fontSize: T.size.base,
-                fontWeight: T.weight.bold,
-                background: "none",
-                border: "none",
-                height: 44,
-                padding: "0 24px",
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSaveQuestion}
-              className="flex items-center justify-center gap-2 cursor-pointer transition-all hover:opacity-90"
-              style={{
-                background: C.gradientBtn,
-                color: "#ffffff",
-                border: "none",
-                borderRadius: "10px",
-                fontFamily: T.fontFamily,
-                fontSize: T.size.base,
-                fontWeight: T.weight.bold,
-                boxShadow: S.btn,
-                height: 44,
-                padding: "0 32px",
-              }}
-            >
-              <MdSave style={{ width: 16, height: 16 }} />
-              {editingIndex >= 0 ? "Save Changes" : "Add to Quiz"}
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* ── Import from Bank Modal ── */}
-      <Modal
-        isOpen={isBankOpen}
-        onClose={() => setIsBankOpen(false)}
-        title="Import from Question Bank"
-        className="max-w-5xl"
-      >
-        <div
-          className="space-y-5 flex flex-col"
-          style={{
-            backgroundColor: C.cardBg,
-            padding: 24,
-            borderRadius: R["2xl"],
-          }}
-        >
-          {/* Filters */}
-          <div
-            className="flex gap-4 items-end shrink-0"
-            style={{
-              backgroundColor: C.innerBg,
-              borderRadius: R["2xl"],
-              border: `1px solid ${C.cardBorder}`,
-              padding: 16,
-            }}
-          >
-            <div className="flex-1 space-y-2">
-              <label
-                style={{
-                  fontFamily: T.fontFamily,
-                  fontSize: T.size.xs,
-                  fontWeight: T.weight.bold,
-                  color: C.text,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  display: "block",
-                }}
-              >
-                Search Questions
-              </label>
-              <div className="relative">
-                <MdSearch
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2"
-                  style={{ width: 16, height: 16, color: C.text }}
-                />
-                <input
-                  placeholder="Type to search..."
-                  value={bankFilters.search || ""}
-                  onChange={(e) =>
-                    setBankFilters({ ...bankFilters, search: e.target.value })
-                  }
-                  style={{ ...baseInputStyle, paddingLeft: 40 }}
-                  onFocus={onFocusHandler}
-                  onBlur={onBlurHandler}
-                />
-              </div>
-            </div>
+            {/* Question Content */}
             <div className="space-y-2">
-              <label
-                style={{
-                  fontFamily: T.fontFamily,
-                  fontSize: T.size.xs,
-                  fontWeight: T.weight.bold,
-                  color: C.text,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  display: "block",
-                }}
-              >
-                Difficulty
-              </label>
-              <select
-                value={bankFilters.difficulty}
-                onChange={(e) =>
-                  setBankFilters({ ...bankFilters, difficulty: e.target.value })
-                }
-                style={{ ...baseInputStyle, width: 150 }}
-                onFocus={onFocusHandler}
-                onBlur={onBlurHandler}
-              >
-                <option value="all">All Levels</option>
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
+                <label style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, display: 'block' }}>
+                    Question Content <span className="text-red-500">*</span>
+                </label>
+                <div style={{ borderRadius: '10px', overflow: 'hidden', border: `1px solid ${C.cardBorder}` }}>
+                    <RichTextEditor
+                        value={currentQuestion.question}
+                        onChange={(html) => setCurrentQuestion({ ...currentQuestion, question: html })}
+                    />
+                </div>
             </div>
-          </div>
 
-          {/* Questions list */}
-          <div
-            className="flex-1 overflow-y-auto space-y-4 custom-scrollbar"
-            style={{
-              minHeight: 400,
-              backgroundColor: C.cardBg,
-              borderRadius: R["2xl"],
-              border: `1px solid ${C.cardBorder}`,
-              padding: 20,
-              boxShadow: S.card,
-            }}
-          >
-            {bankLoading ? (
-              <div className="flex flex-col justify-center items-center min-h-[300px] gap-3">
-                <div
-                  className="rounded-full border-[3px] animate-spin"
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderColor: `${C.btnPrimary}30`,
-                    borderTopColor: C.btnPrimary,
-                  }}
-                />
-                <p
-                  style={{
-                    fontFamily: T.fontFamily,
-                    fontSize: T.size.base,
-                    fontWeight: T.weight.bold,
-                    color: C.text,
-                  }}
-                >
-                  Loading bank...
-                </p>
-              </div>
-            ) : (
-              (() => {
-                const searchFiltered = bankQuestions.filter(
-                  (q) =>
-                    !bankFilters.search ||
-                    q.question
-                      .toLowerCase()
-                      .includes(bankFilters.search.toLowerCase()),
-                );
-                if (searchFiltered.length === 0)
-                  return (
-                    <div className="flex flex-col items-center justify-center min-h-[300px]">
-                      <MdLibraryBooks
-                        style={{
-                          width: 48,
-                          height: 48,
-                          color: C.text,
-                          opacity: 0.2,
-                          marginBottom: 16,
-                        }}
-                      />
-                      <p
-                        style={{
-                          fontFamily: T.fontFamily,
-                          fontSize: T.size.base,
-                          fontWeight: T.weight.bold,
-                          color: C.text,
-                        }}
-                      >
-                        No matching questions found.
-                      </p>
+            {/* Answer Options (Conditional for MCQ) */}
+            {(currentQuestion.questionType === "mcq" || currentQuestion.type === "mcq" || !currentQuestion.type) && (
+                <div className="p-5" style={{ backgroundColor: C.innerBg, borderRadius: R.xl, border: `1px solid ${C.cardBorder}` }}>
+                    <div className="flex items-center justify-between mb-4">
+                        <label style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>
+                            Answer Options
+                        </label>
+                        <span style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.textMuted }}>Select the radio button to mark correct answer</span>
                     </div>
-                  );
-                const grouped = searchFiltered.reduce((acc, q) => {
-                  const topicName = q.topicId?.name || "Uncategorized";
-                  if (!acc[topicName]) acc[topicName] = [];
-                  acc[topicName].push(q);
-                  return acc;
-                }, {});
-                return Object.entries(grouped).map(([topicName, questions]) => (
-                  <div
-                    key={topicName}
-                    className="overflow-hidden"
-                    style={{
-                      backgroundColor: C.innerBg,
-                      borderRadius: R["2xl"],
-                      border: `1px solid ${C.cardBorder}`,
-                    }}
-                  >
-                    <div
-                      className="flex items-center justify-between px-5 py-4"
-                      style={{
-                        backgroundColor: C.cardBg,
-                        borderBottom: `1px solid ${C.cardBorder}`,
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span
-                          style={{
-                            fontFamily: T.fontFamily,
-                            fontWeight: T.weight.bold,
-                            color: C.heading,
-                          }}
-                        >
-                          {topicName}
-                        </span>
-                        <span
-                          style={{
-                            fontFamily: T.fontFamily,
-                            fontSize: T.size.xs,
-                            fontWeight: T.weight.bold,
-                            backgroundColor: C.innerBg,
-                            color: C.text,
-                            padding: "2px 8px",
-                            borderRadius: "10px",
-                          }}
-                        >
-                          {questions.length} items
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const topicIds = questions.map((q) => q._id);
-                          const allSelected = topicIds.every((id) =>
-                            selectedBankIds.includes(id),
-                          );
-                          if (allSelected)
-                            setSelectedBankIds(
-                              selectedBankIds.filter(
-                                (id) => !topicIds.includes(id),
-                              ),
-                            );
-                          else
-                            setSelectedBankIds([
-                              ...new Set([...selectedBankIds, ...topicIds]),
-                            ]);
-                        }}
-                        className="cursor-pointer transition-all hover:opacity-80"
-                        style={{
-                          fontFamily: T.fontFamily,
-                          fontSize: T.size.xs,
-                          color: C.btnPrimary,
-                          fontWeight: T.weight.bold,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                          backgroundColor: C.innerBg,
-                          borderRadius: "10px",
-                          border: "none",
-                          padding: "6px 12px",
-                        }}
-                      >
-                        {questions.every((q) => selectedBankIds.includes(q._id))
-                          ? "Deselect All"
-                          : "Select All"}
-                      </button>
+                    
+                    <div className="space-y-3">
+                        {currentQuestion.options.map((opt, idx) => (
+                            <div key={idx} className="flex items-center gap-3 transition-all" 
+                                 style={{ 
+                                     backgroundColor: opt.isCorrect ? C.successBg : C.surfaceWhite, 
+                                     padding: '8px', 
+                                     borderRadius: '12px', 
+                                     border: `1px solid ${opt.isCorrect ? C.successBorder : C.cardBorder}` 
+                                 }}>
+                                
+                                <div className="flex items-center justify-center pl-2">
+                                    <input
+                                        type="radio"
+                                        name="correctAnswer"
+                                        checked={opt.isCorrect}
+                                        onChange={() => handleCorrectSelect(idx)}
+                                        style={{ width: 18, height: 18, cursor: "pointer", accentColor: C.success }}
+                                    />
+                                </div>
+                                
+                                <input
+                                    value={opt.text}
+                                    onChange={(e) => handleOptionChange(idx, e.target.value)}
+                                    placeholder={`Option ${String.fromCharCode(65 + idx)}`}
+                                    style={{
+                                        ...baseInputStyle,
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        padding: '8px 12px',
+                                        color: opt.isCorrect ? C.success : C.heading,
+                                        fontWeight: opt.isCorrect ? T.weight.bold : T.weight.semibold
+                                    }}
+                                    onFocus={onFocusHandler}
+                                    onBlur={onBlurHandler}
+                                />
+                                
+                                {currentQuestion.options.length > 2 && (
+                                    <button
+                                        onClick={() => handleRemoveOption(idx)}
+                                        className="flex items-center justify-center shrink-0 cursor-pointer transition-colors"
+                                        style={{ width: 36, height: 36, backgroundColor: 'transparent', border: 'none', borderRadius: '8px' }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.dangerBg; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                        title="Remove Option"
+                                    >
+                                        <MdDelete style={{ width: 18, height: 18, color: C.danger }} />
+                                    </button>
+                                )}
+                            </div>
+                        ))}
                     </div>
-                    <div>
-                      {questions.map((q) => (
-                        <div
-                          key={q._id}
-                          className="flex items-start gap-4 transition-all hover:opacity-90"
-                          style={{
-                            padding: "16px 20px",
-                            borderBottom: `1px solid ${C.cardBorder}`,
-                          }}
-                        >
-                          <div className="pt-1">
-                            <input
-                              type="checkbox"
-                              checked={selectedBankIds.includes(q._id)}
-                              onChange={(e) => {
-                                if (e.target.checked)
-                                  setSelectedBankIds([
-                                    ...selectedBankIds,
-                                    q._id,
-                                  ]);
-                                else
-                                  setSelectedBankIds(
-                                    selectedBankIds.filter(
-                                      (id) => id !== q._id,
-                                    ),
-                                  );
-                              }}
-                              style={{
-                                width: 20,
-                                height: 20,
-                                cursor: "pointer",
-                              }}
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex gap-2 mb-2">
-                              {[
-                                q.difficulty,
-                                q.type || "mcq",
-                                `${q.points || 1} Pts`,
-                              ].map((tag, i) => (
-                                <span
-                                  key={i}
-                                  style={{
+
+                    {currentQuestion.options.length < 6 && (
+                        <div className="mt-4 flex justify-center">
+                            <button
+                                onClick={handleAddOption}
+                                className="flex items-center justify-center gap-2 cursor-pointer transition-all"
+                                style={{
+                                    border: `1px dashed ${C.cardBorder}`,
+                                    borderRadius: '10px',
+                                    color: C.btnPrimary,
                                     fontFamily: T.fontFamily,
                                     fontSize: T.size.xs,
                                     fontWeight: T.weight.bold,
-                                    textTransform: "uppercase",
-                                    padding: "2px 8px",
-                                    borderRadius: "10px",
-                                    backgroundColor: C.cardBg,
-                                    border: `1px solid ${C.cardBorder}`,
-                                    color: i === 0 ? C.heading : C.text,
-                                  }}
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                            <div
-                              dangerouslySetInnerHTML={{
-                                __html: sanitizeHtml(q.question),
-                              }}
-                              style={{
-                                fontFamily: T.fontFamily,
-                                fontSize: T.size.base,
-                                fontWeight: T.weight.semibold,
-                                color: C.heading,
-                              }}
-                            />
-                          </div>
+                                    backgroundColor: C.surfaceWhite,
+                                    height: 38,
+                                    padding: "0 20px",
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.borderColor = C.btnPrimary; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.surfaceWhite; e.currentTarget.style.borderColor = C.cardBorder; }}
+                            >
+                                <MdAdd style={{ width: 16, height: 16 }} /> Add Another Option
+                            </button>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                ));
-              })()
+                    )}
+                </div>
             )}
-          </div>
 
-          {/* Footer */}
-          <div
-            className="flex justify-between items-center pt-5 shrink-0"
-            style={{ borderTop: `1px solid ${C.cardBorder}` }}
-          >
-            <span
-              style={{
-                fontFamily: T.fontFamily,
-                fontSize: T.size.base,
-                fontWeight: T.weight.bold,
-                color: C.heading,
-                backgroundColor: C.cardBg,
-                padding: "8px 16px",
-                borderRadius: "10px",
-                border: `1px solid ${C.cardBorder}`,
-                boxShadow: S.card,
-              }}
-            >
-              <span style={{ color: C.btnPrimary }}>
-                {selectedBankIds.length}
-              </span>{" "}
-              questions selected
-            </span>
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setIsBankOpen(false);
-                  setSelectedBankIds([]);
-                }}
-                className="cursor-pointer hover:opacity-70 transition-all"
-                style={{
-                  color: C.text,
-                  fontFamily: T.fontFamily,
-                  fontSize: T.size.base,
-                  fontWeight: T.weight.bold,
-                  background: "none",
-                  border: "none",
-                  height: 44,
-                  padding: "0 24px",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleImportFromBank}
-                disabled={selectedBankIds.length === 0}
-                className="flex items-center justify-center gap-2 cursor-pointer transition-all hover:opacity-90"
-                style={{
-                  background:
-                    selectedBankIds.length > 0 ? C.gradientBtn : C.btnViewAllBg,
-                  color:
-                    selectedBankIds.length > 0 ? "#ffffff" : C.btnViewAllText,
-                  borderRadius: "10px",
-                  fontFamily: T.fontFamily,
-                  fontSize: T.size.base,
-                  fontWeight: T.weight.bold,
-                  border: "none",
-                  height: 44,
-                  padding: "0 32px",
-                  boxShadow: selectedBankIds.length > 0 ? S.btn : "none",
-                }}
-              >
-                <MdLibraryBooks style={{ width: 16, height: 16 }} /> Import to
-                Quiz
-              </button>
+            {/* Explanation */}
+            <div className="space-y-2">
+                <label style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, display: 'block' }}>
+                    Explanation (Optional)
+                </label>
+                <textarea
+                    value={currentQuestion.explanation}
+                    onChange={(e) => setCurrentQuestion({ ...currentQuestion, explanation: e.target.value })}
+                    placeholder="Explain why the selected answer is correct..."
+                    style={{ ...baseInputStyle, minHeight: 80, resize: "vertical" }}
+                    onFocus={onFocusHandler}
+                    onBlur={onBlurHandler}
+                />
             </div>
-          </div>
+
         </div>
-      </Modal>
+
+        {/* Fixed Footer Actions */}
+        <div className="shrink-0 px-6 py-5 flex items-center justify-end gap-3" style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: C.cardBg }}>
+            <button
+                onClick={() => setIsAddOpen(false)}
+                className="transition-colors cursor-pointer"
+                style={{
+                    backgroundColor: C.btnViewAllBg,
+                    color: C.btnViewAllText,
+                    fontFamily: T.fontFamily,
+                    fontSize: T.size.base,
+                    fontWeight: T.weight.bold,
+                    border: `1px solid ${C.cardBorder}`,
+                    borderRadius: '10px',
+                    padding: '10px 24px',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+            >
+                Cancel
+            </button>
+            <button
+                onClick={handleSaveQuestion}
+                className="flex items-center justify-center gap-2 cursor-pointer transition-opacity border-none"
+                style={{
+                    background: C.gradientBtn,
+                    color: "#ffffff",
+                    borderRadius: "10px",
+                    fontFamily: T.fontFamily,
+                    fontSize: T.size.base,
+                    fontWeight: T.weight.bold,
+                    boxShadow: S.btn,
+                    padding: '10px 32px',
+                }}
+                onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.96)'}
+                onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+                <MdCheckCircle style={{ width: 18, height: 18 }} />
+                {editingIndex >= 0 ? "Save Changes" : "Add to Quiz"}
+            </button>
+        </div>
+
+    </div>
+</Modal>
+
+   {/* ── Import from Bank Modal ── */}
+<Modal
+    isOpen={isBankOpen}
+    onClose={() => setIsBankOpen(false)}
+    title="Import from Question Bank"
+    className="max-w-5xl p-0 overflow-hidden" // P-0 and overflow-hidden to handle layout internally
+>
+    <div className="flex flex-col w-full" style={{ maxHeight: '85vh', backgroundColor: C.pageBg, borderRadius: R['2xl'] }}>
+        
+        {/* Sticky Filters Section */}
+        <div className="shrink-0 px-6 py-5 flex flex-col md:flex-row gap-4 items-end" 
+             style={{ backgroundColor: C.cardBg, borderBottom: `1px solid ${C.cardBorder}`, zIndex: 10 }}>
+            
+            <div className="flex-1 w-full space-y-2">
+                <label style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, display: 'block' }}>
+                    Search Questions
+                </label>
+                <div className="relative">
+                    <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2" style={{ width: 18, height: 18, color: C.textFaint }} />
+                    <input
+                        placeholder="Type to search..."
+                        value={bankFilters.search || ""}
+                        onChange={(e) => setBankFilters({ ...bankFilters, search: e.target.value })}
+                        style={{ ...baseInputStyle, paddingLeft: '44px', backgroundColor: C.innerBg }}
+                        onFocus={onFocusHandler}
+                        onBlur={onBlurHandler}
+                    />
+                </div>
+            </div>
+            
+            <div className="w-full md:w-auto space-y-2">
+                <label style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, display: 'block' }}>
+                    Difficulty
+                </label>
+                <select
+                    value={bankFilters.difficulty}
+                    onChange={(e) => setBankFilters({ ...bankFilters, difficulty: e.target.value })}
+                    style={{ ...baseInputStyle, width: '100%', minWidth: '160px', backgroundColor: C.innerBg, cursor: 'pointer' }}
+                    onFocus={onFocusHandler}
+                    onBlur={onBlurHandler}
+                >
+                    <option value="all">All Levels</option>
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+        </div>
+
+        {/* Scrollable Questions List */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+            {bankLoading ? (
+                <div className="flex flex-col justify-center items-center h-full min-h-[300px] gap-3">
+                    <div className="rounded-full border-[3px] animate-spin"
+                        style={{ width: 36, height: 36, borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                        Loading question bank...
+                    </p>
+                </div>
+            ) : (
+                (() => {
+                    const searchFiltered = bankQuestions.filter(
+                        (q) => !bankFilters.search || q.question.toLowerCase().includes(bankFilters.search.toLowerCase())
+                    );
+                    
+                    if (searchFiltered.length === 0) {
+                        return (
+                            <div className="flex flex-col items-center justify-center min-h-[300px]" style={{ backgroundColor: C.surfaceWhite, border: `2px dashed ${C.cardBorder}`, borderRadius: R.xl }}>
+                                <MdLibraryBooks style={{ width: 48, height: 48, color: C.textFaint, marginBottom: '16px' }} />
+                                <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>No matching questions</h3>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.textMuted, margin: 0, marginTop: '4px' }}>Try adjusting your search or filters.</p>
+                            </div>
+                        );
+                    }
+
+                    const grouped = searchFiltered.reduce((acc, q) => {
+                        const topicName = q.topicId?.name || "Uncategorized";
+                        if (!acc[topicName]) acc[topicName] = [];
+                        acc[topicName].push(q);
+                        return acc;
+                    }, {});
+
+                    return Object.entries(grouped).map(([topicName, questions]) => (
+                        <div key={topicName} className="overflow-hidden transition-all"
+                             style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                            
+                            {/* Topic Header */}
+                            <div className="flex items-center justify-between px-5 py-3" style={{ backgroundColor: C.innerBg, borderBottom: `1px solid ${C.cardBorder}` }}>
+                                <div className="flex items-center gap-3">
+                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.black, color: C.heading }}>
+                                        {topicName}
+                                    </span>
+                                    <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, backgroundColor: C.surfaceWhite, color: C.btnPrimary, padding: "4px 10px", borderRadius: "10px", border: `1px solid ${C.cardBorder}`, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
+                                        {questions.length} items
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const topicIds = questions.map((q) => q._id);
+                                        const allSelected = topicIds.every((id) => selectedBankIds.includes(id));
+                                        if (allSelected) {
+                                            setSelectedBankIds(selectedBankIds.filter((id) => !topicIds.includes(id)));
+                                        } else {
+                                            setSelectedBankIds([...new Set([...selectedBankIds, ...topicIds])]);
+                                        }
+                                    }}
+                                    className="cursor-pointer transition-colors border-none"
+                                    style={{
+                                        fontFamily: T.fontFamily, fontSize: '11px', color: C.btnPrimary, fontWeight: T.weight.bold,
+                                        textTransform: "uppercase", letterSpacing: T.tracking.wider, backgroundColor: C.surfaceWhite,
+                                        borderRadius: "8px", padding: "6px 14px", border: `1px solid ${C.cardBorder}`,
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.surfaceWhite; }}
+                                >
+                                    {questions.every((q) => selectedBankIds.includes(q._id)) ? "Deselect All" : "Select All"}
+                                </button>
+                            </div>
+
+                            {/* Questions List within Topic */}
+                            <div className="divide-y" style={{ borderColor: C.cardBorder }}>
+                                {questions.map((q) => {
+                                    const isSelected = selectedBankIds.includes(q._id);
+                                    return (
+                                        <div key={q._id} className="flex items-start gap-4 transition-colors cursor-pointer"
+                                             style={{ padding: "20px", backgroundColor: isSelected ? C.innerBg : 'transparent' }}
+                                             onClick={() => {
+                                                 if (isSelected) {
+                                                     setSelectedBankIds(selectedBankIds.filter((id) => id !== q._id));
+                                                 } else {
+                                                     setSelectedBankIds([...selectedBankIds, q._id]);
+                                                 }
+                                             }}>
+                                            
+                                            {/* Checkbox */}
+                                            <div className="pt-1">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isSelected}
+                                                    onChange={() => {}} // Handled by parent div onClick
+                                                    style={{ width: 20, height: 20, cursor: "pointer", accentColor: C.btnPrimary }}
+                                                />
+                                            </div>
+                                            
+                                            {/* Question Details */}
+                                            <div className="flex-1 min-w-0">
+                                                {/* Tags */}
+                                                <div className="flex flex-wrap gap-2 mb-3">
+                                                    {[q.difficulty, q.type || "mcq", `${q.points || 1} Pts`].map((tag, i) => (
+                                                        <span key={i} style={{
+                                                            fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, textTransform: "uppercase", letterSpacing: T.tracking.wider, padding: "4px 10px", borderRadius: "8px",
+                                                            backgroundColor: i === 0 
+                                                                ? (tag === 'hard' ? C.dangerBg : tag === 'medium' ? C.warningBg : C.successBg) 
+                                                                : C.surfaceWhite,
+                                                            border: `1px solid ${i === 0 
+                                                                ? (tag === 'hard' ? C.dangerBorder : tag === 'medium' ? C.warningBorder : C.successBorder) 
+                                                                : C.cardBorder}`,
+                                                            color: i === 0 
+                                                                ? (tag === 'hard' ? C.danger : tag === 'medium' ? C.warning : C.success) 
+                                                                : C.textMuted,
+                                                        }}>
+                                                            {tag}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                                
+                                                {/* Rich Text Preview */}
+                                                <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(q.question) }}
+                                                     className="prose prose-sm max-w-none"
+                                                     style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading, lineHeight: T.leading.relaxed }}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ));
+                })()
+            )}
+        </div>
+
+        {/* Fixed Footer Actions */}
+        <div className="shrink-0 px-6 py-5 flex items-center justify-between" style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: C.cardBg }}>
+            
+            <div style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, backgroundColor: C.innerBg, padding: "8px 16px", borderRadius: "10px", border: `1px solid ${C.cardBorder}` }}>
+                <span style={{ color: C.btnPrimary, fontSize: T.size.base, fontWeight: T.weight.black }}>{selectedBankIds.length}</span> questions selected
+            </div>
+            
+            <div className="flex gap-3">
+                <button
+                    onClick={() => { setIsBankOpen(false); setSelectedBankIds([]); }}
+                    className="transition-colors cursor-pointer border-none"
+                    style={{
+                        backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, fontFamily: T.fontFamily, fontSize: T.size.base,
+                        fontWeight: T.weight.bold, borderRadius: "10px", padding: "10px 24px"
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.btnViewAllBg; }}
+                >
+                    Cancel
+                </button>
+                <button
+                    onClick={handleImportFromBank}
+                    disabled={selectedBankIds.length === 0}
+                    className="flex items-center justify-center gap-2 transition-opacity border-none cursor-pointer disabled:cursor-not-allowed"
+                    style={{
+                        background: selectedBankIds.length > 0 ? C.gradientBtn : C.cardBorder,
+                        color: selectedBankIds.length > 0 ? "#ffffff" : C.textMuted,
+                        borderRadius: "10px", fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold,
+                        padding: "10px 32px", boxShadow: selectedBankIds.length > 0 ? S.btn : "none",
+                        opacity: selectedBankIds.length > 0 ? 1 : 0.6
+                    }}
+                    onMouseDown={(e) => { if(selectedBankIds.length > 0) e.currentTarget.style.transform = 'scale(0.96)'; }}
+                    onMouseUp={(e) => { if(selectedBankIds.length > 0) e.currentTarget.style.transform = 'scale(1)'; }}
+                >
+                    <MdLibraryBooks style={{ width: 18, height: 18 }} /> Import to Quiz
+                </button>
+            </div>
+        </div>
+        
+    </div>
+</Modal>
     </div>
   );
 }
