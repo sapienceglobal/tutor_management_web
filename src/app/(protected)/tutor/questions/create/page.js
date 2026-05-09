@@ -14,7 +14,7 @@ import Link from 'next/link';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { QuestionFormFields } from '@/components/shared/QuestionFormFields';
-import { C, T, S, R } from '@/constants/tutorTokens';
+import { C, T, S, R } from '@/constants/studentTokens';
 
 // Focus Handlers
 const onFocusHandler = e => {
@@ -109,7 +109,7 @@ export default function CreateQuestionPage() {
     };
 
     return (
-        <div className="w-full min-h-screen p-6 flex flex-col items-center" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen flex flex-col items-center" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
             
             <div className="w-full max-w-3xl space-y-6">
                 {/* Header */}
