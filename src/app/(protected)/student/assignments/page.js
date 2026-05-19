@@ -1,592 +1,1426 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
-    MdSearch, MdUpload, MdClose, MdArticle, MdCheckCircle, MdErrorOutline, MdAccessTime,
-    MdChevronLeft, MdChevronRight, MdEmojiEvents, MdChatBubbleOutline, MdDownload,
-    MdStar, MdInsertChartOutlined, MdVisibility, MdMenuBook, MdOutlineAssignment
-} from 'react-icons/md';
-import { Loader2 } from 'lucide-react'; // Loader ke liye spinner
-import api from '@/lib/axios';
-import assignmentService from '@/services/assignmentService';
-import { resolveMediaUrl } from '@/lib/mediaUrl';
-import { C, T, S, R } from '@/constants/studentTokens';
-import StatCard from '@/components/StatCard';
+  MdSearch,
+  MdUpload,
+  MdClose,
+  MdArticle,
+  MdCheckCircle,
+  MdErrorOutline,
+  MdAccessTime,
+  MdChevronLeft,
+  MdChevronRight,
+  MdEmojiEvents,
+  MdChatBubbleOutline,
+  MdDownload,
+  MdStar,
+  MdInsertChartOutlined,
+  MdVisibility,
+  MdMenuBook,
+  MdOutlineAssignment,
+} from "react-icons/md";
+import { Loader2 } from "lucide-react"; // Loader ke liye spinner
+import api from "@/lib/axios";
+import assignmentService from "@/services/assignmentService";
+import { resolveMediaUrl } from "@/lib/mediaUrl";
+import { C, T, S, R } from "@/constants/studentTokens";
+import StatCard from "@/components/StatCard";
 
 // ─── Theme ───────────────────────────────────────────────────────────────────
 const PAGE_SIZE = 8;
 
-const onFocus = e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; };
-const onBlur = e => { e.target.style.borderColor = 'transparent'; e.target.style.boxShadow = 'none'; };
+const onFocus = (e) => {
+  e.target.style.borderColor = C.btnPrimary;
+  e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`;
+};
+const onBlur = (e) => {
+  e.target.style.borderColor = "transparent";
+  e.target.style.boxShadow = "none";
+};
 
 const baseInput = {
-    backgroundColor: C.surfaceWhite, border: '1.5px solid transparent', borderRadius: '10px',
-    color: C.heading, fontFamily: T.fontFamily, fontSize: T.size.sm,
-    fontWeight: T.weight.semibold, outline: 'none', width: '100%',
-    padding: '10px 16px', transition: 'all 0.2s ease',
+  backgroundColor: C.surfaceWhite,
+  border: "1.5px solid transparent",
+  borderRadius: "10px",
+  color: C.heading,
+  fontFamily: T.fontFamily,
+  fontSize: T.size.sm,
+  fontWeight: T.weight.semibold,
+  outline: "none",
+  width: "100%",
+  padding: "10px 16px",
+  transition: "all 0.2s ease",
 };
 
 // ─── Submission Detail Drawer ─────────────────────────────────────────────────
 function SubmissionDrawer({ row, onClose }) {
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-    useEffect(() => {
-        const load = async () => {
-            try {
-                const res = await assignmentService.getMySubmission(row._id);
-                if (res.success) setData(res);
-            } catch (e) {
-                setError('Could not load submission details.');
-            } finally { setLoading(false); }
-        };
-        load();
-    }, [row._id]);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await assignmentService.getMySubmission(row._id);
+        if (res.success) setData(res);
+      } catch (e) {
+        setError("Could not load submission details.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [row._id]);
 
-    const sub = data?.submission;
-    const asgn = data?.assignment || row;
-    const pct = sub?.grade != null && asgn?.totalMarks
-        ? Math.round((sub.grade / asgn.totalMarks) * 100) : null;
-    const pctColor = pct == null ? C.textMuted : pct >= 75 ? C.success : pct >= 50 ? C.warning : C.danger;
+  const sub = data?.submission;
+  const asgn = data?.assignment || row;
+  const pct =
+    sub?.grade != null && asgn?.totalMarks
+      ? Math.round((sub.grade / asgn.totalMarks) * 100)
+      : null;
+  const pctColor =
+    pct == null
+      ? C.textMuted
+      : pct >= 75
+        ? C.success
+        : pct >= 50
+          ? C.warning
+          : C.danger;
 
-    return (
-        <>
-            {/* Backdrop */}
-            <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
 
-            {/* Drawer */}
-            <div className="fixed right-0 top-0 bottom-0 z-50 flex flex-col w-full max-w-[520px] shadow-2xl overflow-hidden"
-                style={{ backgroundColor: C.outerCard, borderLeft: `1px solid ${C.cardBorder}`, fontFamily: T.fontFamily }}>
+      {/* Drawer */}
+      <div
+        className="fixed right-0 top-0 bottom-0 z-50 flex flex-col w-full max-w-[520px] shadow-2xl overflow-hidden"
+        style={{
+          backgroundColor: C.outerCard,
+          borderLeft: `1px solid ${C.cardBorder}`,
+          fontFamily: T.fontFamily,
+        }}
+      >
+        {/* Header */}
+        <div
+          className="p-6 border-b flex items-start justify-between gap-4 shrink-0"
+          style={{ borderColor: C.cardBorder, backgroundColor: C.innerBox }}
+        >
+          <div className="min-w-0 flex-1">
+            <p
+              style={{
+                fontSize: "10px",
+                fontWeight: T.weight.bold,
+                color: C.textMuted,
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+                margin: "0 0 4px 0",
+              }}
+            >
+              Submission Detail
+            </p>
+            <h2
+              className="truncate"
+              style={{
+                fontSize: T.size.lg,
+                fontWeight: T.weight.black,
+                color: C.heading,
+                margin: 0,
+              }}
+            >
+              {row.title}
+            </h2>
+            <p
+              style={{
+                fontSize: T.size.xs,
+                color: C.textMuted,
+                fontWeight: T.weight.semibold,
+                margin: "3px 0 0 0",
+              }}
+            >
+              {row.courseTitle}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 flex items-center justify-center shrink-0 cursor-pointer border-none transition-colors"
+            style={{
+              backgroundColor: C.surfaceWhite,
+              color: C.heading,
+              border: `1px solid ${C.cardBorder}`,
+              borderRadius: "10px",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = "#fff")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = C.surfaceWhite)
+            }
+          >
+            <MdClose size={16} />
+          </button>
+        </div>
 
-                {/* Header */}
-                <div className="p-6 border-b flex items-start justify-between gap-4 shrink-0"
-                    style={{ borderColor: C.cardBorder, backgroundColor: C.innerBox }}>
-                    <div className="min-w-0 flex-1">
-                        <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 4px 0' }}>
-                            Submission Detail
-                        </p>
-                        <h2 className="truncate" style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
-                            {row.title}
-                        </h2>
-                        <p style={{ fontSize: T.size.xs, color: C.textMuted, fontWeight: T.weight.semibold, margin: '3px 0 0 0' }}>{row.courseTitle}</p>
-                    </div>
-                    <button onClick={onClose}
-                        className="w-9 h-9 flex items-center justify-center shrink-0 cursor-pointer border-none transition-colors"
-                        style={{ backgroundColor: C.surfaceWhite, color: C.heading, border: `1px solid ${C.cardBorder}`, borderRadius: '10px' }}
-                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fff'}
-                        onMouseLeave={e => e.currentTarget.style.backgroundColor = C.surfaceWhite}>
-                        <MdClose size={16} />
-                    </button>
-                </div>
-
-                {/* Body */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
-
-                    {loading && (
-                        <div className="flex justify-center py-20">
-                            <Loader2 className="w-8 h-8 animate-spin" style={{ color: C.btnPrimary }} />
-                        </div>
-                    )}
-
-                    {error && (
-                        <div className="p-4 text-center" style={{ backgroundColor: C.dangerBg, border: `1px solid ${C.dangerBorder}`, borderRadius: '10px' }}>
-                            <p style={{ color: C.danger, fontSize: T.size.sm, fontWeight: T.weight.bold }}>{error}</p>
-                        </div>
-                    )}
-                    {/* ── ASSIGNMENT INSTRUCTIONS & FILES (NEW) ── */}
-                    {data && asgn && (
-                        <div className="p-5 mb-6 border" style={{ backgroundColor: C.innerBox, borderColor: C.cardBorder, borderRadius: R.md }}>
-                            <h3 className="flex items-center gap-2" style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: '0 0 12px 0' }}>
-                                <MdArticle size={16} style={{ color: C.btnPrimary }} /> Assignment Details
-                            </h3>
-                            <p className="whitespace-pre-wrap" style={{ fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.medium, lineHeight: 1.6, margin: 0 }}>
-                                {asgn.description || 'No description provided.'}
-                            </p>
-
-                            {/* Tutor's Reference Files */}
-                            {asgn.attachments?.length > 0 && (
-                                <div className="mt-4 pt-4 border-t" style={{ borderColor: C.cardBorder }}>
-                                    <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>
-                                        Reference Materials
-                                    </p>
-                                    <div className="space-y-2">
-                                        {asgn.attachments.map((file, idx) => (
-                                            <a key={idx} href={resolveMediaUrl(file.url)} target="_blank" rel="noopener noreferrer"
-                                                className="flex items-center justify-between p-3 transition-all border text-decoration-none group"
-                                                style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder, borderRadius: '10px' }}
-                                                onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.backgroundColor = '#fff'; }}
-                                                onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.backgroundColor = C.outerCard; }}>
-                                                <div className="flex items-center gap-3 min-w-0">
-                                                    <div className="p-2 rounded-lg bg-white shadow-sm shrink-0">
-                                                        {String(file.type || '').toLowerCase().startsWith('image/')
-                                                            ? <img src={resolveMediaUrl(file.url)} alt={file.name || 'attachment'} className="w-8 h-8 rounded-md object-cover" />
-                                                            : <MdDownload className="w-4 h-4" style={{ color: C.btnPrimary }} />}
-                                                    </div>
-                                                    <p className="truncate m-0" style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>
-                                                        {file.name || 'Download Attachment'}
-                                                    </p>
-                                                </div>
-                                            </a>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-             
-                    {data && sub && (
-                        <>
-                            {/* Grade Card */}
-                            {sub.status === 'graded' ? (
-                                <div className="p-5 relative overflow-hidden"
-                                    style={{ background: 'linear-gradient(135deg,#ecfdf5,#d1fae5)', border: `1px solid ${C.successBorder}`, borderRadius: R.md }}>
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                                                style={{ backgroundColor: 'rgba(16,185,129,0.15)' }}>
-                                                <MdEmojiEvents size={18} style={{ color: C.success }} />
-                                            </div>
-                                            <span style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: '#065F46' }}>Your Grade</span>
-                                        </div>
-                                        <span style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.success, backgroundColor: C.successBg, border: `1px solid ${C.successBorder}`, padding: '3px 10px', borderRadius: R.full }}>
-                                            GRADED
-                                        </span>
-                                    </div>
-                                    <div className="flex items-end gap-4">
-                                        <div>
-                                            <span style={{ fontSize: '42px', fontWeight: T.weight.black, color: '#065F46', lineHeight: 1 }}>
-                                                {sub.grade}
-                                            </span>
-                                            <span style={{ fontSize: T.size.lg, fontWeight: T.weight.bold, color: '#065F46' }}>
-                                                /{asgn.totalMarks}
-                                            </span>
-                                        </div>
-                                        {pct != null && (
-                                            <div className="flex flex-col items-start gap-1 flex-1">
-                                                <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: '#065F46' }}>
-                                                    {pct}%
-                                                </span>
-                                                <div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(16,185,129,0.2)' }}>
-                                                    <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: pctColor, transition: 'width 0.8s ease' }} />
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                    {sub.gradedAt && (
-                                        <p style={{ fontSize: T.size.xs, fontWeight: T.weight.semibold, color: 'rgba(6,95,70,0.7)', margin: '10px 0 0 0' }}>
-                                            Graded on {new Date(sub.gradedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                            {sub.gradedBy?.name ? ` by ${sub.gradedBy.name}` : ''}
-                                        </p>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="p-5 flex items-center gap-4"
-                                    style={{ backgroundColor: C.warningBg, border: `1px solid ${C.warningBorder}`, borderRadius: R.md }}>
-                                    <MdAccessTime size={22} style={{ color: C.warning, shrink: 0 }} />
-                                    <div>
-                                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: '#92400E', margin: 0 }}>
-                                            Awaiting Grade
-                                        </p>
-                                        <p style={{ fontSize: T.size.xs, fontWeight: T.weight.semibold, color: '#B45309', margin: '2px 0 0 0' }}>
-                                            Submitted on {new Date(sub.submittedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Overall Feedback */}
-                            {sub.feedback && (
-                                <div className="p-5" style={{ backgroundColor: C.outerCard, border: `1px solid ${C.cardBorder}`, borderRadius: R.md }}>
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <MdChatBubbleOutline size={15} style={{ color: C.btnPrimary }} />
-                                        <p style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.8px', margin: 0 }}>
-                                            Tutor Feedback
-                                        </p>
-                                    </div>
-                                    <p style={{ fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.heading, lineHeight: 1.7, margin: 0 }}>
-                                        {sub.feedback}
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* Rubric Scores */}
-                            {asgn.rubric?.length > 0 && (
-                                <div className="overflow-hidden border" style={{ borderColor: C.cardBorder, borderRadius: R.md }}>
-                                    <div className="px-5 py-3.5 flex items-center gap-2 border-b" style={{ backgroundColor: C.innerBox, borderColor: C.cardBorder }}>
-                                        <MdInsertChartOutlined size={15} style={{ color: C.warning }} />
-                                        <p style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.8px', margin: 0 }}>
-                                            Rubric Breakdown
-                                        </p>
-                                    </div>
-                                    <div className="divide-y" style={{ borderColor: C.cardBorder }}>
-                                        {asgn.rubric.map((criterion, i) => {
-                                            const rs = sub.rubricScores?.find(r => r.criterionId?.toString() === criterion._id?.toString());
-                                            return (
-                                                <div key={i} className="p-4" style={{ backgroundColor: rs ? 'rgba(16,185,129,0.04)' : C.outerCard }}>
-                                                    <div className="flex items-start justify-between gap-3 mb-1">
-                                                        <p style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
-                                                            {criterion.criterion}
-                                                        </p>
-                                                        <span className="shrink-0 px-2.5 py-0.5 rounded-lg"
-                                                            style={rs
-                                                                ? { backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontSize: '11px', fontWeight: T.weight.black }
-                                                                : { backgroundColor: C.innerBox, color: C.textMuted, border: `1px solid ${C.cardBorder}`, fontSize: '11px', fontWeight: T.weight.black }}>
-                                                            {rs ? `${rs.points} / ` : '— / '}{criterion.points} pts
-                                                        </span>
-                                                    </div>
-                                                    {criterion.description && (
-                                                        <p style={{ fontSize: T.size.xs, color: C.textMuted, fontWeight: T.weight.semibold, margin: '0 0 4px 0', lineHeight: 1.5 }}>
-                                                            {criterion.description}
-                                                        </p>
-                                                    )}
-                                                    {rs?.comments && (
-                                                        <div className="mt-2 p-3 flex items-start gap-2.5 border"
-                                                            style={{ backgroundColor: C.surfaceWhite, borderColor: C.successBorder, borderRadius: '10px' }}>
-                                                            <MdChatBubbleOutline size={13} style={{ color: C.success, flexShrink: 0, marginTop: 2 }} />
-                                                            <p style={{ fontSize: T.size.xs, color: C.heading, fontWeight: T.weight.semibold, margin: 0 }}>
-                                                                {rs.comments}
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Submitted Files */}
-                            {sub.attachments?.length > 0 && (
-                                <div className="overflow-hidden border" style={{ borderColor: C.cardBorder, borderRadius: R.md }}>
-                                    <div className="px-5 py-3.5 border-b flex items-center gap-2" style={{ backgroundColor: C.innerBox, borderColor: C.cardBorder }}>
-                                        <MdArticle size={15} style={{ color: C.btnPrimary }} />
-                                        <p style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.8px', margin: 0 }}>
-                                            Submitted Files
-                                        </p>
-                                    </div>
-                                    <div className="p-4 space-y-2.5">
-                                        {sub.attachments.map((file, i) => (
-                                            <a key={i} href={resolveMediaUrl(file.url)} target="_blank" rel="noopener noreferrer"
-                                                className="flex items-center justify-between p-3.5 border transition-all group no-underline"
-                                                style={{ backgroundColor: C.outerCard, borderColor: C.cardBorder, borderRadius: '10px' }}
-                                                onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.backgroundColor = '#fff'; }}
-                                                onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.backgroundColor = C.outerCard; }}>
-                                                <div className="flex items-center gap-3 min-w-0">
-                                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: C.innerBox }}>
-                                                        {String(file.type || '').toLowerCase().startsWith('image/')
-                                                            ? <img src={resolveMediaUrl(file.url)} alt={file.name || 'attachment'} className="w-8 h-8 rounded-md object-cover" />
-                                                            : <MdArticle size={14} style={{ color: C.btnPrimary }} />}
-                                                    </div>
-                                                    <p className="truncate m-0" style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>
-                                                        {file.name}
-                                                    </p>
-                                                </div>
-                                                <MdDownload size={14} style={{ color: C.textMuted, flexShrink: 0 }} className="group-hover:text-indigo-600 transition-colors" />
-                                            </a>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Text response */}
-                            {sub.content && (
-                                <div className="overflow-hidden border" style={{ borderColor: C.cardBorder, borderRadius: R.md }}>
-                                    <div className="px-5 py-3.5 border-b flex items-center gap-2" style={{ backgroundColor: C.innerBox, borderColor: C.cardBorder }}>
-                                        <MdMenuBook size={15} style={{ color: C.btnPrimary }} />
-                                        <p style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.8px', margin: 0 }}>
-                                            Your Written Answer
-                                        </p>
-                                    </div>
-                                    <div className="p-5">
-                                        <p className="whitespace-pre-wrap leading-relaxed m-0"
-                                            style={{ fontSize: T.size.sm, color: C.heading, fontWeight: T.weight.semibold }}>
-                                            {sub.content}
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    )}
-                </div>
-
-                {/* Footer */}
-                <div className="p-5 border-t shrink-0" style={{ borderColor: C.cardBorder, backgroundColor: C.innerBox }}>
-                    <Link href={`/student/courses/${row.courseId}/assignments/${row._id}`} className="no-underline block">
-                        <button className="w-full py-3 text-white border-none cursor-pointer transition-opacity hover:opacity-90 shadow-sm"
-                            style={{ background: C.gradientBtn, fontFamily: T.fontFamily, fontWeight: T.weight.bold, fontSize: T.size.sm, borderRadius: '10px' }}>
-                            Open Full Assignment Page
-                        </button>
-                    </Link>
-                </div>
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
+          {loading && (
+            <div className="flex justify-center py-20">
+              <Loader2
+                className="w-8 h-8 animate-spin"
+                style={{ color: C.btnPrimary }}
+              />
             </div>
-        </>
-    );
+          )}
+
+          {error && (
+            <div
+              className="p-4 text-center"
+              style={{
+                backgroundColor: C.dangerBg,
+                border: `1px solid ${C.dangerBorder}`,
+                borderRadius: "10px",
+              }}
+            >
+              <p
+                style={{
+                  color: C.danger,
+                  fontSize: T.size.sm,
+                  fontWeight: T.weight.bold,
+                }}
+              >
+                {error}
+              </p>
+            </div>
+          )}
+          {/* ── ASSIGNMENT INSTRUCTIONS & FILES (NEW) ── */}
+          {data && asgn && (
+            <div
+              className="p-5 mb-6 border"
+              style={{
+                backgroundColor: C.innerBox,
+                borderColor: C.cardBorder,
+                borderRadius: R.md,
+              }}
+            >
+              <h3
+                className="flex items-center gap-2"
+                style={{
+                  fontSize: T.size.sm,
+                  fontWeight: T.weight.black,
+                  color: C.heading,
+                  margin: "0 0 12px 0",
+                }}
+              >
+                <MdArticle size={16} style={{ color: C.btnPrimary }} />{" "}
+                Assignment Details
+              </h3>
+              <p
+                className="whitespace-pre-wrap"
+                style={{
+                  fontSize: T.size.sm,
+                  color: C.heading,
+                  fontWeight: T.weight.medium,
+                  lineHeight: 1.6,
+                  margin: 0,
+                }}
+              >
+                {asgn.description || "No description provided."}
+              </p>
+
+              {/* Tutor's Reference Files */}
+              {asgn.attachments?.length > 0 && (
+                <div
+                  className="mt-4 pt-4 border-t"
+                  style={{ borderColor: C.cardBorder }}
+                >
+                  <p
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: T.weight.bold,
+                      color: C.textMuted,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.8px",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    Reference Materials
+                  </p>
+                  <div className="space-y-2">
+                    {asgn.attachments.map((file, idx) => (
+                      <a
+                        key={idx}
+                        href={resolveMediaUrl(file.url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-3 transition-all border text-decoration-none group"
+                        style={{
+                          backgroundColor: C.outerCard,
+                          borderColor: C.cardBorder,
+                          borderRadius: "10px",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = C.btnPrimary;
+                          e.currentTarget.style.backgroundColor = "#fff";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = C.cardBorder;
+                          e.currentTarget.style.backgroundColor = C.outerCard;
+                        }}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-2 rounded-lg bg-white shadow-sm shrink-0">
+                            {String(file.type || "")
+                              .toLowerCase()
+                              .startsWith("image/") ? (
+                              <img
+                                src={resolveMediaUrl(file.url)}
+                                alt={file.name || "attachment"}
+                                className="w-8 h-8 rounded-md object-cover"
+                              />
+                            ) : (
+                              <MdDownload
+                                className="w-4 h-4"
+                                style={{ color: C.btnPrimary }}
+                              />
+                            )}
+                          </div>
+                          <p
+                            className="truncate m-0"
+                            style={{
+                              fontSize: T.size.xs,
+                              fontWeight: T.weight.bold,
+                              color: C.heading,
+                            }}
+                          >
+                            {file.name || "Download Attachment"}
+                          </p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {data && sub && (
+            <>
+              {/* Grade Card */}
+              {sub.status === "graded" ? (
+                <div
+                  className="p-5 relative overflow-hidden"
+                  style={{
+                    background: "linear-gradient(135deg,#ecfdf5,#d1fae5)",
+                    border: `1px solid ${C.successBorder}`,
+                    borderRadius: R.md,
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-9 h-9 rounded-xl flex items-center justify-center"
+                        style={{ backgroundColor: "rgba(16,185,129,0.15)" }}
+                      >
+                        <MdEmojiEvents size={18} style={{ color: C.success }} />
+                      </div>
+                      <span
+                        style={{
+                          fontSize: T.size.sm,
+                          fontWeight: T.weight.black,
+                          color: "#065F46",
+                        }}
+                      >
+                        Your Grade
+                      </span>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: T.weight.black,
+                        color: C.success,
+                        backgroundColor: C.successBg,
+                        border: `1px solid ${C.successBorder}`,
+                        padding: "3px 10px",
+                        borderRadius: R.full,
+                      }}
+                    >
+                      GRADED
+                    </span>
+                  </div>
+                  <div className="flex items-end gap-4">
+                    <div>
+                      <span
+                        style={{
+                          fontSize: "42px",
+                          fontWeight: T.weight.black,
+                          color: "#065F46",
+                          lineHeight: 1,
+                        }}
+                      >
+                        {sub.grade}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: T.size.lg,
+                          fontWeight: T.weight.bold,
+                          color: "#065F46",
+                        }}
+                      >
+                        /{asgn.totalMarks}
+                      </span>
+                    </div>
+                    {pct != null && (
+                      <div className="flex flex-col items-start gap-1 flex-1">
+                        <span
+                          style={{
+                            fontSize: T.size.xs,
+                            fontWeight: T.weight.bold,
+                            color: "#065F46",
+                          }}
+                        >
+                          {pct}%
+                        </span>
+                        <div
+                          className="w-full h-2 rounded-full overflow-hidden"
+                          style={{ backgroundColor: "rgba(16,185,129,0.2)" }}
+                        >
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${pct}%`,
+                              backgroundColor: pctColor,
+                              transition: "width 0.8s ease",
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {sub.gradedAt && (
+                    <p
+                      style={{
+                        fontSize: T.size.xs,
+                        fontWeight: T.weight.semibold,
+                        color: "rgba(6,95,70,0.7)",
+                        margin: "10px 0 0 0",
+                      }}
+                    >
+                      Graded on{" "}
+                      {new Date(sub.gradedAt).toLocaleDateString("en-US", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                      {sub.gradedBy?.name ? ` by ${sub.gradedBy.name}` : ""}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div
+                  className="p-5 flex items-center gap-4"
+                  style={{
+                    backgroundColor: C.warningBg,
+                    border: `1px solid ${C.warningBorder}`,
+                    borderRadius: R.md,
+                  }}
+                >
+                  <MdAccessTime
+                    size={22}
+                    style={{ color: C.warning, shrink: 0 }}
+                  />
+                  <div>
+                    <p
+                      style={{
+                        fontSize: T.size.sm,
+                        fontWeight: T.weight.black,
+                        color: "#92400E",
+                        margin: 0,
+                      }}
+                    >
+                      Awaiting Grade
+                    </p>
+                    <p
+                      style={{
+                        fontSize: T.size.xs,
+                        fontWeight: T.weight.semibold,
+                        color: "#B45309",
+                        margin: "2px 0 0 0",
+                      }}
+                    >
+                      Submitted on{" "}
+                      {new Date(sub.submittedAt).toLocaleDateString("en-US", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Overall Feedback */}
+              {sub.feedback && (
+                <div
+                  className="p-5"
+                  style={{
+                    backgroundColor: C.outerCard,
+                    border: `1px solid ${C.cardBorder}`,
+                    borderRadius: R.md,
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <MdChatBubbleOutline
+                      size={15}
+                      style={{ color: C.btnPrimary }}
+                    />
+                    <p
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: T.weight.black,
+                        color: C.textMuted,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.8px",
+                        margin: 0,
+                      }}
+                    >
+                      Tutor Feedback
+                    </p>
+                  </div>
+                  <p
+                    style={{
+                      fontSize: T.size.sm,
+                      fontWeight: T.weight.semibold,
+                      color: C.heading,
+                      lineHeight: 1.7,
+                      margin: 0,
+                    }}
+                  >
+                    {sub.feedback}
+                  </p>
+                </div>
+              )}
+
+              {/* Rubric Scores */}
+              {asgn.rubric?.length > 0 && (
+                <div
+                  className="overflow-hidden border"
+                  style={{ borderColor: C.cardBorder, borderRadius: R.md }}
+                >
+                  <div
+                    className="px-5 py-3.5 flex items-center gap-2 border-b"
+                    style={{
+                      backgroundColor: C.innerBox,
+                      borderColor: C.cardBorder,
+                    }}
+                  >
+                    <MdInsertChartOutlined
+                      size={15}
+                      style={{ color: C.warning }}
+                    />
+                    <p
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: T.weight.black,
+                        color: C.textMuted,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.8px",
+                        margin: 0,
+                      }}
+                    >
+                      Rubric Breakdown
+                    </p>
+                  </div>
+                  <div
+                    className="divide-y"
+                    style={{ borderColor: C.cardBorder }}
+                  >
+                    {asgn.rubric.map((criterion, i) => {
+                      const rs = sub.rubricScores?.find(
+                        (r) =>
+                          r.criterionId?.toString() ===
+                          criterion._id?.toString(),
+                      );
+                      return (
+                        <div
+                          key={i}
+                          className="p-4"
+                          style={{
+                            backgroundColor: rs
+                              ? "rgba(16,185,129,0.04)"
+                              : C.outerCard,
+                          }}
+                        >
+                          <div className="flex items-start justify-between gap-3 mb-1">
+                            <p
+                              style={{
+                                fontSize: T.size.sm,
+                                fontWeight: T.weight.bold,
+                                color: C.heading,
+                                margin: 0,
+                              }}
+                            >
+                              {criterion.criterion}
+                            </p>
+                            <span
+                              className="shrink-0 px-2.5 py-0.5 rounded-lg"
+                              style={
+                                rs
+                                  ? {
+                                      backgroundColor: C.successBg,
+                                      color: C.success,
+                                      border: `1px solid ${C.successBorder}`,
+                                      fontSize: "11px",
+                                      fontWeight: T.weight.black,
+                                    }
+                                  : {
+                                      backgroundColor: C.innerBox,
+                                      color: C.textMuted,
+                                      border: `1px solid ${C.cardBorder}`,
+                                      fontSize: "11px",
+                                      fontWeight: T.weight.black,
+                                    }
+                              }
+                            >
+                              {rs ? `${rs.points} / ` : "— / "}
+                              {criterion.points} pts
+                            </span>
+                          </div>
+                          {criterion.description && (
+                            <p
+                              style={{
+                                fontSize: T.size.xs,
+                                color: C.textMuted,
+                                fontWeight: T.weight.semibold,
+                                margin: "0 0 4px 0",
+                                lineHeight: 1.5,
+                              }}
+                            >
+                              {criterion.description}
+                            </p>
+                          )}
+                          {rs?.comments && (
+                            <div
+                              className="mt-2 p-3 flex items-start gap-2.5 border"
+                              style={{
+                                backgroundColor: C.surfaceWhite,
+                                borderColor: C.successBorder,
+                                borderRadius: "10px",
+                              }}
+                            >
+                              <MdChatBubbleOutline
+                                size={13}
+                                style={{
+                                  color: C.success,
+                                  flexShrink: 0,
+                                  marginTop: 2,
+                                }}
+                              />
+                              <p
+                                style={{
+                                  fontSize: T.size.xs,
+                                  color: C.heading,
+                                  fontWeight: T.weight.semibold,
+                                  margin: 0,
+                                }}
+                              >
+                                {rs.comments}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Submitted Files */}
+              {sub.attachments?.length > 0 && (
+                <div
+                  className="overflow-hidden border"
+                  style={{ borderColor: C.cardBorder, borderRadius: R.md }}
+                >
+                  <div
+                    className="px-5 py-3.5 border-b flex items-center gap-2"
+                    style={{
+                      backgroundColor: C.innerBox,
+                      borderColor: C.cardBorder,
+                    }}
+                  >
+                    <MdArticle size={15} style={{ color: C.btnPrimary }} />
+                    <p
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: T.weight.black,
+                        color: C.textMuted,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.8px",
+                        margin: 0,
+                      }}
+                    >
+                      Submitted Files
+                    </p>
+                  </div>
+                  <div className="p-4 space-y-2.5">
+                    {sub.attachments.map((file, i) => (
+                      <a
+                        key={i}
+                        href={resolveMediaUrl(file.url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-3.5 border transition-all group no-underline"
+                        style={{
+                          backgroundColor: C.outerCard,
+                          borderColor: C.cardBorder,
+                          borderRadius: "10px",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = C.btnPrimary;
+                          e.currentTarget.style.backgroundColor = "#fff";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = C.cardBorder;
+                          e.currentTarget.style.backgroundColor = C.outerCard;
+                        }}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                            style={{ backgroundColor: C.innerBox }}
+                          >
+                            {String(file.type || "")
+                              .toLowerCase()
+                              .startsWith("image/") ? (
+                              <img
+                                src={resolveMediaUrl(file.url)}
+                                alt={file.name || "attachment"}
+                                className="w-8 h-8 rounded-md object-cover"
+                              />
+                            ) : (
+                              <MdArticle
+                                size={14}
+                                style={{ color: C.btnPrimary }}
+                              />
+                            )}
+                          </div>
+                          <p
+                            className="truncate m-0"
+                            style={{
+                              fontSize: T.size.xs,
+                              fontWeight: T.weight.bold,
+                              color: C.heading,
+                            }}
+                          >
+                            {file.name}
+                          </p>
+                        </div>
+                        <MdDownload
+                          size={14}
+                          style={{ color: C.textMuted, flexShrink: 0 }}
+                          className="group-hover:text-indigo-600 transition-colors"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Text response */}
+              {sub.content && (
+                <div
+                  className="overflow-hidden border"
+                  style={{ borderColor: C.cardBorder, borderRadius: R.md }}
+                >
+                  <div
+                    className="px-5 py-3.5 border-b flex items-center gap-2"
+                    style={{
+                      backgroundColor: C.innerBox,
+                      borderColor: C.cardBorder,
+                    }}
+                  >
+                    <MdMenuBook size={15} style={{ color: C.btnPrimary }} />
+                    <p
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: T.weight.black,
+                        color: C.textMuted,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.8px",
+                        margin: 0,
+                      }}
+                    >
+                      Your Written Answer
+                    </p>
+                  </div>
+                  <div className="p-5">
+                    <p
+                      className="whitespace-pre-wrap leading-relaxed m-0"
+                      style={{
+                        fontSize: T.size.sm,
+                        color: C.heading,
+                        fontWeight: T.weight.semibold,
+                      }}
+                    >
+                      {sub.content}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div
+          className="p-5 border-t shrink-0"
+          style={{ borderColor: C.cardBorder, backgroundColor: C.innerBox }}
+        >
+          <Link
+            href={`/student/courses/${row.courseId}/assignments/${row._id}`}
+            className="no-underline block"
+          >
+            <button
+              className="w-full py-3 text-white border-none cursor-pointer transition-opacity hover:opacity-90 shadow-sm"
+              style={{
+                background: C.gradientBtn,
+                fontFamily: T.fontFamily,
+                fontWeight: T.weight.bold,
+                fontSize: T.size.sm,
+                borderRadius: "10px",
+              }}
+            >
+              Open Full Assignment Page
+            </button>
+          </Link>
+        </div>
+      </div>
+    </>
+  );
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function StudentAssignmentsPage() {
-    const [enrollments, setEnrollments] = useState([]);
-    const [allRows, setAllRows] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('All');
-    const [courseFilter, setCourseFilter] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [viewRow, setViewRow] = useState(null); // for drawer
+  const [enrollments, setEnrollments] = useState([]);
+  const [allRows, setAllRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("All");
+  const [courseFilter, setCourseFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [viewRow, setViewRow] = useState(null); // for drawer
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                const enrollRes = await api.get('/enrollments/my-enrollments');
-                const enrollmentsList = enrollRes.data?.enrollments || [];
-                setEnrollments(enrollmentsList);
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const enrollRes = await api.get("/enrollments/my-enrollments");
+        const enrollmentsList = enrollRes.data?.enrollments || [];
+        setEnrollments(enrollmentsList);
 
-                const rows = [];
-                for (const enr of enrollmentsList) {
-                    const cid = enr.courseId?._id || enr.courseId;
-                    if (!cid) continue;
-                    const res = await assignmentService.getCourseAssignments(cid);
-                    const assignments = res.assignments || [];
-                    const courseTitle = enr.courseId?.title || 'Course';
-                    assignments.forEach(a => rows.push({ ...a, courseTitle, courseId: cid }));
-                }
-                rows.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-                setAllRows(rows);
-            } catch (e) { console.error(e); }
-            finally { setLoading(false); }
-        };
-        fetchData();
-    }, []);
-
-    const now = new Date();
-
-    const getStatus = (row) => {
-        const sub = row.mySubmission;
-        const due = row.dueDate ? new Date(row.dueDate) : null;
-        if (sub?.status === 'graded') return { label: 'Graded', type: 'graded' };
-        if (sub?.status === 'submitted') return { label: 'Submitted', type: 'submitted' };
-        if (due && due < now) return { label: 'Overdue', type: 'overdue' };
-        return { label: 'Pending', type: 'pending' };
+        const rows = [];
+        for (const enr of enrollmentsList) {
+          const cid = enr.courseId?._id || enr.courseId;
+          if (!cid) continue;
+          const res = await assignmentService.getCourseAssignments(cid);
+          const assignments = res.assignments || [];
+          const courseTitle = enr.courseId?.title || "Course";
+          assignments.forEach((a) =>
+            rows.push({ ...a, courseTitle, courseId: cid }),
+          );
+        }
+        rows.sort(
+          (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+        );
+        setAllRows(rows);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
     };
+    fetchData();
+  }, []);
 
-    const pendingCount = allRows.filter(r => getStatus(r).type === 'pending').length;
-    const submittedCount = allRows.filter(r => ['submitted', 'graded'].includes(getStatus(r).type)).length;
-    const overdueCount = allRows.filter(r => getStatus(r).type === 'overdue').length;
-    const gradedCount = allRows.filter(r => getStatus(r).type === 'graded').length;
+  const now = new Date();
 
-    const filtered = allRows.filter(row => {
-        const s = getStatus(row);
-        if (activeTab === 'Pending' && s.type !== 'pending') return false;
-        if (activeTab === 'Submitted' && !['submitted', 'graded'].includes(s.type)) return false;
-        if (activeTab === 'Overdue' && s.type !== 'overdue') return false;
-        if (activeTab === 'Graded' && s.type !== 'graded') return false;
-        if (courseFilter && !row.courseTitle.toLowerCase().includes(courseFilter.toLowerCase())) return false;
-        return true;
-    });
+  const getStatus = (row) => {
+    const sub = row.mySubmission;
+    const due = row.dueDate ? new Date(row.dueDate) : null;
+    if (sub?.status === "graded") return { label: "Graded", type: "graded" };
+    if (sub?.status === "submitted")
+      return { label: "Submitted", type: "submitted" };
+    if (due && due < now) return { label: "Overdue", type: "overdue" };
+    return { label: "Pending", type: "pending" };
+  };
 
-    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-    const pageRows = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pendingCount = allRows.filter(
+    (r) => getStatus(r).type === "pending",
+  ).length;
+  const submittedCount = allRows.filter((r) =>
+    ["submitted", "graded"].includes(getStatus(r).type),
+  ).length;
+  const overdueCount = allRows.filter(
+    (r) => getStatus(r).type === "overdue",
+  ).length;
+  const gradedCount = allRows.filter(
+    (r) => getStatus(r).type === "graded",
+  ).length;
 
-    const getStatusCfg = (type) => {
-        if (type === 'overdue') return { bg: C.dangerBg, color: C.danger, border: C.dangerBorder, icon: MdErrorOutline, accent: C.danger };
-        if (type === 'graded') return { bg: C.successBg, color: C.success, border: C.successBorder, icon: MdStar, accent: C.success };
-        if (type === 'submitted') return { bg: C.warningBg, color: C.warning, border: C.warningBorder, icon: MdCheckCircle, accent: C.warning };
-        return { bg: '#EEF2FF', color: C.btnPrimary, border: '#C7D2FE', icon: MdAccessTime, accent: C.btnPrimary };
+  const filtered = allRows.filter((row) => {
+    const s = getStatus(row);
+    if (activeTab === "Pending" && s.type !== "pending") return false;
+    if (activeTab === "Submitted" && !["submitted", "graded"].includes(s.type))
+      return false;
+    if (activeTab === "Overdue" && s.type !== "overdue") return false;
+    if (activeTab === "Graded" && s.type !== "graded") return false;
+    if (
+      courseFilter &&
+      !row.courseTitle.toLowerCase().includes(courseFilter.toLowerCase())
+    )
+      return false;
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageRows = filtered.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+
+  const getStatusCfg = (type) => {
+    if (type === "overdue")
+      return {
+        bg: C.dangerBg,
+        color: C.danger,
+        border: C.dangerBorder,
+        icon: MdErrorOutline,
+        accent: C.danger,
+      };
+    if (type === "graded")
+      return {
+        bg: C.successBg,
+        color: C.success,
+        border: C.successBorder,
+        icon: MdStar,
+        accent: C.success,
+      };
+    if (type === "submitted")
+      return {
+        bg: C.warningBg,
+        color: C.warning,
+        border: C.warningBorder,
+        icon: MdCheckCircle,
+        accent: C.warning,
+      };
+    return {
+      bg: "#EEF2FF",
+      color: C.btnPrimary,
+      border: "#C7D2FE",
+      icon: MdAccessTime,
+      accent: C.btnPrimary,
     };
+  };
 
-    if (loading) return (
-        <div className="flex flex-col items-center justify-center min-h-screen gap-3 w-full" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}>
-            <div className="w-12 h-12 rounded-full border-[3px] border-[#4F46E5]/30 border-t-[#4F46E5] animate-spin" />
-            <p style={{ color: C.text, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>Loading assignments...</p>
-        </div>
-    );
-
-    const TABS = [
-        { key: 'All', label: `All (${allRows.length})` },
-        { key: 'Pending', label: `${pendingCount} Pending`, danger: false },
-        { key: 'Submitted', label: `Submitted (${submittedCount})` },
-        { key: 'Graded', label: `${gradedCount} Graded` },
-        { key: 'Overdue', label: `${overdueCount} Overdue`, danger: true },
-    ];
-
+  if (loading)
     return (
-        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
-
-            {/* ── Header ─────────────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5"
-                style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 flex items-center justify-center shrink-0" style={{ backgroundColor: C.innerBg, borderRadius: '10px' }}>
-                        <MdOutlineAssignment size={24} color={C.btnPrimary} />
-                    </div>
-                    <div>
-                        <h1 style={{ color: C.heading, fontSize: T.size['2xl'], fontWeight: T.weight.black, margin: '0 0 4px 0' }}>
-                            Assignments
-                        </h1>
-                        <p style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.semibold, margin: 0 }}>
-                            {allRows.length} Total ·{' '}
-                            <span style={{ color: C.warning, fontWeight: T.weight.bold }}>{pendingCount} Pending</span> ·{' '}
-                            <span style={{ color: C.success, fontWeight: T.weight.bold }}>{gradedCount} Graded</span>
-                        </p>
-                    </div>
-                </div>
-                <Link href="/student/assignments/upload" className="text-decoration-none">
-                    <button className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-sm"
-                        style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: '10px', fontSize: T.size.sm, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
-                        <MdUpload size={16} /> Upload Work
-                    </button>
-                </Link>
-            </div>
-
-
-            {/* ── Stats Row — global dashboard-consistent StatCard ────────────── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div onClick={() => { setActiveTab('Pending');   setCurrentPage(1); }} className="cursor-pointer">
-                    <StatCard label="Pending"   value={pendingCount}   icon={MdAccessTime}      iconBg="#EEF2FF"      iconColor={C.btnPrimary} />
-                </div>
-                <div onClick={() => { setActiveTab('Submitted'); setCurrentPage(1); }} className="cursor-pointer">
-                    <StatCard label="Submitted" value={submittedCount} icon={MdCheckCircle} iconBg={C.warningBg}  iconColor={C.warning} />
-                </div>
-                <div onClick={() => { setActiveTab('Graded');    setCurrentPage(1); }} className="cursor-pointer">
-                    <StatCard label="Graded"    value={gradedCount}    icon={MdEmojiEvents}      iconBg={C.successBg}  iconColor={C.success} />
-                </div>
-                <div onClick={() => { setActiveTab('Overdue');   setCurrentPage(1); }} className="cursor-pointer">
-                    <StatCard label="Overdue"   value={overdueCount}   icon={MdErrorOutline} iconBg={C.dangerBg}   iconColor={C.danger} />
-                </div>
-            </div>
-
-            {/* ── Main Table Card ─────────────────────────────────────── */}
-            <div className="overflow-hidden flex flex-col" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-
-                {/* Filters */}
-                <div className="p-5 flex flex-col xl:flex-row items-center justify-between gap-4"
-                    style={{ backgroundColor: C.innerBg, borderBottom: `1px solid ${C.cardBorder}` }}>
-                    <div className="flex bg-white p-1 rounded-xl shadow-sm border overflow-x-auto w-full xl:w-auto custom-scrollbar" style={{ borderColor: C.cardBorder }}>
-                        {TABS.map(tab => (
-                            <button key={tab.key} onClick={() => { setActiveTab(tab.key); setCurrentPage(1); }}
-                                className="px-4 py-2 text-xs transition-all cursor-pointer border-none whitespace-nowrap"
-                                style={activeTab === tab.key
-                                    ? { backgroundColor: tab.danger ? C.danger : C.btnPrimary, color: '#fff', fontWeight: T.weight.bold, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', fontFamily: T.fontFamily, borderRadius: '8px' }
-                                    : { backgroundColor: 'transparent', color: C.text, fontWeight: T.weight.semibold, fontFamily: T.fontFamily, borderRadius: '8px' }}>
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
-                    <div className="relative w-full xl:w-64 shrink-0">
-                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: C.textMuted }} />
-                        <input type="text" placeholder="Filter by course..." value={courseFilter}
-                            onChange={e => setCourseFilter(e.target.value)}
-                            style={{ ...baseInput, paddingLeft: '36px', height: '40px' }}
-                            onFocus={onFocus} onBlur={onBlur} />
-                    </div>
-                </div>
-
-                {/* List */}
-                <div className="p-5 space-y-3 custom-scrollbar">
-                    {pageRows.length === 0 ? (
-                        <div className="text-center py-16 flex flex-col items-center" style={{ border: `1px dashed ${C.cardBorder}`, borderRadius: R.md }}>
-                            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: C.innerBg }}>
-                                <MdOutlineAssignment size={32} color={C.btnPrimary} style={{ opacity: 0.5 }} />
-                            </div>
-                            <p style={{ fontSize: T.size.md, fontWeight: T.weight.semibold, color: C.heading, margin: '0 0 4px 0' }}>No assignments found</p>
-                            <p style={{ fontSize: T.size.sm, color: C.textMuted, margin: 0 }}>No assignments match your current filter.</p>
-                        </div>
-                    ) : pageRows.map((row) => {
-                        const status = getStatus(row);
-                        const cfg = getStatusCfg(status.type);
-                        const StatusIcon = cfg.icon;
-                        const isSubmittedOrGraded = ['submitted', 'graded'].includes(status.type);
-
-                        return (
-                            <div key={row._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 transition-all border"
-                                style={{ backgroundColor: C.innerBg, borderColor: C.cardBorder, borderLeft: `5px solid ${cfg.accent}`, borderRadius: '10px' }}
-                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.cardBg; }}
-                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.innerBg; }}>
-
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-3 flex-wrap mb-1.5">
-                                        <h3 className="truncate" style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
-                                            {row.title}
-                                        </h3>
-                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full"
-                                            style={{ backgroundColor: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`, fontSize: '9px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                            <StatusIcon size={11} /> {status.label}
-                                        </span>
-                                        {/* Show marks inline if graded */}
-                                        {status.type === 'graded' && row.mySubmission?.grade != null && (
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full"
-                                                style={{ backgroundColor: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontSize: '10px', fontWeight: T.weight.black }}>
-                                                <MdEmojiEvents size={11} /> {row.mySubmission.grade}/{row.totalMarks}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1"
-                                        style={{ fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.textMuted }}>
-                                        <span className="truncate max-w-[200px]">
-                                            Course: <span style={{ color: C.heading, fontWeight: T.weight.bold }}>{row.courseTitle}</span>
-                                        </span>
-                                        <span className="flex items-center gap-1.5">
-                                            <MdAccessTime size={13} />
-                                            Due: {row.dueDate ? new Date(row.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No Due Date'}
-                                        </span>
-                                        <span className="flex items-center gap-1.5">
-                                            <MdEmojiEvents size={13} /> {row.totalMarks} pts
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="shrink-0 flex gap-2 items-center pt-3 sm:pt-0 border-t sm:border-none" style={{ borderColor: C.cardBorder }}>
-                                    {/* View Submission button for submitted/graded */}
-                                    {isSubmittedOrGraded && (
-                                        <button onClick={() => setViewRow(row)}
-                                            className="flex items-center gap-1.5 h-10 px-4 cursor-pointer transition-all hover:scale-105 border"
-                                            style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, borderColor: C.cardBorder, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, boxShadow: S.card, borderRadius: '10px' }}>
-                                            <MdVisibility size={14} /> View Submission
-                                        </button>
-                                    )}
-
-                                    {/* Primary action */}
-                                    <Link href={`/student/courses/${row.courseId}/assignments/${row._id}`} className="text-decoration-none">
-                                        <button className="h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-sm"
-                                            style={isSubmittedOrGraded
-                                                ? { backgroundColor: C.innerBg, color: C.heading, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}`, borderRadius: '10px' }
-                                                : { background: C.gradientBtn, color: '#fff', fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, borderRadius: '10px', boxShadow: S.btn }}>
-                                            {isSubmittedOrGraded ? 'Open' : 'Upload Work'}
-                                        </button>
-                                    </Link>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="flex items-center justify-between px-6 py-4" style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBox }}>
-                        <span style={{ fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.text }}>
-                            Page {currentPage} of {totalPages} · {filtered.length} assignments
-                        </span>
-                        <div className="flex items-center gap-2">
-                            <button disabled={currentPage <= 1} onClick={() => setCurrentPage(p => p - 1)}
-                                className="w-8 h-8 flex items-center justify-center cursor-pointer border-none transition-colors disabled:opacity-50"
-                                style={{ backgroundColor: C.surfaceWhite, color: C.heading, border: `1px solid ${C.cardBorder}`, borderRadius: '10px' }}>
-                                <MdChevronLeft size={16} />
-                            </button>
-                            <button disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => p + 1)}
-                                className="w-8 h-8 flex items-center justify-center cursor-pointer border-none transition-colors disabled:opacity-50"
-                                style={{ backgroundColor: C.surfaceWhite, color: C.heading, border: `1px solid ${C.cardBorder}`, borderRadius: '10px' }}>
-                                <MdChevronRight size={16} />
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Submission Drawer */}
-            {viewRow && <SubmissionDrawer row={viewRow} onClose={() => setViewRow(null)} />}
-        </div>
+      <div
+        className="flex flex-col items-center justify-center min-h-screen gap-3 w-full"
+        style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}
+      >
+        <div className="w-12 h-12 rounded-full border-[3px] border-[#4F46E5]/30 border-t-[#4F46E5] animate-spin" />
+        <p
+          style={{
+            color: C.text,
+            fontSize: T.size.sm,
+            fontWeight: T.weight.semibold,
+          }}
+        >
+          Loading assignments...
+        </p>
+      </div>
     );
+
+  const TABS = [
+    { key: "All", label: `All (${allRows.length})` },
+    { key: "Pending", label: `${pendingCount} Pending`, danger: false },
+    { key: "Submitted", label: `Submitted (${submittedCount})` },
+    { key: "Graded", label: `${gradedCount} Graded` },
+    { key: "Overdue", label: `${overdueCount} Overdue`, danger: true },
+  ];
+
+  return (
+    <div
+      className="w-full min-h-screen space-y-6"
+      style={{
+        backgroundColor: C.pageBg,
+        fontFamily: T.fontFamily,
+        color: C.text,
+      }}
+    >
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <div
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5"
+        style={{
+          backgroundColor: C.cardBg,
+          borderRadius: R["2xl"],
+          border: `1px solid ${C.cardBorder}`,
+          boxShadow: S.card,
+        }}
+      >
+        <div className="flex items-center gap-4">
+          <div
+            className="w-12 h-12 flex items-center justify-center shrink-0"
+            style={{ backgroundColor: C.innerBg, borderRadius: "10px" }}
+          >
+            <MdOutlineAssignment size={24} color={C.btnPrimary} />
+          </div>
+          <div>
+            <h1
+              style={{
+                color: C.heading,
+                fontSize: T.size["2xl"],
+                fontWeight: T.weight.black,
+                margin: "0 0 4px 0",
+              }}
+            >
+              Assignments
+            </h1>
+            <p
+              style={{
+                color: C.textMuted,
+                fontSize: T.size.sm,
+                fontWeight: T.weight.semibold,
+                margin: 0,
+              }}
+            >
+              {allRows.length} Total ·{" "}
+              <span style={{ color: C.warning, fontWeight: T.weight.bold }}>
+                {pendingCount} Pending
+              </span>{" "}
+              ·{" "}
+              <span style={{ color: C.success, fontWeight: T.weight.bold }}>
+                {gradedCount} Graded
+              </span>
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/student/assignments/upload"
+          className="text-decoration-none"
+        >
+          <button
+            className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-sm"
+            style={{
+              background: C.gradientBtn,
+              color: "#ffffff",
+              borderRadius: "10px",
+              fontSize: T.size.sm,
+              fontWeight: T.weight.bold,
+              fontFamily: T.fontFamily,
+            }}
+          >
+            <MdUpload size={16} /> Upload Work
+          </button>
+        </Link>
+      </div>
+
+      {/* ── Stats Row — global dashboard-consistent StatCard ────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div
+          onClick={() => {
+            setActiveTab("Pending");
+            setCurrentPage(1);
+          }}
+          className="cursor-pointer"
+        >
+          <StatCard
+            label="Pending"
+            value={pendingCount}
+            icon={MdAccessTime}
+            iconBg="#EEF2FF"
+            iconColor={C.btnPrimary}
+          />
+        </div>
+        <div
+          onClick={() => {
+            setActiveTab("Submitted");
+            setCurrentPage(1);
+          }}
+          className="cursor-pointer"
+        >
+          <StatCard
+            label="Submitted"
+            value={submittedCount}
+            icon={MdCheckCircle}
+            iconBg={C.warningBg}
+            iconColor={C.warning}
+          />
+        </div>
+        <div
+          onClick={() => {
+            setActiveTab("Graded");
+            setCurrentPage(1);
+          }}
+          className="cursor-pointer"
+        >
+          <StatCard
+            label="Graded"
+            value={gradedCount}
+            icon={MdEmojiEvents}
+            iconBg={C.successBg}
+            iconColor={C.success}
+          />
+        </div>
+        <div
+          onClick={() => {
+            setActiveTab("Overdue");
+            setCurrentPage(1);
+          }}
+          className="cursor-pointer"
+        >
+          <StatCard
+            label="Overdue"
+            value={overdueCount}
+            icon={MdErrorOutline}
+            iconBg={C.dangerBg}
+            iconColor={C.danger}
+          />
+        </div>
+      </div>
+
+      {/* ── Main Table Card ─────────────────────────────────────── */}
+      <div
+        className="overflow-hidden flex flex-col"
+        style={{
+          backgroundColor: C.cardBg,
+          borderRadius: R["2xl"],
+          border: `1px solid ${C.cardBorder}`,
+          boxShadow: S.card,
+        }}
+      >
+        {/* Filters */}
+        <div
+          className="p-5 flex flex-col xl:flex-row items-center justify-between gap-4"
+          style={{
+            backgroundColor: C.innerBg,
+            borderBottom: `1px solid ${C.cardBorder}`,
+          }}
+        >
+          <div
+            className="flex bg-white p-1 rounded-xl shadow-sm border overflow-x-auto w-full xl:w-auto custom-scrollbar"
+            style={{ borderColor: C.cardBorder }}
+          >
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  setActiveTab(tab.key);
+                  setCurrentPage(1);
+                }}
+                className="px-4 py-2 text-xs transition-all cursor-pointer border-none whitespace-nowrap"
+                style={
+                  activeTab === tab.key
+                    ? {
+                        backgroundColor: tab.danger ? C.danger : C.btnPrimary,
+                        color: "#fff",
+                        fontWeight: T.weight.bold,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                        fontFamily: T.fontFamily,
+                        borderRadius: "8px",
+                      }
+                    : {
+                        backgroundColor: "transparent",
+                        color: C.text,
+                        fontWeight: T.weight.semibold,
+                        fontFamily: T.fontFamily,
+                        borderRadius: "8px",
+                      }
+                }
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <div className="relative w-full xl:w-64 shrink-0">
+            <MdSearch
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+              style={{ color: C.textMuted }}
+            />
+            <input
+              type="text"
+              placeholder="Filter by course..."
+              value={courseFilter}
+              onChange={(e) => setCourseFilter(e.target.value)}
+              style={{ ...baseInput, paddingLeft: "36px", height: "40px" }}
+              onFocus={onFocus}
+              onBlur={onBlur}
+            />
+          </div>
+        </div>
+
+        {/* List */}
+        <div className="p-5 space-y-3 custom-scrollbar">
+          {pageRows.length === 0 ? (
+            <div
+              className="text-center py-16 flex flex-col items-center"
+              style={{
+                border: `1px dashed ${C.cardBorder}`,
+                borderRadius: R.md,
+              }}
+            >
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+                style={{ backgroundColor: C.innerBg }}
+              >
+                <MdOutlineAssignment
+                  size={32}
+                  color={C.btnPrimary}
+                  style={{ opacity: 0.5 }}
+                />
+              </div>
+              <p
+                style={{
+                  fontSize: T.size.md,
+                  fontWeight: T.weight.semibold,
+                  color: C.heading,
+                  margin: "0 0 4px 0",
+                }}
+              >
+                No assignments found
+              </p>
+              <p style={{ fontSize: T.size.sm, color: C.textMuted, margin: 0 }}>
+                No assignments match your current filter.
+              </p>
+            </div>
+          ) : (
+            pageRows.map((row) => {
+              const status = getStatus(row);
+              const cfg = getStatusCfg(status.type);
+              const StatusIcon = cfg.icon;
+              const isSubmittedOrGraded = ["submitted", "graded"].includes(
+                status.type,
+              );
+
+              return (
+                <div
+                  key={row._id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 transition-all border"
+                  style={{
+                    backgroundColor: C.innerBg,
+                    borderColor: C.cardBorder,
+                    borderLeft: `5px solid ${cfg.accent}`,
+                    borderRadius: "10px",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = C.cardBg;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = C.innerBg;
+                  }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 flex-wrap mb-1.5">
+                      <h3
+                        className="truncate"
+                        style={{
+                          fontSize: T.size.md,
+                          fontWeight: T.weight.black,
+                          color: C.heading,
+                          margin: 0,
+                        }}
+                      >
+                        {row.title}
+                      </h3>
+                      <span
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full"
+                        style={{
+                          backgroundColor: cfg.bg,
+                          color: cfg.color,
+                          border: `1px solid ${cfg.border}`,
+                          fontSize: "9px",
+                          fontWeight: T.weight.black,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.5px",
+                        }}
+                      >
+                        <StatusIcon size={11} /> {status.label}
+                      </span>
+                      {/* Show marks inline if graded */}
+                      {status.type === "graded" &&
+                        row.mySubmission?.grade != null && (
+                          <span
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full"
+                            style={{
+                              backgroundColor: C.successBg,
+                              color: C.success,
+                              border: `1px solid ${C.successBorder}`,
+                              fontSize: "10px",
+                              fontWeight: T.weight.black,
+                            }}
+                          >
+                            <MdEmojiEvents size={11} /> {row.mySubmission.grade}
+                            /{row.totalMarks}
+                          </span>
+                        )}
+                    </div>
+
+                    <div
+                      className="flex flex-wrap items-center gap-x-4 gap-y-1"
+                      style={{
+                        fontSize: T.size.xs,
+                        fontWeight: T.weight.semibold,
+                        color: C.textMuted,
+                      }}
+                    >
+                      <span className="truncate max-w-[200px]">
+                        Course:{" "}
+                        <span
+                          style={{
+                            color: C.heading,
+                            fontWeight: T.weight.bold,
+                          }}
+                        >
+                          {row.courseTitle}
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <MdAccessTime size={13} />
+                        Due:{" "}
+                        {row.dueDate
+                          ? new Date(row.dueDate).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })
+                          : "No Due Date"}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <MdEmojiEvents size={13} /> {row.totalMarks} pts
+                      </span>
+                    </div>
+                  </div>
+
+                  <div
+                    className="shrink-0 flex gap-2 items-center pt-3 sm:pt-0 border-t sm:border-none"
+                    style={{ borderColor: C.cardBorder }}
+                  >
+                    {/* View Submission button for submitted/graded */}
+                    {isSubmittedOrGraded && (
+                      <button
+                        onClick={() => setViewRow(row)}
+                        className="flex items-center gap-1.5 h-10 px-4 cursor-pointer transition-all hover:scale-105 border"
+                        style={{
+                          backgroundColor: C.surfaceWhite,
+                          color: C.btnPrimary,
+                          borderColor: C.cardBorder,
+                          fontSize: T.size.xs,
+                          fontWeight: T.weight.bold,
+                          fontFamily: T.fontFamily,
+                          boxShadow: S.card,
+                          borderRadius: "10px",
+                        }}
+                      >
+                        <MdVisibility size={14} /> View Submission
+                      </button>
+                    )}
+
+                    {/* Primary action */}
+                    <Link
+                      href={`/student/courses/${row.courseId}/assignments/${row._id}`}
+                      className="text-decoration-none"
+                    >
+                      <button
+                        className="h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-sm"
+                        style={
+                          isSubmittedOrGraded
+                            ? {
+                                backgroundColor: C.innerBg,
+                                color: C.heading,
+                                fontSize: T.size.xs,
+                                fontWeight: T.weight.bold,
+                                fontFamily: T.fontFamily,
+                                border: `1px solid ${C.cardBorder}`,
+                                borderRadius: "10px",
+                              }
+                            : {
+                                background: C.gradientBtn,
+                                color: "#fff",
+                                fontSize: T.size.xs,
+                                fontWeight: T.weight.bold,
+                                fontFamily: T.fontFamily,
+                                borderRadius: "10px",
+                                boxShadow: S.btn,
+                              }
+                        }
+                      >
+                        {isSubmittedOrGraded ? "Open" : "Upload Work"}
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div
+            className="flex items-center justify-between px-6 py-4"
+            style={{
+              borderTop: `1px solid ${C.cardBorder}`,
+              backgroundColor: C.innerBox,
+            }}
+          >
+            <span
+              style={{
+                fontSize: T.size.xs,
+                fontWeight: T.weight.semibold,
+                color: C.text,
+              }}
+            >
+              Page {currentPage} of {totalPages} · {filtered.length} assignments
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="w-8 h-8 flex items-center justify-center cursor-pointer border-none transition-colors disabled:opacity-50"
+                style={{
+                  backgroundColor: C.surfaceWhite,
+                  color: C.heading,
+                  border: `1px solid ${C.cardBorder}`,
+                  borderRadius: "10px",
+                }}
+              >
+                <MdChevronLeft size={16} />
+              </button>
+              <button
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="w-8 h-8 flex items-center justify-center cursor-pointer border-none transition-colors disabled:opacity-50"
+                style={{
+                  backgroundColor: C.surfaceWhite,
+                  color: C.heading,
+                  border: `1px solid ${C.cardBorder}`,
+                  borderRadius: "10px",
+                }}
+              >
+                <MdChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Submission Drawer */}
+      {viewRow && (
+        <SubmissionDrawer row={viewRow} onClose={() => setViewRow(null)} />
+      )}
+    </div>
+  );
 }

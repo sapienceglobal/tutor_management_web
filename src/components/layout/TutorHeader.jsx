@@ -304,4 +304,4 @@ export function TutorHeader({ onMenuClick, onSidebarCollapse, isSidebarCollapsed
             </div>
         </header>
     );
-}
+}    

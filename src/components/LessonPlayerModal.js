@@ -13,6 +13,7 @@ import api from '@/lib/axios';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { toast } from 'react-hot-toast';
 import Hls from 'hls.js';
+import ReactMarkdown from 'react-markdown';
 
 // ─── Dark gradient constant ──────────────────────────────────────────────────
 const dg = { background: 'linear-gradient(135deg, #1e1b4b, #4338ca)' };
@@ -72,6 +73,7 @@ export default function LessonPlayerModal({
     const [notes, setNotes] = useState('');
     const [savedNotes, setSavedNotes] = useState({});
     const [savingNote, setSavingNote] = useState(false);
+    const [noteMode, setNoteMode] = useState('write');
 
     // ── Quiz State ──────────────────────────────────────────────────────────
     const [quiz, setQuiz] = useState(null);
@@ -725,13 +727,23 @@ export default function LessonPlayerModal({
                                         <p className="text-sm font-black text-white">My Notes</p>
                                         <span className="text-[10px] text-slate-400 ml-auto">{lesson.title}</span>
                                     </div>
-                                    <textarea
-                                        value={notes}
-                                        onChange={e => setNotes(e.target.value)}
-                                        rows={8}
-                                        placeholder="Write your notes here… (supports markdown)"
-                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 resize-none font-medium transition-all"
-                                    />
+                                    <div className="flex items-center gap-2 mb-2 mt-4">
+                                        <button onClick={() => setNoteMode('write')} className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${noteMode === 'write' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:bg-white/5'}`}>Write</button>
+                                        <button onClick={() => setNoteMode('preview')} className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${noteMode === 'preview' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:bg-white/5'}`}>Preview</button>
+                                    </div>
+                                    {noteMode === 'write' ? (
+                                        <textarea
+                                            value={notes}
+                                            onChange={e => setNotes(e.target.value)}
+                                            rows={8}
+                                            placeholder="Write your notes here… (supports markdown)"
+                                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 resize-none font-medium transition-all"
+                                        />
+                                    ) : (
+                                        <div className="w-full px-4 py-3 min-h-[200px] bg-white/5 border border-white/10 rounded-2xl text-sm text-slate-200 font-medium overflow-y-auto prose prose-invert prose-sm max-w-none">
+                                            {notes ? <ReactMarkdown>{notes}</ReactMarkdown> : <p className="text-slate-500 m-0">Nothing to preview.</p>}
+                                        </div>
+                                    )}
                                     <div className="flex items-center justify-between">
                                         <span className="text-[11px] text-slate-500 font-medium">{notes.length} chars</span>
                                         <DBtn onClick={saveNote} disabled={savingNote || !notes.trim()} className="px-4 py-2 text-xs flex items-center gap-1.5">
@@ -871,7 +883,13 @@ export default function LessonPlayerModal({
                                                 </p>
                                                 <button onClick={() => setAiContent(null)} className="text-slate-500 hover:text-slate-300"><X className="w-4 h-4" /></button>
                                             </div>
-                                            <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap font-medium">{typeof aiContent === 'string' ? aiContent : JSON.stringify(aiContent, null, 2)}</div>
+                                            <div className="text-sm text-slate-300 leading-relaxed font-medium overflow-y-auto max-h-[400px] custom-scrollbar pr-2 prose prose-invert prose-sm max-w-none">
+                                                {typeof aiContent === 'string' ? (
+                                                    <ReactMarkdown>{aiContent}</ReactMarkdown>
+                                                ) : (
+                                                    <pre className="whitespace-pre-wrap m-0 bg-transparent p-0 text-slate-300 font-mono text-xs">{JSON.stringify(aiContent, null, 2)}</pre>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -944,7 +962,7 @@ export default function LessonPlayerModal({
                                                         </div>
                                                         {showDelete && (
                                                             <button onClick={() => handleDeleteComment(c._id)}
-                                                                className="opacity-0 group-hover:opacity-100 w-6 h-6 text-red-400 hover:bg-red-500/15 rounded-lg flex items-center justify-center transition-all shrink-0">
+                                                                className="md:opacity-0 md:group-hover:opacity-100 opacity-100 w-8 h-8 md:w-6 md:h-6 text-red-400 bg-red-500/10 md:bg-transparent md:hover:bg-red-500/15 rounded-lg flex items-center justify-center transition-all shrink-0">
                                                                 <Trash2 className="w-3.5 h-3.5" />
                                                             </button>
                                                         )}

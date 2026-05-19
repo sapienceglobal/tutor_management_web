@@ -3,7 +3,7 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import {
-    MdCheckCircle, MdCancel, MdHome, MdReplay, MdEmojiEvents, MdDownload,
+    MdCheckCircle, MdCancel, MdHome, MdReplay, MdEmojiEvents, MdDownload, MdPrint,
     MdTrendingUp, MdAutoAwesome, MdArticle, MdKeyboardArrowDown, 
     MdKeyboardArrowUp, MdStar, MdTrackChanges, MdErrorOutline, 
     MdClose, MdChatBubbleOutline, MdInsertChartOutlined, MdMenuBook
@@ -144,10 +144,29 @@ function ExamResultPageClient() {
 
     return (
         <div className="min-h-screen" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}>
-            <div className="w-full space-y-5">
+            <style jsx global>{`
+                @media print {
+                    body * {
+                        visibility: hidden;
+                    }
+                    .printable-area, .printable-area * {
+                        visibility: visible;
+                    }
+                    .printable-area {
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                    }
+                    .no-print {
+                        display: none !important;
+                    }
+                }
+            `}</style>
+            <div className="w-full space-y-5 printable-area">
 
                 {/* ── Breadcrumb & Actions ──────────────────────────────────────────────── */}
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 border shadow-sm" style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: '10px' }}>
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 border shadow-sm no-print" style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: '10px' }}>
                     <div className="flex items-center gap-2" style={{ fontSize: T.size.base, fontWeight: T.weight.bold, color: C.textMuted }}>
                         <Link href="/student/dashboard" className="hover:text-[#4F46E5] transition-colors flex items-center gap-1.5 text-decoration-none" style={{ color: C.textMuted }}><MdHome size={16}/> Home</Link>
                         <span className="text-slate-300">/</span>
@@ -161,10 +180,10 @@ function ExamResultPageClient() {
                             style={{ borderColor: C.cardBorder, borderRadius: '10px', fontSize: T.size.base, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
                             <MdEmojiEvents className="w-4 h-4 text-amber-500" /> Certificate
                         </button>
-                        <button onClick={() => toast('Report download coming soon!')}
+                        <button onClick={() => window.print()}
                             className="flex items-center gap-2 px-4 py-2 bg-white border text-slate-700 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
                             style={{ borderColor: C.cardBorder, borderRadius: '10px', fontSize: T.size.base, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
-                            <MdDownload className="w-4 h-4 text-blue-500" /> Report
+                            <MdPrint className="w-4 h-4 text-blue-500" /> Print Report
                         </button>
                         {!isPassed && (
                             <button onClick={() => router.push(`/student/exams/${params.id}/take`)}

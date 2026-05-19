@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { 
     MdMessage, MdSend, MdSearch, MdSchool, MdCheck, MdDoneAll, MdHourglassEmpty 
 } from 'react-icons/md';
+import { motion, AnimatePresence } from 'framer-motion';
 import { C, T, S, R } from '@/constants/studentTokens';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -59,7 +60,7 @@ const onBlurHandler = e => {
 const baseInputStyle = {
     backgroundColor: C.cardBg,
     border: `1px solid ${C.cardBorder}`,
-    borderRadius: '10px',
+    borderRadius: '12px',
     color: C.heading,
     fontFamily: T.fontFamily,
     fontSize: T.size.base,
@@ -84,6 +85,16 @@ export default function StudentMessagesPage() {
     const [selectedCourseId, setSelectedCourseId] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [draft, setDraft] = useState('');
+
+    const messagesEndRef = useRef(null);
+    const inputRef = useRef(null);
+
+    // Auto-scroll to bottom when messages change
+    useEffect(() => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [messages]);
 
     useEffect(() => {
         fetchInitialData();
@@ -225,6 +236,13 @@ export default function StudentMessagesPage() {
                 setMessages((prev) => [...prev, sentMessage]);
             }
             setDraft('');
+            // Focus back on input automatically so user can keep typing!
+            setTimeout(() => {
+                if (inputRef.current) {
+                    inputRef.current.focus();
+                }
+            }, 50);
+            
             await refreshConversations();
         } catch (error) {
             console.error('Send message error:', error);
@@ -254,44 +272,49 @@ export default function StudentMessagesPage() {
         <div className="w-full h-screen lg:h-[calc(100vh-100px)] p-6 flex flex-col gap-6" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
             
             {/* Header */}
-            <div className="flex items-center gap-2.5 shrink-0">
-                <div className="flex items-center justify-center rounded-lg shrink-0" style={{ width: 40, height: 40, backgroundColor: C.iconBg }}>
-                    <MdMessage style={{ width: 16, height: 16, color: C.iconColor }} />
+            <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center justify-center rounded-xl shrink-0 shadow-sm" style={{ width: 44, height: 44, backgroundColor: C.iconBg }}>
+                    <MdMessage style={{ width: 20, height: 20, color: C.iconColor }} />
                 </div>
-                <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.semibold, color: C.heading }}>
-                    Tutor Messages
-                </h2>
+                <div>
+                    <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.bold, color: C.heading, margin: 0, lineHeight: 1.2 }}>
+                        Tutor Messages
+                    </h2>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.textMuted, margin: 0 }}>
+                        Communicate directly with your enrolled course tutors
+                    </p>
+                </div>
             </div>
 
             {tutors.length === 0 ? (
-                <div className="p-14 text-center border border-dashed flex-1 flex flex-col justify-center" style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
-                    <div className="flex items-center justify-center mx-auto mb-4" style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: R.lg }}>
-                        <MdSchool style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
+                <div className="p-14 text-center border border-dashed flex-1 flex flex-col justify-center shadow-sm" style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
+                    <div className="flex items-center justify-center mx-auto mb-4" style={{ width: 64, height: 64, backgroundColor: C.innerBg, borderRadius: R.xl }}>
+                        <MdSchool style={{ width: 32, height: 32, color: C.btnPrimary, opacity: 0.5 }} />
                     </div>
-                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>No tutor conversations yet</h3>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, marginTop: 4 }}>Enroll in a course to start direct messaging with your tutors.</p>
+                    <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.bold, color: C.heading }}>No tutor conversations yet</h3>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, marginTop: 8 }}>Enroll in a course to start direct messaging with your tutors.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 min-h-0 gap-6">
 
                     {/* ── Inbox Sidebar (OUTER CARD) ────────────────────────────────── */}
-                    <aside className="lg:col-span-4 flex flex-col overflow-hidden" 
-                        style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <aside className="lg:col-span-4 flex flex-col overflow-hidden shadow-sm" 
+                        style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}` }}>
                         
-                        <div className="p-4 shrink-0" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBox }}>
+                        <div className="p-4 shrink-0" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.surfaceWhite }}>
                             <div className="relative">
-                                <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2" size={16} color={C.textMuted} />
+                                <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2" size={18} color={C.textMuted} />
                                 <input
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     placeholder="Search conversations..."
-                                    style={{ ...baseInputStyle, paddingLeft: '36px', height: '44px', backgroundColor: C.surfaceWhite }}
+                                    style={{ ...baseInputStyle, paddingLeft: '40px', height: '44px', backgroundColor: C.innerBg, border: 'none' }}
                                     onFocus={onFocusHandler} onBlur={onBlurHandler}
                                 />
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar" style={{ backgroundColor: C.cardBg }}>
                             {filteredConversations.length > 0 ? (
                                 filteredConversations.map((convo) => {
                                     const active = String(selectedTutorId) === String(convo.counterpartId);
@@ -304,25 +327,28 @@ export default function StudentMessagesPage() {
                                             className="w-full text-left px-5 py-4 border-none cursor-pointer transition-all"
                                             style={{ 
                                                 backgroundColor: active ? C.innerBg : 'transparent',
-                                                borderBottom: `1px solid ${C.cardBorder}`
+                                                borderBottom: `1px solid ${C.cardBorder}`,
+                                                borderLeft: active ? `4px solid ${C.btnPrimary}` : '4px solid transparent'
                                             }}>
-                                            <div className="flex gap-3 items-center">
-                                                <div className="w-10 h-10 flex items-center justify-center shrink-0 text-white shadow-sm" 
-                                                    style={{ background: C.gradientBtn, borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}>
+                                            <div className="flex gap-4 items-center">
+                                                <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white shadow-sm" 
+                                                    style={{ background: active ? C.gradientBtn : C.textMuted, borderRadius: '12px', fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold }}>
                                                     {convo.counterpart?.name?.[0]?.toUpperCase() || 'T'}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-center mb-1">
                                                         <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{convo.counterpart?.name || 'Tutor'}</p>
-                                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, fontWeight: T.weight.semibold }}>{timeLabel(convo.lastMessage?.sentAt)}</span>
+                                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: active ? C.btnPrimary : C.textMuted, fontWeight: T.weight.bold }}>{timeLabel(convo.lastMessage?.sentAt)}</span>
                                                     </div>
-                                                    <div className="flex justify-between items-center">
-                                                        <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: active ? C.heading : C.text, margin: 0 }}>{convo.lastMessage?.body || 'No messages'}</p>
+                                                    <div className="flex justify-between items-center mt-1">
+                                                        <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: active ? T.weight.semibold : T.weight.medium, color: active ? C.heading : C.textMuted, margin: 0 }}>{convo.lastMessage?.body || 'No messages'}</p>
                                                         {convo.unreadCount > 0 && (
-                                                            <span className="shrink-0 min-w-[20px] h-[20px] px-1 flex items-center justify-center shadow-sm" 
-                                                                style={{ backgroundColor: C.btnPrimary, color: '#ffffff', borderRadius: '10px', fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                                            <motion.span 
+                                                                initial={{ scale: 0 }} animate={{ scale: 1 }}
+                                                                className="shrink-0 min-w-[20px] h-[20px] px-1 flex items-center justify-center shadow-sm" 
+                                                                style={{ backgroundColor: C.danger, color: '#ffffff', borderRadius: '10px', fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
                                                                 {convo.unreadCount}
-                                                            </span>
+                                                            </motion.span>
                                                         )}
                                                     </div>
                                                 </div>
@@ -342,16 +368,17 @@ export default function StudentMessagesPage() {
                                             className="w-full text-left px-5 py-4 border-none cursor-pointer transition-all"
                                             style={{ 
                                                 backgroundColor: active ? C.innerBg : 'transparent',
-                                                borderBottom: `1px solid ${C.cardBorder}`
+                                                borderBottom: `1px solid ${C.cardBorder}`,
+                                                borderLeft: active ? `4px solid ${C.btnPrimary}` : '4px solid transparent'
                                             }}>
-                                            <div className="flex gap-3 items-center">
-                                                <div className="w-10 h-10 flex items-center justify-center shrink-0 text-white shadow-sm" 
-                                                    style={{ background: C.gradientBtn, borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}>
+                                            <div className="flex gap-4 items-center">
+                                                <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white shadow-sm" 
+                                                    style={{ background: active ? C.gradientBtn : C.textMuted, borderRadius: '12px', fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold }}>
                                                     {tutor.name?.[0]?.toUpperCase() || 'T'}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 2px 0' }}>{tutor.name}</p>
-                                                    <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text, margin: 0 }}>No conversation yet</p>
+                                                    <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>{tutor.name}</p>
+                                                    <p className="truncate" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>No conversation yet</p>
                                                 </div>
                                             </div>
                                         </button>
@@ -362,20 +389,20 @@ export default function StudentMessagesPage() {
                     </aside>
 
                     {/* ── Chat Window (OUTER CARD) ──────────────────────────────────── */}
-                    <main className="lg:col-span-8 flex flex-col overflow-hidden" 
-                        style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                    <main className="lg:col-span-8 flex flex-col overflow-hidden shadow-sm" 
+                        style={{ backgroundColor: C.surfaceWhite, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}` }}>
                         
                         {selectedTutorId && currentTutor ? (
                             <>
                                 {/* Chat Header */}
-                                <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBox }}>
+                                <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.cardBg }}>
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 flex items-center justify-center shrink-0 text-white shadow-sm" style={{ background: C.gradientBtn, borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}>
+                                        <div className="w-10 h-10 flex items-center justify-center shrink-0 text-white shadow-sm" style={{ background: C.gradientBtn, borderRadius: '12px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}>
                                             {currentTutor.name?.[0]?.toUpperCase()}
                                         </div>
                                         <div>
                                             <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 2px 0' }}>{currentTutor.name}</p>
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.text, margin: 0 }}>{currentTutor.email}</p>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.textMuted, margin: 0 }}>{currentTutor.email}</p>
                                         </div>
                                     </div>
 
@@ -384,7 +411,7 @@ export default function StudentMessagesPage() {
                                         value={selectedCourseId}
                                         onChange={(e) => setSelectedCourseId(e.target.value)}
                                         className="w-full sm:w-auto shrink-0 cursor-pointer"
-                                        style={{ ...baseInputStyle, height: '44px', backgroundColor: C.surfaceWhite, width: '180px' }}
+                                        style={{ ...baseInputStyle, height: '40px', padding: '0 16px', backgroundColor: C.innerBg, width: '200px', border: 'none' }}
                                         onFocus={onFocusHandler} onBlur={onBlurHandler}
                                     >
                                         <option value="">General Discussion</option>
@@ -397,83 +424,105 @@ export default function StudentMessagesPage() {
                                 </div>
 
                                 {/* Messages List (INNER BOX FEEL) */}
-                                <div className="flex-1 overflow-y-auto p-5 custom-scrollbar space-y-4" style={{ backgroundColor: C.innerBg }}>
+                                <div className="flex-1 overflow-y-auto p-5 md:p-8 custom-scrollbar space-y-6" style={{ backgroundColor: C.innerBg }}>
                                     {loadingMessages ? (
                                         <div className="h-full flex items-center justify-center"><MdHourglassEmpty className="animate-spin" size={24} color={C.btnPrimary} /></div>
                                     ) : messages.length > 0 ? (
-                                        messages.map((msg, i) => {
-                                            const showDate = i === 0 || dateLabel(messages[i - 1].sentAt) !== dateLabel(msg.sentAt);
-                                            return (
-                                                <div key={msg._id}>
-                                                    {showDate && (
-                                                        <div className="flex justify-center my-6">
-                                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, backgroundColor: C.cardBg, padding: '4px 12px', borderRadius: '10px', border: `1px solid ${C.cardBorder}`, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                                {dateLabel(msg.sentAt)}
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                    <div className={`flex ${msg.isOwn ? 'justify-end' : 'justify-start'}`}>
-                                                        <div className={`max-w-[70%] p-3.5`} 
-                                                            style={{ 
-                                                                backgroundColor: msg.isOwn ? C.btnPrimary : C.surfaceWhite, 
-                                                                color: msg.isOwn ? '#ffffff' : C.heading,
-                                                                boxShadow: S.card,
-                                                                borderRadius: '10px',
-                                                                borderTopRightRadius: msg.isOwn ? '0' : '10px',
-                                                                borderTopLeftRadius: msg.isOwn ? '10px' : '0',
-                                                                border: msg.isOwn ? 'none' : `1px solid ${C.cardBorder}`
-                                                            }}>
-                                                            {msg.course?.title && (
-                                                                <span style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, opacity: 0.8, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                                    Regarding: {msg.course.title}
+                                        <AnimatePresence initial={false}>
+                                            {messages.map((msg, i) => {
+                                                const showDate = i === 0 || dateLabel(messages[i - 1].sentAt) !== dateLabel(msg.sentAt);
+                                                return (
+                                                    <div key={msg._id}>
+                                                        {showDate && (
+                                                            <div className="flex justify-center my-6">
+                                                                <span style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: C.textMuted, backgroundColor: C.cardBg, padding: '4px 16px', borderRadius: '20px', border: `1px solid ${C.cardBorder}`, textTransform: 'uppercase', letterSpacing: '1px', boxShadow: S.sm }}>
+                                                                    {dateLabel(msg.sentAt)}
                                                                 </span>
-                                                            )}
-                                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{msg.body}</p>
-                                                            <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', fontFamily: T.fontFamily, fontSize: T.size.xs, marginTop: '6px', opacity: 0.8, fontWeight: T.weight.bold }}>
-                                                                {timeLabel(msg.sentAt)}
-                                                                {msg.isOwn && (
-                                                                    <span>{msg.isRead ? <MdDoneAll size={14} /> : <MdCheck size={14} />}</span>
+                                                            </div>
+                                                        )}
+                                                        <motion.div 
+                                                            initial={{ opacity: 0, y: 10, scale: 0.95 }} 
+                                                            animate={{ opacity: 1, y: 0, scale: 1 }} 
+                                                            transition={{ duration: 0.2 }}
+                                                            className={`flex ${msg.isOwn ? 'justify-end' : 'justify-start'}`}
+                                                        >
+                                                            <div className={`max-w-[75%] md:max-w-[65%] p-4 relative group`} 
+                                                                style={{ 
+                                                                    background: msg.isOwn ? C.gradientBtn : C.cardBg, 
+                                                                    color: msg.isOwn ? '#ffffff' : C.heading,
+                                                                    boxShadow: msg.isOwn ? S.btn : S.card,
+                                                                    borderRadius: '20px',
+                                                                    borderBottomRightRadius: msg.isOwn ? '4px' : '20px',
+                                                                    borderBottomLeftRadius: msg.isOwn ? '20px' : '4px',
+                                                                    border: msg.isOwn ? 'none' : `1px solid ${C.cardBorder}`
+                                                                }}>
+                                                                {msg.course?.title && (
+                                                                    <span style={{ display: 'block', fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: msg.isOwn ? 'rgba(255,255,255,0.8)' : C.btnPrimary, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                                        Regarding: {msg.course.title}
+                                                                    </span>
                                                                 )}
-                                                            </p>
-                                                        </div>
+                                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{msg.body}</p>
+                                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', fontFamily: T.fontFamily, fontSize: '10px', marginTop: '8px', color: msg.isOwn ? 'rgba(255,255,255,0.7)' : C.textMuted, fontWeight: T.weight.bold }}>
+                                                                    {timeLabel(msg.sentAt)}
+                                                                    {msg.isOwn && (
+                                                                        <span className="ml-1">{msg.isRead ? <MdDoneAll size={14} color="#60A5FA" /> : <MdCheck size={14} />}</span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </motion.div>
                                                     </div>
-                                                </div>
-                                            );
-                                        })
+                                                );
+                                            })}
+                                        </AnimatePresence>
                                     ) : (
-                                        <div className="h-full flex flex-col items-center justify-center opacity-50">
-                                            <MdMessage size={48} color={C.textMuted} />
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.text, marginTop: '12px' }}>Start the conversation!</p>
+                                        <div className="h-full flex flex-col items-center justify-center opacity-60">
+                                            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
+                                                <MdMessage size={36} color={C.textMuted} />
+                                            </div>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>Start the conversation!</p>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, marginTop: 4 }}>Send your first message below.</p>
                                         </div>
                                     )}
+                                    {/* Invisible div to scroll to */}
+                                    <div ref={messagesEndRef} />
                                 </div>
 
                                 {/* Reply Input Area */}
-                                <div className="p-4 shrink-0" style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBox }}>
-                                    <div className="flex items-center gap-3">
+                                <div className="p-4 shrink-0 bg-white" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+                                    <div className="flex items-end gap-3 max-w-5xl mx-auto">
                                         <textarea
+                                            ref={inputRef}
                                             value={draft}
                                             onChange={(e) => setDraft(e.target.value)}
                                             placeholder="Write your message..."
-                                            style={{ ...baseInputStyle, backgroundColor: C.surfaceWhite, resize: 'none', height: '48px', paddingTop: '12px' }}
+                                            style={{ ...baseInputStyle, backgroundColor: C.innerBg, resize: 'none', minHeight: '52px', maxHeight: '120px', padding: '14px 16px', borderRadius: '24px', border: `1px solid ${C.cardBorder}` }}
                                             onFocus={onFocusHandler} onBlur={onBlurHandler}
-                                            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }}}
+                                            onKeyDown={(e) => { 
+                                                if (e.key === 'Enter' && !e.shiftKey) { 
+                                                    e.preventDefault(); 
+                                                    handleSend(); 
+                                                }
+                                            }}
+                                            rows={draft.split('\n').length > 1 ? Math.min(draft.split('\n').length, 4) : 1}
                                         />
                                         <button onClick={handleSend} disabled={sending || !draft.trim()}
-                                            className="w-12 h-12 flex items-center justify-center shrink-0 cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-40 shadow-sm"
-                                            style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: '10px', boxShadow: S.btn }}>
-                                            {sending ? <MdHourglassEmpty size={18} className="animate-spin" /> : <MdSend size={18} />}
+                                            className="w-12 h-12 flex items-center justify-center shrink-0 cursor-pointer border-none transition-transform hover:scale-105 disabled:opacity-40 disabled:hover:scale-100 shadow-sm"
+                                            style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: '50%', boxShadow: S.btn }}>
+                                            {sending ? <MdHourglassEmpty size={20} className="animate-spin" /> : <MdSend size={20} className="ml-1" />}
                                         </button>
                                     </div>
+                                    <p className="text-center mt-2" style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.textMuted, fontWeight: T.weight.medium }}>
+                                        Press <strong style={{color: C.heading}}>Enter</strong> to send, <strong style={{color: C.heading}}>Shift + Enter</strong> for new line.
+                                    </p>
                                 </div>
                             </>
                         ) : (
-                            <div className="p-14 text-center border border-dashed mx-6 my-auto" style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
-                                <div className="flex items-center justify-center mx-auto mb-4" style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
-                                    <MdMessage style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
+                            <div className="p-14 text-center border border-dashed mx-6 my-auto shadow-sm" style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
+                                <div className="flex items-center justify-center mx-auto mb-5" style={{ width: 80, height: 80, backgroundColor: C.innerBg, borderRadius: '20px' }}>
+                                    <MdMessage style={{ width: 40, height: 40, color: C.btnPrimary, opacity: 0.6 }} />
                                 </div>
-                                <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading }}>Select a Conversation</h3>
-                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.text, marginTop: 4 }}>Choose a tutor from the left to start or continue a discussion.</p>
+                                <h3 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.bold, color: C.heading }}>Select a Conversation</h3>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.textMuted, marginTop: 8 }}>Choose a tutor from the left sidebar to start or continue a discussion.</p>
                             </div>
                         )}
                     </main>

@@ -737,7 +737,7 @@ export default function ReportsAnalyticsPage() {
                           </p>
                         </div>
                         <Link
-                          href={`/student/exams/attempt/${attempt._id}`}
+                          href={`/student/exams/${attempt.examId}/result?attemptId=${attempt._id}`}
                           className="text-decoration-none"
                         >
                           <button

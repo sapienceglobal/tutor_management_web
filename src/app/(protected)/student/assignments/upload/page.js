@@ -28,7 +28,7 @@ const ALLOWED_EXT = ['.pdf', '.doc', '.docx', '.txt', '.png', '.jpg', '.jpeg'];
 const onFocusHandler = e => {
     e.target.style.borderColor = C.btnPrimary;
     e.target.style.boxShadow   = '0 0 0 3px rgba(117,115,232,0.15)';
-};
+};   
 const onBlurHandler = e => {
     e.target.style.borderColor = C.cardBorder;
     e.target.style.boxShadow   = 'none';

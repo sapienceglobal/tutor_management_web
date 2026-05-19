@@ -104,7 +104,7 @@ export default function StudentAssignmentDetailsPage({ params }) {
             setLoading(true);
             const res = await assignmentService.getAssignmentDetails(assignmentId);
             if (res.success) {
-                setAssignment(res.assignment);
+                setAssignment({ ...res.assignment, mySubmission: res.mySubmission });
                 if (res.mySubmission) {
                     setContent(res.mySubmission.content || '');
                     setAttachments(res.mySubmission.attachments || []);

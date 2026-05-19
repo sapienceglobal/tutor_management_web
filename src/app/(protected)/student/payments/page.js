@@ -200,6 +200,7 @@ export default function PaymentsPage() {
         setCurrentPage(1);
     };
     const resetFilter = () => {
+        setSearchTerm('');
         setStatusFilter('');
         setDateFrom('');
         setDateTo('');
@@ -247,7 +248,7 @@ export default function PaymentsPage() {
                 <div className="lg:col-span-2 space-y-6">
                     {/* Payments Overview */}
                     <div className="overflow-hidden" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                        <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
+                        <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: 'transparent' }}>
                             <div className="flex items-center gap-2.5">
                                 <div className="flex items-center justify-center rounded-lg shrink-0"
                                     style={{ width: 40, height: 40, backgroundColor: C.iconBg }}>
@@ -322,7 +323,7 @@ export default function PaymentsPage() {
 
                     {/* Payment History */}
                     <div className="overflow-hidden" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                        <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
+                        <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: 'transparent' }}>
                             <div className="flex items-center gap-2.5">
                                 <div className="flex items-center justify-center rounded-lg shrink-0"
                                     style={{ width: 40, height: 40, backgroundColor: C.iconBg }}>
@@ -472,6 +473,17 @@ export default function PaymentsPage() {
                             </button>
                         </div>
                         <div className="space-y-4">
+                            <div>
+                                <label style={{ display: 'block', fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 6 }}>Search</label>
+                                <input
+                                    type="text"
+                                    placeholder="Search by ID or details..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    style={{ ...baseInputStyle, height: '44px' }}
+                                    onFocus={onFocusHandler} onBlur={onBlurHandler}
+                                />
+                            </div>
                             <div>
                                 <label style={{ display: 'block', fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: 6 }}>Status</label>
                                 <select

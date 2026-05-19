@@ -127,7 +127,7 @@ export default function ExamPlayerPage() {
                 startedAt: startedAt || new Date().toISOString(),
             };
             const res = await api.post(`/exams/${examId}/submit`, payload);
-            if (res.data.success) router.push(`/student/exams/attempt/${res.data.attemptId}`);
+            if (res.data.success) router.push(`/student/exams/${examId}/result?attemptId=${res.data.attemptId}`);
         } catch (error) {
             toast.error('Submission failed. Please try again.');
         } finally { setSubmitting(false); }

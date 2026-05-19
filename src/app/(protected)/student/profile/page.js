@@ -9,6 +9,7 @@ import {
     ChevronRight, BookOpen, CheckCircle, Award, Shield,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { C, T, S, R, cx } from '@/constants/studentTokens';
 
 export default function StudentProfilePage() {
     const router = useRouter();
@@ -80,23 +81,23 @@ export default function StudentProfilePage() {
     const completedCourses  = enrollments.filter(e => e.progress?.percentage >= 100).length;
     const profileCompletion = [user?.name, user?.email, user?.phone, user?.profileImage].filter(Boolean).length * 25;
 
-    const cardStyle = { backgroundColor: 'var(--theme-background)', borderColor: 'var(--theme-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' };
-    const inputStyle = { backgroundColor: 'color-mix(in srgb, var(--theme-foreground) 4%, var(--theme-background))', borderColor: 'var(--theme-border)', color: 'var(--theme-foreground)' };
+    const cardStyle = { backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], boxShadow: S.card };
+    const inputStyle = { backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, color: C.heading, borderRadius: '10px', outline: 'none' };
 
     if (loading) return (
         <div className="flex items-center justify-center min-h-[60vh]">
             <div className="w-10 h-10 rounded-full border-[3px] animate-spin"
-                style={{ borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)', borderTopColor: 'var(--theme-primary)' }} />
+                style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
         </div>
     );
     if (!user) return null;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" style={{ fontFamily: T.fontFamily }}>
             {/* Page title */}
             <div>
-                <h1 className="text-2xl font-black tracking-tight" style={{ color: 'var(--theme-foreground)' }}>My Profile</h1>
-                <p className="text-sm mt-0.5" style={{ color: 'var(--theme-foreground)', opacity: 0.45 }}>
+                <h1 style={{ color: C.heading, fontSize: T.size['2xl'], fontWeight: T.weight.bold, margin: 0 }}>My Profile</h1>
+                <p style={{ color: C.text, fontSize: T.size.sm, margin: '4px 0 0 0', fontWeight: T.weight.medium }}>
                     Manage your personal information and account settings
                 </p>
             </div>
@@ -106,22 +107,22 @@ export default function StudentProfilePage() {
                 <div className="lg:col-span-2 space-y-5">
 
                     {/* ── Profile Header ─────────────────────────────────── */}
-                    <div className="rounded-2xl border p-6" style={cardStyle}>
+                    <div className="p-6" style={cardStyle}>
                         <div className="flex flex-col sm:flex-row sm:items-start gap-5">
                             {/* Avatar */}
                             <div className="relative shrink-0">
-                                <div className="w-24 h-24 rounded-2xl overflow-hidden border-2"
-                                    style={{ borderColor: 'var(--theme-border)', backgroundColor: 'color-mix(in srgb, var(--theme-primary) 8%, var(--theme-background))' }}>
+                                <div className="w-24 h-24 rounded-2xl overflow-hidden"
+                                    style={{ border: `2px solid ${C.cardBorder}`, backgroundColor: C.innerBg }}>
                                     {user.profileImage ? (
                                         <img src={user.profileImage} alt={user.name} className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center">
-                                            <User className="w-10 h-10" style={{ color: 'var(--theme-primary)', opacity: 0.4 }} />
+                                            <User className="w-10 h-10" style={{ color: C.btnPrimary, opacity: 0.4 }} />
                                         </div>
                                     )}
                                 </div>
-                                <label className="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer"
-                                    style={{ backgroundColor: 'var(--theme-primary)' }}>
+                                <label className="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer transition-transform hover:scale-105"
+                                    style={{ backgroundColor: C.btnPrimary }}>
                                     <Camera className="w-4 h-4 text-white" />
                                     <input id="profile-image-input" type="file" accept="image/*" className="hidden"
                                         onChange={e => {
@@ -136,31 +137,31 @@ export default function StudentProfilePage() {
 
                             {/* Details */}
                             <div className="flex-1 min-w-0">
-                                <h2 className="text-xl font-black" style={{ color: 'var(--theme-foreground)' }}>{user.name || 'Student'}</h2>
-                                <p className="text-sm mt-0.5" style={{ color: 'var(--theme-foreground)', opacity: 0.42 }}>
+                                <h2 style={{ color: C.heading, fontSize: T.size.xl, fontWeight: T.weight.bold, margin: 0 }}>{user.name || 'Student'}</h2>
+                                <p style={{ color: C.text, fontSize: T.size.sm, margin: '4px 0 0 0', fontWeight: T.weight.medium }}>
                                     ID: {studentId}
                                 </p>
                                 <div className="flex flex-wrap gap-2 mt-2">
-                                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full"
-                                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', color: 'var(--theme-primary)' }}>
+                                    <span className="px-2.5 py-0.5 rounded-full"
+                                        style={{ backgroundColor: C.innerBg, color: C.btnPrimary, fontSize: T.size.xs, fontWeight: T.weight.bold }}>
                                         Student
                                     </span>
-                                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full"
-                                        style={{ backgroundColor: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
+                                    <span className="px-2.5 py-0.5 rounded-full"
+                                        style={{ backgroundColor: C.successBg, color: C.success, fontSize: T.size.xs, fontWeight: T.weight.bold, border: `1px solid ${C.successBorder}` }}>
                                         Active
                                     </span>
                                 </div>
-                                <p className="text-xs mt-2" style={{ color: 'var(--theme-foreground)', opacity: 0.38 }}>Joined {joinDate}</p>
+                                <p style={{ color: C.text, fontSize: T.size.xs, margin: '8px 0 0 0', fontWeight: T.weight.medium }}>Joined {joinDate}</p>
                                 <div className="flex flex-wrap gap-2 mt-4">
                                     {[
                                         { icon: Pencil, label: 'Edit Profile',      href: '/student/profile' },
                                         { icon: Lock,   label: 'Change Password',   href: '/student/profile/change-password' },
                                     ].map(({ icon: Icon, label, href }) => (
-                                        <Link key={href} href={href}>
-                                            <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all"
-                                                style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-foreground)', backgroundColor: 'transparent' }}
-                                                onMouseEnter={e => { e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--theme-primary) 40%, transparent)'; e.currentTarget.style.color = 'var(--theme-primary)'; }}
-                                                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--theme-border)'; e.currentTarget.style.color = 'var(--theme-foreground)'; }}>
+                                        <Link key={href} href={href} style={{ textDecoration: 'none' }}>
+                                            <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all cursor-pointer"
+                                                style={{ border: `1px solid ${C.cardBorder}`, color: C.heading, backgroundColor: 'transparent', fontSize: T.size.xs, fontWeight: T.weight.semibold }}
+                                                onMouseEnter={e => { e.currentTarget.style.borderColor = C.btnPrimary; e.currentTarget.style.color = C.btnPrimary; }}
+                                                onMouseLeave={e => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.color = C.heading; }}>
                                                 <Icon className="w-3.5 h-3.5" /> {label}
                                             </button>
                                         </Link>
@@ -171,10 +172,10 @@ export default function StudentProfilePage() {
                     </div>
 
                     {/* ── Personal Info Form ─────────────────────────────── */}
-                    <div className="rounded-2xl border overflow-hidden" style={cardStyle}>
-                        <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--theme-border)' }}>
-                            <h2 className="font-black text-sm" style={{ color: 'var(--theme-foreground)' }}>Personal Information</h2>
-                            <button className="text-xs font-semibold" style={{ color: 'var(--theme-primary)' }}>Edit Details</button>
+                    <div className="overflow-hidden" style={cardStyle}>
+                        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: 'transparent' }}>
+                            <h2 style={{ color: C.heading, fontSize: T.size.sm, fontWeight: T.weight.bold, margin: 0 }}>Personal Information</h2>
+                            <button className="cursor-pointer border-none bg-transparent" style={{ color: C.btnPrimary, fontSize: T.size.xs, fontWeight: T.weight.semibold }}>Edit Details</button>
                         </div>
                         <form onSubmit={handleUpdateProfile} className="p-5 space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -186,8 +187,7 @@ export default function StudentProfilePage() {
                                     { label: 'Gender',           key: 'gender',      type: 'text',   placeholder: 'Male / Female / Other' },
                                 ].map(field => (
                                     <div key={field.label}>
-                                        <label className="block text-[10px] font-black uppercase tracking-wider mb-1.5"
-                                            style={{ color: 'var(--theme-foreground)', opacity: 0.35 }}>
+                                        <label style={{ display: 'block', color: C.text, fontSize: '10px', fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '6px' }}>
                                             {field.label}
                                         </label>
                                         <input
@@ -196,17 +196,19 @@ export default function StudentProfilePage() {
                                             onChange={field.disabled ? undefined : e => setEditForm(p => ({ ...p, [field.key]: e.target.value }))}
                                             placeholder={field.placeholder}
                                             disabled={field.disabled}
-                                            className="w-full px-3 py-2.5 rounded-xl border text-sm disabled:opacity-50"
-                                            style={inputStyle}
+                                            className="w-full px-3 py-2.5 transition-colors disabled:opacity-60"
+                                            style={{ ...inputStyle, fontSize: T.size.sm, fontWeight: T.weight.medium }}
+                                            onFocus={e => { e.currentTarget.style.borderColor = C.btnPrimary; }}
+                                            onBlur={e => { e.currentTarget.style.borderColor = C.cardBorder; }}
                                         />
                                     </div>
                                 ))}
                             </div>
                             <div className="flex justify-end pt-1">
                                 <button type="submit" disabled={saving}
-                                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50"
-                                    style={{ backgroundColor: 'var(--theme-primary)' }}
-                                    onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; }}
+                                    className="flex items-center gap-2 px-5 py-2.5 transition-all disabled:opacity-50 cursor-pointer border-none"
+                                    style={{ background: C.gradientBtn, color: '#fff', borderRadius: '10px', fontSize: T.size.sm, fontWeight: T.weight.bold, boxShadow: S.btn }}
+                                    onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
                                     onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}>
                                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                                     Save Changes
@@ -216,9 +218,9 @@ export default function StudentProfilePage() {
                     </div>
 
                     {/* ── Academic Info ──────────────────────────────────── */}
-                    <div className="rounded-2xl border overflow-hidden" style={cardStyle}>
-                        <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--theme-border)' }}>
-                            <h2 className="font-black text-sm" style={{ color: 'var(--theme-foreground)' }}>Academic Information</h2>
+                    <div className="overflow-hidden" style={cardStyle}>
+                        <div className="px-5 py-4" style={{ borderBottom: `1px solid ${C.cardBorder}`, backgroundColor: 'transparent' }}>
+                            <h2 style={{ color: C.heading, fontSize: T.size.sm, fontWeight: T.weight.bold, margin: 0 }}>Academic Information</h2>
                         </div>
                         <div className="p-5">
                             {[
@@ -229,24 +231,23 @@ export default function StudentProfilePage() {
                                 { label: 'Joined',          value: joinDate           },
                             ].map((row, i, arr) => (
                                 <div key={row.label}
-                                    className="flex items-center justify-between py-2.5 text-sm"
-                                    style={{ borderBottom: i < arr.length - 1 ? `1px solid var(--theme-border)` : 'none' }}>
-                                    <span style={{ color: 'var(--theme-foreground)', opacity: 0.42 }}>{row.label}</span>
-                                    <span className="font-semibold" style={{ color: 'var(--theme-foreground)' }}>{row.value}</span>
+                                    className="flex items-center justify-between py-2.5"
+                                    style={{ borderBottom: i < arr.length - 1 ? `1px solid ${C.cardBorder}` : 'none' }}>
+                                    <span style={{ color: C.text, fontSize: T.size.sm, fontWeight: T.weight.medium }}>{row.label}</span>
+                                    <span style={{ color: C.heading, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>{row.value}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
-
 
                 </div>
 
                 {/* ── Right Sidebar ─────────────────────────────────────── */}
                 <div className="space-y-5">
                     {/* Quick Stats */}
-                    <div className="rounded-2xl border p-5" style={cardStyle}>
-                        <h2 className="font-black text-sm mb-4" style={{ color: 'var(--theme-foreground)' }}>Quick Stats</h2>
-                        <ul className="space-y-3">
+                    <div className="p-5" style={cardStyle}>
+                        <h2 style={{ color: C.heading, fontSize: T.size.sm, fontWeight: T.weight.bold, margin: '0 0 16px 0' }}>Quick Stats</h2>
+                        <ul className="space-y-3 m-0 p-0" style={{ listStyle: 'none' }}>
                             {[
                                 { icon: BookOpen,    label: 'Enrolled Courses', value: enrollments.length },
                                 { icon: CheckCircle, label: 'Tests Completed',  value: '—'               },
@@ -255,12 +256,12 @@ export default function StudentProfilePage() {
                             ].map(stat => (
                                 <li key={stat.label} className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                                        style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)' }}>
-                                        <stat.icon className="w-5 h-5" style={{ color: 'var(--theme-primary)', opacity: 0.75 }} />
+                                        style={{ backgroundColor: C.innerBg }}>
+                                        <stat.icon className="w-5 h-5" style={{ color: C.btnPrimary }} />
                                     </div>
                                     <div>
-                                        <p className="text-[11px]" style={{ color: 'var(--theme-foreground)', opacity: 0.38 }}>{stat.label}</p>
-                                        <p className="text-base font-black" style={{ color: 'var(--theme-foreground)' }}>{stat.value}</p>
+                                        <p style={{ color: C.text, fontSize: '11px', margin: 0, fontWeight: T.weight.medium }}>{stat.label}</p>
+                                        <p style={{ color: C.heading, fontSize: T.size.base, margin: 0, fontWeight: T.weight.bold }}>{stat.value}</p>
                                     </div>
                                 </li>
                             ))}
@@ -268,25 +269,25 @@ export default function StudentProfilePage() {
                     </div>
 
                     {/* Profile Completion */}
-                    <div className="rounded-2xl border p-5" style={cardStyle}>
-                        <h2 className="font-black text-sm mb-4" style={{ color: 'var(--theme-foreground)' }}>Profile Completion</h2>
+                    <div className="p-5" style={cardStyle}>
+                        <h2 style={{ color: C.heading, fontSize: T.size.sm, fontWeight: T.weight.bold, margin: '0 0 16px 0' }}>Profile Completion</h2>
                         <div className="flex flex-col items-center">
                             <div className="relative w-28 h-28">
                                 <svg className="w-28 h-28 -rotate-90" viewBox="0 0 36 36">
                                     <path strokeWidth="3" fill="none"
-                                        style={{ stroke: 'color-mix(in srgb, var(--theme-foreground) 8%, transparent)' }}
+                                        style={{ stroke: C.cardBorder }}
                                         d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                                     <path strokeWidth="3" strokeLinecap="round" fill="none"
-                                        style={{ stroke: 'var(--theme-primary)' }}
+                                        style={{ stroke: C.btnPrimary }}
                                         strokeDasharray={`${Math.min(100, profileCompletion)}, 100`}
                                         d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                                 </svg>
-                                <span className="absolute inset-0 flex items-center justify-center text-xl font-black"
-                                    style={{ color: 'var(--theme-foreground)' }}>
+                                <span className="absolute inset-0 flex items-center justify-center"
+                                    style={{ color: C.heading, fontSize: T.size.xl, fontWeight: T.weight.bold }}>
                                     {Math.min(100, profileCompletion)}%
                                 </span>
                             </div>
-                            <p className="text-xs mt-3 text-center" style={{ color: 'var(--theme-foreground)', opacity: 0.38 }}>
+                            <p className="text-center" style={{ color: C.text, fontSize: T.size.xs, margin: '12px 0 0 0', fontWeight: T.weight.medium }}>
                                 {profileCompletion < 100 ? 'Add more details to complete your profile' : '🎉 Profile is complete!'}
                             </p>
                         </div>

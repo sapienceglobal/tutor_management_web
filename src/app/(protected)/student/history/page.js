@@ -64,7 +64,7 @@ export default function StudentTestsPage() {
     );
 
     return (
-        <div className="w-full min-h-screen p-6 space-y-6" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen space-y-6" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
 
             {/* ── Top Bar ───────────────────────────────────────────────── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, boxShadow: S.card, borderRadius: R['2xl'] }}>
@@ -210,12 +210,12 @@ export default function StudentTestsPage() {
                                                         </button>
                                                     </Link>
                                                 ) : (
-                                                    <Link href={`/student/exams/attempt/${item._id}`} className="text-decoration-none">
-                                                        <button className="flex items-center justify-center gap-1.5 h-9 w-full cursor-pointer border-none transition-opacity hover:opacity-80 shadow-sm"
-                                                            style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, border: `1px solid ${C.cardBorder}`, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, borderRadius: '10px' }}>
-                                                            <MdVisibility size={14} /> Report
-                                                        </button>
-                                                    </Link>
+                                                <Link href={`/student/exams/${item.examId}/result?attemptId=${item._id}`} className="text-decoration-none">
+                                                    <button className="flex items-center justify-center gap-1.5 h-9 w-full cursor-pointer border-none transition-opacity hover:opacity-80 shadow-sm"
+                                                        style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, border: `1px solid ${C.cardBorder}`, fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, borderRadius: '10px' }}>
+                                                        <MdVisibility size={14} /> Report
+                                                    </button>
+                                                </Link>
                                                 )}
                                             </div>
                                         </div>
