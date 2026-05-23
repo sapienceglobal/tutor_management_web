@@ -161,7 +161,8 @@ export default function TakeExamPage({ params }) {
       (step === "verification" || step === "exam") &&
       !loading &&
       !!exam &&
-      !!exam.isProctoringEnabled,
+      !!exam.isProctoringEnabled &&
+      !(typeof window !== "undefined" && new URLSearchParams(window.location.search).get("platform") === "app"),
     isVerificationMode: step === "verification",
     examDuration: exam ? exam.duration * 60 : 0,
     timeLeftRef,
@@ -223,6 +224,12 @@ export default function TakeExamPage({ params }) {
   // ── AI Webcam Initialization ───────────────────────────────────
   useEffect(() => {
     if (loading || !exam) return;
+    const isApp = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("platform") === "app";
+    if (isApp) {
+      setCameraPermission("granted");
+      setIsCameraActive(true);
+      return;
+    }
     if (!exam.isProctoringEnabled && !exam.isAudioProctoringEnabled) {
       setCameraPermission("not_required");
       setIsCameraActive(false);
@@ -494,6 +501,73 @@ export default function TakeExamPage({ params }) {
     return () =>
       document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [exam, loading, tabSwitchCount, step]);
+
+  // ── Native Bridge Listener (Flutter App Integration) ──────────────────
+  useEffect(() => {
+    const handleNativeProctoring = (e) => {
+      if (e.detail) {
+        handleProctoringEvent(e.detail);
+      }
+    };
+    const handleNativeTab = (e) => {
+      if (e.detail && typeof e.detail.count === "number") {
+        const newCount = e.detail.count;
+        setTabSwitchCount(newCount);
+        const newEvent = {
+          eventType: "tab_switch",
+          severity: newCount >= 5 ? "high" : newCount >= 3 ? "medium" : "low",
+          timestamp: new Date().toISOString(),
+          details: `Tab switch #${newCount} — strictTabSwitching: ${exam?.strictTabSwitching}`,
+          videoTimestamp: timeLeftRef.current
+            ? exam?.duration * 60 - timeLeftRef.current
+            : 0,
+        };
+        setProctoringEvents((prev) => [...prev, newEvent]);
+
+        if (exam?.strictTabSwitching) {
+          if (newCount >= 5) {
+            toast.error(
+              "🚨 CRITICAL: Maximum tab switches reached. Exam is being auto-submitted!",
+              { duration: 8000, id: "tab-switch" },
+            );
+            handleSubmit(true);
+          } else if (newCount >= 3) {
+            toast.error(
+              `🚨 Warning #${newCount}: Tab switching will result in exam cancellation.`,
+              { duration: 5000, id: "tab-switch" },
+            );
+          } else {
+            toast.error(
+              `⚠️ Tab switch detected (${newCount}/5). Strict monitoring is active.`,
+              { duration: 5000, id: "tab-switch" },
+            );
+          }
+        } else {
+          if (newCount <= 3) {
+            toast(`ℹ️ Tab switch recorded (${newCount})`, {
+              duration: 2500,
+              id: "tab-switch",
+              style: { background: "#334155", color: "#fff", fontSize: 13 },
+            });
+          }
+          if (newCount > 3) {
+            toast.error(`⚠️ Multiple tab switches (${newCount}) recorded.`, {
+              duration: 3000,
+              id: "tab-switch",
+            });
+          }
+        }
+      }
+    };
+
+    window.addEventListener("nativeProctoringEvent", handleNativeProctoring);
+    window.addEventListener("nativeTabSwitch", handleNativeTab);
+
+    return () => {
+      window.removeEventListener("nativeProctoringEvent", handleNativeProctoring);
+      window.removeEventListener("nativeTabSwitch", handleNativeTab);
+    };
+  }, [exam, handleProctoringEvent]);
 
   // ── Fetch exam ───────────────────────────────────────────────────────
   useEffect(() => {

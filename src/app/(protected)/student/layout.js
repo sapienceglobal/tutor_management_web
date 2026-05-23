@@ -3,15 +3,18 @@
 import { StudentHeader } from "@/components/layout/StudentHeader";
 import { StudentSidebar } from "@/components/layout/StudentSidebar";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/lib/axios";
 import Cookies from "js-cookie";
 import useInstitute from "@/hooks/useInstitute";
 import { C, T } from "@/constants/studentTokens";
 import { Suspense } from "react";
 
-export default function StudentLayout({ children }) {
+function StudentLayoutInner({ children }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isAppView = searchParams.get("platform") === "app";
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Default false rakha hai taaki page load hote hi sidebar pura open rahe (bina jhatke ke)
@@ -46,6 +49,19 @@ export default function StudentLayout({ children }) {
     router.push("/login");
   };
 
+  // ── App Mode: Strip all navigation chrome for Flutter InAppWebView ──
+  if (isAppView) {
+    return (
+      <div
+        className="min-h-screen"
+        style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}
+      >
+        {children}
+      </div>
+    );
+  }
+
+  // ── Normal Web Mode: Full layout with sidebar & header ──
   return (
     <div
       className="min-h-screen"
@@ -74,5 +90,13 @@ export default function StudentLayout({ children }) {
         <main className="p-4 lg:p-6">{children}</main>
       </div>
     </div>
+  );
+}
+
+export default function StudentLayout({ children }) {
+  return (
+    <Suspense fallback={null}>
+      <StudentLayoutInner>{children}</StudentLayoutInner>
+    </Suspense>
   );
 }
