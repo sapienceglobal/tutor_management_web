@@ -33,7 +33,7 @@ export function StudentHeader({ user, institute, onLogout, onMenuClick, onSideba
     const [mounted, setMounted]         = useState(false);
     
     // Real-time Search Engine State
-    const [searchResults, setSearchResults] = useState({ courses: [], tutors: [] });
+    const [searchResults, setSearchResults] = useState({ courses: [], tutors: [], exams: [] });
     const [isSearching, setIsSearching] = useState(false);
     const [showResults, setShowResults] = useState(false);
     const searchContainerRef = useRef(null);
@@ -59,22 +59,24 @@ export function StudentHeader({ user, institute, onLogout, onMenuClick, onSideba
     // ─── Debounced Real-time Search Hook ───
     useEffect(() => {
         if (!searchTerm.trim()) {
-            setSearchResults({ courses: [], tutors: [] });
+            setSearchResults({ courses: [], tutors: [], exams: [] });
             return;
         }
 
         const delayDebounceFn = setTimeout(async () => {
             setIsSearching(true);
             try {
-                const [coursesRes, tutorsRes] = await Promise.all([
+                const [coursesRes, tutorsRes, examsRes] = await Promise.all([
                     api.get(`/courses?search=${encodeURIComponent(searchTerm)}`),
-                    api.get(`/tutors?search=${encodeURIComponent(searchTerm)}`)
+                    api.get(`/tutors?search=${encodeURIComponent(searchTerm)}`),
+                    api.get(`/exams/student/all?search=${encodeURIComponent(searchTerm)}`)
                 ]);
                 
                 const courses = coursesRes.data?.success ? (coursesRes.data.courses || []) : [];
                 const tutors = tutorsRes.data?.success ? (tutorsRes.data.tutors || []) : [];
+                const exams = examsRes.data?.success ? (examsRes.data.exams || []) : [];
 
-                setSearchResults({ courses, tutors });
+                setSearchResults({ courses, tutors, exams });
             } catch (err) {
                 console.error("Error searching in StudentHeader:", err);
             } finally {
@@ -162,7 +164,7 @@ export function StudentHeader({ user, institute, onLogout, onMenuClick, onSideba
                                 {searchTerm && (
                                     <button 
                                         type="button"
-                                        onClick={() => { setSearchTerm(''); setSearchResults({ courses: [], tutors: [] }); }}
+                                        onClick={() => { setSearchTerm(''); setSearchResults({ courses: [], tutors: [], exams: [] }); }}
                                         className="absolute right-3 top-1/2 -translate-y-1/2 border-none bg-transparent cursor-pointer text-gray-400 hover:text-gray-600 flex items-center justify-center"
                                         style={{ outline: 'none' }}
                                     >
@@ -188,7 +190,7 @@ export function StudentHeader({ user, institute, onLogout, onMenuClick, onSideba
                                         <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: `${C.btnPrimary}50`, borderTopColor: C.btnPrimary }}></div>
                                         <span style={{ fontSize: '11px', color: C.textMuted, fontFamily: T.fontFamily, fontWeight: T.weight.semibold }}>Searching...</span>
                                     </div>
-                                ) : (searchResults.courses.length === 0 && searchResults.tutors.length === 0) ? (
+                                ) : (searchResults.courses.length === 0 && searchResults.tutors.length === 0 && (!searchResults.exams || searchResults.exams.length === 0)) ? (
                                     <div className="text-center py-6">
                                         <MdSearch className="mx-auto mb-2 text-gray-300" style={{ width: 32, height: 32 }} />
                                         <p style={{ margin: 0, fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>No matches found</p>
@@ -358,6 +360,91 @@ export function StudentHeader({ user, institute, onLogout, onMenuClick, onSideba
                                                                     textOverflow: 'ellipsis'
                                                                 }}>
                                                                     {tutor.categoryId?.name || 'Expert'} • {tutor.experience || 0} yrs exp
+                                                                </p>
+                                                            </div>
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Matching Exams */}
+                                        {searchResults.exams && searchResults.exams.length > 0 && (
+                                            <div>
+                                                <div style={{
+                                                    fontFamily: T.fontFamily,
+                                                    fontSize: '10px',
+                                                    fontWeight: T.weight.bold,
+                                                    color: C.btnPrimary,
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '1px',
+                                                    marginBottom: '8px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px'
+                                                }}>
+                                                    <span>📝 Matching Tests</span>
+                                                    <span style={{
+                                                        backgroundColor: `${C.btnPrimary}15`,
+                                                        color: C.btnPrimary,
+                                                        padding: '1px 6px',
+                                                        borderRadius: '6px',
+                                                        fontSize: '9px'
+                                                    }}>
+                                                        {searchResults.exams.length}
+                                                    </span>
+                                                </div>
+                                                <div className="flex flex-col gap-1">
+                                                    {searchResults.exams.slice(0, 4).map(exam => (
+                                                        <Link
+                                                            key={exam._id}
+                                                            href={`/student/exams/${exam._id}/take`}
+                                                            onClick={() => setShowResults(false)}
+                                                            className="flex items-center gap-3 p-2 transition-all hover:bg-gray-50"
+                                                            style={{
+                                                                borderRadius: '8px',
+                                                                cursor: 'pointer',
+                                                                textDecoration: 'none',
+                                                                color: 'inherit'
+                                                            }}
+                                                        >
+                                                            <div style={{
+                                                                width: '36px',
+                                                                height: '36px',
+                                                                borderRadius: '6px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                backgroundColor: '#fef3c7',
+                                                                color: '#d97706',
+                                                                fontSize: '18px',
+                                                                flexShrink: 0
+                                                            }}>
+                                                                📝
+                                                            </div>
+                                                            <div style={{ minWidth: 0, flex: 1 }}>
+                                                                <p style={{
+                                                                    margin: 0,
+                                                                    fontFamily: T.fontFamily,
+                                                                    fontSize: '13px',
+                                                                    fontWeight: T.weight.bold,
+                                                                    color: C.heading,
+                                                                    whiteSpace: 'nowrap',
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis'
+                                                                }}>
+                                                                    {exam.title}
+                                                                </p>
+                                                                <p style={{
+                                                                    margin: 0,
+                                                                    fontFamily: T.fontFamily,
+                                                                    fontSize: '10px',
+                                                                    color: C.textMuted,
+                                                                    whiteSpace: 'nowrap',
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis'
+                                                                }}>
+                                                                    {exam.courseTitle || 'Main Test'} • {exam.duration} mins
                                                                 </p>
                                                             </div>
                                                         </Link>

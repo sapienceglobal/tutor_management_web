@@ -13,10 +13,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 const SUGGESTION_CHIPS = [
-    { icon: TrendingUp,    label: 'Platform performance summary',     color: 'bg-[#F4F0FD] text-[#6B4DF1] border-[#E9DFFC]' },
-    { icon: AlertTriangle, label: 'Konse institutes expiring hain?',  color: 'bg-[#FFF7ED] text-[#EA580C] border-[#FFEDD5]' },
-    { icon: Wifi,          label: 'Abhi koi live class chal rahi hai?', color: 'bg-[#ECFDF5] text-[#10B981] border-[#D1FAE5]' },
-    { icon: BookOpen,      label: 'Sabse popular course kaun sa hai?', color: 'bg-[#FDF4FF] text-[#C026D3] border-[#FAE8FF]' },
+    { icon: TrendingUp, label: 'Platform performance summary', color: 'bg-[#F4F0FD] text-[#6B4DF1] border-[#E9DFFC]' },
+    { icon: AlertTriangle, label: 'Konse institutes expiring hain?', color: 'bg-[#FFF7ED] text-[#EA580C] border-[#FFEDD5]' },
+    { icon: Wifi, label: 'Abhi koi live class chal rahi hai?', color: 'bg-[#ECFDF5] text-[#10B981] border-[#D1FAE5]' },
+    { icon: BookOpen, label: 'Sabse popular course kaun sa hai?', color: 'bg-[#FDF4FF] text-[#C026D3] border-[#FAE8FF]' },
 ];
 
 const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.12)';
@@ -57,6 +57,9 @@ export default function SuperAdminAICoordinator() {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    // n8n doesn't return platformFootprint by default in our current setup unless explicitly asked.
+    // If you want to keep this, you'll need to fetch it via a separate API call when the component loads.
+    // For now, I'm setting it to null to avoid errors.
     const [platformFootprint, setPlatformFootprint] = useState(null);
     const [isOnline] = useState(true);
     const messagesEndRef = useRef(null);
@@ -91,15 +94,17 @@ export default function SuperAdminAICoordinator() {
         setIsLoading(true);
 
         try {
+            // Replaced the history payload with just the message, as n8n handles memory internally now via the webhook call.
             const res = await axiosInstance.post('/ai/superadmin-coordinator', {
-                message: userMsg,
-                history: messages.slice(-10)
+                message: userMsg
             });
+
             if (res.data.success) {
+                // n8n sends the reply in res.data.reply based on your backend controller setup
                 setMessages([...newHistory, { role: 'assistant', content: res.data.reply }]);
-                if (res.data.platformStateFootprint) setPlatformFootprint(res.data.platformStateFootprint);
             }
-        } catch {
+        } catch (err) {
+            console.error("Chat Error:", err);
             toast.error("Neural link interrupted.");
             setMessages([...newHistory, { role: 'assistant', content: "*Error: Failed to reach the AI core. Please check your network or API keys.*" }]);
         } finally {
@@ -134,15 +139,21 @@ export default function SuperAdminAICoordinator() {
             return <p className="text-white text-[14px] leading-relaxed whitespace-pre-wrap m-0">{msg.content}</p>;
         }
 
-        const jsonBlockRegex = /```json\s*(\{[\s\S]*?\})\s*```/g;
+        // Updated Regex: n8n sometimes wraps the JSON differently depending on the LLM output.
+        // This regex is a bit more robust in finding the action block.
+        const jsonBlockRegex = /```json\s*([\s\S]*?)\s*```/g;
         let cleanContent = msg.content;
         let actionObj = null;
 
         const match = jsonBlockRegex.exec(msg.content);
         if (match?.[1]) {
             try {
-                actionObj = JSON.parse(match[1]);
-                cleanContent = msg.content.replace(match[0], '').trim();
+                // Check if it's the action block we care about
+                const parsed = JSON.parse(match[1]);
+                if (parsed.action && parsed.targetId) {
+                    actionObj = parsed;
+                    cleanContent = msg.content.replace(match[0], '').trim();
+                }
             } catch { /* silent */ }
         }
 
@@ -152,19 +163,19 @@ export default function SuperAdminAICoordinator() {
                 <div className="text-[14px] text-[#4A5568] leading-relaxed break-words">
                     <ReactMarkdown
                         components={{
-                            p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
-                            strong: ({node, ...props}) => <strong className="font-black text-[#27225B]" {...props} />,
-                            h1: ({node, ...props}) => <h1 className="text-[20px] font-black text-[#27225B] mt-4 mb-2" {...props} />,
-                            h2: ({node, ...props}) => <h2 className="text-[18px] font-black text-[#27225B] mt-4 mb-2" {...props} />,
-                            h3: ({node, ...props}) => <h3 className="text-[16px] font-bold text-[#6B4DF1] mt-3 mb-2" {...props} />,
-                            ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-3 space-y-1 marker:text-[#6B4DF1]" {...props} />,
-                            ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-3 space-y-1 marker:text-[#6B4DF1]" {...props} />,
-                            li: ({node, ...props}) => <li className="" {...props} />,
-                            code: ({node, inline, ...props}) => 
-                                inline 
-                                ? <code className="bg-[#F4F0FD] text-[#6B4DF1] px-1.5 py-0.5 rounded-md text-[12px] font-bold font-mono" {...props} />
-                                : <code className="block bg-[#27225B] text-[#A78BFA] p-3 rounded-xl text-[12px] overflow-x-auto font-mono my-3 shadow-inner" {...props} />,
-                            blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-[#6B4DF1] bg-[#F9F7FC] pl-4 py-2 italic text-[#7D8DA6] rounded-r-lg my-3" {...props} />,
+                            p: ({ node, ...props }) => <p className="mb-3 last:mb-0" {...props} />,
+                            strong: ({ node, ...props }) => <strong className="font-black text-[#27225B]" {...props} />,
+                            h1: ({ node, ...props }) => <h1 className="text-[20px] font-black text-[#27225B] mt-4 mb-2" {...props} />,
+                            h2: ({ node, ...props }) => <h2 className="text-[18px] font-black text-[#27225B] mt-4 mb-2" {...props} />,
+                            h3: ({ node, ...props }) => <h3 className="text-[16px] font-bold text-[#6B4DF1] mt-3 mb-2" {...props} />,
+                            ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-3 space-y-1 marker:text-[#6B4DF1]" {...props} />,
+                            ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-3 space-y-1 marker:text-[#6B4DF1]" {...props} />,
+                            li: ({ node, ...props }) => <li className="" {...props} />,
+                            code: ({ node, inline, ...props }) =>
+                                inline
+                                    ? <code className="bg-[#F4F0FD] text-[#6B4DF1] px-1.5 py-0.5 rounded-md text-[12px] font-bold font-mono" {...props} />
+                                    : <code className="block bg-[#27225B] text-[#A78BFA] p-3 rounded-xl text-[12px] overflow-x-auto font-mono my-3 shadow-inner" {...props} />,
+                            blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-[#6B4DF1] bg-[#F9F7FC] pl-4 py-2 italic text-[#7D8DA6] rounded-r-lg my-3" {...props} />,
                         }}
                     >
                         {cleanContent}
@@ -184,9 +195,9 @@ export default function SuperAdminAICoordinator() {
                                 <TerminalSquare size={14} className="text-[#EA580C]" />
                             </div>
                             <span className="text-[11px] font-black text-[#EA580C] uppercase tracking-wider">Pending Command</span>
-                           <span className="ml-auto text-[10px] font-bold text-[#EA580C] bg-[#FFEDD5] px-2.5 py-1 rounded-md border border-[#FDBA74] uppercase tracking-wider">
-    {actionObj.operation ? `${actionObj.operation} USER/INSTITUTE` : actionObj.action}
-</span>
+                            <span className="ml-auto text-[10px] font-bold text-[#EA580C] bg-[#FFEDD5] px-2.5 py-1 rounded-md border border-[#FDBA74] uppercase tracking-wider">
+                                {actionObj.operation ? `${actionObj.operation} USER/INSTITUTE` : actionObj.action}
+                            </span>
                         </div>
                         <div className="px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div>
@@ -216,7 +227,7 @@ export default function SuperAdminAICoordinator() {
 
     return (
         <div className="h-[calc(100vh-88px)] flex flex-col relative overflow-hidden rounded-[24px] bg-[#F4EEFD] font-sans -m-4 lg:-m-6">
-            
+
             <div className="relative z-10 flex flex-col h-full">
                 {/* ── Header ── */}
                 <div className="flex flex-col md:flex-row items-center justify-between px-6 py-4 border-b border-[#E9DFFC] bg-white flex-shrink-0" style={{ boxShadow: softShadow }}>
@@ -289,11 +300,10 @@ export default function SuperAdminAICoordinator() {
                                 )}
 
                                 {/* Bubble */}
-                                <div className={`px-6 py-4 shadow-sm w-full ${
-                                    msg.role === 'user'
+                                <div className={`px-6 py-4 shadow-sm w-full ${msg.role === 'user'
                                         ? 'rounded-3xl rounded-br-sm bg-[#6B4DF1] text-white border border-[#5839D6]'
                                         : 'rounded-3xl rounded-bl-sm bg-white border border-[#E9DFFC]'
-                                }`}>
+                                    }`}>
                                     {renderMessageContent(msg, idx)}
                                 </div>
                             </motion.div>
@@ -310,7 +320,7 @@ export default function SuperAdminAICoordinator() {
 
                 {/* ── Input area ── */}
                 <div className="px-4 md:px-8 py-5 border-t border-[#E9DFFC] bg-white flex-shrink-0">
-                    
+
                     {/* Suggestion chips */}
                     <AnimatePresence>
                         {messages.length <= 1 && (
@@ -367,7 +377,7 @@ export default function SuperAdminAICoordinator() {
                     </form>
 
                     <p className="text-center text-[10px] text-[#A0ABC0] mt-3 tracking-widest font-bold uppercase select-none flex items-center justify-center gap-1.5">
-                        <Shield size={12}/> Sapience Secure Line • Actions require manual approval
+                        <Shield size={12} /> Sapience Secure Line • Actions require manual approval
                     </p>
                 </div>
             </div>
