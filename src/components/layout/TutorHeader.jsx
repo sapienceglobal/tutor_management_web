@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
+import Link from 'next/link';
+import api from '@/lib/axios';
 import {
     MdSearch, MdNotifications, MdMail, MdGridView, MdFullscreen,
     MdPerson, MdLogout, MdMenu, MdChevronLeft, MdChevronRight,
-    MdKeyboardArrowDown, MdSettings
+    MdKeyboardArrowDown, MdSettings, MdClose
 } from 'react-icons/md';
 import { C, T } from '@/constants/tutorTokens';
 
@@ -28,7 +30,11 @@ export function TutorHeader({ onMenuClick, onSidebarCollapse, isSidebarCollapsed
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [mounted, setMounted]             = useState(false);
     const [searchTerm, setSearchTerm]       = useState('');
+    const [searchResults, setSearchResults] = useState({});
+    const [isSearching, setIsSearching] = useState(false);
+    const [showResults, setShowResults] = useState(false);
     const dropdownRef = useRef(null);
+    const searchContainerRef = useRef(null);
 
     useEffect(() => {
         setMounted(true);
@@ -42,9 +48,41 @@ export function TutorHeader({ onMenuClick, onSidebarCollapse, isSidebarCollapsed
             if (dropdownRef.current && !dropdownRef.current.contains(e.target))
                 setIsProfileOpen(false);
         };
+        const handleSearchClickOutside = (e) => {
+            if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+                setShowResults(false);
+            }
+        };
         document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
+        document.addEventListener('mousedown', handleSearchClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handler);
+            document.removeEventListener('mousedown', handleSearchClickOutside);
+        };
     }, []);
+
+    useEffect(() => {
+        if (!searchTerm.trim()) {
+            setSearchResults({});
+            return;
+        }
+
+        const delayDebounceFn = setTimeout(async () => {
+            setIsSearching(true);
+            try {
+                const res = await api.get(`/search/unified?q=${encodeURIComponent(searchTerm)}`);
+                if (res.data?.success) {
+                    setSearchResults(res.data.results || {});
+                }
+            } catch (err) {
+                console.error("Error in Unified TutorHeader Search:", err);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 300);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchTerm]);
 
     const handleLogout = () => {
         Cookies.remove('token');
@@ -97,33 +135,158 @@ export function TutorHeader({ onMenuClick, onSidebarCollapse, isSidebarCollapsed
                 </button>
             </div>
 
-            <div className="hidden md:flex items-center relative flex-shrink-0">
-                <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 transition-colors" 
-                    style={{ width: 18, height: 18, color: C.textMuted }} />
-                <input
-                    type="text"
-                    placeholder="Search courses, tests..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    onFocus={e => { e.target.style.borderColor = C.btnPrimary; e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; e.target.style.backgroundColor = C.cardBg; }}
-                    onBlur={e => { e.target.style.borderColor = C.cardBorder; e.target.style.boxShadow = 'none'; e.target.style.backgroundColor = C.innerBg; }}
-                    style={{
-                        width: '100%',
-                        minWidth: '240px',
-                        height: '38px',
-                        paddingLeft: '36px',
-                        paddingRight: '16px',
-                        backgroundColor: C.innerBg,
-                        border: `1px solid ${C.cardBorder}`,
-                        borderRadius: '10px',
-                        color: C.heading,
-                        fontFamily: T.fontFamily,
-                        fontSize: T.size.base,
-                        fontWeight: T.weight.semibold,
-                        outline: 'none',
-                        transition: 'all 0.2s ease'
-                    }}
-                />
+            {/* Search */}
+            <div ref={searchContainerRef} className="hidden md:block flex-1 max-w-[420px] ml-4 relative z-50">
+                <div className="relative group">
+                    <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 transition-colors pointer-events-none" 
+                        style={{ width: 18, height: 18, color: C.textMuted }} />
+                    <input
+                        type="text"
+                        placeholder="Search assigned courses, batches..."
+                        value={searchTerm}
+                        onChange={e => {
+                            setSearchTerm(e.target.value);
+                            setShowResults(true);
+                        }}
+                        onFocus={e => { 
+                            e.target.style.borderColor = C.btnPrimary; 
+                            e.target.style.boxShadow = `0 0 0 3px ${C.btnPrimary}15`; 
+                            e.target.style.backgroundColor = C.cardBg; 
+                            setShowResults(true); 
+                        }}
+                        onBlur={e => { 
+                            e.target.style.borderColor = C.cardBorder; 
+                            e.target.style.boxShadow = 'none'; 
+                            e.target.style.backgroundColor = C.innerBg; 
+                        }}
+                        style={{
+                            width: '100%',
+                            height: '38px',
+                            paddingLeft: '36px',
+                            paddingRight: searchTerm ? '36px' : '16px',
+                            backgroundColor: C.innerBg,
+                            border: `1px solid ${C.cardBorder}`,
+                            borderRadius: '10px',
+                            color: C.heading,
+                            fontFamily: T.fontFamily,
+                            fontSize: T.size.base,
+                            fontWeight: T.weight.semibold,
+                            outline: 'none',
+                            transition: 'all 0.2s ease'
+                        }}
+                    />
+                    {searchTerm && (
+                        <button 
+                            type="button"
+                            onClick={() => { setSearchTerm(''); setSearchResults({}); }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 border-none bg-transparent cursor-pointer text-gray-400 hover:text-gray-600 flex items-center justify-center"
+                            style={{ outline: 'none' }}
+                        >
+                            <MdClose style={{ width: 16, height: 16 }} />
+                        </button>
+                    )}
+                </div>
+
+                {/* Unified Search Dropdown Overlay */}
+                {showResults && searchTerm.trim() && (
+                    <div
+                        className="absolute top-[calc(100%+8px)] left-0 right-0 z-50 overflow-y-auto max-h-[420px] shadow-2xl p-4 transition-all duration-200"
+                        style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                            border: `1px solid ${C.cardBorder}`,
+                            borderRadius: '16px',
+                            backdropFilter: 'blur(8px)',
+                        }}
+                    >
+                        {isSearching ? (
+                            <div className="flex flex-col items-center justify-center py-6 gap-2">
+                                <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: `${C.btnPrimary}50`, borderTopColor: C.btnPrimary }}></div>
+                                <span style={{ fontSize: '11px', color: C.textMuted, fontFamily: T.fontFamily, fontWeight: T.weight.semibold }}>Searching platform...</span>
+                            </div>
+                        ) : (!searchResults || Object.keys(searchResults).length === 0 || !Object.values(searchResults).some(arr => arr && arr.length > 0)) ? (
+                            <div className="text-center py-6">
+                                <MdSearch className="mx-auto mb-2 text-gray-300" style={{ width: 32, height: 32 }} />
+                                <p style={{ margin: 0, fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>No matches found</p>
+                                <p style={{ margin: '4px 0 0 0', fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>No results match "{searchTerm}"</p>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-4">
+                                {/* 1. Courses Category */}
+                                {searchResults.courses?.length > 0 && (
+                                    <div>
+                                        <div style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.btnPrimary, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <span>🎓 Courses</span>
+                                            <span style={{ backgroundColor: `${C.btnPrimary}15`, color: C.btnPrimary, padding: '1px 6px', borderRadius: '6px', fontSize: '9px' }}>{searchResults.courses.length}</span>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            {searchResults.courses.map(course => (
+                                                <Link key={course._id} href={`/${userRole}/courses`} onClick={() => setShowResults(false)} className="flex items-center gap-3 p-2 transition-all hover:bg-gray-50 rounded-lg text-decoration-none">
+                                                    <div style={{ width: '36px', height: '36px', borderRadius: '6px', overflow: 'hidden', backgroundColor: '#f3f4f6', flexShrink: 0 }}>
+                                                        {course.thumbnail ? (
+                                                            <img src={resolveImageUrl(course.thumbnail)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        ) : (
+                                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '14px' }}>🎓</div>
+                                                        )}
+                                                    </div>
+                                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                                        <p style={{ margin: 0, fontFamily: T.fontFamily, fontSize: '13px', fontWeight: T.weight.bold, color: C.heading }}>{course.title}</p>
+                                                        <p style={{ margin: 0, fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted }}>Course Program</p>
+                                                    </div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* 2. Students Category */}
+                                {searchResults.students?.length > 0 && (
+                                    <div>
+                                        <div style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.btnPrimary, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <span>👥 Institute Students</span>
+                                            <span style={{ backgroundColor: `${C.btnPrimary}15`, color: C.btnPrimary, padding: '1px 6px', borderRadius: '6px', fontSize: '9px' }}>{searchResults.students.length}</span>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            {searchResults.students.map(s => (
+                                                <Link key={s._id} href={`/${userRole}/students`} onClick={() => setShowResults(false)} className="flex items-center gap-3 p-2 transition-all hover:bg-gray-50 rounded-lg text-decoration-none">
+                                                    <div style={{ width: '36px', height: '36px', borderRadius: '6px', overflow: 'hidden', backgroundColor: '#f3f4f6', flexShrink: 0 }}>
+                                                        <img src={resolveImageUrl(s.profileImage)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    </div>
+                                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                                        <p style={{ margin: 0, fontFamily: T.fontFamily, fontSize: '13px', fontWeight: T.weight.bold, color: C.heading }}>{s.name}</p>
+                                                        <p style={{ margin: 0, fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted }}>{s.email}</p>
+                                                    </div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* 3. Batches Category */}
+                                {searchResults.batches?.length > 0 && (
+                                    <div>
+                                        <div style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.btnPrimary, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <span>📁 Batches</span>
+                                            <span style={{ backgroundColor: `${C.btnPrimary}15`, color: C.btnPrimary, padding: '1px 6px', borderRadius: '6px', fontSize: '9px' }}>{searchResults.batches.length}</span>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            {searchResults.batches.map(b => (
+                                                <Link key={b._id} href={`/${userRole}/batches`} onClick={() => setShowResults(false)} className="flex items-center gap-3 p-2 transition-all hover:bg-gray-50 rounded-lg text-decoration-none">
+                                                    <div style={{ width: '36px', height: '36px', borderRadius: '6px', overflow: 'hidden', backgroundColor: '#f59e0b20', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                        <span style={{ fontSize: '16px' }}>📁</span>
+                                                    </div>
+                                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                                        <p style={{ margin: 0, fontFamily: T.fontFamily, fontSize: '13px', fontWeight: T.weight.bold, color: C.heading }}>{b.name}</p>
+                                                        <p style={{ margin: 0, fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted }}>Status: <span className="capitalize">{b.status}</span></p>
+                                                    </div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             <div className="flex items-center gap-1.5 ml-auto">
