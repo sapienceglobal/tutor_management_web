@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { 
@@ -63,6 +63,16 @@ export default function TutorMessagesPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [draft, setDraft] = useState('');
     const [preferredStudentId, setPreferredStudentId] = useState('');
+
+    const messagesEndRef = useRef(null);
+    const inputRef = useRef(null);
+
+    // Auto-scroll to bottom when messages change
+    useEffect(() => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [messages]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -141,6 +151,15 @@ export default function TutorMessagesPage() {
         }
     };
 
+    const refreshConversations = async () => {
+        try {
+            const res = await api.get('/messages/conversations');
+            setConversations(res.data?.conversations || []);
+        } catch {
+            // silent refresh fail
+        }
+    };
+
     const handleSend = async () => {
         const body = draft.trim();
         if (!selectedStudentId || !body) return;
@@ -158,6 +177,14 @@ export default function TutorMessagesPage() {
                 setMessages((prev) => [...prev, sentMessage]);
             }
             setDraft('');
+            // Focus back on input automatically so user can keep typing!
+            setTimeout(() => {
+                if (inputRef.current) {
+                    inputRef.current.focus();
+                }
+            }, 50);
+            
+            await refreshConversations();
         } catch (error) {
             toast.error('Failed to send message');
         } finally {
@@ -214,41 +241,75 @@ export default function TutorMessagesPage() {
                     </div>
 
                     <div className="flex-1 overflow-y-auto custom-scrollbar">
-                        {filteredConversations.map((convo) => {
-                            const active = String(selectedStudentId) === String(convo.counterpartId);
-                            return (
-                                <button key={convo.counterpartId} 
-                                    onClick={() => setSelectedStudentId(String(convo.counterpartId))}
-                                    className="w-full text-left px-5 py-4 border-none cursor-pointer transition-all"
-                                    style={{ 
-                                        backgroundColor: active ? C.btnViewAllBg : 'transparent',
-                                        borderBottom: `1px solid ${C.cardBorder}`
-                                    }}>
-                                    <div className="flex gap-4">
-                                        <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-white font-bold shadow-sm" 
-                                            style={{ background: C.gradientBtn, border: `2px solid ${active ? C.surfaceWhite : 'transparent'}` }}>
-                                            {convo.counterpart?.name?.[0]?.toUpperCase()}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-center mb-1">
-                                                <p className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{convo.counterpart?.name}</p>
-                                                <span style={{ fontSize: '10px', color: C.textMuted, fontWeight: T.weight.semibold }}>{timeLabel(convo.lastMessage?.sentAt)}</span>
+                        {filteredConversations.length > 0 ? (
+                            filteredConversations.map((convo) => {
+                                const active = String(selectedStudentId) === String(convo.counterpartId);
+                                return (
+                                    <button key={convo.counterpartId} 
+                                        onClick={() => {
+                                            setSelectedStudentId(String(convo.counterpartId));
+                                            setSelectedCourseId('');
+                                        }}
+                                        className="w-full text-left px-5 py-4 border-none cursor-pointer transition-all"
+                                        style={{ 
+                                            backgroundColor: active ? C.innerBg : 'transparent',
+                                            borderBottom: `1px solid ${C.cardBorder}`,
+                                            borderLeft: active ? `4px solid ${C.btnPrimary}` : '4px solid transparent'
+                                        }}>
+                                        <div className="flex gap-4">
+                                            <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-white font-bold shadow-sm" 
+                                                style={{ background: C.gradientBtn, border: `2px solid ${active ? C.surfaceWhite : 'transparent'}` }}>
+                                                {convo.counterpart?.name?.[0]?.toUpperCase()}
                                             </div>
-                                            <div className="flex justify-between items-center gap-2">
-                                                <p className="truncate" style={{ fontSize: '11px', color: active ? C.heading : C.textMuted, margin: 0, fontWeight: convo.unreadCount > 0 ? T.weight.bold : T.weight.medium }}>
-                                                    {convo.lastMessage?.body || 'No messages'}
-                                                </p>
-                                                {convo.unreadCount > 0 && (
-                                                    <span className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-sm" style={{ backgroundColor: C.btnPrimary }}>
-                                                        {convo.unreadCount}
-                                                    </span>
-                                                )}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <p className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>{convo.counterpart?.name}</p>
+                                                    <span style={{ fontSize: '10px', color: C.textMuted, fontWeight: T.weight.semibold }}>{timeLabel(convo.lastMessage?.sentAt)}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center gap-2">
+                                                    <p className="truncate" style={{ fontSize: '11px', color: active ? C.heading : C.textMuted, margin: 0, fontWeight: convo.unreadCount > 0 ? T.weight.bold : T.weight.medium }}>
+                                                        {convo.lastMessage?.body || 'No messages'}
+                                                    </p>
+                                                    {convo.unreadCount > 0 && (
+                                                        <span className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-sm" style={{ backgroundColor: C.btnPrimary }}>
+                                                            {convo.unreadCount}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </button>
-                            );
-                        })}
+                                    </button>
+                                );
+                            })
+                        ) : (
+                            students.map((student) => {
+                                const active = String(selectedStudentId) === String(student._id);
+                                return (
+                                    <button key={student._id} 
+                                        onClick={() => {
+                                            setSelectedStudentId(String(student._id));
+                                            setSelectedCourseId('');
+                                        }}
+                                        className="w-full text-left px-5 py-4 border-none cursor-pointer transition-all"
+                                        style={{ 
+                                            backgroundColor: active ? C.innerBg : 'transparent',
+                                            borderBottom: `1px solid ${C.cardBorder}`,
+                                            borderLeft: active ? `4px solid ${C.btnPrimary}` : '4px solid transparent'
+                                        }}>
+                                        <div className="flex gap-4">
+                                            <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-white font-bold shadow-sm" 
+                                                style={{ background: C.gradientBtn, border: `2px solid ${active ? C.surfaceWhite : 'transparent'}` }}>
+                                                {student.name?.[0]?.toUpperCase() || 'S'}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="truncate" style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>{student.name}</p>
+                                                <p className="truncate" style={{ fontSize: '11px', color: C.textMuted, margin: 0 }}>No conversation yet</p>
+                                            </div>
+                                        </div>
+                                    </button>
+                                );
+                            })
+                        )}
                     </div>
                 </aside>
 
@@ -269,6 +330,22 @@ export default function TutorMessagesPage() {
                                         <p style={{ fontSize: '11px', color: C.textMuted, fontWeight: T.weight.semibold }}>{currentStudent.email}</p>
                                     </div>
                                 </div>
+
+                                {/* Course Selector */}
+                                <select
+                                    value={selectedCourseId}
+                                    onChange={(e) => setSelectedCourseId(e.target.value)}
+                                    className="w-full sm:w-auto shrink-0 cursor-pointer"
+                                    style={{ ...baseInputStyle, height: '40px', padding: '0 16px', backgroundColor: C.cardBg, width: '200px', border: `1px solid ${C.cardBorder}` }}
+                                    onFocus={onFocusHandler} onBlur={onBlurHandler}
+                                >
+                                    <option value="">General Discussion</option>
+                                    {(currentStudent.enrolledCourses || []).map((course, idx) => (
+                                        <option key={`${course.courseId || course._id}-${idx}`} value={course.courseId || course._id}>
+                                            {course.title}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             {/* Messages List */}
@@ -276,36 +353,45 @@ export default function TutorMessagesPage() {
                                 {loadingMessages ? (
                                     <div className="h-full flex items-center justify-center"><MdHourglassEmpty className="animate-spin" size={32} color={C.btnPrimary} /></div>
                                 ) : messages.length > 0 ? (
-                                    messages.map((msg, i) => {
-                                        const showDate = i === 0 || dateLabel(messages[i - 1].sentAt) !== dateLabel(msg.sentAt);
-                                        return (
-                                            <div key={msg._id} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                                {showDate && (
-                                                    <div className="flex justify-center my-8">
-                                                        <span style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, backgroundColor: C.cardBg, padding: '6px 16px', borderRadius: '10px', textTransform: 'uppercase', letterSpacing: T.tracking.wider, border: `1px solid ${C.cardBorder}` }}>
-                                                            {dateLabel(msg.sentAt)}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                <div className={`flex ${msg.isOwn ? 'justify-end' : 'justify-start'}`}>
-                                                    <div className={`max-w-[75%] p-4 shadow-sm ${msg.isOwn ? 'rounded-2xl rounded-tr-none' : 'rounded-2xl rounded-tl-none'}`} 
-                                                        style={{ 
-                                                            backgroundColor: msg.isOwn ? C.btnPrimary : C.surfaceWhite, 
-                                                            color: msg.isOwn ? '#ffffff' : C.heading,
-                                                            border: msg.isOwn ? 'none' : `1px solid ${C.cardBorder}`
-                                                        }}>
-                                                        <p style={{ fontSize: T.size.sm, margin: 0, lineHeight: 1.6, fontWeight: T.weight.medium }}>{msg.body}</p>
-                                                        <div className="flex items-center justify-end gap-1 mt-2" style={{ opacity: 0.8 }}>
-                                                            <span style={{ fontSize: '9px', fontWeight: T.weight.bold }}>{timeLabel(msg.sentAt)}</span>
-                                                            {msg.isOwn && (
-                                                                <span style={{ fontSize: '12px' }}>{msg.isRead ? <MdDoneAll /> : <MdCheck />}</span>
+                                    <>
+                                        {messages.map((msg, i) => {
+                                            const showDate = i === 0 || dateLabel(messages[i - 1].sentAt) !== dateLabel(msg.sentAt);
+                                            return (
+                                                <div key={msg._id} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                                    {showDate && (
+                                                        <div className="flex justify-center my-8">
+                                                            <span style={{ fontSize: '10px', fontWeight: T.weight.black, color: C.textMuted, backgroundColor: C.cardBg, padding: '6px 16px', borderRadius: '10px', textTransform: 'uppercase', letterSpacing: T.tracking.wider, border: `1px solid ${C.cardBorder}` }}>
+                                                                {dateLabel(msg.sentAt)}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    <div className={`flex ${msg.isOwn ? 'justify-end' : 'justify-start'}`}>
+                                                        <div className={`max-w-[75%] p-4 shadow-sm ${msg.isOwn ? 'rounded-2xl rounded-tr-none' : 'rounded-2xl rounded-tl-none'}`} 
+                                                            style={{ 
+                                                                backgroundColor: msg.isOwn ? C.btnPrimary : C.surfaceWhite, 
+                                                                color: msg.isOwn ? '#ffffff' : C.heading,
+                                                                border: msg.isOwn ? 'none' : `1px solid ${C.cardBorder}`
+                                                            }}>
+                                                            {msg.course?.title && (
+                                                                <span style={{ display: 'block', fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: msg.isOwn ? 'rgba(255,255,255,0.8)' : C.btnPrimary, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                                    Regarding: {msg.course.title}
+                                                                </span>
                                                             )}
+                                                            <p style={{ fontSize: T.size.sm, margin: 0, lineHeight: 1.6, fontWeight: T.weight.medium }}>{msg.body}</p>
+                                                            <div className="flex items-center justify-end gap-1 mt-2" style={{ opacity: 0.8 }}>
+                                                                <span style={{ fontSize: '9px', fontWeight: T.weight.bold }}>{timeLabel(msg.sentAt)}</span>
+                                                                {msg.isOwn && (
+                                                                    <span style={{ fontSize: '12px' }}>{msg.isRead ? <MdDoneAll /> : <MdCheck />}</span>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })
+                                            );
+                                        })}
+                                        {/* Invisible div to scroll to */}
+                                        <div ref={messagesEndRef} />
+                                    </>
                                 ) : (
                                     <div className="h-full flex flex-col items-center justify-center opacity-30">
                                         <MdForum size={64} color={C.textMuted} />
@@ -318,6 +404,7 @@ export default function TutorMessagesPage() {
                             <div className="p-4 px-6 shrink-0" style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: C.cardBg }}>
                                 <div className="flex items-end gap-3">
                                     <textarea
+                                        ref={inputRef}
                                         value={draft}
                                         onChange={(e) => setDraft(e.target.value)}
                                         placeholder="Type a message..."
@@ -331,6 +418,9 @@ export default function TutorMessagesPage() {
                                         {sending ? <MdHourglassEmpty size={20} className="animate-spin" /> : <MdSend size={22} />}
                                     </button>
                                 </div>
+                                <p className="text-center mt-2" style={{ fontFamily: T.fontFamily, fontSize: '11px', color: C.textMuted, fontWeight: T.weight.medium }}>
+                                    Press <strong style={{color: C.heading}}>Enter</strong> to send, <strong style={{color: C.heading}}>Shift + Enter</strong> for new line.
+                                </p>
                             </div>
                         </>
                     ) : (

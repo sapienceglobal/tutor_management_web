@@ -133,9 +133,9 @@ export default function FeatureAccessCard({ tenant, onUpgrade }) {
                                         {!feature.available && onUpgrade && (
                                             <button
                                                 onClick={() => onUpgrade(feature)}
-                                                className="text-[12px] text-[#6B4DF1] hover:text-[#5839D6] font-bold border-none bg-transparent cursor-pointer"
+                                                className="px-3.5 py-1.5 rounded-lg text-[12px] text-white bg-[#6B4DF1] hover:bg-[#5839D6] font-bold transition-all shadow-sm border-none cursor-pointer hover:scale-105 active:scale-95"
                                             >
-                                                Upgrade →
+                                                Upgrade Now
                                             </button>
                                         )}
                                     </div>

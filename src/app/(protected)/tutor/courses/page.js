@@ -28,7 +28,8 @@ import {
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
-import { C, T, S, R, FX, cx, pageStyle } from '@/constants/studentTokens';
+import { C, T, S, R, FX, pageStyle } from '@/constants/studentTokens';
+import { getAudienceDisplay, getAudienceScope } from '@/lib/audienceDisplay';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -168,6 +169,13 @@ function CourseGridCard({ course, onDelete }) {
             {/* ── Card Body ── */}
             <div className="p-4 flex flex-col flex-1 gap-2">
 
+                {/* Scope Badge */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[9px] uppercase tracking-wider font-extrabold ${getAudienceDisplay(course).badgeClass}`}>
+                        {getAudienceDisplay(course).label}
+                    </span>
+                </div>
+
                 {/* Title */}
                 <h3 className="line-clamp-1" style={{
                     fontFamily: T.fontFamily,
@@ -207,44 +215,49 @@ function CourseGridCard({ course, onDelete }) {
                             style={{ width: `${course.completionRate || 0}%`, background: C.gradientBtn, borderRadius: '10px' }} />
                     </div>
                 )}
+            </div>
 
-                {/* ── Actions ── */}
-                <div className="flex gap-2 mt-auto pt-1">
+            {/* ── Actions ── */}
+            <div className="p-4 pt-0 border-t" style={{ borderColor: C.cardBorder }}>
+                <div className="flex items-center gap-2 mt-4">
                     <Link href={`/student/courses/${course._id}`} className="flex-1">
                         <button
-                            className="w-full flex items-center justify-center gap-1.5 transition-all hover:opacity-90"
+                            className="w-full flex items-center justify-center gap-1.5 transition-all hover:opacity-80"
                             style={{
                                 height: 36,
                                 backgroundColor: C.btnViewAllBg,
                                 color: C.btnViewAllText,
                                 fontFamily: T.fontFamily,
-                                fontSize: T.size.xs,
-                                fontWeight: T.weight.bold,
+                                fontSize: T.size.md,
+                                fontWeight: T.weight.semibold,
                                 border: `1px solid ${C.cardBorder}`,
                                 borderRadius: '10px',
+                                cursor: 'pointer',
                             }}>
-                            <MdVisibility style={{ width: 14, height: 14 }} /> View
+                            <MdVisibility style={{ width: 14, height: 14 }} /> Preview
                         </button>
                     </Link>
 
-                    {!isDraft ? (
-                        <Link href={`/tutor/courses/${course._id}`} className="flex-1">
-                            <button
-                                className="w-full flex items-center justify-center gap-1.5 transition-all hover:opacity-90"
-                                style={{
-                                    height: 36,
-                                    backgroundColor: C.btnViewAllBg,
-                                    color: C.btnViewAllText,
-                                    fontFamily: T.fontFamily,
-                                    fontSize: T.size.xs,
-                                    fontWeight: T.weight.bold,
-                                    border: `1px solid ${C.cardBorder}`,
-                                    borderRadius: '10px',
-                                }}>
-                                <MdEdit style={{ width: 14, height: 14 }} /> Edit
-                            </button>
-                        </Link>
-                    ) : (
+                    <Link href={`/tutor/courses/${course._id}/edit`} className="flex-1">
+                        <button
+                            className="w-full flex items-center justify-center gap-1.5 transition-all hover:opacity-85"
+                            style={{
+                                height: 36,
+                                background: C.gradientBtn,
+                                color: '#ffffff',
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.md,
+                                fontWeight: T.weight.semibold,
+                                border: 'none',
+                                borderRadius: '10px',
+                                cursor: 'pointer',
+                                boxShadow: S.btn,
+                            }}>
+                            <MdEdit style={{ width: 14, height: 14 }} /> Edit
+                        </button>
+                    </Link>
+
+                    {isDraft && (
                         <button
                             onClick={() => onDelete(course._id)}
                             className="flex-1 flex items-center justify-center gap-1.5 transition-all hover:opacity-80"
@@ -253,8 +266,8 @@ function CourseGridCard({ course, onDelete }) {
                                 backgroundColor: C.dangerBg,
                                 color: C.danger,
                                 fontFamily: T.fontFamily,
-                                fontSize: T.size.xs,
-                                fontWeight: T.weight.bold,
+                                fontSize: T.size.md,
+                                fontWeight: T.weight.semibold,
                                 border: `1px solid ${C.dangerBorder}`,
                                 borderRadius: '10px',
                                 cursor: 'pointer',
@@ -342,6 +355,9 @@ function CourseListRow({ course, onDelete }) {
                     >
                         {course.title}
                     </h3>
+                    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[9px] uppercase tracking-wider font-extrabold ${getAudienceDisplay(course).badgeClass}`}>
+                        {getAudienceDisplay(course).label}
+                    </span>
                     <StatusBadge status={course.status} />
                 </div>
                 <p
@@ -385,8 +401,8 @@ function CourseListRow({ course, onDelete }) {
                             backgroundColor: C.btnViewAllBg,
                             color: C.btnViewAllText,
                             fontFamily: T.fontFamily,
-                            fontSize: T.size.xs,
-                            fontWeight: T.weight.bold,
+                            fontSize: T.size.md,
+                            fontWeight: T.weight.semibold,
                             border: `1px solid ${C.cardBorder}`,
                             borderRadius: '10px',
                             cursor: 'pointer',
@@ -403,8 +419,8 @@ function CourseListRow({ course, onDelete }) {
                             background: C.gradientBtn,
                             color: '#ffffff',
                             fontFamily: T.fontFamily,
-                            fontSize: T.size.xs,
-                            fontWeight: T.weight.bold,
+                            fontSize: T.size.md,
+                            fontWeight: T.weight.semibold,
                             border: 'none',
                             borderRadius: '10px',
                             boxShadow: S.btn,
@@ -453,6 +469,7 @@ export default function MyCoursesPage() {
     const [filterStatus, setFilterStatus] = useState('all');
     const [viewMode, setViewMode]         = useState('grid');
     const [currentPage, setCurrentPage]   = useState(1);
+    const [scopeFilter, setScopeFilter]   = useState('all');
     const { confirmDialog }               = useConfirm();
 
     useEffect(() => { fetchMyCourses(); }, []);
@@ -505,7 +522,15 @@ export default function MyCoursesPage() {
             filterStatus === 'draft'     ? !['published', 'pending'].includes(course.status) :
             filterStatus === 'ai'        ? course.isAIGenerated === true :
             true;
-        return matchesSearch && matchesStatus;
+
+        const scope = getAudienceScope(course);
+        const matchesScope =
+            scopeFilter === 'all'       ? true :
+            scopeFilter === 'institute' ? (scope === 'institute' || scope === 'batch' || scope === 'private') :
+            scopeFilter === 'global'    ? scope === 'global' :
+            true;
+
+        return matchesSearch && matchesStatus && matchesScope;
     });
 
     const totalPages = Math.max(1, Math.ceil(filteredCourses.length / ITEMS_PER_PAGE));
@@ -534,8 +559,8 @@ export default function MyCoursesPage() {
 
     return (
         <div
-            className="space-y-5 pb-8"
-            style={{ ...pageStyle, backgroundColor: C.pageBg, minHeight: '100vh', padding: 24 }}
+            className="space-y-5 w-full min-h-screen pb-8"
+            style={{ fontFamily: T.fontFamily, backgroundColor: C.pageBg, color: C.text }}
         >
 
             {/* ── Header ── */}
@@ -632,8 +657,8 @@ export default function MyCoursesPage() {
                                         background: isAI ? '#7C3AED' : C.gradientBtn,
                                         color: '#ffffff',
                                         fontFamily: T.fontFamily,
-                                        fontSize: T.size.xs,
-                                        fontWeight: T.weight.bold,
+                                        fontSize: T.size.md,
+                                        fontWeight: T.weight.semibold,
                                         whiteSpace: 'nowrap',
                                         boxShadow: S.active,
                                         padding: '8px 14px',
@@ -644,8 +669,8 @@ export default function MyCoursesPage() {
                                     : {
                                         color: C.text,
                                         fontFamily: T.fontFamily,
-                                        fontSize: T.size.xs,
-                                        fontWeight: T.weight.bold,
+                                        fontSize: T.size.md,
+                                        fontWeight: T.weight.semibold,
                                         whiteSpace: 'nowrap',
                                         padding: '8px 14px',
                                         borderRadius: '10px',
@@ -750,6 +775,51 @@ export default function MyCoursesPage() {
                             <Icon style={{ width: 14, height: 14 }} />
                         </button>
                     ))}
+                </div>
+            </div>
+
+            {/* ── Scope Filter Tabs ── */}
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div
+                    className="flex items-center p-1"
+                    style={{
+                        backgroundColor: C.innerBg,
+                        borderRadius: R.xl,
+                        border: `1px solid ${C.cardBorder}`,
+                    }}
+                >
+                    {[
+                        { id: 'all', label: 'All Courses' },
+                        { id: 'institute', label: 'My Institute' },
+                        { id: 'global', label: 'Global' },
+                    ].map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setScopeFilter(tab.id)}
+                            className="px-4 py-2 cursor-pointer border-none transition-all"
+                            style={{
+                                backgroundColor: scopeFilter === tab.id ? C.surfaceWhite : 'transparent',
+                                color: scopeFilter === tab.id ? C.btnPrimary : C.textMuted,
+                                borderRadius: R.lg,
+                                boxShadow: scopeFilter === tab.id ? S.card : 'none',
+                                fontSize: T.size.md,
+                                fontWeight: T.weight.semibold,
+                                fontFamily: T.fontFamily,
+                            }}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+                <div
+                    style={{
+                        fontFamily: T.fontFamily,
+                        fontSize: T.size.xs,
+                        color: C.text,
+                        fontWeight: T.weight.semibold,
+                    }}
+                >
+                    Showing {filteredCourses.length} of {courses.length} Courses
                 </div>
             </div>
 

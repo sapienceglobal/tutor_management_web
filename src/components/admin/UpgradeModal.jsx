@@ -94,14 +94,14 @@ export default function UpgradeModal({ isOpen, onClose, currentPlan, plans = [],
                                     <button
                                         onClick={() => onUpgrade(plan._id)}
                                         disabled={isCurrentPlan}
-                                        className={`w-full py-3 px-4 rounded-lg font-semibold transition-all ${
+                                        className={`w-full py-3.5 px-4 rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md ${
                                             isCurrentPlan
-                                                ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
+                                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
                                                 : plan.color === 'green'
-                                                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                                                    ? 'bg-emerald-600 hover:bg-emerald-700 hover:shadow-emerald-200 text-white'
                                                     : plan.color === 'blue'
-                                                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                                                        : 'bg-purple-600 hover:bg-purple-700 text-white'
+                                                        ? 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-indigo-200 text-white'
+                                                        : 'bg-purple-600 hover:bg-purple-700 hover:shadow-purple-200 text-white'
                                         }`}
                                     >
                                         {isCurrentPlan ? 'Current Plan' : 'Upgrade Now'}

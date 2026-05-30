@@ -25,6 +25,7 @@ import AudienceSelector from "@/components/shared/AudienceSelector";
 import useInstitute from "@/hooks/useInstitute";
 import { C, T, FX, S, R } from "@/constants/studentTokens";
 import StatCard from "@/components/StatCard";
+import { getAudienceDisplay, getAudienceScope } from "@/lib/audienceDisplay";
 
 // Focus Handlers
 const onFocusHandler = (e) => {
@@ -62,6 +63,7 @@ export default function TutorLiveClassesPage() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [activeTab, setActiveTab] = useState("all"); // 'all', 'today', 'upcoming', 'past'
+  const [scopeFilter, setScopeFilter] = useState("all");
   const { confirmDialog } = useConfirm();
 
   const initialFormState = {
@@ -290,6 +292,12 @@ export default function TutorLiveClassesPage() {
       if (activeTab === "past") return end < now;
       return true;
     })
+    .filter((c) => {
+      const scope = getAudienceScope(c);
+      if (scopeFilter === "institute") return scope === "institute" || scope === "batch" || scope === "private";
+      if (scopeFilter === "global") return scope === "global";
+      return true;
+    })
     .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
 
   if (loading) {
@@ -464,38 +472,64 @@ export default function TutorLiveClassesPage() {
           boxShadow: S.card,
         }}
       >
-        <div className="flex items-center justify-between mb-5">
-          <h2
-            style={{
-              fontSize: T.size.md,
-              fontWeight: T.weight.black,
-              color: C.heading,
-              margin: 0,
-            }}
-          >
-            Live Classes
-          </h2>
-          <div
-            className="flex items-center gap-1 p-1"
-            style={{
-              backgroundColor: C.innerBg,
-              borderRadius: "8px",
-              border: `1px solid ${C.cardBorder}`,
-            }}
-          >
-            <button
-              className="w-8 h-8 flex items-center justify-center border-none cursor-pointer"
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 flex-wrap">
+          <div className="flex items-center gap-3">
+            <h2
               style={{
-                backgroundColor: C.surfaceWhite,
-                borderRadius: "6px",
-                boxShadow: S.card,
+                fontSize: T.size.md,
+                fontWeight: T.weight.black,
+                color: C.heading,
+                margin: 0,
               }}
             >
-              <MdList size={18} color={C.btnPrimary} />
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center border-none cursor-pointer bg-transparent opacity-50 hover:opacity-100 transition-opacity">
-              <MdCalendarMonth size={18} color={C.heading} />
-            </button>
+              Interactive Sessions
+            </h2>
+            <span
+              style={{
+                fontFamily: T.fontFamily,
+                fontSize: T.size.xs,
+                backgroundColor: C.btnPrimary,
+                color: '#fff',
+                padding: '2px 8px',
+                borderRadius: '8px',
+                fontWeight: T.weight.bold,
+              }}
+            >
+              {filteredClasses.length}
+            </span>
+          </div>
+
+          {/* Scope Filter Tabs */}
+          <div
+              className="flex items-center p-1"
+              style={{
+                  backgroundColor: C.innerBg,
+                  borderRadius: R.xl,
+                  border: `1px solid ${C.cardBorder}`,
+              }}
+          >
+              {[
+                  { id: 'all', label: 'All Classes' },
+                  { id: 'institute', label: 'My Institute' },
+                  { id: 'global', label: 'Global' },
+              ].map((tab) => (
+                  <button
+                      key={tab.id}
+                      onClick={() => setScopeFilter(tab.id)}
+                      className="px-4 py-2 cursor-pointer border-none transition-all"
+                      style={{
+                          backgroundColor: scopeFilter === tab.id ? C.surfaceWhite : 'transparent',
+                          color: scopeFilter === tab.id ? C.btnPrimary : C.textMuted,
+                          borderRadius: R.lg,
+                          boxShadow: scopeFilter === tab.id ? S.card : 'none',
+                          fontSize: T.size.sm,
+                          fontWeight: T.weight.bold,
+                          fontFamily: T.fontFamily,
+                      }}
+                  >
+                      {tab.label}
+                  </button>
+              ))}
           </div>
         </div>
 
@@ -585,7 +619,7 @@ export default function TutorLiveClassesPage() {
                   }
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
                       <span
                         style={{
                           fontSize: "10px",
@@ -599,6 +633,11 @@ export default function TutorLiveClassesPage() {
                         }}
                       >
                         {statusText}
+                      </span>
+                      <span
+                        className={`inline-flex items-center rounded-md px-2 py-0.5 text-[9px] uppercase tracking-wider font-extrabold ${getAudienceDisplay(cls).badgeClass}`}
+                      >
+                        {getAudienceDisplay(cls).label}
                       </span>
                       {isLive && (
                         <span
@@ -686,8 +725,8 @@ export default function TutorLiveClassesPage() {
                           backgroundColor: C.success,
                           color: "#ffffff",
                           borderRadius: "8px",
-                          fontSize: T.size.sm,
-                          fontWeight: T.weight.bold,
+                          fontSize: T.size.md,
+                          fontWeight: T.weight.semibold,
                           fontFamily: T.fontFamily,
                         }}
                       >
@@ -703,8 +742,8 @@ export default function TutorLiveClassesPage() {
                         backgroundColor: C.surfaceWhite,
                         color: C.btnPrimary,
                         borderRadius: "8px",
-                        fontSize: T.size.sm,
-                        fontWeight: T.weight.bold,
+                        fontSize: T.size.md,
+                        fontWeight: T.weight.semibold,
                         fontFamily: T.fontFamily,
                         border: `1px solid ${C.cardBorder}`,
                       }}
@@ -726,8 +765,8 @@ export default function TutorLiveClassesPage() {
                         backgroundColor: C.surfaceWhite,
                         color: C.textMuted,
                         borderRadius: "8px",
-                        fontSize: T.size.sm,
-                        fontWeight: T.weight.bold,
+                        fontSize: T.size.md,
+                        fontWeight: T.weight.semibold,
                         fontFamily: T.fontFamily,
                         border: `1px solid ${C.cardBorder}`,
                       }}
@@ -749,8 +788,8 @@ export default function TutorLiveClassesPage() {
                         backgroundColor: C.surfaceWhite,
                         color: C.danger,
                         borderRadius: "8px",
-                        fontSize: T.size.sm,
-                        fontWeight: T.weight.bold,
+                        fontSize: T.size.md,
+                        fontWeight: T.weight.semibold,
                         fontFamily: T.fontFamily,
                         border: `1px solid ${C.cardBorder}`,
                       }}

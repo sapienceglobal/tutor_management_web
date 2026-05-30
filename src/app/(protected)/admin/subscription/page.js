@@ -108,7 +108,7 @@ export default function SubscriptionPage() {
 
     const fetchPlans = async () => {
         try {
-            const res = await api.get('/subscriptions');
+            const res = await api.get('/subscriptions?planType=institute');
             if (res.data?.success) setPlans(res.data.plans);
         } catch (error) { console.error('Failed to load plans:', error); }
     };

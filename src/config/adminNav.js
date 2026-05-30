@@ -1,25 +1,24 @@
 import {
-    LayoutDashboard,
-    Users,
-    GraduationCap,
-    BookOpen,
-    Settings,
-    DollarSign,
-    Shield,
-    BarChart3,
-    Tags,
-    CreditCard,
-    Activity,
-    Mail,
-    Building2,
-    Crown
-} from 'lucide-react';
+    MdDashboard,
+    MdPeople,
+    MdSchool,
+    MdMenuBook,
+    MdSettings,
+    MdAttachMoney,
+    MdSecurity,
+    MdBarChart,
+    MdLocalOffer,
+    MdCreditCard,
+    MdEmail,
+    MdBusiness,
+    MdWorkspacePremium
+} from 'react-icons/md';
 
 export const adminNavItems = [
     {
         title: "Admin Dashboard",
         href: "/admin/dashboard",
-        icon: LayoutDashboard,
+        icon: MdDashboard,
         type: "link"
     },
     {
@@ -28,19 +27,19 @@ export const adminNavItems = [
         children: [
             {
                 title: "Stats Overview",
-                icon: BarChart3,
+                icon: MdBarChart,
                 href: "/admin/stats",
                 type: "link"
             },
             {
                 title: "Earnings Overview",
-                icon: DollarSign,
+                icon: MdAttachMoney,
                 href: "/admin/earnings",
                 type: "link"
             },
             {
                 title: "Payout Requests",
-                icon: CreditCard,
+                icon: MdCreditCard,
                 href: "/admin/payouts",
                 type: "link"
             }
@@ -52,55 +51,55 @@ export const adminNavItems = [
         children: [
             {
                 title: "Invite Management",
-                icon: Mail,
+                icon: MdEmail,
                 href: "/admin/invites",
                 type: "link"
             },
             {
                 title: "Tutors",
-                icon: GraduationCap,
+                icon: MdSchool,
                 href: "/admin/tutors",
                 type: "link"
             },
             {
                 title: "Leave Requests",
-                icon: BookOpen,
+                icon: MdMenuBook,
                 href: "/admin/leaves",
                 type: "link"
             },
             {
                 title: "Students",
-                icon: Users,
+                icon: MdPeople,
                 href: "/admin/students",
                 type: "link"
             },
             {
                 title: "Courses",
-                icon: BookOpen,
+                icon: MdMenuBook,
                 href: "/admin/courses",
                 type: "link"
             },
             {
                 title: "Batches",
-                icon: Users,
+                icon: MdPeople,
                 href: "/admin/batches",
                 type: "link"
             },
             {
                 title: "Categories",
-                icon: Tags,
+                icon: MdLocalOffer,
                 href: "/admin/categories",
                 type: "link"
             },
             {
                 title: "Branches",
-                icon: Building2,
+                icon: MdBusiness,
                 href: "/admin/branches",
                 type: "link"
             },
             {
                 title: "Fee Collection",
-                icon: DollarSign,
+                icon: MdAttachMoney,
                 href: "/admin/fees",
                 type: "link"
             }
@@ -112,19 +111,19 @@ export const adminNavItems = [
         children: [
             {
                 title: "Settings",
-                icon: Settings,
+                icon: MdSettings,
                 href: "/admin/settings",
                 type: "link"
             },
             {
                 title: "Subscription",
-                icon: Crown,
+                icon: MdWorkspacePremium,
                 href: "/admin/subscription",
                 type: "link"
             },
             {
                 title: "Security & Logs",
-                icon: Shield,
+                icon: MdSecurity,
                 href: "/admin/security",
                 type: "link"
             }

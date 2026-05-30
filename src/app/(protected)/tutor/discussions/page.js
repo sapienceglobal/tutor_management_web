@@ -190,10 +190,10 @@ export default function TutorDiscussionsPage() {
 
             {/* Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 animate-in fade-in duration-500 delay-100">
-                <StatCard label="Total Comments" value={summary?.total ?? 0} subtext="Across your lessons" icon={MdForum} iconBg={C.iconBg} iconColor={C.btnPrimary} />
-                <StatCard label="Flagged" value={summary?.flagged ?? 0} subtext="Need moderation" icon={MdFlag} iconBg={(summary?.flagged ?? 0) > 0 ? C.warningBg : C.iconBg} iconColor={(summary?.flagged ?? 0) > 0 ? C.warning : C.btnPrimary} />
-                <StatCard label="Hidden" value={summary?.hidden ?? 0} subtext="Currently hidden" icon={MdVisibilityOff} iconBg={(summary?.hidden ?? 0) > 0 ? C.dangerBg : C.iconBg} iconColor={(summary?.hidden ?? 0) > 0 ? C.danger : C.btnPrimary} />
-                <StatCard label="Pending Replies" value={pendingReplies} subtext="No tutor reply yet" icon={MdWarning} iconBg={pendingReplies > 0 ? C.warningBg : C.successBg} iconColor={pendingReplies > 0 ? C.warning : C.success} />
+                <StatCard label="Total Comments" value={summary?.total ?? 0} subtext="Across your lessons" icon={MdForum} iconBg={C.iconBg} iconColor={C.iconColor} />
+                <StatCard label="Flagged" value={summary?.flagged ?? 0} subtext="Need moderation" icon={MdFlag} iconBg={C.warningBg} iconColor={C.warning} />
+                <StatCard label="Hidden" value={summary?.hidden ?? 0} subtext="Currently hidden" icon={MdVisibilityOff} iconBg={C.dangerBg} iconColor={C.danger} />
+                <StatCard label="Pending Replies" value={pendingReplies} subtext="No tutor reply yet" icon={MdWarning} iconBg={C.btnViewAllBg} iconColor={C.btnPrimary} />
             </div>
 
             {/* Filters Area */}

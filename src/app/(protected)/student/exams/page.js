@@ -19,7 +19,7 @@ import {
   MdFlashOn,
 } from "react-icons/md";
 import api from "@/lib/axios";
-import { getAudienceDisplay } from "@/lib/audienceDisplay";
+import { getAudienceDisplay, getAudienceScope } from "@/lib/audienceDisplay";
 import { C, T, S, R, FX } from "@/constants/studentTokens";
 import StatCard from "@/components/StatCard";
 
@@ -51,6 +51,7 @@ export default function StudentExamsPage() {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [scopeFilter, setScopeFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [todayCarouselIdx, setTodayCarouselIdx] = useState(0);
 
@@ -86,10 +87,19 @@ export default function StudentExamsPage() {
       const matchesSearch = exam.title
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
-      if (filter === "all") return matchesSearch;
-      return status === filter && matchesSearch;
+      
+      const matchesStatus = filter === "all" ? true : status === filter;
+
+      const scope = getAudienceScope(exam);
+      const matchesScope =
+        scopeFilter === "all" ? true :
+        scopeFilter === "institute" ? (scope === "institute" || scope === "batch" || scope === "private") :
+        scopeFilter === "global" ? scope === "global" :
+        true;
+
+      return matchesSearch && matchesStatus && matchesScope;
     });
-  }, [exams, filter, searchTerm]);
+  }, [exams, filter, scopeFilter, searchTerm]);
 
   const stats = useMemo(
     () => ({
@@ -180,7 +190,7 @@ export default function StudentExamsPage() {
     >
       {/* Header */}
       <div
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5"
+        className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 lg:p-8"
         style={{
           backgroundColor: C.outerCard,
           borderRadius: R["2xl"],
@@ -200,7 +210,7 @@ export default function StudentExamsPage() {
               style={{
                 color: C.heading,
                 fontSize: T.size.xl,
-                fontWeight: T.weight.bold, // Updated from black to bold
+                fontWeight: T.weight.bold,
                 margin: "0 0 4px 0",
               }}
             >
@@ -209,7 +219,7 @@ export default function StudentExamsPage() {
             <p
               style={{
                 color: C.textMuted,
-                fontSize: T.size.base, // Updated from sm to base
+                fontSize: T.size.base,
                 fontWeight: T.weight.semibold,
                 margin: 0,
               }}
@@ -217,6 +227,39 @@ export default function StudentExamsPage() {
               Access and attempt exams from your enrolled courses.
             </p>
           </div>
+        </div>
+
+        {/* Tab Toggles */}
+        <div
+          className="flex items-center p-1 w-full md:w-auto"
+          style={{
+            backgroundColor: C.innerBg,
+            borderRadius: R.xl,
+            border: `1px solid ${C.cardBorder}`,
+          }}
+        >
+          {[
+            { id: 'all', label: 'All Exams' },
+            { id: 'institute', label: 'My Institute' },
+            { id: 'global', label: 'Global' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setScopeFilter(tab.id)}
+              className="flex-1 md:flex-none px-4 py-2 cursor-pointer border-none transition-all"
+              style={{
+                backgroundColor: scopeFilter === tab.id ? C.surfaceWhite : 'transparent',
+                color: scopeFilter === tab.id ? C.btnPrimary : C.textMuted,
+                borderRadius: R.lg,
+                boxShadow: scopeFilter === tab.id ? S.card : 'none',
+                fontSize: T.size.sm,
+                fontWeight: T.weight.bold,
+                fontFamily: T.fontFamily,
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 

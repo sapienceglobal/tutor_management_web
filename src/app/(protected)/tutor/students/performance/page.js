@@ -116,6 +116,15 @@ const getGrade = (score) => {
   return { letter: "F", color: C.danger, bg: C.dangerBg };
 };
 
+// ─── Image Resolver ────────────────────────────────────────────────────────────
+const resolveImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  const baseUrl = apiUrl.replace(/\/api\/?$/, "");
+  return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+};
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function TutorStudentPerformancePage() {
   const [students, setStudents] = useState([]);
@@ -261,7 +270,7 @@ export default function TutorStudentPerformancePage() {
 
   return (
     <div
-      className="w-full min-h-screen p-6 pb-24 space-y-6"
+      className="w-full min-h-screen pb-24 space-y-6"
       style={{
         backgroundColor: C.pageBg,
         fontFamily: T.fontFamily,
@@ -691,7 +700,7 @@ export default function TutorStudentPerformancePage() {
 
             {/* Rows */}
             {paginatedStudents.length > 0 ? (
-              <div className="flex flex-col">
+              <div className="flex flex-col p-3 gap-2">
                 {paginatedStudents.map((student, idx) => {
                   const progress = student.indicators?.progress ?? 0;
                   const score = student.indicators?.examAverage ?? 0;
@@ -708,21 +717,14 @@ export default function TutorStudentPerformancePage() {
                   return (
                     <div
                       key={student.studentId}
-                      className="grid gap-4 px-5 py-3 items-center transition-colors"
+                      className="grid gap-4 px-4 py-3 items-center transition-colors hover:bg-white/40"
                       style={{
                         gridTemplateColumns:
                           "40px 2fr 1.5fr 1fr 80px 80px 100px",
-                        borderBottom:
-                          idx !== paginatedStudents.length - 1
-                            ? `1px solid ${C.cardBorder}`
-                            : "none",
+                        backgroundColor: C.innerBg,
+                        border: `1px solid ${C.cardBorder}`,
+                        borderRadius: "10px",
                       }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.backgroundColor = C.innerBg)
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor = "transparent")
-                      }
                     >
                       {/* Checkbox */}
                       <div className="flex justify-center">
@@ -740,19 +742,23 @@ export default function TutorStudentPerformancePage() {
                       {/* Student info */}
                       <div className="flex items-center gap-3 min-w-0">
                         <div
-                          className="flex items-center justify-center shrink-0"
+                          className="flex items-center justify-center shrink-0 overflow-hidden"
                           style={{
                             width: 40,
                             height: 40,
                             borderRadius: R.full,
-                            backgroundColor: C.btnViewAllBg,
+                            backgroundColor: C.innerBg,
                             border: `1px solid ${C.cardBorder}`,
                             fontFamily: T.fontFamily,
                             fontWeight: T.weight.bold,
                             color: C.heading,
                           }}
                         >
-                          {student.name.charAt(0).toUpperCase()}
+                          {student.profileImage ? (
+                            <img src={resolveImageUrl(student.profileImage)} alt={student.name} className="w-full h-full object-cover" />
+                          ) : (
+                            student.name.charAt(0).toUpperCase()
+                          )}
                         </div>
                         <div className="min-w-0">
                           <p

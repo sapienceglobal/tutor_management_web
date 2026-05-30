@@ -272,7 +272,7 @@ export default function EarningsPage() {
                             subtext={`${summary.totalTransactions || 0} successful payments`} 
                             icon={MdAttachMoney} 
                             iconBg={C.iconBg} 
-                            iconColor={C.btnPrimary} 
+                            iconColor={C.iconColor} 
                         />
                         <StatCard 
                             label="Withdrawable Balance" 

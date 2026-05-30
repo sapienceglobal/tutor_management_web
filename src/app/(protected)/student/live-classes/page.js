@@ -18,7 +18,7 @@ import {
 } from "react-icons/md";
 import { Loader2 } from "lucide-react";
 import api from "@/lib/axios";
-import { getAudienceDisplay } from "@/lib/audienceDisplay";
+import { getAudienceDisplay, getAudienceScope } from "@/lib/audienceDisplay";
 import { C, T, S, R } from "@/constants/studentTokens";
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
@@ -28,6 +28,16 @@ const SCHEDULE_PAGE_SIZE = 4;
 export default function LiveClassesPage() {
   const [liveClasses, setLiveClasses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [visibilityFilter, setVisibilityFilter] = useState("all");
+
+  const filteredLiveClasses = useMemo(() => {
+    return liveClasses.filter((c) => {
+      const scope = getAudienceScope(c);
+      if (visibilityFilter === "institute") return scope === "institute" || scope === "batch" || scope === "private";
+      if (visibilityFilter === "global") return scope === "global";
+      return true;
+    });
+  }, [liveClasses, visibilityFilter]);
   const [selectedDate, setSelectedDate] = useState(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -58,7 +68,7 @@ export default function LiveClassesPage() {
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(dayStart);
     dayEnd.setDate(dayEnd.getDate() + 1);
-    return liveClasses
+    return filteredLiveClasses
       .filter((c) => {
         const dt = new Date(c.dateTime);
         return dt >= dayStart && dt < dayEnd;
@@ -67,16 +77,16 @@ export default function LiveClassesPage() {
   };
 
   const todayClasses = getClassesForDate(selectedDate);
-  const upcomingClasses = liveClasses
+  const upcomingClasses = filteredLiveClasses
     .filter((c) => new Date(c.dateTime) >= now)
     .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime))
     .slice(0, 5);
-  const pastClasses = liveClasses
+  const pastClasses = filteredLiveClasses
     .filter((c) => new Date(c.dateTime) < now)
     .sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime))
     .slice(0, 5);
 
-  const allScheduled = liveClasses
+  const allScheduled = filteredLiveClasses
     .filter((c) => new Date(c.dateTime) >= now)
     .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
   const scheduleTotalPages = Math.max(
@@ -132,13 +142,13 @@ export default function LiveClassesPage() {
 
   const examDates = useMemo(() => {
     const dates = new Set();
-    liveClasses.forEach((e) => {
+    filteredLiveClasses.forEach((e) => {
       const d = new Date(e.dateTime);
       if (d.getMonth() === month && d.getFullYear() === year)
         dates.add(d.getDate());
     });
     return dates;
-  }, [liveClasses, month, year]);
+  }, [filteredLiveClasses, month, year]);
 
   if (loading)
     return (
@@ -201,14 +211,38 @@ export default function LiveClassesPage() {
               and access past class recordings.
             </p>
           </div>
+          
+          {/* Tab Toggles */}
           <div
-            className="hidden md:flex w-40 h-28 items-center justify-center shadow-inner"
-            style={{ backgroundColor: C.innerBox, borderRadius: "10px" }}
+              className="flex items-center p-1"
+              style={{
+                  backgroundColor: C.innerBg,
+                  borderRadius: R.xl,
+                  border: `1px solid ${C.cardBorder}`,
+              }}
           >
-            <MdVideocam
-              className="w-12 h-12 opacity-60"
-              style={{ color: C.btnPrimary }}
-            />
+              {[
+                  { id: 'all', label: 'All Classes' },
+                  { id: 'institute', label: 'My Institute' },
+                  { id: 'global', label: 'Global' },
+              ].map((tab) => (
+                  <button
+                      key={tab.id}
+                      onClick={() => setVisibilityFilter(tab.id)}
+                      className="px-4 py-2 cursor-pointer border-none transition-all"
+                      style={{
+                          backgroundColor: visibilityFilter === tab.id ? C.surfaceWhite : 'transparent',
+                          color: visibilityFilter === tab.id ? C.btnPrimary : C.textMuted,
+                          borderRadius: R.lg,
+                          boxShadow: visibilityFilter === tab.id ? S.card : 'none',
+                          fontSize: T.size.sm,
+                          fontWeight: T.weight.bold,
+                          fontFamily: T.fontFamily,
+                      }}
+                  >
+                      {tab.label}
+                  </button>
+              ))}
           </div>
         </div>
       </div>
@@ -840,17 +874,22 @@ export default function LiveClassesPage() {
                   >
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <div className="min-w-0 pr-2">
-                        <p
-                          className="truncate"
-                          style={{
-                            fontSize: T.size.base,
-                            fontWeight: T.weight.bold,
-                            color: C.heading,
-                            margin: "0 0 2px 0",
-                          }}
-                        >
-                          {c.title}
-                        </p>
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <p
+                            className="truncate animate-none"
+                            style={{
+                              fontSize: T.size.base,
+                              fontWeight: T.weight.bold,
+                              color: C.heading,
+                              margin: 0,
+                            }}
+                          >
+                            {c.title}
+                          </p>
+                          <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-extrabold ${getAudienceDisplay(c).badgeClass}`}>
+                            {getAudienceDisplay(c).label}
+                          </span>
+                        </div>
                         <p
                           className="truncate"
                           style={{

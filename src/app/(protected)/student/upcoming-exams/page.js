@@ -19,12 +19,14 @@ import {
 import api from '@/lib/axios';
 import { C, T, S, R } from '@/constants/studentTokens';
 import StatCard from '@/components/StatCard';
+import { getAudienceDisplay, getAudienceScope } from '@/lib/audienceDisplay';
 
 export default function UpcomingExamsPage() {
     const [exams, setExams]                   = useState([]);
     const [loading, setLoading]               = useState(true);
     const [completedCount, setCompletedCount] = useState(0);
     const [calendarDate, setCalendarDate]     = useState(new Date());
+    const [activeTab, setActiveTab]           = useState('all');
 
     useEffect(() => {
         const fetchExams = async () => {
@@ -40,6 +42,15 @@ export default function UpcomingExamsPage() {
         };
         fetchExams();
     }, []);
+
+    const filteredExams = useMemo(() => {
+        return exams.filter(e => {
+            const scope = getAudienceScope(e);
+            if (activeTab === 'institute') return scope === 'institute' || scope === 'batch' || scope === 'private';
+            if (activeTab === 'global') return scope === 'global';
+            return true;
+        });
+    }, [exams, activeTab]);
 
     const stats = useMemo(() => {
         const now = new Date();
@@ -141,7 +152,7 @@ export default function UpcomingExamsPage() {
         >
             {/* ── Header ─────────────────────────────────────────────────── */}
             <div
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5"
+                className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 lg:p-8"
                 style={{
                     backgroundColor: C.cardBg,
                     border: `1px solid ${C.cardBorder}`,
@@ -184,23 +195,58 @@ export default function UpcomingExamsPage() {
                     </div>
                 </div>
 
-                <Link href="/student/history">
-                    <button
-                        className="flex items-center gap-2 px-4 h-10 cursor-pointer transition-opacity hover:opacity-80"
+                <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                    {/* Tab Toggles */}
+                    <div
+                        className="flex items-center p-1 w-full sm:w-auto"
                         style={{
-                            backgroundColor: C.btnViewAllBg,
-                            color: C.btnViewAllText,
-                            fontFamily: T.fontFamily,
-                            fontSize: T.size.base,
-                            fontWeight: T.weight.bold,
+                            backgroundColor: C.innerBg,
+                            borderRadius: R.xl,
                             border: `1px solid ${C.cardBorder}`,
-                            borderRadius: '10px',
                         }}
                     >
-                        <MdArticle style={{ width: 16, height: 16, color: C.btnPrimary }} />
-                        Exam History
-                    </button>
-                </Link>
+                        {[
+                            { id: 'all', label: 'All Exams' },
+                            { id: 'institute', label: 'My Institute' },
+                            { id: 'global', label: 'Global' },
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className="flex-1 sm:flex-none px-4 py-2 cursor-pointer border-none transition-all"
+                                style={{
+                                    backgroundColor: activeTab === tab.id ? C.surfaceWhite : 'transparent',
+                                    color: activeTab === tab.id ? C.btnPrimary : C.textMuted,
+                                    borderRadius: R.lg,
+                                    boxShadow: activeTab === tab.id ? S.card : 'none',
+                                    fontSize: T.size.sm,
+                                    fontWeight: T.weight.bold,
+                                    fontFamily: T.fontFamily,
+                                }}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <Link href="/student/history" className="w-full sm:w-auto shrink-0">
+                        <button
+                            className="flex items-center justify-center gap-2 px-4 h-10 w-full cursor-pointer transition-opacity hover:opacity-80"
+                            style={{
+                                backgroundColor: C.btnViewAllBg,
+                                color: C.btnViewAllText,
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.base,
+                                fontWeight: T.weight.bold,
+                                border: `1px solid ${C.cardBorder}`,
+                                borderRadius: '10px',
+                            }}
+                        >
+                            <MdArticle style={{ width: 16, height: 16, color: C.btnPrimary }} />
+                            Exam History
+                        </button>
+                    </Link>
+                </div>
             </div>
 
             {/* ── Stat Cards ─────────────────────────────────────────────── */}
@@ -240,43 +286,44 @@ export default function UpcomingExamsPage() {
 
                 {/* ── Left: Exam List ────────────────────────────────────── */}
                 <div className="xl:col-span-2 space-y-4">
-
                     {/* Section heading */}
-                    <div className="flex items-center gap-2.5">
-                        <div
-                            className="flex items-center justify-center rounded-lg shrink-0"
-                            style={{ width: 40, height: 40, backgroundColor: C.iconBg }}
-                        >
-                            <MdMenuBook style={{ width: 16, height: 16, color: C.iconColor }} />
-                        </div>
-                        <h2
-                            style={{
-                                fontFamily: T.fontFamily,
-                                fontSize: T.size.xl,
-                                fontWeight: T.weight.semibold,
-                                color: C.heading,
-                            }}
-                        >
-                            All Upcoming Exams
-                        </h2>
-                        {exams.length > 0 && (
-                            <span
-                                className="px-2.5 py-0.5 rounded-lg"
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-2.5">
+                            <div
+                                className="flex items-center justify-center rounded-lg shrink-0"
+                                style={{ width: 40, height: 40, backgroundColor: C.iconBg }}
+                            >
+                                <MdMenuBook style={{ width: 16, height: 16, color: C.iconColor }} />
+                            </div>
+                            <h2
                                 style={{
-                                    backgroundColor: C.btnPrimary,
-                                    color: '#fff',
                                     fontFamily: T.fontFamily,
-                                    fontSize: T.size.xs,
-                                    fontWeight: T.weight.bold,
+                                    fontSize: T.size.xl,
+                                    fontWeight: T.weight.semibold,
+                                    color: C.heading,
                                 }}
                             >
-                                {exams.length}
-                            </span>
-                        )}
+                                All Upcoming Exams
+                            </h2>
+                            {filteredExams.length > 0 && (
+                                <span
+                                    className="px-2.5 py-0.5 rounded-lg"
+                                    style={{
+                                        backgroundColor: C.btnPrimary,
+                                        color: '#fff',
+                                        fontFamily: T.fontFamily,
+                                        fontSize: T.size.xs,
+                                        fontWeight: T.weight.bold,
+                                    }}
+                                >
+                                    {filteredExams.length}
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     {/* Empty State */}
-                    {exams.length === 0 ? (
+                    {filteredExams.length === 0 ? (
                         <div
                             className="p-14 text-center border border-dashed"
                             style={{
@@ -316,13 +363,16 @@ export default function UpcomingExamsPage() {
                                     marginTop: 4,
                                 }}
                             >
-                                You're all caught up — great work!
+                                {activeTab === 'all'
+                                    ? "You're all caught up — great work!"
+                                    : `No exams available in the "${activeTab === 'institute' ? 'My Institute' : 'Global'}" scope.`}
                             </p>
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {exams.map(exam => {
+                            {filteredExams.map(exam => {
                                 const badge = getUrgencyBadge(exam.startDate || exam.createdAt);
+                                const aud = getAudienceDisplay(exam);
                                 return (
                                     <div
                                         key={exam._id}
@@ -333,7 +383,6 @@ export default function UpcomingExamsPage() {
                                             boxShadow: S.card,
                                             borderRadius: '10px',
                                         }}
-                                     
                                     >
                                         {/* Icon */}
                                         <div
@@ -352,17 +401,23 @@ export default function UpcomingExamsPage() {
 
                                         {/* Info */}
                                         <div className="flex-1 min-w-0">
-                                            <h3
-                                                className="truncate mb-1"
-                                                style={{
-                                                    fontFamily: T.fontFamily,
-                                                    fontSize: T.size.md,
-                                                    fontWeight: T.weight.bold,
-                                                    color: C.heading,
-                                                }}
-                                            >
-                                                {exam.title}
-                                            </h3>
+                                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                <h3
+                                                    className="truncate"
+                                                    style={{
+                                                        fontFamily: T.fontFamily,
+                                                        fontSize: T.size.md,
+                                                        fontWeight: T.weight.bold,
+                                                        color: C.heading,
+                                                        margin: 0,
+                                                    }}
+                                                >
+                                                    {exam.title}
+                                                </h3>
+                                                <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[9px] uppercase tracking-wider font-extrabold ${aud.badgeClass}`}>
+                                                    {aud.label}
+                                                </span>
+                                            </div>
                                             <div className="flex items-center flex-wrap gap-x-4 gap-y-1">
                                                 <span
                                                     className="flex items-center gap-1.5"

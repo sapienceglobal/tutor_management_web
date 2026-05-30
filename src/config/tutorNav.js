@@ -1,38 +1,32 @@
 import {
-    LayoutDashboard,
-    FileText,
-    BookOpen,
-    Library,
-    Settings,
-    Users,
-    ClipboardList,
-    DollarSign,
-    BrainCircuit,
-    Star,
-    BarChart2,
-    Video,
-    CalendarDays,
-    CalendarCheck,
-    GraduationCap,
-    ClipboardCheck,
-    Layers,
-    Cpu,
-    Tag,
-    CalendarClock,
-    Wallet,
-    Megaphone,
-    MessageSquare,
-    MessageCircle,
-    ShieldAlert,
-    Crown,
-} from 'lucide-react';
+    MdDashboard,
+    MdMenuBook,
+    MdCalendarMonth,
+    MdArticle,
+    MdLibraryBooks,
+    MdLocalOffer,
+    MdPeople,
+    MdReport,
+    MdEventAvailable,
+    MdStar,
+    MdAssignment,
+    MdSchedule,
+    MdBarChart,
+    MdAccountBalanceWallet,
+    MdAutoAwesome,
+    MdCampaign,
+    MdForum,
+    MdChat,
+    MdWorkspacePremium,
+    MdSettings
+} from 'react-icons/md';
 
 export const tutorNavItems = [
     // ── Top-level direct link ──────────────────────────────────────────────
     {
         title: "Dashboard",
         href: "/tutor/dashboard",
-        icon: LayoutDashboard,
+        icon: MdDashboard,
         type: "link",
     },
 
@@ -43,7 +37,7 @@ export const tutorNavItems = [
         children: [
             {
                 title: "My Courses",
-                icon: BookOpen,
+                icon: MdMenuBook,
                 submenu: [
                     { title: "All Courses", href: "/tutor/courses" },
                     { title: "Student Batches", href: "/tutor/batches" },
@@ -54,7 +48,7 @@ export const tutorNavItems = [
             },
             {
                 title: "Schedule",
-                icon: CalendarDays,
+                icon: MdCalendarMonth,
                 submenu: [
                     { title: "All Bookings", href: "/tutor/appointments" },
                     { title: "Manage Availability", href: "/tutor/appointments/schedule" },
@@ -70,7 +64,7 @@ export const tutorNavItems = [
         children: [
             {
                 title: "Quizzes & Exams",
-                icon: FileText,
+                icon: MdArticle,
                 submenu: [
                     { title: "All Quizzes & Exams", href: "/tutor/quizzes" },
                     { title: "Re-evaluation Requests", href: "/tutor/quizzes/re-evaluations" },
@@ -78,7 +72,7 @@ export const tutorNavItems = [
             },
             {
                 title: "Question Bank",
-                icon: Library,
+                icon: MdLibraryBooks,
                 submenu: [
                     { title: "All Questions", href: "/tutor/questions" },
                     { title: "AI Bulk Generator", href: "/tutor/questions/ai-generator", badge: "Premium", featureGate: "aiAssessment" },
@@ -86,7 +80,7 @@ export const tutorNavItems = [
             },
             {
                 title: "Taxonomy",
-                icon: Tag,
+                icon: MdLocalOffer,
                 submenu: [
                     { title: "Manage Topics", href: "/tutor/taxonomy/topics" },
                     { title: "Manage Skills", href: "/tutor/taxonomy/skills" },
@@ -102,25 +96,25 @@ export const tutorNavItems = [
         children: [
             {
                 title: "Students",
-                icon: Users,
+                icon: MdPeople,
                 href: "/tutor/students",
                 type: "link",
             },
             {
                 title: "At-Risk Students",
-                icon: ShieldAlert,
+                icon: MdReport,
                 href: "/tutor/students/at-risk",
                 type: "link",
             },
             {
                 title: "Leave Requests",
-                icon: CalendarCheck,
+                icon: MdEventAvailable,
                 href: "/tutor/leaves",
                 type: "link",
             },
             {
                 title: "Reviews",
-                icon: Star,
+                icon: MdStar,
                 href: "/tutor/reviews",
                 type: "link",
             },
@@ -134,31 +128,31 @@ export const tutorNavItems = [
         children: [
             {
                 title: "Reports Hub",
-                icon: FileText,
+                icon: MdAssignment,
                 href: "/tutor/reports",
                 type: "link",
             },
             {
                 title: "Student Performance",
-                icon: Users,
+                icon: MdPeople,
                 href: "/tutor/students/performance",
                 type: "link",
             },
             {
                 title: "Attendance Reports",
-                icon: CalendarClock,
+                icon: MdSchedule,
                 href: "/tutor/reports/attendance",
                 type: "link",
             },
             {
                 title: "Analytics",
-                icon: BarChart2,
+                icon: MdBarChart,
                 href: "/tutor/analytics",
                 type: "link",
             },
             {
                 title: "Earnings & Payouts",
-                icon: Wallet,
+                icon: MdAccountBalanceWallet,
                 href: "/tutor/earnings",
                 type: "link",
             },
@@ -166,13 +160,13 @@ export const tutorNavItems = [
     },
 
     // ── CONFIGURATION ──────────────────────────────────────────────────────
-   {
+    {
         title: "COMMUNICATION",
         type: "section",
         children: [
-           {
+            {
                 title: "AI Buddy",
-                icon: BrainCircuit,
+                icon: MdAutoAwesome,
                 href: "/tutor/ai-buddy",  
                 type: "link",
                 badge: "Premium",
@@ -180,19 +174,19 @@ export const tutorNavItems = [
             },
             {
                 title: "Announcements",
-                icon: Megaphone,
+                icon: MdCampaign,
                 href: "/tutor/announcements",
                 type: "link",
             },
             {
                 title: "Discussion Forum",
-                icon: MessageCircle,
+                icon: MdForum,
                 href: "/tutor/discussions",
                 type: "link",
             },
             {
                 title: "Messages",
-                icon: MessageSquare,
+                icon: MdChat,
                 href: "/tutor/messages",
                 type: "link",
             },
@@ -205,13 +199,13 @@ export const tutorNavItems = [
         children: [
             {
                 title: "Subscription",
-                icon: Crown,
+                icon: MdWorkspacePremium,
                 href: "/tutor/subscription",
                 type: "link",
             },
             {
                 title: "Settings",
-                icon: Settings,
+                icon: MdSettings,
                 href: "/tutor/settings",
                 type: "link",
             },

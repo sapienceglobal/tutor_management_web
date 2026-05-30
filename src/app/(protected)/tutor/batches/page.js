@@ -16,6 +16,7 @@ import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { C, T, S, R } from '@/constants/studentTokens';
 import AddBatchWizardModal from '@/components/shared/AddBatchWizardModal';
+import { getAudienceDisplay } from '@/lib/audienceDisplay';
 
 // Focus Handlers
 const onFocusHandler = e => {
@@ -152,13 +153,18 @@ export default function TutorBatchesPage() {
                                             onMouseLeave={e => e.currentTarget.style.backgroundColor = C.cardBg}>
 
                                             <div className="min-w-0 pr-2">
-                                                <h3 className="truncate" style={{ fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 6px 0' }}>{batch.name}</h3>
-                                                <span style={{
-                                                    fontSize: '9px', fontWeight: T.weight.black, padding: '3px 8px', borderRadius: '6px', textTransform: 'uppercase', letterSpacing: T.tracking.wider,
-                                                    backgroundColor: st.bg, color: st.color, border: `1px solid ${st.border}`
-                                                }}>
-                                                    {batch.status || 'Active'}
-                                                </span>
+                                                <h3 className="truncate animate-none" style={{ fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 6px 0' }}>{batch.name}</h3>
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <span style={{
+                                                        fontSize: '9px', fontWeight: T.weight.black, padding: '3px 8px', borderRadius: '6px', textTransform: 'uppercase', letterSpacing: T.tracking.wider,
+                                                        backgroundColor: st.bg, color: st.color, border: `1px solid ${st.border}`
+                                                    }}>
+                                                        {batch.status || 'Active'}
+                                                    </span>
+                                                    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-extrabold ${getAudienceDisplay(batch).badgeClass}`}>
+                                                        {getAudienceDisplay(batch).label}
+                                                    </span>
+                                                </div>
                                             </div>
 
                                             <div className="min-w-0 pr-2">
@@ -182,7 +188,7 @@ export default function TutorBatchesPage() {
                                                 <button
                                                     onClick={() => router.push(`/tutor/batches/${batch._id}`)}
                                                     className="flex items-center justify-center gap-1.5 px-4 py-2 cursor-pointer transition-colors border-none shadow-sm"
-                                                    style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, borderRadius: '8px', fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}
+                                                    style={{ backgroundColor: C.surfaceWhite, color: C.btnPrimary, borderRadius: '8px', fontSize: T.size.md, fontWeight: T.weight.semibold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}
                                                     onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnPrimary; e.currentTarget.style.color = '#fff'; }}
                                                     onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.surfaceWhite; e.currentTarget.style.color = C.btnPrimary; }}>
                                                     <MdVisibility size={14} /> View
@@ -190,9 +196,9 @@ export default function TutorBatchesPage() {
                                                 <button
                                                     onClick={() => { setEditingBatch(batch); setShowModal(true); }}
                                                     className="flex items-center justify-center gap-1.5 px-4 py-2 cursor-pointer transition-colors border-none shadow-sm"
-                                                    style={{ backgroundColor: C.iconBg, color:'#ffffff', borderRadius: '8px', fontSize: T.size.xs, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}
+                                                    style={{ backgroundColor: C.iconBg, color:'#ffffff', borderRadius: '8px', fontSize: T.size.md, fontWeight: T.weight.semibold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}
                                                     onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.btnPrimary; e.currentTarget.style.color = '#fff'; }}
-                                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.iconBg; e.currentTarget.style.color = C.btnPrimary; }}>
+                                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.iconBg; e.currentTarget.style.color = '#ffffff'; }}>
                                                     <MdEdit size={14} /> Edit
                                                 </button>
                                             </div>

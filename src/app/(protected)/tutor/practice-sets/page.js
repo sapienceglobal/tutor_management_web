@@ -23,11 +23,13 @@ import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { getAudienceDisplay, getAudienceScope } from '@/lib/audienceDisplay';
 
 export default function PracticeSetsPage() {
     const [practiceSets, setPracticeSets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeTab, setActiveTab] = useState('all');
     const { confirmDialog } = useConfirm();
 
     useEffect(() => {
@@ -69,13 +71,29 @@ export default function PracticeSetsPage() {
         const newStatus = currentStatus === 'published' ? 'draft' : 'published';
         try {
             await api.patch(`/exams/${examId}`, { status: newStatus });
-            setExams(exams.map(e =>
+            setPracticeSets(practiceSets.map(e =>
                 e._id === examId ? { ...e, status: newStatus } : e
             ));
+            toast.success(`Practice set ${newStatus}ed successfully!`);
         } catch (error) {
             console.error('Error updating status:', error);
+            toast.error('Failed to update status');
         }
     };
+
+    const filteredSets = practiceSets.filter(set => {
+        const matchesSearch = set.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (set.courseTitle && set.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()));
+
+        const scope = getAudienceScope(set);
+        const matchesScope =
+            activeTab === 'all'       ? true :
+            activeTab === 'institute' ? (scope === 'institute' || scope === 'batch' || scope === 'private') :
+            activeTab === 'global'    ? scope === 'global' :
+            true;
+
+        return matchesSearch && matchesScope;
+    });
 
     return (
         <div className="space-y-6">
@@ -92,9 +110,45 @@ export default function PracticeSetsPage() {
                 </Link>
             </div>
 
+            {practiceSets.length > 0 && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="relative max-w-md w-full">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <Input
+                            type="text"
+                            placeholder="Search practice sets..."
+                            className="pl-9 bg-white"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+
+                    {/* Scope Filter Tabs */}
+                    <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 self-start sm:self-auto">
+                        {[
+                            { id: 'all', label: 'All Practice Sets' },
+                            { id: 'institute', label: 'My Institute' },
+                            { id: 'global', label: 'Global' }
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all border-none cursor-pointer ${
+                                    activeTab === tab.id
+                                        ? 'bg-white text-emerald-600 shadow-sm'
+                                        : 'text-slate-600 hover:text-slate-900 bg-transparent'
+                                }`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {loading ? (
                 <div className="text-center py-20">Loading practice sets...</div>
-            ) : exams.length === 0 ? (
+            ) : practiceSets.length === 0 ? (
                 <div className="bg-white rounded-xl border shadow-sm p-12 text-center">
                     <div className="mx-auto h-20 w-20 bg-emerald-50 rounded-full flex items-center justify-center mb-6">
                         <BookOpen className="h-10 w-10 text-emerald-600" />
@@ -107,16 +161,23 @@ export default function PracticeSetsPage() {
                         <Button className="bg-emerald-600 hover:bg-emerald-700">Create New Set</Button>
                     </Link>
                 </div>
+            ) : filteredSets.length === 0 ? (
+                <div className="bg-white rounded-xl border shadow-sm p-12 text-center text-gray-500">
+                    No practice sets match your search term.
+                </div>
             ) : (
                 <div className="grid gap-4">
-                    {exams.map((exam) => (
+                    {filteredSets.map((exam) => (
                         <div key={exam._id} className="bg-white p-6 rounded-xl border shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-1">
+                                <div className="flex items-center gap-3 mb-1 flex-wrap">
                                     <h3 className="font-bold text-lg text-gray-900">{exam.title}</h3>
                                     <Badge variant={exam.status === 'published' ? 'default' : 'secondary'} className={exam.status === 'published' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}>
                                         {exam.status}
                                     </Badge>
+                                    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] uppercase tracking-wider font-extrabold ${getAudienceDisplay(exam).badgeClass}`}>
+                                        {getAudienceDisplay(exam).label}
+                                    </span>
                                 </div>
                                 <p className="text-sm text-gray-500 flex items-center gap-2">
                                     <span className="font-medium text-emerald-600">{exam.courseTitle || 'Unknown Course'}</span>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,10 +17,12 @@ import {
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getAudienceDisplay, getAudienceScope } from '@/lib/audienceDisplay';
 
 export default function StudentPracticeSetsPage() {
     const [exams, setExams] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('all');
 
     useEffect(() => {
         const fetchExams = async () => {
@@ -38,6 +40,15 @@ export default function StudentPracticeSetsPage() {
         };
         fetchExams();
     }, []);
+
+    const filteredExams = useMemo(() => {
+        return exams.filter(e => {
+            const scope = getAudienceScope(e);
+            if (activeTab === 'institute') return scope === 'institute' || scope === 'batch' || scope === 'private';
+            if (activeTab === 'global') return scope === 'global';
+            return true;
+        });
+    }, [exams, activeTab]);
 
     if (loading) {
         return (
@@ -70,24 +81,46 @@ export default function StudentPracticeSetsPage() {
                     </div>
                 </div>
 
-                {exams.length === 0 ? (
+                {/* Scope Filter Tabs */}
+                {exams.length > 0 && (
+                    <div className="flex justify-end mb-4">
+                        <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200">
+                            {[
+                                { id: 'all', label: 'All Practice Sets' },
+                                { id: 'institute', label: 'My Institute' },
+                                { id: 'global', label: 'Global' }
+                            ].map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                                        activeTab === tab.id
+                                            ? 'bg-white text-teal-600 shadow-sm'
+                                            : 'text-slate-600 hover:text-slate-900 bg-transparent'
+                                    }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {filteredExams.length === 0 ? (
                     <div className="bg-white rounded-[2rem] border-2 border-dashed border-slate-200 p-12 text-center shadow-sm">
                         <div className="mx-auto h-24 w-24 bg-teal-50 rounded-full flex items-center justify-center mb-6 animate-pulse">
                             <Zap className="h-10 w-10 text-teal-400" />
                         </div>
                         <h2 className="text-2xl font-bold text-slate-900 mb-2">No Practice Sets Available</h2>
                         <p className="text-slate-500 max-w-md mx-auto mt-2 mb-8">
-                            There are no practice sets available for you right now. Browse courses to find more content.
+                            {activeTab === 'all'
+                                ? "There are no practice sets available for you right now."
+                                : `No practice sets match the selected filter: ${activeTab === 'institute' ? 'My Institute' : 'Global'}.`}
                         </p>
-                        <Link href="/student/courses">
-                            <Button className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl px-8 py-6 h-auto text-lg shadow-lg shadow-teal-200">
-                                Browse Courses
-                            </Button>
-                        </Link>
                     </div>
                 ) : (
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {exams.map((exam, index) => (
+                        {filteredExams.map((exam, index) => (
                             <motion.div
                                 key={exam._id}
                                 initial={{ opacity: 0, y: 20 }}
@@ -98,10 +131,15 @@ export default function StudentPracticeSetsPage() {
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-teal-50 to-transparent rounded-bl-[4rem] -mr-8 -mt-8 opacity-50 group-hover:from-emerald-50 transition-colors"></div>
 
                                     <div className="relative mb-6">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <Badge variant="outline" className="text-xs font-bold uppercase tracking-wide text-slate-500 bg-slate-50 border-slate-200 py-1.5 px-3 rounded-full">
-                                                {exam.courseTitle || 'General Practice'}
-                                            </Badge>
+                                        <div className="flex justify-between items-start mb-4 flex-wrap gap-2">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wide text-slate-500 bg-slate-50 border-slate-200 py-1 px-2.5 rounded-full">
+                                                    {exam.courseTitle || 'General Practice'}
+                                                </Badge>
+                                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] uppercase tracking-wider font-extrabold ${getAudienceDisplay(exam).badgeClass}`}>
+                                                    {getAudienceDisplay(exam).label}
+                                                </span>
+                                            </div>
                                             <div className="flex items-center gap-0.5 text-amber-400">
                                                 <Star className="w-3.5 h-3.5 fill-current" />
                                                 <Star className="w-3.5 h-3.5 fill-current" />

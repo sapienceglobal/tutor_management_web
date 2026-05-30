@@ -53,6 +53,15 @@ function ScoreBar({ score }) {
     );
 }
 
+// ─── Image Resolver ────────────────────────────────────────────────────────────
+const resolveImageUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith("http")) return path;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    const baseUrl = apiUrl.replace(/\/api\/?$/, "");
+    return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+};
+
 export default function TutorStudentsPage() {
     const [students, setStudents]         = useState([]);
     const [loading, setLoading]           = useState(true);
@@ -128,7 +137,7 @@ export default function TutorStudentsPage() {
     }
 
     return (
-        <div className="w-full min-h-screen md:p-8" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}>
+        <div className="w-full min-h-screen" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily }}>
             
             {/* ── Header ────────────────────────────────────────────────────── */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -205,7 +214,7 @@ export default function TutorStudentsPage() {
 
                                         {/* Student */}
                                         <div className="flex items-center gap-3 min-w-0 pr-2">
-                                            <div className="flex items-center justify-center shrink-0"
+                                            <div className="flex items-center justify-center shrink-0 overflow-hidden"
                                                 style={{ 
                                                     width: '40px', height: '40px', borderRadius: R.full, 
                                                     background: student.isBlockedByTutor ? C.dangerBg : C.iconBg,
@@ -213,7 +222,11 @@ export default function TutorStudentsPage() {
                                                     fontSize: T.size.lg, fontWeight: T.weight.bold,
                                                     border: student.isBlockedByTutor ? `1px solid ${C.dangerBorder}` : `1px solid ${C.cardBorder}`
                                                 }}>
-                                                {student.name.charAt(0).toUpperCase()}
+                                                {student.profileImage ? (
+                                                    <img src={resolveImageUrl(student.profileImage)} alt={student.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    student.name.charAt(0).toUpperCase()
+                                                )}
                                             </div>
                                             <div className="min-w-0">
                                                 <p className="truncate" style={{ fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 2px 0' }}>{student.name}</p>

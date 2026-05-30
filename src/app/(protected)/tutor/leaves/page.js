@@ -196,7 +196,7 @@ export default function TutorLeavesPage() {
     }
 
     return (
-        <div className="w-full min-h-screen p-6" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
 
             {/* ── Header ────────────────────────────────────────────────────── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
