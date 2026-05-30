@@ -24,6 +24,13 @@ export default function SubscriptionDashboard() {
     const [loadingPlans, setLoadingPlans] = useState(true);
 
     useEffect(() => {
+        const loadRazorpay = () => {
+            const script = document.createElement('script');
+            script.src   = 'https://checkout.razorpay.com/v1/checkout.js';
+            document.body.appendChild(script);
+        };
+        loadRazorpay();
+
         const loadPersonalPlans = async () => {
             try {
                 const roleParam = role ? `&planRole=${role}` : '';
@@ -41,27 +48,62 @@ export default function SubscriptionDashboard() {
     }, [role]);
 
     const handlePurchase = async (plan) => {
+        if (!window.Razorpay) {
+            toast.error('Payment gateway is still loading. Please wait.');
+            return;
+        }
         try {
             setIsUpgrading(plan._id);
-            
-            // Simulating sleek premium loader/gateway payment authorization
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            const toastId = toast.loading('Initiating secure payment...');
 
-            const { data } = await api.post('/auth/upgrade-personal', { planId: plan._id });
+            const { data: orderRes } = await api.post('/payments/renew-subscription', {
+                planId: plan._id
+            });
 
-            if (data.success) {
-                toast.success(`Welcome to Personal ${plan.name}! Your AI limits are unlocked.`, {
-                    duration: 5000,
-                    icon: '🚀'
-                });
-                
-                // Instantly rehydrate global React states and remove UI locks!
-                if (refreshSubscription) {
-                    await refreshSubscription();
-                }
-            } else {
-                toast.error(data.message || 'Upgrade failed. Please try again.');
+            if (!orderRes.success) {
+                toast.error(orderRes.message || 'Failed to initialize payment', { id: toastId });
+                return;
             }
+            toast.dismiss(toastId);
+
+            const options = {
+                key:         orderRes.key,
+                amount:      orderRes.order.amount,
+                currency:    orderRes.order.currency,
+                name:        'Sapience LMS',
+                description: `Upgrade to Personal ${plan.name}`,
+                order_id:    orderRes.order.id,
+                handler: async function (response) {
+                    const verifyToastId = toast.loading('Verifying your payment...');
+                    try {
+                        const { data: verifyRes } = await api.post('/payments/verify', {
+                            razorpayOrderId:    response.razorpay_order_id,
+                            razorpayPaymentId:  response.razorpay_payment_id,
+                            razorpaySignature:  response.razorpay_signature,
+                        });
+                        if (verifyRes.success) {
+                            toast.success(`Welcome to Personal ${plan.name}! Your AI limits are unlocked. 🎉`, { id: verifyToastId, duration: 5000 });
+                            
+                            // Instantly rehydrate global React states and remove UI locks!
+                            if (refreshSubscription) {
+                                await refreshSubscription();
+                            }
+                        } else {
+                            toast.error('Payment verification failed.', { id: verifyToastId });
+                        }
+                    } catch (err) {
+                        console.error('Verification error:', err);
+                        toast.error('An error occurred during verification.', { id: verifyToastId });
+                    }
+                },
+                theme:   { color: '#6B4DF1' },
+            };
+
+            const rzp = new window.Razorpay(options);
+            rzp.on('payment.failed', function (response) {
+                toast.error(`Payment failed: ${response.error.description}`);
+            });
+            rzp.open();
         } catch (error) {
             console.error('Upgrade request error:', error);
             toast.error('Payment checkout failed. Please check your connection.');
@@ -217,9 +259,9 @@ export default function SubscriptionDashboard() {
                         {/* Feature checklist */}
                         <div className="space-y-1">
                             <h3 className="text-xs font-black uppercase tracking-widest text-[#7D8DA6] mb-3">AI Plan Features</h3>
-                            {renderFeatureRow('AI Assistant Chat', Boolean(personalSubscription?.isActive && personalSubscription.features?.aiFeatures), 'Conversational tutor and study buddy')}
-                            {renderFeatureRow('AI Homework Assessment', Boolean(personalSubscription?.isActive && personalSubscription.features?.aiFeatures), 'Automatically evaluate subjective answer files')}
-                            {renderFeatureRow('AI Student Weakness Predictor', Boolean(personalSubscription?.isActive && personalSubscription.features?.aiFeatures), 'Identify dropouts and predict academic weak areas')}
+                            {renderFeatureRow('AI Assistant Chat', Boolean(personalSubscription?.isActive && personalSubscription.features?.aiAssistant), 'Conversational tutor and study buddy')}
+                            {renderFeatureRow('AI Homework Assessment', Boolean(personalSubscription?.isActive && personalSubscription.features?.aiAssessment), 'Automatically evaluate subjective answer files')}
+                            {renderFeatureRow('AI Student Weakness Predictor', Boolean(personalSubscription?.isActive && personalSubscription.features?.aiIntelligence), 'Identify dropouts and predict academic weak areas')}
                         </div>
                     </div>
 
@@ -279,28 +321,79 @@ export default function SubscriptionDashboard() {
                                         </div>
 
                                         <div className="space-y-3.5 pt-4 border-t border-gray-100">
+                                            {/* AI Credits */}
                                             <div className="flex items-center gap-2.5 text-[13px] font-black text-[#8B5CF6]">
                                                 <div className="p-0.5 rounded-full bg-purple-50 text-purple-600"><Check size={12} /></div>
                                                 <span>{plan.features?.aiCreditsPerMonth?.toLocaleString() || 0} Premium AI Credits/Mo</span>
                                             </div>
-                                            {plan.features?.aiAssistant && (
+
+                                            {/* Max Students (Tutor only) */}
+                                            {plan.planRole === 'tutor' && (
                                                 <div className="flex items-center gap-2.5 text-[13px] font-semibold text-gray-700">
                                                     <div className="p-0.5 rounded-full bg-emerald-50 text-emerald-600"><Check size={12} /></div>
-                                                    <span>AI Assistant (Chat & Summaries)</span>
+                                                    <span>Students Manager ({plan.features?.maxStudents === -1 ? 'Unlimited' : plan.features?.maxStudents || 100})</span>
                                                 </div>
                                             )}
-                                            {plan.features?.aiAssessment && (
-                                                <div className="flex items-center gap-2.5 text-[13px] font-semibold text-gray-700">
-                                                    <div className="p-0.5 rounded-full bg-emerald-50 text-emerald-600"><Check size={12} /></div>
-                                                    <span>AI Assessment & Homework Grader</span>
+
+                                            {/* Storage Limit */}
+                                            <div className="flex items-center gap-2.5 text-[13px] font-semibold text-gray-700">
+                                                <div className="p-0.5 rounded-full bg-emerald-50 text-emerald-600"><Check size={12} /></div>
+                                                <span>Storage Limit ({plan.features?.storageLimitGB || 5}GB)</span>
+                                            </div>
+
+                                            {/* HLS Video Security (Tutor only) */}
+                                            {plan.planRole === 'tutor' && (
+                                                <div className="flex items-center gap-2.5 text-[13px]">
+                                                    <div className={`w-5 h-5 flex items-center justify-center rounded-full shrink-0 ${plan.features?.hlsStreaming ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
+                                                        {plan.features?.hlsStreaming ? <Check size={12} /> : <span className="text-[10px] font-bold">✕</span>}
+                                                    </div>
+                                                    <span className={plan.features?.hlsStreaming ? 'text-gray-700 font-semibold' : 'text-gray-400 font-normal line-through'}>
+                                                        HLS Video Security
+                                                    </span>
                                                 </div>
                                             )}
-                                            {plan.features?.aiIntelligence && (
-                                                <div className="flex items-center gap-2.5 text-[13px] font-semibold text-gray-700">
-                                                    <div className="p-0.5 rounded-full bg-emerald-50 text-emerald-600"><Check size={12} /></div>
-                                                    <span>AI Dropout & Student Weakness Predictor</span>
+
+                                            {/* Zoom Live Classes (Tutor only) */}
+                                            {plan.planRole === 'tutor' && (
+                                                <div className="flex items-center gap-2.5 text-[13px]">
+                                                    <div className={`w-5 h-5 flex items-center justify-center rounded-full shrink-0 ${plan.features?.zoomIntegration ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
+                                                        {plan.features?.zoomIntegration ? <Check size={12} /> : <span className="text-[10px] font-bold">✕</span>}
+                                                    </div>
+                                                    <span className={plan.features?.zoomIntegration ? 'text-gray-700 font-semibold' : 'text-gray-400 font-normal line-through'}>
+                                                        Zoom Live Classes
+                                                    </span>
                                                 </div>
                                             )}
+
+                                            {/* AI Assistant */}
+                                            <div className="flex items-center gap-2.5 text-[13px]">
+                                                <div className={`w-5 h-5 flex items-center justify-center rounded-full shrink-0 ${plan.features?.aiAssistant ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
+                                                    {plan.features?.aiAssistant ? <Check size={12} /> : <span className="text-[10px] font-bold">✕</span>}
+                                                </div>
+                                                <span className={plan.features?.aiAssistant ? 'text-gray-700 font-semibold' : 'text-gray-400 font-normal line-through'}>
+                                                    AI Assistant (Chat & Summary)
+                                                </span>
+                                            </div>
+
+                                            {/* AI Assessment */}
+                                            <div className="flex items-center gap-2.5 text-[13px]">
+                                                <div className={`w-5 h-5 flex items-center justify-center rounded-full shrink-0 ${plan.features?.aiAssessment ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
+                                                    {plan.features?.aiAssessment ? <Check size={12} /> : <span className="text-[10px] font-bold">✕</span>}
+                                                </div>
+                                                <span className={plan.features?.aiAssessment ? 'text-gray-700 font-semibold' : 'text-gray-400 font-normal line-through'}>
+                                                    AI Assessment (Proctoring & Grading)
+                                                </span>
+                                            </div>
+
+                                            {/* AI Intelligence */}
+                                            <div className="flex items-center gap-2.5 text-[13px]">
+                                                <div className={`w-5 h-5 flex items-center justify-center rounded-full shrink-0 ${plan.features?.aiIntelligence ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
+                                                    {plan.features?.aiIntelligence ? <Check size={12} /> : <span className="text-[10px] font-bold">✕</span>}
+                                                </div>
+                                                <span className={plan.features?.aiIntelligence ? 'text-gray-700 font-semibold' : 'text-gray-400 font-normal line-through'}>
+                                                    AI Intelligence (Risk & Analytics)
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
 

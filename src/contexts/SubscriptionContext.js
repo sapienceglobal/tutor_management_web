@@ -219,9 +219,13 @@ export const SubscriptionProvider = ({ children }) => {
 
     const hasFeature = (featureKey, options = {}) => {
         if (role === 'superadmin') return true;
-        if (options.isPersonal) {
+        
+        // Auto-fallback: if explicitly requested personal OR if the user has no active institute plan, check personal plan!
+        const checkPersonal = options.isPersonal || (!planName || planName.toLowerCase() === 'free');
+        if (checkPersonal) {
             return Boolean(personalSubscription?.isActive && personalSubscription?.features?.[featureKey] === true);
         }
+        
         return features[featureKey] === true;
     };
 

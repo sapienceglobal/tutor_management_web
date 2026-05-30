@@ -11,12 +11,17 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import remarkGfm from 'remark-gfm';
 
 const SUGGESTION_CHIPS = [
     { icon: TrendingUp, label: 'Platform performance summary', color: 'bg-[#F4F0FD] text-[#6B4DF1] border-[#E9DFFC]' },
     { icon: AlertTriangle, label: 'Konse institutes expiring hain?', color: 'bg-[#FFF7ED] text-[#EA580C] border-[#FFEDD5]' },
     { icon: Wifi, label: 'Abhi koi live class chal rahi hai?', color: 'bg-[#ECFDF5] text-[#10B981] border-[#D1FAE5]' },
     { icon: BookOpen, label: 'Sabse popular course kaun sa hai?', color: 'bg-[#FDF4FF] text-[#C026D3] border-[#FAE8FF]' },
+    { icon: Activity, label: 'System health check karo', color: 'bg-[#F4F0FD] text-[#6B4DF1] border-[#E9DFFC]' },
+    { icon: GraduationCap, label: 'Students ki CSV report do', color: 'bg-[#ECFDF5] text-[#10B981] border-[#D1FAE5]' },
+    { icon: Sparkles, label: 'Jitendra sharma ko welcome email bhejo', color: 'bg-[#FFF7ED] text-[#EA580C] border-[#FFEDD5]' },
+    { icon: Building2, label: 'Sabhi active institutes ki list dikhao', color: 'bg-[#FDF4FF] text-[#C026D3] border-[#FAE8FF]' },
 ];
 
 const softShadow = '0px 8px 30px -10px rgba(112, 128, 176, 0.12)';
@@ -162,6 +167,7 @@ export default function SuperAdminAICoordinator() {
                 {/* Custom Markdown Styling without prose plugin */}
                 <div className="text-[14px] text-[#4A5568] leading-relaxed break-words">
                     <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
                         components={{
                             p: ({ node, ...props }) => <p className="mb-3 last:mb-0" {...props} />,
                             strong: ({ node, ...props }) => <strong className="font-black text-[#27225B]" {...props} />,
@@ -176,6 +182,24 @@ export default function SuperAdminAICoordinator() {
                                     ? <code className="bg-[#F4F0FD] text-[#6B4DF1] px-1.5 py-0.5 rounded-md text-[12px] font-bold font-mono" {...props} />
                                     : <code className="block bg-[#27225B] text-[#A78BFA] p-3 rounded-xl text-[12px] overflow-x-auto font-mono my-3 shadow-inner" {...props} />,
                             blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-[#6B4DF1] bg-[#F9F7FC] pl-4 py-2 italic text-[#7D8DA6] rounded-r-lg my-3" {...props} />,
+
+                            // 👇 NEW ADDITIONS FOR SUPERADMIN POWERS 👇
+                            a: ({ node, ...props }) => (
+                                <a
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-[#6B4DF1] font-bold bg-[#F4F0FD] px-3 py-1.5 rounded-lg border border-[#E9DFFC] hover:bg-[#6B4DF1] hover:text-white transition-all duration-200 no-underline"
+                                    {...props}
+                                />
+                            ),
+                            table: ({ node, ...props }) => (
+                                <div className="overflow-x-auto my-4 rounded-xl border border-[#E9DFFC] shadow-sm">
+                                    <table className="w-full text-left border-collapse text-[13px] bg-white" {...props} />
+                                </div>
+                            ),
+                            thead: ({ node, ...props }) => <thead className="bg-[#F9F7FC] border-b border-[#E9DFFC]" {...props} />,
+                            th: ({ node, ...props }) => <th className="px-4 py-3 font-bold text-[#27225B] uppercase tracking-wider text-[11px]" {...props} />,
+                            td: ({ node, ...props }) => <td className="px-4 py-3 border-b border-[#F4F0FD] text-[#4A5568]" {...props} />,
                         }}
                     >
                         {cleanContent}
@@ -301,8 +325,8 @@ export default function SuperAdminAICoordinator() {
 
                                 {/* Bubble */}
                                 <div className={`px-6 py-4 shadow-sm w-full ${msg.role === 'user'
-                                        ? 'rounded-3xl rounded-br-sm bg-[#6B4DF1] text-white border border-[#5839D6]'
-                                        : 'rounded-3xl rounded-bl-sm bg-white border border-[#E9DFFC]'
+                                    ? 'rounded-3xl rounded-br-sm bg-[#6B4DF1] text-white border border-[#5839D6]'
+                                    : 'rounded-3xl rounded-bl-sm bg-white border border-[#E9DFFC]'
                                     }`}>
                                     {renderMessageContent(msg, idx)}
                                 </div>
