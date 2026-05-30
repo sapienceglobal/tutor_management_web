@@ -67,6 +67,9 @@ function AiSubSidebar({ collapsed, setCollapsed }) {
     const [expandedGroups, setExpandedGroups] = useState({ 'Smart Teaching': true });
     // ✅ real stats
     const [sidebarStats, setSidebarStats] = useState({ totalSessions: null, totalTasks: null });
+    
+    // 🌟 Load subscription details
+    const { planName, features, personalSubscription, openUpsellModal } = useSubscription();
 
     useEffect(() => {
         api.get('/ai/tutor-dashboard-stats')
@@ -212,23 +215,50 @@ function AiSubSidebar({ collapsed, setCollapsed }) {
                 })}
             </div>
 
-            {/* ✅ Bottom stats — real data */}
+            {/* ✅ Premium Subscription & Credits display */}
             <div className="p-3 flex-shrink-0" style={{ borderTop: `1px solid ${SB.border}` }}>
-                <div className="rounded-xl p-3" style={{ backgroundColor: 'rgba(117,115,232,0.06)', border: '1px solid rgba(117,115,232,0.12)' }}>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: '#7573E8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-                        AI Usage
-                    </p>
-                    {[
-                        { label: 'Chats', value: sidebarStats.totalSessions },
-                        { label: 'Tasks Done', value: sidebarStats.totalTasks },
-                    ].map(({ label, value }) => (
-                        <div key={label} className="flex items-center justify-between mb-1">
-                            <span style={{ fontFamily: T.fontFamily, fontSize: '11px', color: '#94A3B8' }}>{label}</span>
-                            <span style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.bold, color: '#334155' }}>
-                                {value === null ? '…' : value}
+                <div className="rounded-xl p-3 space-y-3.5" style={{ backgroundColor: 'rgba(117,115,232,0.04)', border: '1px solid rgba(117,115,232,0.1)' }}>
+                    
+                    {/* Institute Billing Block */}
+                    <div>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: '9px', fontWeight: T.weight.bold, color: '#7573E8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+                            🏫 Institute Quota ({planName || 'Free'})
+                        </p>
+                        <div className="flex items-center justify-between">
+                            <span style={{ fontFamily: T.fontFamily, fontSize: '11px', color: '#64748B', fontWeight: T.weight.medium }}>AI Credits</span>
+                            <span className="text-[12px] font-black text-[#4F46E5]">
+                                {features.aiCreditsPerMonth !== undefined ? `${features.aiCreditsPerMonth}` : '0'}
                             </span>
                         </div>
-                    ))}
+                    </div>
+
+                    {/* Personal Billing Block */}
+                    <div style={{ borderTop: '1px dashed rgba(117,115,232,0.15)', paddingTop: 10 }}>
+                        <p style={{ fontFamily: T.fontFamily, fontSize: '9px', fontWeight: T.weight.bold, color: '#DB2777', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+                            👤 Personal Quota
+                        </p>
+                        {personalSubscription?.isActive ? (
+                            <div className="flex items-center justify-between">
+                                <span style={{ fontFamily: T.fontFamily, fontSize: '11px', color: '#64748B', fontWeight: T.weight.medium }}>AI Credits</span>
+                                <span className="text-[12px] font-black text-[#DB2777]">
+                                    {(personalSubscription.features?.aiCreditsPerMonth || 0) - (personalSubscription.features?.aiUsageCount || 0)}
+                                </span>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: '#94A3B8', margin: 0, lineHeight: '1.4' }}>
+                                    Using private/global assets? Upgrade to get individual credits.
+                                </p>
+                                <button 
+                                    onClick={openUpsellModal}
+                                    className="w-full py-1.5 px-2 bg-gradient-to-r from-[#DB2777] to-[#F43F5E] text-white text-[10px] font-black rounded-lg border-none cursor-pointer hover:opacity-90 shadow-sm transition-all text-center uppercase tracking-wider whitespace-nowrap"
+                                >
+                                    Get Personal Plan
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
                 </div>
             </div>
         </div>

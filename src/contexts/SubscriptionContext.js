@@ -80,70 +80,96 @@ const UpsellModal = ({ isOpen, onClose, role }) => {
                     {loading ? (
                         <div className="flex justify-center items-center py-12"><div className="w-8 h-8 border-4 border-[#6B4DF1] border-t-transparent rounded-full animate-spin"></div></div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {plans.map((plan) => (
-                                <div key={plan._id} className={`rounded-2xl p-6 border-2 transition-all ${plan.isPopular ? 'border-[#6B4DF1] bg-[#F4F0FD] shadow-lg shadow-[#6B4DF1]/10 transform -translate-y-2' : 'border-gray-100 bg-white hover:border-gray-300'}`}>
-                                    {plan.isPopular && <div className="text-xs font-black text-white bg-[#6B4DF1] px-3 py-1 rounded-full uppercase tracking-wide inline-block mb-3">Most Popular</div>}
-                                    <h3 className="text-xl font-black text-[#27225B] mb-2">{plan.name}</h3>
-                                    <div className="flex items-baseline gap-1 mb-6">
-                                        <span className="text-3xl font-black text-[#27225B]">₹{plan.price}</span>
-                                        <span className="text-sm font-bold text-gray-400 capitalize">/{plan.billingCycle}</span>
-                                    </div>
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {plans.map((plan) => (
+                                    <div key={plan._id} className={`rounded-2xl p-6 border-2 transition-all ${plan.isPopular ? 'border-[#6B4DF1] bg-[#F4F0FD] shadow-lg shadow-[#6B4DF1]/10 transform -translate-y-2' : 'border-gray-100 bg-white hover:border-gray-300'}`}>
+                                        {plan.isPopular && <div className="text-xs font-black text-white bg-[#6B4DF1] px-3 py-1 rounded-full uppercase tracking-wide inline-block mb-3">Most Popular</div>}
+                                        <h3 className="text-xl font-black text-[#27225B] mb-2">{plan.name}</h3>
+                                        <div className="flex items-baseline gap-1 mb-6">
+                                            <span className="text-3xl font-black text-[#27225B]">₹{plan.price}</span>
+                                            <span className="text-sm font-bold text-gray-400 capitalize">/{plan.billingCycle}</span>
+                                        </div>
 
-                                    <div className="space-y-4 mb-8">
-                                        {/* 🌟 FIX: Show "Unlimited" instead of "-1" */}
-                                        <div className="flex items-center gap-3 text-[13px] font-bold text-gray-700">
-                                            <CheckCircle2 size={16} className="text-emerald-500" /> 
-                                            {plan.features.maxTutors === -1 ? 'Unlimited' : `Up to ${plan.features.maxTutors}`} Tutors
-                                        </div>
-                                        <div className="flex items-center gap-3 text-[13px] font-bold text-gray-700">
-                                            <CheckCircle2 size={16} className="text-emerald-500" /> 
-                                            {plan.features.maxStudents === -1 ? 'Unlimited' : `Up to ${plan.features.maxStudents}`} Students
-                                        </div>
-                                        <div className="flex items-center gap-3 text-[13px] font-bold text-gray-700">
-                                            <CheckCircle2 size={16} className="text-emerald-500" /> 
-                                            {plan.features.storageLimitGB}GB Storage
-                                        </div>
-                                        {/* 🌟 NEW: Display AI Credits */}
-                                        <div className="flex items-center gap-3 text-[13px] font-black text-[#8B5CF6]">
-                                            <Zap size={16} className="text-[#8B5CF6] fill-purple-100" /> 
-                                            {plan.features.aiCreditsPerMonth?.toLocaleString() || 0} AI Credits/Mo
-                                        </div>
-                                        
-                                        <div className="w-full h-px bg-gray-100 my-4"></div>
-
-                                        {/* Dynamic Features Mapping */}
-                                        {Object.entries(featureDetails).map(([key, details]) => {
-                                            const hasThisFeature = plan.features[key];
+                                        <div className="space-y-4 mb-8">
+                                            {/* 🌟 FIX: Show "Unlimited" instead of "-1" */}
+                                            <div className="flex items-center gap-3 text-[13px] font-bold text-gray-700">
+                                                <CheckCircle2 size={16} className="text-emerald-500" /> 
+                                                {plan.features.maxTutors === -1 ? 'Unlimited' : `Up to ${plan.features.maxTutors}`} Tutors
+                                            </div>
+                                            <div className="flex items-center gap-3 text-[13px] font-bold text-gray-700">
+                                                <CheckCircle2 size={16} className="text-emerald-500" /> 
+                                                {plan.features.maxStudents === -1 ? 'Unlimited' : `Up to ${plan.features.maxStudents}`} Students
+                                            </div>
+                                            <div className="flex items-center gap-3 text-[13px] font-bold text-gray-700">
+                                                <CheckCircle2 size={16} className="text-emerald-500" /> 
+                                                {plan.features.storageLimitGB}GB Storage
+                                            </div>
+                                            {/* 🌟 NEW: Display AI Credits */}
+                                            <div className="flex items-center gap-3 text-[13px] font-black text-[#8B5CF6]">
+                                                <Zap size={16} className="text-[#8B5CF6] fill-purple-100" /> 
+                                                {plan.features.aiCreditsPerMonth?.toLocaleString() || 0} AI Credits/Mo
+                                            </div>
                                             
-                                            // Hide Admin-only features from Tutors
-                                            if (role !== 'admin' && (key === 'customBranding' || key === 'apiAccess')) return null;
+                                            <div className="w-full h-px bg-gray-100 my-4"></div>
 
-                                            return (
-                                                <div key={key} className={`flex items-center gap-3 text-[13px] font-bold ${hasThisFeature ? 'text-gray-800' : 'text-gray-400 opacity-60'}`}>
-                                                    {hasThisFeature ? (
-                                                        <div className={`p-1 rounded-md ${details.bg}`}><details.icon size={12} className={details.color} /></div>
-                                                    ) : (
-                                                        <X size={16} className="text-gray-300" />
-                                                    )}
-                                                    <span className={hasThisFeature ? '' : 'line-through'}>{details.label}</span>
-                                                </div>
-                                            );
-                                        })}
+                                            {/* Dynamic Features Mapping */}
+                                            {Object.entries(featureDetails).map(([key, details]) => {
+                                                const hasThisFeature = plan.features[key];
+                                                
+                                                // Hide Admin-only features from Tutors
+                                                if (role !== 'admin' && (key === 'customBranding' || key === 'apiAccess')) return null;
+
+                                                return (
+                                                    <div key={key} className={`flex items-center gap-3 text-[13px] font-bold ${hasThisFeature ? 'text-gray-800' : 'text-gray-400 opacity-60'}`}>
+                                                        {hasThisFeature ? (
+                                                            <div className={`p-1 rounded-md ${details.bg}`}><details.icon size={12} className={details.color} /></div>
+                                                        ) : (
+                                                            <X size={16} className="text-gray-300" />
+                                                        )}
+                                                        <span className={hasThisFeature ? '' : 'line-through'}>{details.label}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {role === 'admin' ? (
+                                            <button onClick={() => { onClose(); router.push('/admin/subscription'); }} className={`w-full py-3 rounded-xl font-black text-sm transition-all ${plan.isPopular ? 'bg-[#6B4DF1] text-white hover:bg-[#5839D6] shadow-md' : 'bg-gray-100 text-gray-800 hover:bg-gray-200 border-none cursor-pointer'}`}>
+                                                Upgrade to {plan.name}
+                                            </button>
+                                        ) : (
+                                            <button disabled className="w-full py-3 rounded-xl font-black text-sm bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200">
+                                                Admin Action Required
+                                            </button>
+                                        )}
                                     </div>
-
-                                    {role === 'admin' ? (
-                                        <button onClick={() => { onClose(); router.push('/admin/subscription'); }} className={`w-full py-3 rounded-xl font-black text-sm transition-all ${plan.isPopular ? 'bg-[#6B4DF1] text-white hover:bg-[#5839D6] shadow-md' : 'bg-gray-100 text-gray-800 hover:bg-gray-200 border-none cursor-pointer'}`}>
-                                            Upgrade to {plan.name}
-                                        </button>
-                                    ) : (
-                                        <button disabled className="w-full py-3 rounded-xl font-black text-sm bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200">
-                                            Admin Action Required
-                                        </button>
-                                    )}
+                                ))}
+                            </div>
+                            
+                            {/* 🌟 NEW: Personal AI Subscription banner inside the modal */}
+                            {role !== 'admin' && role !== 'superadmin' && (
+                                <div className="mt-8 bg-gradient-to-r from-purple-950 to-indigo-900 text-white rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl border border-purple-500/20">
+                                    <div className="space-y-2 text-center md:text-left">
+                                        <div className="flex items-center justify-center md:justify-start gap-2 text-yellow-400 font-extrabold uppercase text-[10px] tracking-widest">
+                                            <Sparkles size={14} className="fill-yellow-400 text-yellow-400" /> Individual Upgrade Available
+                                        </div>
+                                        <h4 className="text-lg font-black text-white">Want AI for your private tuition / personal courses?</h4>
+                                        <p className="text-purple-200 text-[13px] font-medium max-w-xl">
+                                            Don't let institute limits stop you. Get your own personal AI Credits and unlock all AI features for your independent classes.
+                                        </p>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            onClose();
+                                            router.push(role === 'student' ? '/student/subscription' : '/tutor/subscription');
+                                        }}
+                                        className="px-6 py-3.5 bg-gradient-to-r from-[#DB2777] to-[#F43F5E] text-white text-xs font-black rounded-xl hover:opacity-90 transition-opacity border-none cursor-pointer tracking-widest uppercase shadow-lg shadow-pink-500/20 whitespace-nowrap"
+                                    >
+                                        Get Personal Plan
+                                    </button>
                                 </div>
-                            ))}
-                        </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
@@ -155,8 +181,13 @@ const UpsellModal = ({ isOpen, onClose, role }) => {
 export const SubscriptionProvider = ({ children }) => {
     const [features, setFeatures] = useState({});
     const [planName, setPlanName] = useState('');
+    const [personalSubscription, setPersonalSubscription] = useState(null);
     const [role, setRole] = useState(null);
     const [loading, setLoading] = useState(true);
+    
+    // 🌟 NEW: Institute Credit States
+    const [instituteCredits, setInstituteCredits] = useState(0);
+    const [instituteUsage, setInstituteUsage] = useState(0);
     
     // Upsell Modal State
     const [isUpsellOpen, setIsUpsellOpen] = useState(false);
@@ -168,9 +199,13 @@ export const SubscriptionProvider = ({ children }) => {
             
             if (data.success && data.user) {
                 setRole(data.user.role);
-                if (data.user.instituteId) {
-                    setFeatures(data.user.instituteId.features || {});
-                    setPlanName(data.user.instituteId.subscriptionPlan || 'Free');
+                setPersonalSubscription(data.user.personalSubscription || null);
+                const inst = data.user.institute || data.user.instituteId;
+                if (inst && typeof inst === 'object') {
+                    setFeatures(inst.features || {});
+                    setPlanName(inst.subscriptionPlan || 'Free');
+                    setInstituteCredits(inst.features?.aiCreditsPerMonth || inst.aiUsageQuota || 0);
+                    setInstituteUsage(inst.aiUsageCount || 0);
                 }
             }
         } catch (error) {
@@ -182,8 +217,11 @@ export const SubscriptionProvider = ({ children }) => {
 
     useEffect(() => { fetchSubscriptionData(); }, []);
 
-    const hasFeature = (featureKey) => {
+    const hasFeature = (featureKey, options = {}) => {
         if (role === 'superadmin') return true;
+        if (options.isPersonal) {
+            return Boolean(personalSubscription?.isActive && personalSubscription?.features?.[featureKey] === true);
+        }
         return features[featureKey] === true;
     };
 
@@ -193,8 +231,9 @@ export const SubscriptionProvider = ({ children }) => {
 
     return (
         <SubscriptionContext.Provider value={{ 
-            features, planName, role, loading, hasFeature,
-            openUpsellModal, // 🌟 Naya expose kiya
+            features, planName, personalSubscription, role, loading, hasFeature,
+            openUpsellModal, 
+            instituteCredits, instituteUsage,
             refreshSubscription: fetchSubscriptionData 
         }}>
             {children}

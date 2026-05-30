@@ -142,7 +142,6 @@ export function StudentHeader({ user, institute, onLogout, onMenuClick, onSideba
                                         setSearchTerm(e.target.value);
                                         setShowResults(true);
                                     }}
-                                    onFocus={() => setShowResults(true)}
                                     style={{
                                         width: '100%',
                                         height: '38px',

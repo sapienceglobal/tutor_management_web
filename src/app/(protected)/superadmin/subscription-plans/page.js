@@ -38,6 +38,7 @@ export default function SubscriptionPlansPage() {
     const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [activeTab, setActiveTab] = useState('institute'); // 🌟 NEW: Plans Segment active category tab
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [openMenuId, setOpenMenuId] = useState(null); 
@@ -47,6 +48,8 @@ export default function SubscriptionPlansPage() {
         name: '',
         price: '',
         billingCycle: 'monthly',
+        planType: 'institute', // 🌟 NEW: Personal or Institute plan type
+        planRole: 'all',       // 🌟 Target role for Personal plans
         isActive: true,
         isPopular: false,
         features: {
@@ -194,6 +197,15 @@ export default function SubscriptionPlansPage() {
     }
 
     const filteredPlans = plans.filter(p => p.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    // 🌟 Segment plans based on category tabs
+    const displayedPlans = filteredPlans.filter(plan => {
+        if (activeTab === 'all') return true;
+        if (activeTab === 'institute') return plan.planType === 'institute';
+        if (activeTab === 'tutor_personal') return plan.planType === 'personal' && plan.planRole === 'tutor';
+        if (activeTab === 'student_personal') return plan.planType === 'personal' && plan.planRole === 'student';
+        return true;
+    });
 
     return (
         <div className="min-h-screen space-y-6 pb-8" style={{ backgroundColor: C.pageBg, ...pageStyle }}>
@@ -263,56 +275,151 @@ export default function SubscriptionPlansPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* 🌟 PREMIUM SEGMENTED FILTER TABS 🌟 */}
+            <div className="flex flex-wrap items-center gap-2 p-1.5" style={{ backgroundColor: C.innerBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, display: 'inline-flex', alignSelf: 'flex-start' }}>
+                <button 
+                    onClick={() => setActiveTab('institute')}
+                    className="flex items-center gap-2 border-none cursor-pointer transition-all duration-300"
+                    style={{
+                        padding: '10px 20px',
+                        borderRadius: R.xl,
+                        fontFamily: T.fontFamily,
+                        fontSize: T.size.base,
+                        fontWeight: T.weight.bold,
+                        backgroundColor: activeTab === 'institute' ? C.surfaceWhite : 'transparent',
+                        color: activeTab === 'institute' ? '#4F46E5' : C.textMuted,
+                        boxShadow: activeTab === 'institute' ? S.card : 'none'
+                    }}
+                >
+                    🏢 Institute Plans
+                </button>
+                <button 
+                    onClick={() => setActiveTab('tutor_personal')}
+                    className="flex items-center gap-2 border-none cursor-pointer transition-all duration-300"
+                    style={{
+                        padding: '10px 20px',
+                        borderRadius: R.xl,
+                        fontFamily: T.fontFamily,
+                        fontSize: T.size.base,
+                        fontWeight: T.weight.bold,
+                        backgroundColor: activeTab === 'tutor_personal' ? C.surfaceWhite : 'transparent',
+                        color: activeTab === 'tutor_personal' ? '#DB2777' : C.textMuted,
+                        boxShadow: activeTab === 'tutor_personal' ? S.card : 'none'
+                    }}
+                >
+                    👨‍🏫 Tutor Personal
+                </button>
+                <button 
+                    onClick={() => setActiveTab('student_personal')}
+                    className="flex items-center gap-2 border-none cursor-pointer transition-all duration-300"
+                    style={{
+                        padding: '10px 20px',
+                        borderRadius: R.xl,
+                        fontFamily: T.fontFamily,
+                        fontSize: T.size.base,
+                        fontWeight: T.weight.bold,
+                        backgroundColor: activeTab === 'student_personal' ? C.surfaceWhite : 'transparent',
+                        color: activeTab === 'student_personal' ? '#10B981' : C.textMuted,
+                        boxShadow: activeTab === 'student_personal' ? S.card : 'none'
+                    }}
+                >
+                    🎓 Student Personal
+                </button>
+                <button 
+                    onClick={() => setActiveTab('all')}
+                    className="flex items-center gap-2 border-none cursor-pointer transition-all duration-300"
+                    style={{
+                        padding: '10px 20px',
+                        borderRadius: R.xl,
+                        fontFamily: T.fontFamily,
+                        fontSize: T.size.base,
+                        fontWeight: T.weight.bold,
+                        backgroundColor: activeTab === 'all' ? C.surfaceWhite : 'transparent',
+                        color: activeTab === 'all' ? C.heading : C.textMuted,
+                        boxShadow: activeTab === 'all' ? S.card : 'none'
+                    }}
+                >
+                    🌐 All Plans
+                </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 
-                {filteredPlans.map((plan, index) => {
+                {displayedPlans.map((plan, index) => {
                     const theme = getTheme(index, plan.name);
                     return (
                         <div key={plan._id} className="relative flex flex-col transition-transform hover:-translate-y-1" 
                             style={{ backgroundColor: theme.bg, borderRadius: R['2xl'], border: `1px solid ${theme.border}`, boxShadow: S.card }}>
                             
-                            <div className="absolute top-4 right-4 z-20">
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === plan._id ? null : plan._id); }}
-                                    className="flex items-center justify-center transition-colors border-none bg-transparent cursor-pointer"
-                                    style={{ width: 32, height: 32, borderRadius: R.full, color: C.textFaint }}
-                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.innerBg}
-                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                                >
-                                    <MdMoreHoriz style={{ width: 20, height: 20 }} />
-                                </button>
-
-                                {openMenuId === plan._id && (
-                                    <div className="absolute right-0 top-full mt-1 w-44 py-2 z-50" 
-                                        style={{ backgroundColor: C.cardBg, borderRadius: R.xl, boxShadow: S.cardHover, border: `1px solid ${C.cardBorder}` }} 
-                                        onClick={e => e.stopPropagation()}>
-                                        <button onClick={() => handleOpenModal(plan)} className="w-full text-left px-4 py-2 flex items-center gap-2 border-none bg-transparent cursor-pointer transition-colors"
-                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.text }}
-                                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.btnPrimary; }}
-                                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.text; }}
-                                        >
-                                            <MdEdit style={{ width: 16, height: 16 }}/> Edit Plan
-                                        </button>
-                                        <button className="w-full text-left px-4 py-2 flex items-center gap-2 border-none bg-transparent cursor-pointer transition-colors"
-                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.text }}
-                                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.btnPrimary; }}
-                                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.text; }}
-                                        >
-                                            <MdBusiness style={{ width: 16, height: 16 }}/> Manage Institutes
-                                        </button>
-                                        <button onClick={() => handleDelete(plan._id)} className="w-full text-left px-4 py-2 flex items-center gap-2 border-none bg-transparent cursor-pointer mt-1 pt-2 transition-colors"
-                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.danger, borderTop: `1px solid ${C.cardBorder}` }}
-                                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.dangerBg; }}
-                                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-                                        >
-                                            <MdDelete style={{ width: 16, height: 16 }}/> Delete
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
                             <div className="p-6 pb-0">
-                                <p className="absolute top-6 right-16 m-0" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textFaint }}>#INST{plan._id.slice(-4).toUpperCase()}</p>
+                                <div className="flex items-center justify-between gap-2 mb-3">
+                                    {/* Left Side: ID & Tag */}
+                                    <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                                        <p className="m-0 select-none shrink-0" style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.black, color: C.textFaint }}>
+                                            #{plan.planType === 'personal' ? 'PERS' : 'INST'}{plan._id.slice(-4).toUpperCase()}
+                                        </p>
+                                        <span style={{ 
+                                            fontFamily: T.fontFamily, 
+                                            fontSize: '9px', 
+                                            fontWeight: T.weight.black, 
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '1.2px',
+                                            padding: '3px 8px',
+                                            borderRadius: '6px',
+                                            backgroundColor: plan.planType === 'personal' ? '#FCE7F3' : '#E0E7FF',
+                                            color: plan.planType === 'personal' ? '#DB2777' : '#4F46E5',
+                                            whiteSpace: 'nowrap',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px'
+                                        }}>
+                                            {plan.planType === 'personal' 
+                                                ? `👤 Personal (${plan.planRole === 'tutor' ? 'Tutor' : plan.planRole === 'student' ? 'Student' : 'All'})` 
+                                                : '🏢 Institute'}
+                                        </span>
+                                    </div>
+
+                                    {/* Right Side: Inline 3-Dots Dropdown Trigger */}
+                                    <div className="relative shrink-0">
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === plan._id ? null : plan._id); }}
+                                            className="flex items-center justify-center transition-colors border-none bg-transparent cursor-pointer"
+                                            style={{ width: 28, height: 28, borderRadius: R.full, color: C.textFaint }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.innerBg}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            <MdMoreHoriz style={{ width: 20, height: 20 }} />
+                                        </button>
+
+                                        {openMenuId === plan._id && (
+                                            <div className="absolute right-0 top-full mt-1 w-44 py-2 z-50" 
+                                                style={{ backgroundColor: C.cardBg, borderRadius: R.xl, boxShadow: S.cardHover, border: `1px solid ${C.cardBorder}` }} 
+                                                onClick={e => e.stopPropagation()}>
+                                                <button onClick={() => handleOpenModal(plan)} className="w-full text-left px-4 py-2 flex items-center gap-2 border-none bg-transparent cursor-pointer transition-colors"
+                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.text }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.btnPrimary; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.text; }}
+                                                >
+                                                    <MdEdit style={{ width: 16, height: 16 }}/> Edit Plan
+                                                </button>
+                                                <button className="w-full text-left px-4 py-2 flex items-center gap-2 border-none bg-transparent cursor-pointer transition-colors"
+                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.text }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.btnPrimary; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.text; }}
+                                                >
+                                                    <MdBusiness style={{ width: 16, height: 16 }}/> Manage Institutes
+                                                </button>
+                                                <button onClick={() => handleDelete(plan._id)} className="w-full text-left px-4 py-2 flex items-center gap-2 border-none bg-transparent cursor-pointer mt-1 pt-2 transition-colors"
+                                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.danger, borderTop: `1px solid ${C.cardBorder}` }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.dangerBg; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                                >
+                                                    <MdDelete style={{ width: 16, height: 16 }}/> Delete
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                                 <h3 className="m-0 mb-1" style={{ fontFamily: T.fontFamily, fontSize: T.size['2xl'], fontWeight: T.weight.black, color: theme.title }}>{plan.name}</h3>
                                 
                                 <div className="flex items-baseline gap-1 mb-4">
@@ -332,29 +439,37 @@ export default function SubscriptionPlansPage() {
 
                             <div className="p-6 flex-1 flex flex-col">
                                 <div className="space-y-3.5 flex-1 mb-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex items-center justify-center shrink-0" style={{ width: 24, height: 24, borderRadius: R.full, backgroundColor: theme.iconBg }}><MdPublic style={{ width: 14, height: 14, color: theme.iconColor }} /></div>
-                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>Students Manager ({plan.features.maxStudents === -1 ? 'Unlimited' : plan.features.maxStudents})</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex items-center justify-center shrink-0" style={{ width: 24, height: 24, borderRadius: R.full, backgroundColor: theme.iconBg }}><MdMemory style={{ width: 14, height: 14, color: theme.iconColor }} /></div>
-                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>Instructors Manager ({plan.features.maxTutors === -1 ? 'Unlimited' : plan.features.maxTutors})</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex items-center justify-center shrink-0" style={{ width: 24, height: 24, borderRadius: R.full, backgroundColor: C.warningBg }}><MdSecurity style={{ width: 14, height: 14, color: C.warning }} /></div>
-                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>Storage Limit ({plan.features.storageLimitGB}GB)</span>
-                                    </div>
+                                    {plan.planType !== 'personal' && (
+                                        <>
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center justify-center shrink-0" style={{ width: 24, height: 24, borderRadius: R.full, backgroundColor: theme.iconBg }}><MdPublic style={{ width: 14, height: 14, color: theme.iconColor }} /></div>
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>Students Manager ({plan.features.maxStudents === -1 ? 'Unlimited' : plan.features.maxStudents})</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center justify-center shrink-0" style={{ width: 24, height: 24, borderRadius: R.full, backgroundColor: theme.iconBg }}><MdMemory style={{ width: 14, height: 14, color: theme.iconColor }} /></div>
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>Instructors Manager ({plan.features.maxTutors === -1 ? 'Unlimited' : plan.features.maxTutors})</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center justify-center shrink-0" style={{ width: 24, height: 24, borderRadius: R.full, backgroundColor: C.warningBg }}><MdSecurity style={{ width: 14, height: 14, color: C.warning }} /></div>
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>Storage Limit ({plan.features.storageLimitGB}GB)</span>
+                                            </div>
+                                        </>
+                                    )}
                                     
-                                    {advancedFeatures.map(feat => (
-                                        <div key={feat.key} className="flex items-center gap-3">
-                                            {plan.features[feat.key] ? (
-                                                <div className="flex items-center justify-center shrink-0" style={{ width: 24, height: 24, borderRadius: R.full, backgroundColor: theme.iconBg }}><MdCheckCircle style={{ width: 14, height: 14, color: theme.iconColor }} /></div>
-                                            ) : (
-                                                <div className="flex items-center justify-center shrink-0" style={{ width: 24, height: 24, borderRadius: R.full, backgroundColor: C.innerBg }}><MdCancel style={{ width: 14, height: 14, color: C.textFaint }} /></div>
-                                            )}
-                                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: plan.features[feat.key] ? C.heading : C.textMuted, textDecoration: plan.features[feat.key] ? 'none' : 'line-through' }}>{feat.label}</span>
-                                        </div>
-                                    ))}
+                                    {advancedFeatures.map(feat => {
+                                        if (plan.planType === 'personal' && !feat.key.startsWith('ai')) return null;
+
+                                        return (
+                                            <div key={feat.key} className="flex items-center gap-3">
+                                                {plan.features[feat.key] ? (
+                                                    <div className="flex items-center justify-center shrink-0" style={{ width: 24, height: 24, borderRadius: R.full, backgroundColor: theme.iconBg }}><MdCheckCircle style={{ width: 14, height: 14, color: theme.iconColor }} /></div>
+                                                ) : (
+                                                    <div className="flex items-center justify-center shrink-0" style={{ width: 24, height: 24, borderRadius: R.full, backgroundColor: C.innerBg }}><MdCancel style={{ width: 14, height: 14, color: C.textFaint }} /></div>
+                                                )}
+                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: plan.features[feat.key] ? C.heading : C.textMuted, textDecoration: plan.features[feat.key] ? 'none' : 'line-through' }}>{feat.label}</span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
 
                                 <div className="mt-auto">
@@ -427,8 +542,8 @@ export default function SubscriptionPlansPage() {
                         </div>
 
                         <div className="p-8 overflow-y-auto space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="col-span-2">
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="col-span-3">
                                     <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '6px' }}>Tier Name</label>
                                     <input required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} style={baseInputStyle} placeholder="e.g. Enterprise Plus"/>
                                 </div>
@@ -443,43 +558,87 @@ export default function SubscriptionPlansPage() {
                                         <option value="yearly">Yearly</option>
                                     </select>
                                 </div>
-                            </div>
-
-                            {/* 🌟 NEW: Core Plan Limits & AI Credits */}
-                            <div className="col-span-2 mt-2">
-                                <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '12px', margin: 0 }}>Core Limits & Credits</h4>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'] }}>
-                                   <div>
-                                        <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', marginBottom: '4px' }}>Max Tutors</label>
-                                        <input type="number" min="-1" required 
-                                            value={formData.features.maxTutors ?? ''} 
-                                            onChange={(e) => setFormData({...formData, features: {...formData.features, maxTutors: e.target.value === '' ? '' : parseInt(e.target.value)}})} 
-                                            style={{ ...baseInputStyle, padding: '8px', fontSize: T.size.sm }} />
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: '9px', color: C.textFaint, margin: 0, marginTop: 4 }}>-1 for Unlimited</p>
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', marginBottom: '4px' }}>Max Students</label>
-                                        <input type="number" min="-1" required 
-                                            value={formData.features.maxStudents ?? ''} 
-                                            onChange={(e) => setFormData({...formData, features: {...formData.features, maxStudents: e.target.value === '' ? '' : parseInt(e.target.value)}})} 
-                                            style={{ ...baseInputStyle, padding: '8px', fontSize: T.size.sm }} />
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', marginBottom: '4px' }}>Storage (GB)</label>
-                                        <input type="number" min="1" required 
-                                            value={formData.features.storageLimitGB ?? ''} 
-                                            onChange={(e) => setFormData({...formData, features: {...formData.features, storageLimitGB: e.target.value === '' ? '' : parseInt(e.target.value)}})} 
-                                            style={{ ...baseInputStyle, padding: '8px', fontSize: T.size.sm }} />
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.btnPrimary, textTransform: 'uppercase', marginBottom: '4px' }}>AI Credits/Mo</label>
-                                        <input type="number" min="0" required 
-                                            value={formData.features.aiCreditsPerMonth ?? ''} 
-                                            onChange={(e) => setFormData({...formData, features: {...formData.features, aiCreditsPerMonth: e.target.value === '' ? '' : parseInt(e.target.value)}})} 
-                                            style={{ ...baseInputStyle, padding: '8px', fontSize: T.size.sm, color: C.btnPrimary, border: `1px solid ${C.btnPrimary}` }} />
-                                    </div>
+                                <div>
+                                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '6px' }}>Plan Type</label>
+                                    <select value={formData.planType || 'institute'} onChange={(e) => setFormData({...formData, planType: e.target.value})} style={{ ...baseInputStyle, cursor: 'pointer' }}>
+                                        <option value="institute">🏢 Institute</option>
+                                        <option value="personal">👤 Personal</option>
+                                    </select>
                                 </div>
                             </div>
+
+                            {formData.planType === 'personal' && (
+                                <div>
+                                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '6px' }}>Target Audience Role</label>
+                                    <select value={formData.planRole || 'all'} onChange={(e) => {
+                                        const newRole = e.target.value;
+                                        const updatedFeatures = { ...formData.features };
+                                        if (newRole === 'student') {
+                                            updatedFeatures.aiAssessment = false;
+                                            updatedFeatures.aiIntelligence = false;
+                                        }
+                                        setFormData({
+                                            ...formData, 
+                                            planRole: newRole,
+                                            features: updatedFeatures
+                                        });
+                                    }} style={{ ...baseInputStyle, cursor: 'pointer' }}>
+                                        <option value="all">🌐 All Roles (Tutor & Student)</option>
+                                        <option value="tutor">👨‍🏫 Tutors Only</option>
+                                        <option value="student">🎓 Students Only</option>
+                                    </select>
+                                </div>
+                            )}
+
+                            {formData.planType !== 'personal' ? (
+                                <div className="col-span-2 mt-2">
+                                    <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '12px', margin: 0 }}>Core Limits & Credits</h4>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'] }}>
+                                       <div>
+                                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', marginBottom: '4px' }}>Max Tutors</label>
+                                            <input type="number" min="-1" required 
+                                                value={formData.features.maxTutors ?? ''} 
+                                                onChange={(e) => setFormData({...formData, features: {...formData.features, maxTutors: e.target.value === '' ? '' : parseInt(e.target.value)}})} 
+                                                style={{ ...baseInputStyle, padding: '8px', fontSize: T.size.sm }} />
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: '9px', color: C.textFaint, margin: 0, marginTop: 4 }}>-1 for Unlimited</p>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', marginBottom: '4px' }}>Max Students</label>
+                                            <input type="number" min="-1" required 
+                                                value={formData.features.maxStudents ?? ''} 
+                                                onChange={(e) => setFormData({...formData, features: {...formData.features, maxStudents: e.target.value === '' ? '' : parseInt(e.target.value)}})} 
+                                                style={{ ...baseInputStyle, padding: '8px', fontSize: T.size.sm }} />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', marginBottom: '4px' }}>Storage (GB)</label>
+                                            <input type="number" min="1" required 
+                                                value={formData.features.storageLimitGB ?? ''} 
+                                                onChange={(e) => setFormData({...formData, features: {...formData.features, storageLimitGB: e.target.value === '' ? '' : parseInt(e.target.value)}})} 
+                                                style={{ ...baseInputStyle, padding: '8px', fontSize: T.size.sm }} />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.btnPrimary, textTransform: 'uppercase', marginBottom: '4px' }}>AI Credits/Mo</label>
+                                            <input type="number" min="0" required 
+                                                value={formData.features.aiCreditsPerMonth ?? ''} 
+                                                onChange={(e) => setFormData({...formData, features: {...formData.features, aiCreditsPerMonth: e.target.value === '' ? '' : parseInt(e.target.value)}})} 
+                                                style={{ ...baseInputStyle, padding: '8px', fontSize: T.size.sm, color: C.btnPrimary, border: `1px solid ${C.btnPrimary}` }} />
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="col-span-2 mt-2">
+                                    <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginBottom: '12px', margin: 0 }}>Core AI Credits</h4>
+                                    <div className="grid grid-cols-1 p-4" style={{ backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'] }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.btnPrimary, textTransform: 'uppercase', marginBottom: '4px' }}>AI Credits/Mo</label>
+                                            <input type="number" min="0" required 
+                                                value={formData.features.aiCreditsPerMonth ?? ''} 
+                                                onChange={(e) => setFormData({...formData, features: {...formData.features, aiCreditsPerMonth: e.target.value === '' ? '' : parseInt(e.target.value)}})} 
+                                                style={{ ...baseInputStyle, padding: '8px', fontSize: T.size.sm, color: C.btnPrimary, border: `1px solid ${C.btnPrimary}` }} />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                             
                             <label className="flex items-center justify-between p-4 cursor-pointer transition-colors" 
                                 style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: R.xl }}
@@ -494,36 +653,46 @@ export default function SubscriptionPlansPage() {
                             </label>
 
                             <div>
-                                <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginTop: '8px', marginBottom: '12px', margin: 0 }}>Advanced LMS Modules</h4>
+                                <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginTop: '8px', marginBottom: '12px', margin: 0 }}>Advanced Modules</h4>
                                 <div className="grid grid-cols-1 gap-2.5">
-                                    {advancedFeatures.map((feat) => (
-                                        <label key={feat.key} className="flex items-center justify-between p-3.5 transition-all cursor-pointer shadow-sm"
-                                            style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R.xl }}
-                                            onMouseEnter={(e) => e.currentTarget.style.borderColor = C.btnPrimary}
-                                            onMouseLeave={(e) => e.currentTarget.style.borderColor = C.cardBorder}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex items-center justify-center shrink-0" 
-                                                    style={{ 
-                                                        width: 28, height: 28, borderRadius: '8px',
-                                                        backgroundColor: formData.features[feat.key] ? C.innerBg : C.surfaceWhite,
-                                                        color: formData.features[feat.key] ? C.btnPrimary : C.textFaint
-                                                    }}>
-                                                    <feat.icon style={{ width: 16, height: 16 }} />
+                                    {advancedFeatures.map((feat) => {
+                                        // Hide non-AI features for personal plans
+                                        if (formData.planType === 'personal') {
+                                            if (!feat.key.startsWith('ai')) return null;
+                                            
+                                            // Dynamic Student Role Filter: Only allow student-centric AI Assistant
+                                            if (formData.planRole === 'student' && feat.key !== 'aiAssistant') return null;
+                                        }
+
+                                        return (
+                                            <label key={feat.key} className="flex items-center justify-between p-3.5 transition-all cursor-pointer shadow-sm"
+                                                style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R.xl }}
+                                                onMouseEnter={(e) => e.currentTarget.style.borderColor = C.btnPrimary}
+                                                onMouseLeave={(e) => e.currentTarget.style.borderColor = C.cardBorder}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex items-center justify-center shrink-0" 
+                                                        style={{ 
+                                                            width: 28, height: 28, borderRadius: '8px',
+                                                            backgroundColor: formData.features[feat.key] ? C.innerBg : C.surfaceWhite,
+                                                            color: formData.features[feat.key] ? C.btnPrimary : C.textFaint
+                                                        }}>
+                                                        <feat.icon style={{ width: 16, height: 16 }} />
+                                                    </div>
+                                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>{feat.label}</span>
                                                 </div>
-                                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>{feat.label}</span>
-                                            </div>
-                                            <input 
-                                                type="checkbox" 
-                                                checked={formData.features[feat.key]} 
-                                                onChange={(e) => setFormData({
-                                                    ...formData, 
-                                                    features: { ...formData.features, [feat.key]: e.target.checked }
-                                                })} 
-                                                style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }} 
-                                            />
-                                        </label>
-                                    ))}
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={formData.features[feat.key]} 
+                                                    onChange={(e) => setFormData({
+                                                        ...formData, 
+                                                        features: { ...formData.features, [feat.key]: e.target.checked }
+                                                    })} 
+                                                    style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }} 
+                                                />
+                                            </label>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>

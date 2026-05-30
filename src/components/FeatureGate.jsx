@@ -15,7 +15,8 @@ export default function FeatureGate({
     children, 
     mode = 'lock', 
     fallback = null,
-    className = ""
+    className = "",
+    isPersonal = false
 }) {
     const { hasFeature, role, loading,openUpsellModal } = useSubscription();
     const router = useRouter();
@@ -24,7 +25,7 @@ export default function FeatureGate({
         return <div className={`animate-pulse opacity-50 pointer-events-none ${className}`}>{children}</div>;
     }
 
-    if (hasFeature(featureName)) {
+    if (hasFeature(featureName, { isPersonal })) {
         return <div className={className}>{children}</div>;
     }
 

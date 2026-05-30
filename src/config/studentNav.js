@@ -118,6 +118,12 @@ export const studentNavItems = [
         type: "section",
         children: [
             {
+                title: "Subscription",
+                icon: MdWorkspacePremium,
+                href: "/student/subscription",
+                type: "link"
+            },
+            {
                 title: "Payments",
                 icon: MdCreditCard,
                 href: "/student/payments",

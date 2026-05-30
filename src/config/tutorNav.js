@@ -24,6 +24,7 @@ import {
     MessageSquare,
     MessageCircle,
     ShieldAlert,
+    Crown,
 } from 'lucide-react';
 
 export const tutorNavItems = [
@@ -202,6 +203,12 @@ export const tutorNavItems = [
         title: "CONFIGURATION",
         type: "section",
         children: [
+            {
+                title: "Subscription",
+                icon: Crown,
+                href: "/tutor/subscription",
+                type: "link",
+            },
             {
                 title: "Settings",
                 icon: Settings,
