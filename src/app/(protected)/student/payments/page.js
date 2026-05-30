@@ -136,7 +136,7 @@ export default function PaymentsPage() {
             const res = await api.post(`/payments/${paymentId}/retry`);
             if (res.data.success && res.data.razorpayOrder) {
                 const options = {
-                    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                    key: res.data.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
                     amount: res.data.razorpayOrder.amount,
                     currency: res.data.razorpayOrder.currency,
                     name: 'Sapience LMS',

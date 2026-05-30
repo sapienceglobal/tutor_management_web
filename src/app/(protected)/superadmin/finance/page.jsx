@@ -31,6 +31,7 @@ function SectionHeader({ icon: Icon, title }) {
 
 export default function SuperAdminFinancePage() {
     const [loading, setLoading] = useState(true);
+    const [processingRefund, setProcessingRefund] = useState(null);
     const [financeData, setFinanceData] = useState({
         kpis: {
             totalRevenue: 0,
@@ -72,6 +73,26 @@ export default function SuperAdminFinancePage() {
             }
         } catch (error) {
             toast.error('Failed to process payout');
+        }
+    };
+
+    const handleRefund = async (paymentId, amount) => {
+        const reason = prompt(`Are you sure you want to refund ₹${amount}? This will issue an instant refund via Razorpay and instantly revoke course/subscription access. Enter a reason (optional):`);
+        if (reason === null) return; // User cancelled
+        
+        setProcessingRefund(paymentId);
+        const toastId = toast.loading('Initiating instant Razorpay refund...');
+        try {
+            const res = await api.post(`/superadmin/finance/refund/${paymentId}`, { reason });
+            if (res.data.success) {
+                toast.success('Refund issued successfully through Razorpay and access revoked!', { id: toastId });
+                fetchFinanceOverview();
+            }
+        } catch (error) {
+            const errMsg = error.response?.data?.message || error.message || 'Failed to process refund';
+            toast.error(errMsg, { id: toastId });
+        } finally {
+            setProcessingRefund(null);
         }
     };
 
@@ -196,7 +217,7 @@ export default function SuperAdminFinancePage() {
                         <table className="w-full text-left border-collapse">
                             <thead style={{ backgroundColor: C.innerBg }}>
                                 <tr>
-                                    {['Transaction ID', 'Institute / User', 'Type', 'Amount', 'Status'].map((header, idx) => (
+                                    {['Transaction ID', 'Institute / User', 'Type', 'Amount', 'Status', 'Actions'].map((header, idx) => (
                                         <th key={idx} style={{
                                             fontFamily: T.fontFamily,
                                             fontSize: T.size.xs,
@@ -216,7 +237,7 @@ export default function SuperAdminFinancePage() {
                             <tbody>
                                 {recentTransactions.length === 0 ? (
                                     <tr>
-                                        <td colSpan="5" className="p-8">
+                                        <td colSpan="6" className="p-8">
                                             <div className="p-14 text-center border border-dashed" style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
                                                 <div className="flex items-center justify-center mx-auto mb-4" style={{ width: 56, height: 56, backgroundColor: C.innerBg, borderRadius: '10px' }}>
                                                     <MdTrendingUp style={{ width: 28, height: 28, color: C.btnPrimary, opacity: 0.5 }} />
@@ -244,7 +265,7 @@ export default function SuperAdminFinancePage() {
                                             <span style={{ 
                                                 padding: '4px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: T.weight.black, 
                                                 textTransform: 'uppercase', letterSpacing: T.tracking.wider,
-                                                ...(trx.type === 'subscription' ? { backgroundColor: C.innerBg, color: C.btnPrimary } : { backgroundColor: C.warningBg, color: C.warning })
+                                                ...(trx.type === 'subscription' || trx.type === 'subscription_renewal' ? { backgroundColor: C.innerBg, color: C.btnPrimary } : { backgroundColor: C.warningBg, color: C.warning })
                                             }}>
                                                 {trx.type}
                                             </span>
@@ -259,10 +280,34 @@ export default function SuperAdminFinancePage() {
                                                 <span className="flex items-center gap-1.5" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.success }}>
                                                     <MdCheckCircle style={{ width: 14, height: 14 }}/> Success
                                                 </span>
+                                            ) : trx.status === 'refunded' ? (
+                                                <span className="flex items-center gap-1.5" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>
+                                                    <MdWarning style={{ width: 14, height: 14, color: '#9CA3AF' }}/> Refunded
+                                                </span>
                                             ) : (
                                                 <span className="flex items-center gap-1.5" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.danger }}>
                                                     <MdWarning style={{ width: 14, height: 14 }}/> Failed
                                                 </span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {trx.status === 'successful' ? (
+                                                <button
+                                                    onClick={() => handleRefund(trx.id, trx.amount)}
+                                                    disabled={processingRefund === trx.id}
+                                                    className="px-3 py-1.5 transition-colors cursor-pointer border hover:bg-red-50 text-red-600 rounded-lg text-xs font-bold"
+                                                    style={{ 
+                                                        borderColor: '#FEE2E2',
+                                                        fontFamily: T.fontFamily,
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                    }}
+                                                >
+                                                    {processingRefund === trx.id ? 'Refunding...' : 'Refund'}
+                                                </button>
+                                            ) : (
+                                                <span style={{ color: C.textMuted, fontSize: T.size.xs }}>—</span>
                                             )}
                                         </td>
                                     </tr>

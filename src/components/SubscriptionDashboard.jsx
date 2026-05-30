@@ -106,7 +106,8 @@ export default function SubscriptionDashboard() {
             rzp.open();
         } catch (error) {
             console.error('Upgrade request error:', error);
-            toast.error('Payment checkout failed. Please check your connection.');
+            const errMsg = error.response?.data?.message || error.message || 'Payment checkout failed. Please check your connection.';
+            toast.error(errMsg);
         } finally {
             setIsUpgrading(null);
         }
