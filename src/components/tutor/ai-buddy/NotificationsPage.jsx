@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     BellRing, Send, BarChart2, Zap, Settings, AlertTriangle, Clock, 
@@ -19,11 +19,14 @@ const MOCK_HISTORY = [
 ];
 
 export default function NotificationsPage() {
+    const [logs, setLogs] = useState(MOCK_HISTORY);
     const [drafting, setDrafting] = useState(false);
     const [contextTopic, setContextTopic] = useState('');
     const [tone, setTone] = useState('Encouraging');
     const [draftedMessage, setDraftedMessage] = useState('');
     const [targetStudent, setTargetStudent] = useState('');
+    const [students, setStudents] = useState([]);
+    const [loadingStudents, setLoadingStudents] = useState(false);
     
     // Toggles state
     const [triggers, setTriggers] = useState({
@@ -31,6 +34,23 @@ export default function NotificationsPage() {
         performance: true,
         deadline: false
     });
+
+    useEffect(() => {
+        const getStudents = async () => {
+            setLoadingStudents(true);
+            try {
+                const res = await api.get('/ai/study-plan/students');
+                if (res.data?.success) {
+                    setStudents(res.data.students || []);
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoadingStudents(false);
+            }
+        };
+        getStudents();
+    }, []);
 
     const handleDraft = async () => {
         if (!contextTopic.trim()) return toast.error('Please provide a context or reason.');
@@ -56,16 +76,40 @@ export default function NotificationsPage() {
         }
     };
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (!draftedMessage.trim()) return toast.error('Cannot send empty message.');
+        if (!targetStudent.trim()) return toast.error('Please specify target student name.');
+
+        const newLog = {
+            id: Date.now(),
+            student: targetStudent.trim(),
+            time: 'Just now',
+            type: tone + ' Check-in',
+            message: draftedMessage.trim(),
+            isOpened: false
+        };
+
+        const postPromise = async () => {
+            const res = await api.post('/ai/send-notification', {
+                targetStudentName: targetStudent.trim(),
+                message: draftedMessage.trim(),
+                tone
+            });
+            if (!res.data.success) {
+                throw new Error(res.data.message || 'Failed to deliver notification');
+            }
+            return res.data;
+        };
+
         toast.promise(
-            new Promise(resolve => setTimeout(resolve, 800)),
+            postPromise(),
             {
-                loading: 'Dispatching...',
+                loading: `Dispatching smart check-in to ${targetStudent.trim()}...`,
                 success: 'Notification securely sent to student dashboard!',
-                error: 'Failed to send'
+                error: (err) => err?.response?.data?.message || err?.message || 'Failed to send notification'
             }
         ).then(() => {
+            setLogs(prev => [newLog, ...prev]);
             setDraftedMessage('');
             setContextTopic('');
             setTargetStudent('');
@@ -192,14 +236,20 @@ export default function NotificationsPage() {
                             <div>
                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Target Recipient</label>
                                 <div className="relative">
-                                    <User className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                                    <input 
-                                        type="text" 
-                                        placeholder="e.g., Avinash Kumar, MCC 203..." 
+                                    <User className="absolute left-3 top-[13px] w-4 h-4 text-slate-400 z-10" />
+                                    <select 
                                         value={targetStudent}
                                         onChange={e => setTargetStudent(e.target.value)}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-slate-800 font-bold focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent outline-none transition-all placeholder:text-slate-300 placeholder:font-medium"
-                                    />
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-slate-800 font-bold focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent outline-none transition-all cursor-pointer appearance-none"
+                                    >
+                                        <option value="">Select a Student...</option>
+                                        {students.map(s => (
+                                            <option key={s._id} value={s.name}>
+                                                {s.name} ({s.course || 'Enrolled Student'})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
                                 </div>
                             </div>
 
@@ -265,7 +315,7 @@ export default function NotificationsPage() {
                             </div>
                             
                             <div className="p-5 flex-1 overflow-y-auto space-y-5">
-                                {MOCK_HISTORY.map((log) => (
+                                {logs.map((log) => (
                                     <div key={log.id} className="relative pl-6 pb-2 border-l-2 border-slate-100 last:border-transparent last:pb-0">
                                         <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-white border-4 border-purple-200 flex items-center justify-center">
                                             <div className="w-1.5 h-1.5 rounded-full bg-[var(--theme-primary)]" />

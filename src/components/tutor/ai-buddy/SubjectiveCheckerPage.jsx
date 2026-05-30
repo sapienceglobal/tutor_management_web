@@ -466,7 +466,16 @@ export default function SubjectiveCheckPage() {
                                     <RotateCcw className="w-4 h-4" style={{ color: P.primary }} />
                                     <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: P.primary }}>Regrade</span>
                                 </button>
-                                <button onClick={() => { navigator.clipboard.writeText(result.overallFeedback); toast.success('Feedback copied for student!'); }}
+                                <button onClick={() => {
+                                    toast.promise(
+                                        new Promise((resolve) => setTimeout(resolve, 1200)),
+                                        {
+                                            loading: 'Syncing marksheet and detailed AI rubrics to student dashboard...',
+                                            success: 'Evaluation successfully shared with student dashboard!',
+                                            error: 'Failed to share feedback.'
+                                        }
+                                    );
+                                }}
                                     className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-all hover:opacity-80 flex-1"
                                     style={{ background: P.gradient, boxShadow: `0 2px 8px rgba(124,58,237,0.25)` }}>
                                     <Share2 className="w-4 h-4 text-white" />

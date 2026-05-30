@@ -404,30 +404,41 @@ export default function CourseBuilderPage() {
                                 </p>
                             </div>
 
-                            {/* Learning Objectives */}
+                            {/* Study Focus Areas */}
                             <div>
                                 <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: '#1E293B', marginBottom: 10 }}>
-                                    Learning Objectives
+                                    Primary Study Focus
                                 </p>
                                 <div className="grid grid-cols-2 gap-2">
-                                    {SECTION_OPTIONS.slice(0, 6).map(opt => (
-                                        <Checkbox key={opt.key}
-                                            checked={sections[opt.key]}
-                                            onChange={v => setSections(prev => ({ ...prev, [opt.key]: v }))}
-                                            label={opt.label}
-                                            icon={opt.icon}
-                                            color={P.primary} />
+                                    {[
+                                        { key: 'practical', label: '🔧 Practical Applications' },
+                                        { key: 'conceptual', label: '🧠 Conceptual Mastery' },
+                                        { key: 'examPrep', label: '📝 Exam & Test Prep' },
+                                        { key: 'retention', label: '⚡ Retention & Recall' }
+                                    ].map(opt => (
+                                        <button key={opt.key}
+                                            type="button"
+                                            onClick={() => setDifficulty(opt.key)}
+                                            className="px-3 py-2 rounded-xl text-left transition-all border"
+                                            style={{
+                                                backgroundColor: difficulty === opt.key ? P.soft : 'transparent',
+                                                borderColor: difficulty === opt.key ? P.primary : '#E2E8F0',
+                                            }}>
+                                            <span style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.semibold, color: difficulty === opt.key ? P.primary : '#64748B' }}>
+                                                {opt.label}
+                                            </span>
+                                        </button>
                                     ))}
                                 </div>
                             </div>
                         </div>
 
-                        {/* RIGHT config — Report Sections */}
+                        {/* RIGHT config — Sections to Generate */}
                         <div>
                             <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: '#1E293B', marginBottom: 10 }}>
-                                Report Sections
+                                Course Components to Generate
                             </p>
-                            <div className="space-y-2.5 p-4 rounded-2xl"
+                            <div className="space-y-3.5 p-4 rounded-2xl"
                                 style={{ backgroundColor: P.soft, border: `1px solid ${P.border}` }}>
                                 {SECTION_OPTIONS.map(opt => (
                                     <Checkbox key={opt.key}

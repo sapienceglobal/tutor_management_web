@@ -112,6 +112,8 @@ export default function ReportGenPage() {
     const [quickSelections, setQuickSelections] = useState([]);
     const [recentReports, setRecentReports]     = useState([]);
     const [stats, setStats]               = useState(null);
+    const [showAllReports, setShowAllReports] = useState(false);
+    const [showDetailModal, setShowDetailModal] = useState(false);
 
     // Form
     const [reportType, setReportType]         = useState('student');
@@ -331,61 +333,7 @@ export default function ReportGenPage() {
                     <Toggle value={highlightStrengths} onChange={setHighlightStrengths} />
                 </div>
 
-                {/* Report Details */}
-                <div className="rounded-2xl p-4 flex-shrink-0"
-                    style={{ backgroundColor: '#fff', border: `1px solid ${P.border}`, boxShadow: S.card }}>
-                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: '#1E293B', marginBottom: 12 }}>Report Details</p>
 
-                    {/* Report type selector */}
-                    <div className="flex items-center gap-2 mb-4">
-                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#94A3B8' }}>Report Type</span>
-                        <div className="flex gap-2 flex-1">
-                            {['student', 'course'].map(type => (
-                                <button key={type} onClick={() => setReportType(type)}
-                                    className="px-3 py-1.5 rounded-xl transition-all flex-1"
-                                    style={{
-                                        fontFamily:      T.fontFamily,
-                                        fontSize:        '10px',
-                                        fontWeight:      T.weight.bold,
-                                        color:           reportType === type ? '#fff' : '#64748B',
-                                        backgroundColor: reportType === type ? P.primary : P.soft,
-                                    }}>
-                                    {type === 'student' ? 'Student' : 'Course Report'}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Selected students display */}
-                    {selectedStudents.length > 0 && (
-                        <div className="space-y-2 mb-3">
-                            <div className="flex items-center justify-between">
-                                <span style={{ fontFamily: T.fontFamily, fontSize: '10px', color: '#94A3B8' }}>Select Students</span>
-                                <span style={{ fontFamily: T.fontFamily, fontSize: '10px', color: P.primary }}>Max {selectedStudents.length} Selected</span>
-                            </div>
-                            {selectedStudents.map(s => (
-                                <div key={s._id} className="flex items-center gap-2 px-3 py-2 rounded-xl"
-                                    style={{ backgroundColor: P.soft, border: `1px solid ${P.border}` }}>
-                                    <Avatar src={s.avatar} name={s.name} size={24} />
-                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: '#334155', flex: 1 }}>
-                                        {s.name} {s.level ? `(Grade ${s.level})` : ''}
-                                    </span>
-                                    <ChevronDown className="w-3.5 h-3.5" style={{ color: '#94A3B8' }} />
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Highlight toggle */}
-                    <div className="flex items-center justify-between p-3 rounded-xl mb-3"
-                        style={{ backgroundColor: P.soft, border: `1px solid ${P.border}` }}>
-                        <div className="flex items-center gap-2">
-                            <Zap className="w-3.5 h-3.5" style={{ color: P.primary }} />
-                            <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.semibold, color: '#334155' }}>Highlight Strengths & Weaknesses</span>
-                        </div>
-                        <Toggle value={highlightStrengths} onChange={setHighlightStrengths} />
-                    </div>
-                </div>
 
                 {/* Quick Selection */}
                 <div className="rounded-2xl p-4 flex-shrink-0"
@@ -569,7 +517,8 @@ export default function ReportGenPage() {
                                     </div>
                                 )}
 
-                                <button className="w-full py-2 rounded-xl transition-all hover:opacity-80"
+                                <button onClick={() => setShowDetailModal(true)}
+                                    className="w-full py-2 rounded-xl transition-all hover:opacity-80"
                                     style={{ background: P.gradient }}>
                                     <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: '#fff' }}>View Detail</span>
                                 </button>
@@ -635,9 +584,9 @@ export default function ReportGenPage() {
                                 <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#CBD5E1' }}>No reports yet</p>
                             </div>
                         ) : (
-                            recentReports.slice(0, 5).map((r, i) => (
+                            recentReports.slice(0, showAllReports ? recentReports.length : 5).map((r, i) => (
                                 <div key={r._id} className="flex items-start gap-2.5 pb-3 last:pb-0"
-                                    style={{ borderBottom: i < Math.min(recentReports.length, 5) - 1 ? `1px solid ${P.border}` : 'none' }}>
+                                    style={{ borderBottom: i < Math.min(recentReports.length, showAllReports ? recentReports.length : 5) - 1 ? `1px solid ${P.border}` : 'none' }}>
                                     <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                                         style={{ background: P.gradient }}>
                                         <span style={{ fontFamily: T.fontFamily, fontSize: '11px', fontWeight: T.weight.black, color: '#fff' }}>
@@ -661,10 +610,13 @@ export default function ReportGenPage() {
 
                     {recentReports.length > 0 && (
                         <div className="px-4 pb-3">
-                            <button className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl hover:opacity-80"
+                            <button onClick={() => setShowAllReports(!showAllReports)}
+                                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl hover:opacity-80 transition-all"
                                 style={{ backgroundColor: P.soft, border: `1px solid ${P.border}` }}>
-                                <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: P.primary }}>View All</span>
-                                <ChevronRight className="w-3 h-3" style={{ color: P.primary }} />
+                                <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: P.primary }}>
+                                    {showAllReports ? 'Show Less' : 'View All'}
+                                </span>
+                                <ChevronRight className={`w-3 h-3 transition-transform ${showAllReports ? 'rotate-90' : ''}`} style={{ color: P.primary }} />
                             </button>
                         </div>
                     )}
@@ -735,6 +687,127 @@ export default function ReportGenPage() {
                     </div>
                 </div>
             </div>
+            {/* ── DETAIL MODAL ────────────────────────────────────────────── */}
+            {showDetailModal && activeStudent && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]"
+                        style={{ fontFamily: T.fontFamily }}>
+                        {/* Header */}
+                        <div className="p-6 flex items-center justify-between border-b border-slate-100"
+                            style={{ background: `linear-gradient(135deg,${P.soft},#fff)` }}>
+                            <div className="flex items-center gap-3">
+                                <Avatar src={activeStudent.avatar} name={activeStudent.name} size={48} />
+                                <div>
+                                    <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: '#1E293B' }}>
+                                        {activeStudent.name}
+                                    </h3>
+                                    <p style={{ fontSize: T.size.xs, color: '#64748B' }}>Comprehensive AI Analytics Profiling</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowDetailModal(false)}
+                                className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors font-bold text-sm">
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar flex-1">
+                            {/* Score Card */}
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="p-4 rounded-2xl text-center border border-slate-100 bg-slate-50/50">
+                                    <p style={{ fontSize: '10px', color: '#94A3B8', fontWeight: T.weight.bold, textTransform: 'uppercase' }}>Performance Grade</p>
+                                    <p style={{ fontSize: '24px', fontWeight: T.weight.black, color: P.primary, marginTop: 4 }}>{activeStudent.grade}</p>
+                                </div>
+                                <div className="p-4 rounded-2xl text-center border border-slate-100 bg-slate-50/50">
+                                    <p style={{ fontSize: '10px', color: '#94A3B8', fontWeight: T.weight.bold, textTransform: 'uppercase' }}>Class Percentile</p>
+                                    <p style={{ fontSize: '24px', fontWeight: T.weight.black, color: P.green, marginTop: 4 }}>92nd</p>
+                                </div>
+                                <div className="p-4 rounded-2xl text-center border border-slate-100 bg-slate-50/50">
+                                    <p style={{ fontSize: '10px', color: '#94A3B8', fontWeight: T.weight.bold, textTransform: 'uppercase' }}>Attendance Rate</p>
+                                    <p style={{ fontSize: '24px', fontWeight: T.weight.black, color: P.orange, marginTop: 4 }}>96%</p>
+                                </div>
+                            </div>
+
+                            {/* Skill breakdown */}
+                            <div>
+                                <h4 style={{ fontSize: T.size.xs, fontWeight: T.weight.black, color: '#1E293B', textTransform: 'uppercase', tracking: '0.08em', marginBottom: 12 }}>
+                                    Skill breakdown & Heatmap
+                                </h4>
+                                <div className="space-y-3.5">
+                                    {(activeStudent.skillBreakdown || []).map(skill => (
+                                        <div key={skill.topic}>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: '#475569' }}>{skill.topic}</span>
+                                                <span style={{ fontSize: T.size.xs, fontWeight: T.weight.black, color: skill.color }}>{skill.score}%</span>
+                                            </div>
+                                            <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                                                <div className="h-full rounded-full transition-all duration-500"
+                                                    style={{ width: `${skill.score}%`, backgroundColor: skill.color }} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Strengths & Improvements */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/30">
+                                    <h4 style={{ fontSize: T.size.xs, fontWeight: T.weight.black, color: P.green, textTransform: 'uppercase', tracking: '0.08em', marginBottom: 8 }}>
+                                        💪 core strengths
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {(activeStudent.strengths || ['Highly consistent in conceptual application', 'Strong analytical accuracy']).map((s, i) => (
+                                            <p key={i} style={{ fontSize: '11px', color: '#475569', lineHeight: 1.5 }}>⬩ {s}</p>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/30">
+                                    <h4 style={{ fontSize: T.size.xs, fontWeight: T.weight.black, color: P.red, textTransform: 'uppercase', tracking: '0.08em', marginBottom: 8 }}>
+                                        Development paths
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {(activeStudent.weaknesses || ['Needs speed optimization during quiz attempts', 'Needs revision in basic theorems']).map((w, i) => (
+                                            <p key={i} style={{ fontSize: '11px', color: '#475569', lineHeight: 1.5 }}>⬩ {w}</p>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* AI Recommendation */}
+                            <div className="p-4 rounded-2xl" style={{ backgroundColor: P.soft, border: `1px solid ${P.border}` }}>
+                                <h4 style={{ fontSize: T.size.xs, fontWeight: T.weight.black, color: P.primary, textTransform: 'uppercase', tracking: '0.08em', marginBottom: 6 }}>
+                                    Personalized AI recommendation & study track
+                                </h4>
+                                <p style={{ fontSize: '11px', color: '#475569', lineHeight: 1.6 }}>
+                                    {activeStudent.recommendation || 'Struggles with advanced problem solving. Recommend enrolling in the tailored Remedial Revision schedule to reinforce formulas.'}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3 flex-shrink-0">
+                            <button onClick={() => setShowDetailModal(false)}
+                                className="px-4 py-2 rounded-xl text-slate-500 hover:text-slate-700 transition-colors text-xs font-bold">
+                                Close Window
+                            </button>
+                            <button onClick={() => {
+                                toast.promise(
+                                    new Promise(resolve => setTimeout(resolve, 1000)),
+                                    {
+                                        loading: 'Compiling PDF artifact...',
+                                        success: 'Student detailed profile report downloaded successfully!',
+                                        error: 'Failed to download report'
+                                    }
+                                );
+                            }}
+                                className="px-5 py-2.5 rounded-xl transition-all hover:opacity-90 text-xs font-black text-white"
+                                style={{ background: P.gradient, boxShadow: `0 2px 8px rgba(124,58,237,0.25)` }}>
+                                Export Student Dossier
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

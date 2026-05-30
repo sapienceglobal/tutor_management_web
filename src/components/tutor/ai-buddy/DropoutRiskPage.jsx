@@ -461,8 +461,8 @@ export default function DropoutRiskPage() {
                     </div>
                     {loading ? <div className="space-y-2">{[...Array(4)].map((_, i) => <Sk key={i} h={16} />)}</div> : (
                         <div className="grid grid-cols-2 gap-2">
-                            {filtered.slice(0, 8).map(student => (
-                                <StudentRow key={student._id} student={student}
+                            {filtered.slice(0, 8).map((student, i) => (
+                                <StudentRow key={`${student._id || student.studentId || i}-${i}`} student={student}
                                     isActive={selectedStudent?._id === student._id}
                                     onSelect={selectStudent} />
                             ))}
@@ -577,10 +577,10 @@ export default function DropoutRiskPage() {
                     </div>
                     {loading ? <div className="space-y-2">{[...Array(3)].map((_, i) => <Sk key={i} h={12} />)}</div> : (
                         <div className="space-y-2">
-                            {(data?.students || []).filter(s => s.riskLevel !== 'Low').slice(0, 4).map(student => {
+                            {(data?.students || []).filter(s => s.riskLevel !== 'Low').slice(0, 4).map((student, i) => {
                                 const risk = RISK[student.riskLevel];
                                 return (
-                                    <div key={student._id}
+                                    <div key={`${student._id || student.studentId || i}-${i}`}
                                         onClick={() => selectStudent(student)}
                                         className="flex items-center gap-2.5 cursor-pointer p-2 rounded-xl hover:opacity-80 transition-all"
                                         style={{ backgroundColor: P.soft }}>

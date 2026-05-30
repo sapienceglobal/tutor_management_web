@@ -363,44 +363,49 @@ export default function ProctoringAlertsPage() {
                         </button>
                     </div>
 
-                    {/* Column headers */}
-                    <div className="flex items-center gap-4 px-4 py-2.5"
-                        style={{ backgroundColor: P.soft, borderBottom: '1px solid ' + P.border }}>
-                        {['Alerted Student', 'Alert Type', 'Flagged Time & Details', 'Exam', ''].map((col, i) => (
-                            <p key={i} style={{
-                                fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold,
-                                color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em',
-                                width: i === 0 ? 180 : i === 1 ? 180 : i === 3 ? 140 : i === 4 ? 80 : undefined,
-                                flex: i === 2 ? 1 : undefined, flexShrink: 0,
-                            }}>
-                                {col}
-                            </p>
-                        ))}
-                    </div>
+                    {/* Table Container with Horizontal Scroll */}
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <div className="min-w-[780px]">
+                            {/* Column headers */}
+                            <div className="flex items-center gap-4 px-4 py-2.5"
+                                style={{ backgroundColor: P.soft, borderBottom: '1px solid ' + P.border }}>
+                                {['Alerted Student', 'Alert Type', 'Flagged Time & Details', 'Exam', ''].map((col, i) => (
+                                    <p key={i} style={{
+                                        fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold,
+                                        color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em',
+                                        width: i === 0 ? 180 : i === 1 ? 180 : i === 3 ? 140 : i === 4 ? 80 : undefined,
+                                        flex: i === 2 ? 1 : undefined, flexShrink: 0,
+                                    }}>
+                                        {col}
+                                    </p>
+                                ))}
+                            </div>
 
-                    {/* Alert rows */}
-                    {loading ? (
-                        <div className="p-4 space-y-3">
-                            {[...Array(5)].map((_, i) => (
-                                <div key={i} className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full animate-pulse" style={{ backgroundColor: P.soft }} />
-                                    <div className="flex-1 space-y-1.5"><Sk h={3} /><Sk h={3} w="3/4" /></div>
+                            {/* Alert rows */}
+                            {loading ? (
+                                <div className="p-4 space-y-3">
+                                    {[...Array(5)].map((_, i) => (
+                                        <div key={i} className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-full animate-pulse" style={{ backgroundColor: P.soft }} />
+                                            <div className="flex-1 space-y-1.5"><Sk h={3} /><Sk h={3} w="3/4" /></div>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
+                            ) : (data?.alerts || []).length === 0 ? (
+                                <div className="text-center py-12">
+                                    <ShieldAlert className="w-12 h-12 mx-auto mb-3" style={{ color: P.soft }} />
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#CBD5E1' }}>
+                                        {riskFilter !== 'All' ? 'No ' + riskFilter + ' alerts' : 'No proctoring alerts yet'}
+                                    </p>
+                                </div>
+                            ) : (
+                                (data?.alerts || []).map(alert => (
+                                    <AlertRow key={alert._id} alert={alert}
+                                        onReview={id => router.push('/tutor/ai-buddy/suspicion-review/' + id)} />
+                                ))
+                            )}
                         </div>
-                    ) : (data?.alerts || []).length === 0 ? (
-                        <div className="text-center py-12">
-                            <ShieldAlert className="w-12 h-12 mx-auto mb-3" style={{ color: P.soft }} />
-                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#CBD5E1' }}>
-                                {riskFilter !== 'All' ? 'No ' + riskFilter + ' alerts' : 'No proctoring alerts yet'}
-                            </p>
-                        </div>
-                    ) : (
-                        (data?.alerts || []).map(alert => (
-                            <AlertRow key={alert._id} alert={alert}
-                                onReview={id => router.push('/tutor/ai-buddy/suspicion-review/' + id)} />
-                        ))
-                    )}
+                    </div>
                 </div>
             </div>
 

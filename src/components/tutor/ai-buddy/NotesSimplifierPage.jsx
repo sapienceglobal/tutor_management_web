@@ -253,6 +253,7 @@ export default function NotesSimplifierPage() {
     const [history, setHistory]           = useState([]);
     const [knowledgeBank, setKnowledgeBank] = useState({ trending: [], recentTitles: [], taxonomyTopics: [] });
     const [loadingInit, setLoadingInit]   = useState(true);
+    const [kbTab, setKbTab]               = useState('Trending');
 
     // ── Result ─────────────────────────────────────────────────────
     const [simplifying, setSimplifying]   = useState(false);
@@ -675,12 +676,13 @@ export default function NotesSimplifierPage() {
 
                     {/* Tabs */}
                     <div className="flex gap-1 mb-3">
-                        {['Trending', 'Recently Simplified'].map((tab, i) => (
+                        {['Trending', 'Recently Simplified'].map((tab) => (
                             <button key={tab}
+                                onClick={() => setKbTab(tab)}
                                 className="flex-1 py-1 rounded-lg text-center transition-all"
                                 style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold,
-                                    backgroundColor: i === 0 ? P.primary : 'transparent',
-                                    color: i === 0 ? '#fff' : '#94A3B8' }}>
+                                    backgroundColor: kbTab === tab ? P.primary : 'transparent',
+                                    color: kbTab === tab ? '#fff' : '#94A3B8' }}>
                                 {tab}
                             </button>
                         ))}
@@ -688,23 +690,46 @@ export default function NotesSimplifierPage() {
 
                     {loadingInit ? (
                         <div className="space-y-2"><Sk h={5} /><Sk h={5} /><Sk h={5} /></div>
-                    ) : allTopics.length > 0 ? (
-                        <div className="space-y-1.5">
-                            {allTopics.slice(0, 5).map((topic, i) => (
-                                <div key={topic} onClick={() => { setRawText(prev => prev ? prev : `Notes about ${topic}`); }}
-                                    className="flex items-center gap-2 p-2 rounded-xl cursor-pointer hover:opacity-80 transition-all"
-                                    style={{ backgroundColor: P.soft }}>
-                                    <div className="w-5 h-5 rounded-lg flex items-center justify-center" style={{ background: P.gradient }}>
-                                        <BookOpen className="w-3 h-3 text-white" />
+                    ) : kbTab === 'Trending' ? (
+                        allTopics.length > 0 ? (
+                            <div className="space-y-1.5">
+                                {allTopics.slice(0, 5).map((topic, i) => (
+                                    <div key={topic} onClick={() => { setRawText(prev => prev ? prev : `Notes about ${topic}`); }}
+                                        className="flex items-center gap-2 p-2 rounded-xl cursor-pointer hover:opacity-80 transition-all"
+                                        style={{ backgroundColor: P.soft }}>
+                                        <div className="w-5 h-5 rounded-lg flex items-center justify-center" style={{ background: P.gradient }}>
+                                            <BookOpen className="w-3 h-3 text-white" />
+                                        </div>
+                                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: '#3B0764' }}>{topic}</span>
                                     </div>
-                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: '#3B0764' }}>{topic}</span>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#CBD5E1', textAlign: 'center', padding: '12px 0' }}>
+                                No topics yet. Simplify notes to build your bank.
+                            </p>
+                        )
                     ) : (
-                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#CBD5E1', textAlign: 'center', padding: '12px 0' }}>
-                            No topics yet. Simplify notes to build your bank.
-                        </p>
+                        (knowledgeBank.recentTitles || []).length > 0 ? (
+                            <div className="space-y-1.5">
+                                {(knowledgeBank.recentTitles || []).slice(0, 5).map((item) => (
+                                    <div key={item._id} onClick={() => loadHistoryNote(item._id)}
+                                        className="flex items-center gap-2 p-2 rounded-xl cursor-pointer hover:opacity-80 transition-all"
+                                        style={{ backgroundColor: P.soft }}>
+                                        <div className="w-5 h-5 rounded-lg flex items-center justify-center" style={{ background: P.gradient }}>
+                                            <FileText className="w-3 h-3 text-white" />
+                                        </div>
+                                        <span className="truncate flex-1 text-left" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: '#3B0764' }}>
+                                            {item.title || 'Untitled Note'}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#CBD5E1', textAlign: 'center', padding: '12px 0' }}>
+                                No recently simplified notes yet.
+                            </p>
+                        )
                     )}
                 </div>
 

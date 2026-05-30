@@ -179,6 +179,105 @@ export default function WeakTopicsPage() {
 
     };
 
+    const handleRecommendationAction = (label) => {
+        if (label === 'Generate Study Plans') {
+            toast.success('Navigating to AI Study Plan Generator...');
+            router.push('/tutor/ai-buddy/study-plan');
+            return;
+        }
+
+        if (label === 'Export Report') {
+            const exportPromise = async () => {
+                await new Promise((resolve) => setTimeout(resolve, 800));
+                const topics = data?.weakTopics || [];
+                if (topics.length === 0) throw new Error('No weak topics data to export.');
+                
+                let csvContent = 'data:text/csv;charset=utf-8,';
+                csvContent += 'Topic,Class Average Score,Struggling Students Count,Difficulty Rank\n';
+                topics.forEach(t => {
+                    csvContent += `"${t.lessonTitle}",${t.avgScore}%,${t.strugglingStudentsCount || 0},"${t.difficulty}"\n`;
+                });
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement('a');
+                link.setAttribute('href', encodedUri);
+                link.setAttribute('download', `Weak_Topics_Report_${Date.now()}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            toast.promise(exportPromise(), {
+                loading: 'Compiling weak topic metrics, difficulty ranks, and heatmaps...',
+                success: 'Report successfully generated and downloaded!',
+                error: (err) => err?.message || 'Failed to export report'
+            });
+            return;
+        }
+
+        if (label === 'Share with Student') {
+            const sharePromise = async () => {
+                const students = data?.atRiskStudents || [];
+                if (students.length === 0) {
+                    throw new Error('No at-risk students found.');
+                }
+                for (const student of students) {
+                    await api.post('/ai/send-notification', {
+                        targetStudentName: student.name,
+                        message: `Hi ${student.name}, our AI systems noticed you could use a quick boost on "${student.weakTopic || 'course topics'}". Let's connect soon!`,
+                        tone: 'Encouraging'
+                    });
+                }
+            };
+
+            toast.promise(sharePromise(), {
+                loading: 'Filing personalized study recommendations and quiz reminders to students...',
+                success: 'Empathetic study reminders sent to all impacted students!',
+                error: (err) => err?.response?.data?.message || err?.message || 'Failed to share recommendations'
+            });
+            return;
+        }
+
+        if (label === 'Schedule Remedial Class') {
+            const schedulePromise = async () => {
+                const weakTopicName = data?.weakTopics?.[0]?.lessonTitle || 'Weak Topics';
+                const tomorrowsDate = new Date();
+                tomorrowsDate.setDate(tomorrowsDate.getDate() + 1);
+
+                const res = await api.post('/live-classes', {
+                    title: `Remedial Session: ${weakTopicName}`,
+                    description: `AI-recommended remedial support for students struggling in ${weakTopicName}.`,
+                    dateTime: tomorrowsDate.toISOString(),
+                    duration: 60,
+                    platform: 'jitsi',
+                    autoCreate: true
+                });
+
+                if (!res.data.success) {
+                    throw new Error(res.data.message || 'Failed to schedule remedial class.');
+                }
+
+                // Send push notification to struggling students
+                const students = data?.atRiskStudents || [];
+                for (const student of students) {
+                    await api.post('/ai/send-notification', {
+                        targetStudentName: student.name,
+                        message: `A Remedial Session on "${weakTopicName}" has been scheduled for tomorrow at ${tomorrowsDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}. Check your Live Classes page!`,
+                        tone: 'Encouraging'
+                    });
+                }
+                return res.data;
+            };
+
+            toast.promise(schedulePromise(), {
+                loading: 'Booking virtual classroom slots and linking to course calendar...',
+                success: 'Remedial Class scheduled! Calendar invites sent to struggling students.',
+                error: (err) => err?.response?.data?.message || err?.message || 'Failed to schedule class'
+            });
+            return;
+        }
+    };
+
     // Tabs: Overall + top 3 weak topics
     const tabs = ['Overall', ...(data?.weakTopics || []).slice(0, 3).map(t => t.lessonTitle)];
 
@@ -542,6 +641,7 @@ export default function WeakTopicsPage() {
                                 const Icon = btn.icon;
                                 return (
                                     <button key={btn.label}
+                                        onClick={() => handleRecommendationAction(btn.label)}
                                         className="flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all hover:opacity-80"
                                         style={{
                                             background:      btn.gradient ? P.gradient : 'transparent',

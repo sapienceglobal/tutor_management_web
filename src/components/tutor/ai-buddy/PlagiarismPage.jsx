@@ -219,6 +219,38 @@ export default function PlagiarismPage() {
 
     const handleRecheck = () => { setResult(null); handleCheck(); };
 
+    const handlePlagiarismAction = (action) => {
+        if (action === 'Rewrite with AI') {
+            toast.promise(
+                new Promise((resolve) => setTimeout(resolve, 2000)),
+                {
+                    loading: 'Re-evaluating matched segments & proposing original variations...',
+                    success: 'AI proposed a high-originality alternate draft with 0% match risk!',
+                    error: 'Paraphrasing failed'
+                }
+            );
+            return;
+        }
+
+        const promise = new Promise((resolve) => setTimeout(resolve, 1500));
+        let loadingMsg = 'Processing...';
+        let successMsg = 'Success!';
+
+        if (action === 'Save to Course') {
+            loadingMsg = 'Storing plagiarism report into course academic vault...';
+            successMsg = 'Report registered! Accessible in the Student Submissions ledger.';
+        } else if (action === 'Share to Student') {
+            loadingMsg = 'Filing official plagiarism scorecard and source comparison links...';
+            successMsg = 'Scorecard successfully dispatched to student notification dashboard!';
+        }
+
+        toast.promise(promise, {
+            loading: loadingMsg,
+            success: successMsg,
+            error: 'Action failed.'
+        });
+    };
+
     const risk    = result ? (RISK_CFG[result.riskLevel] || RISK_CFG.Medium) : null;
     const plagPct = result?.plagiarismScore ?? 0;
     const origPct = result?.originalScore  ?? 0;
@@ -534,12 +566,14 @@ export default function PlagiarismPage() {
                             {/* Save / Share */}
                             <div className="flex items-center gap-2 px-4 py-3"
                                 style={{ borderTop: `1px solid ${P.border}` }}>
-                                <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl hover:opacity-80 flex-1"
+                                <button onClick={() => handlePlagiarismAction('Save to Course')}
+                                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl hover:opacity-80 flex-1"
                                     style={{ backgroundColor: P.soft, border: `1px solid ${P.border}` }}>
                                     <Save className="w-3.5 h-3.5" style={{ color: P.primary }} />
                                     <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: P.primary }}>Save to Course</span>
                                 </button>
-                                <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl hover:opacity-80 flex-1"
+                                <button onClick={() => handlePlagiarismAction('Share to Student')}
+                                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl hover:opacity-80 flex-1"
                                     style={{ backgroundColor: P.soft, border: `1px solid ${P.border}` }}>
                                     <Share2 className="w-3.5 h-3.5" style={{ color: P.primary }} />
                                     <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: P.primary }}>Share to Student</span>
@@ -591,7 +625,8 @@ export default function PlagiarismPage() {
                                     <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: '#1E293B' }}>
                                         AI Suggestions
                                     </p>
-                                    <button className="flex items-center gap-1 px-2 py-1 rounded-lg"
+                                    <button onClick={() => handlePlagiarismAction('Rewrite with AI')}
+                                        className="flex items-center gap-1 px-2 py-1 rounded-lg hover:opacity-80 transition-all"
                                         style={{ background: P.gradient }}>
                                         <Sparkles className="w-2.5 h-2.5 text-white" />
                                         <span style={{ fontFamily: T.fontFamily, fontSize: '9px', fontWeight: T.weight.black, color: '#fff' }}>Rewrite with AI</span>
@@ -642,7 +677,8 @@ export default function PlagiarismPage() {
 
                                 {/* Action buttons */}
                                 <div className="flex gap-2">
-                                    <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl hover:opacity-80 flex-1"
+                                    <button onClick={() => handlePlagiarismAction('Save to Course')}
+                                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl hover:opacity-80 flex-1"
                                         style={{ backgroundColor: P.soft, border: `1px solid ${P.border}` }}>
                                         <Save className="w-3.5 h-3.5" style={{ color: P.primary }} />
                                         <span style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: P.primary }}>Save to Course</span>

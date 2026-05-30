@@ -155,6 +155,43 @@ export default function LectureSummaryPage() {
     const fileRef   = useRef(null);
     const resultRef = useRef(null);
 
+    // ── Share modal state ─────────────────────────────────────────
+    const [sharing, setSharing] = useState(false);
+    const [shareCourseId, setShareCourseId] = useState('');
+    const [notifyStudents, setNotifyStudents] = useState(true);
+    const [sharingInProgress, setSharingInProgress] = useState(false);
+
+    const handleShare = () => {
+        if (!result) return toast.error('No generated summary to share');
+        // Pre-fill courseId if it exists in the result
+        const prefilledId = result.courseId?._id || result.courseId || courseId || '';
+        setShareCourseId(prefilledId);
+        setSharing(true);
+    };
+
+    const handleShareSubmit = async () => {
+        if (!shareCourseId) return toast.error('Please select a course to share with.');
+        setSharingInProgress(true);
+        try {
+            const res = await api.patch(`/ai/lecture-summaries/${result._id}/share`, {
+                courseId: shareCourseId,
+                notifyStudents
+            });
+            if (res.data?.success) {
+                toast.success('Lecture summary shared and students notified successfully!');
+                setSharing(false);
+                setResult(prev => ({
+                    ...prev,
+                    courseId: res.data.record.courseId
+                }));
+            }
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'Failed to share summary');
+        } finally {
+            setSharingInProgress(false);
+        }
+    };
+
     // ── Load initial data ──────────────────────────────────────────
     useEffect(() => {
         const init = async () => {
@@ -750,7 +787,7 @@ export default function LectureSummaryPage() {
                                     style={{ backgroundColor: P.soft, border: `1px solid ${P.border}`, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: P.primary }}>
                                     <Copy className="w-3.5 h-3.5" /> Copy Notes
                                 </button>
-                                <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl"
+                                <button onClick={handleShare} className="flex items-center gap-1.5 px-4 py-2 rounded-xl transition-transform hover:scale-[1.02]"
                                     style={{ backgroundColor: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.20)', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: '#059669' }}>
                                     <Share2 className="w-3.5 h-3.5" /> Share
                                 </button>
@@ -888,6 +925,97 @@ export default function LectureSummaryPage() {
                     </p>
                 </div>
             </div>
+
+            {/* ── SHARE MODAL ────────────────────────────────────────────── */}
+            {sharing && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                    <div className="w-full max-w-md overflow-hidden bg-white border rounded-3xl shadow-2xl animate-scale-up"
+                        style={{ borderColor: P.border, fontFamily: T.fontFamily }}>
+                        
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between px-6 py-5 border-b"
+                            style={{ borderColor: P.border, background: 'linear-gradient(135deg, rgba(124,58,237,0.04), rgba(139,92,246,0.02))' }}>
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                                    style={{ background: P.gradient }}>
+                                    <Share2 className="w-4 h-4 text-white" />
+                                </div>
+                                <div>
+                                    <h2 style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: '#1E293B' }}>
+                                        Share Lecture Summary
+                                    </h2>
+                                    <p style={{ fontSize: '11px', color: '#64748B', marginTop: 1 }}>
+                                        Publish summary to a course and notify students
+                                    </p>
+                                </div>
+                            </div>
+                            <button onClick={() => setSharing(false)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="p-6 space-y-5">
+                            {/* Course selection */}
+                            <div className="space-y-2">
+                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: '#475569' }}>
+                                    Target Course
+                                </label>
+                                <div className="relative">
+                                    <select value={shareCourseId} onChange={e => setShareCourseId(e.target.value)}
+                                        className="w-full appearance-none pl-3 pr-10 py-3 rounded-2xl outline-none border transition-all focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+                                        style={{ fontSize: T.size.sm, color: '#334155', backgroundColor: '#F8FAFC', borderColor: P.border }}>
+                                        <option value="">Select a Course...</option>
+                                        {courses.map(c => (
+                                            <option key={c._id} value={c._id}>{c.title}</option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#94A3B8' }} />
+                                </div>
+                            </div>
+
+                            {/* Notification Toggle */}
+                            <div className="flex items-start gap-3 p-4 border rounded-2xl bg-violet-50/40" style={{ borderColor: 'rgba(124,58,237,0.15)' }}>
+                                <input type="checkbox" id="notifyToggle" checked={notifyStudents} onChange={e => setNotifyStudents(e.target.checked)}
+                                    className="w-4 h-4 mt-0.5 rounded border-gray-300 text-violet-600 focus:ring-violet-500 cursor-pointer" />
+                                <div className="space-y-1">
+                                    <label htmlFor="notifyToggle" className="block cursor-pointer"
+                                        style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: '#1E293B' }}>
+                                        Send Smart AI Notification
+                                    </label>
+                                    <p style={{ fontSize: '11px', color: '#64748B', lineHeight: 1.4 }}>
+                                        Enrolled students will receive a dashboard notification and learning alert about this summary.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t bg-slate-50" style={{ borderColor: P.border }}>
+                            <button onClick={() => setSharing(false)} disabled={sharingInProgress}
+                                className="px-4 py-2.5 rounded-xl border font-bold transition-all hover:bg-slate-100"
+                                style={{ fontSize: T.size.xs, color: '#64748B', borderColor: '#CBD5E1' }}>
+                                Cancel
+                            </button>
+                            <button onClick={handleShareSubmit} disabled={sharingInProgress}
+                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-white font-bold transition-all hover:opacity-90 disabled:opacity-50"
+                                style={{ background: P.gradient, fontSize: T.size.xs, boxShadow: '0 4px 12px rgba(124,58,237,0.25)' }}>
+                                {sharingInProgress ? (
+                                    <>
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Sharing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Share2 className="w-3.5 h-3.5" /> Share Now
+                                    </>
+                                )}
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

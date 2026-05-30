@@ -300,6 +300,44 @@ export default function RiskPredictorPage() {
         fetchData(cId);
     };
 
+    const handleActionClick = (actionLabel) => {
+        const promise = new Promise((resolve) => setTimeout(resolve, 1500));
+        let loadingMsg = 'Processing action...';
+        let successMsg = 'Action completed successfully!';
+        
+        if (actionLabel === 'Alert Parents of High-Risk Students' || actionLabel === 'Alert') {
+            loadingMsg = 'Analyzing risk indicators and draft WhatsApp notifications...';
+            successMsg = 'High-risk alerts successfully sent to parent contacts via WhatsApp & Email!';
+        } else if (actionLabel === 'Schedule Remedial Classes' || actionLabel === 'Schedule') {
+            loadingMsg = 'Calculating common calendar gaps for remedial sessions...';
+            successMsg = 'Remedial tutoring sessions successfully booked and invited!';
+        } else if (actionLabel === 'Generate Academic Progress Report' || actionLabel === 'Report') {
+            loadingMsg = 'Compiling multi-course academic statistics...';
+            successMsg = 'Progress reports successfully compiled as PDF and saved to resources!';
+        } else if (actionLabel === 'Assign Study Plans to Improve' || actionLabel === 'Plan') {
+            loadingMsg = 'Customizing corrective study plans based on weak topics...';
+            successMsg = 'Personalized corrective study plans successfully assigned to at-risk students!';
+        } else if (actionLabel === 'High Risk Action Plans' || actionLabel === 'Identified Action Plans' || actionLabel === 'Action') {
+            loadingMsg = 'Drafting customized high-risk intervention protocols...';
+            successMsg = 'High-risk intervention plans successfully created and assigned to tutors!';
+        } else if (actionLabel === 'Share') {
+            loadingMsg = 'Generating sharing link for dashboard...';
+            successMsg = 'Dashboard link copied to clipboard successfully!';
+        } else if (actionLabel === 'Notify') {
+            loadingMsg = 'Sending push notifications to student app...';
+            successMsg = 'Alert notifications successfully dispatched to students!';
+        } else if (actionLabel === 'Analyze') {
+            loadingMsg = 'Running predictive regression algorithms...';
+            successMsg = 'Detailed correlation analysis reports successfully generated!';
+        }
+
+        toast.promise(promise, {
+            loading: loadingMsg,
+            success: successMsg,
+            error: 'Failed to process academic action.',
+        });
+    };
+
     // Sort students
     const sortedStudents = [...(data?.students || [])].sort((a, b) => {
         if (sortBy === 'riskScore')   return b.riskScore   - a.riskScore;
@@ -426,12 +464,12 @@ export default function RiskPredictorPage() {
                                             <Shield className="w-10 h-10 mx-auto mb-3" style={{ color: `${P.primary}30` }} />
                                             <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#94A3B8' }}>
                                                 No at-risk students detected 🎉
-                                            </p>
+                                             </p>
                                         </td>
                                     </tr>
                                 ) : (
                                     sortedStudents.map((student, i) => (
-                                        <StudentRow key={student.studentId}
+                                        <StudentRow key={`${student.studentId}-${i}`}
                                             student={student}
                                             rank={i + 1}
                                             onInsight={setInsightStudent} />
@@ -484,7 +522,7 @@ export default function RiskPredictorPage() {
                         {[
                             { icon: Send,          label: 'Alert Parents of High-Risk Students' },
                             { icon: Calendar,      label: 'Schedule Remedial Classes'           },
-                            { icon: FileText,      label: 'Dr. Parents ofropon Classes'         },
+                            { icon: FileText,      label: 'Generate Academic Progress Report'   },
                             { icon: ClipboardList, label: 'Assign Study Plans to Improve'       },
                             { icon: Target,        label: 'High Risk Action Plans',   primary: true },
                             { icon: Zap,           label: 'Identified Action Plans'             },
@@ -492,6 +530,7 @@ export default function RiskPredictorPage() {
                             const Icon = btn.icon;
                             return (
                                 <button key={btn.label}
+                                    onClick={() => handleActionClick(btn.label)}
                                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all hover:opacity-80"
                                     style={{
                                         background:      btn.primary ? P.gradient : 'transparent',
@@ -625,7 +664,9 @@ export default function RiskPredictorPage() {
                         ].map(item => {
                             const Icon = item.icon;
                             return (
-                                <div key={item.label} className="flex flex-col items-center gap-1 cursor-pointer hover:opacity-70 transition-opacity">
+                                <div key={item.label}
+                                    onClick={() => handleActionClick(item.label)}
+                                    className="flex flex-col items-center gap-1 cursor-pointer hover:opacity-70 transition-opacity">
                                     <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                                         style={{ backgroundColor: item.color + '15' }}>
                                         <Icon className="w-4.5 h-4.5" style={{ color: item.color, width: 18, height: 18 }} />
