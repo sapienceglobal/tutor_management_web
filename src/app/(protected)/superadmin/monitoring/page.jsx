@@ -130,6 +130,7 @@ export default function SystemMonitoringPage() {
                     icon={MdDns} 
                     value={formatUptime(server.uptimeSeconds)} 
                     label="Node.js Uptime" 
+                    subtext={`Web: ${apiHealth.webRequests24h || 0} | Mobile: ${apiHealth.mobileRequests24h || 0} hits`}
                     iconBg="#EEF2FF" 
                     iconColor="#4F46E5" 
                 />
@@ -137,7 +138,7 @@ export default function SystemMonitoringPage() {
                     icon={MdWarning} 
                     value={`${apiHealth.errorRate}%`} 
                     label="API Error Rate (24h)" 
-                    subtext={`${apiHealth.failedRequests24h} Fails`}
+                    subtext={`Web: ${apiHealth.webFailedRequests24h || 0} | Mobile: ${apiHealth.mobileFailedRequests24h || 0} Fails`}
                     iconBg={apiHealth.errorRate > 5 ? C.dangerBg : "#ECFDF5"} 
                     iconColor={apiHealth.errorRate > 5 ? C.danger : "#10B981"} 
                 />
@@ -202,6 +203,14 @@ export default function SystemMonitoringPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
+                                                <span style={{
+                                                    fontSize: '10px', fontWeight: T.weight.bold, padding: '2px 6px', borderRadius: '4px',
+                                                    backgroundColor: err.platform === 'mobile' ? '#F3E8FF' : '#E0F2FE',
+                                                    color: err.platform === 'mobile' ? '#7E22CE' : '#0369A1',
+                                                    border: `1px solid ${err.platform === 'mobile' ? '#E9D5FF' : '#BAE6FD'}`
+                                                }}>
+                                                    {err.platform === 'mobile' ? 'Mobile' : 'Web'}
+                                                </span>
                                                 <span style={{ 
                                                     fontSize: '10px', fontWeight: T.weight.bold, padding: '2px 6px', borderRadius: '4px',
                                                     backgroundColor: err.method === 'GET' ? '#EBF8FF' : err.method === 'POST' ? C.successBg : C.warningBg,

@@ -171,19 +171,25 @@ const CustomChartTooltip = ({ active, payload, label }) => {
   if (active && payload?.length) {
     return (
       <div style={{
-        backgroundColor: C.cardBg,
-        border: `1px solid ${C.cardBorder}`,
-        borderRadius: '10px',
-        boxShadow: S.cardHover,
-        padding: '10px 14px',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(10px)',
         fontFamily: T.fontFamily,
+        borderRadius: '16px',
+        padding: '12px 16px',
+        boxShadow: '0 10px 30px -10px rgba(0,0,0,0.15)',
+        border: '1px solid rgba(124, 58, 237, 0.1)',
       }}>
-        <p style={{ fontSize: T.size.xs, fontWeight: T.weight.semibold, color: C.textMuted, marginBottom: 4, margin: 0 }}>{label}</p>
-        {payload.map((p, i) => (
-          <p key={i} style={{ fontSize: T.size.base, fontWeight: T.weight.bold, color: p.color, margin: '4px 0 0 0' }}>
-            {p.name}: {p.value}
-          </p>
-        ))}
+        <p style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6, margin: 0 }}>{label}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+          {payload.map((p, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: p.color }} />
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                {p.name}: <strong style={{ color: '#1E293B', fontWeight: 800 }}>{p.value}</strong>
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -399,24 +405,28 @@ export default function TutorDashboard() {
                     <stop offset="5%"  stopColor={C.success} stopOpacity={0.2} />
                     <stop offset="95%" stopColor={C.success} stopOpacity={0} />
                   </linearGradient>
+                  <linearGradient id="colorRevenueTutor" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor={C.warning} stopOpacity={0.2} />
+                    <stop offset="95%" stopColor={C.warning} stopOpacity={0} />
+                  </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.cardBorder} />
                 <XAxis
                   dataKey="name"
                   axisLine={false} tickLine={false}
-                  tick={{ fill: C.text, fontSize: 12, fontWeight: 600, fontFamily: T.fontFamily }}
+                  tick={{ fill: '#64748B', fontSize: 11, fontWeight: 600, fontFamily: T.fontFamily }}
                   dy={10}
                 />
                 <YAxis
                   axisLine={false} tickLine={false}
-                  tick={{ fill: C.text, fontSize: 12, fontWeight: 600, fontFamily: T.fontFamily }}
+                  tick={{ fill: '#64748B', fontSize: 11, fontWeight: 600, fontFamily: T.fontFamily }}
                   dx={-10}
                 />
-                <Tooltip content={<CustomChartTooltip />} cursor={{ stroke: C.cardBorder, strokeWidth: 2, strokeDasharray: '3 3' }} />
-                <Legend iconType="circle" wrapperStyle={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, paddingTop: 10 }} />
-                <Area type="monotone" dataKey="enrollments" name="Enrollments" stroke={C.btnPrimary} strokeWidth={3} fillOpacity={1} fill="url(#colorEnrollments)" activeDot={{ r: 6, strokeWidth: 0 }} />
-                <Area type="monotone" dataKey="completions" name="Completions" stroke={C.success} strokeWidth={3} fillOpacity={1} fill="url(#colorCompletions)" activeDot={{ r: 6, strokeWidth: 0 }} />
-                <Line type="monotone" dataKey="revenue" name="Revenue" stroke={C.warning} strokeWidth={3} dot={false} activeDot={{ r: 6, strokeWidth: 0 }} />
+                <Tooltip content={<CustomChartTooltip />} cursor={{ stroke: C.cardBorder, strokeWidth: 1.5, strokeDasharray: '3 3' }} />
+                <Legend iconType="circle" wrapperStyle={{ fontFamily: T.fontFamily, fontSize: '12px', fontWeight: 600, paddingTop: 12 }} />
+                <Area type="monotone" dataKey="enrollments" name="Enrollments" stroke={C.btnPrimary} strokeWidth={3} fillOpacity={1} fill="url(#colorEnrollments)" dot={{ r: 4, stroke: C.btnPrimary, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6, stroke: C.btnPrimary, strokeWidth: 2, fill: '#fff' }} />
+                <Area type="monotone" dataKey="completions" name="Completions" stroke={C.success} strokeWidth={3} fillOpacity={1} fill="url(#colorCompletions)" dot={{ r: 4, stroke: C.success, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6, stroke: C.success, strokeWidth: 2, fill: '#fff' }} />
+                <Area type="monotone" dataKey="revenue" name="Revenue" stroke={C.warning} strokeWidth={3} fillOpacity={1} fill="url(#colorRevenueTutor)" dot={{ r: 4, stroke: C.warning, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6, stroke: C.warning, strokeWidth: 2, fill: '#fff' }} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>

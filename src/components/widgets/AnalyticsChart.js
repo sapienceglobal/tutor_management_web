@@ -4,6 +4,35 @@ import { useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { C, T, S, R } from '@/constants/studentTokens';
 
+const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload?.length) {
+        return (
+            <div style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                fontFamily: T.fontFamily,
+                borderRadius: '16px',
+                padding: '12px 16px',
+                boxShadow: '0 10px 30px -10px rgba(0,0,0,0.15)',
+                border: '1px solid rgba(124, 58, 237, 0.1)',
+            }}>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6, margin: 0 }}>{label}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                    {payload.map((p, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: p.stroke || p.color }} />
+                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569', textTransform: 'capitalize' }}>
+                                {p.name}: <strong style={{ color: '#1E293B', fontWeight: 800 }}>{p.value}</strong>
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+    return null;
+};
+
 export default function AnalyticsChart({ data, title = "Course Performance" }) {
     const [activeRange, setActiveTab] = useState('weekly');
 
@@ -103,17 +132,7 @@ export default function AnalyticsChart({ data, title = "Course Performance" }) {
                             dx={-10} 
                         />
                         
-                        <Tooltip 
-                            contentStyle={{ 
-                                borderRadius: '10px', 
-                                border: `1px solid ${C.cardBorder}`, 
-                                boxShadow: S.card, 
-                                fontFamily: T.fontFamily,
-                                fontSize: T.size.base,
-                                fontWeight: 'bold' 
-                            }}
-                            cursor={{ stroke: C.cardBorder, strokeWidth: 1, strokeDasharray: '3 3' }} 
-                        />
+                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: C.cardBorder, strokeWidth: 1.5, strokeDasharray: '3 3' }} />
                         
                         <Area 
                             type="monotone" 

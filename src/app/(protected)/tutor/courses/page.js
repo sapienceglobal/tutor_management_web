@@ -91,7 +91,7 @@ function CourseGridCard({ course, onDelete }) {
             {/* ── Thumbnail ── */}
             <div className="relative overflow-hidden flex-shrink-0" style={{ aspectRatio: '16/9', backgroundColor: C.innerBg }}>
                 <img
-                    src={course.thumbnail || 'https://via.placeholder.com/640x360'}
+                    src={course.thumbnail || 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60'}
                     alt={course.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
@@ -316,7 +316,7 @@ function CourseListRow({ course, onDelete }) {
                 style={{ width: 160, height: 90, borderRadius: '10px', backgroundColor: C.innerBg }}
             >
                 <img
-                    src={course.thumbnail || 'https://via.placeholder.com/320x180'}
+                    src={course.thumbnail || 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60'}
                     alt={course.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />

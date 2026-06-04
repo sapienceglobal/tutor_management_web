@@ -12,6 +12,7 @@ import {
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { T, S } from '@/constants/tutorTokens';
+import { useSocket } from '@/contexts/SocketContext';
 
 const P = {
     primary:  '#7C3AED',
@@ -162,6 +163,7 @@ function AlertRow({ alert, onReview }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ProctoringAlertsPage() {
     const router = useRouter();
+    const { socket } = useSocket();
 
     const [data, setData]           = useState(null);
     const [loading, setLoading]     = useState(true);
@@ -169,6 +171,69 @@ export default function ProctoringAlertsPage() {
     const [examFilter, setExamFilter] = useState('');
     const [sortBy, setSortBy]       = useState('latest');
     const [generatingSummary, setGeneratingSummary] = useState(false);
+
+    // Listen for live real-time proctoring alerts via Socket.io
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleLiveProctoringAlert = (alert) => {
+            console.log('🚨 Live proctoring alert received:', alert);
+            
+            // Determine risk level based on severity
+            const riskLevel = alert.severity === 'high' ? 'Cheating Detected' 
+                            : alert.severity === 'medium' ? 'Suspicious Detected'
+                            : 'Low Confidence Detected';
+            
+            const newAlertItem = {
+                _id: alert.attemptId || Math.random().toString(),
+                studentName: alert.studentName,
+                examName: alert.examTitle,
+                riskLevel: riskLevel,
+                violationsCount: alert.tabSwitchCount || 1,
+                timeAgo: 'Just now',
+                keyIssues: [`${alert.eventType}: ${alert.details || 'Violation logged'}`],
+                score: 'Risk: High',
+            };
+
+            // Display live toast alert
+            toast.error(`🚨 Live Alert: ${alert.studentName} triggered ${alert.eventType} in ${alert.examTitle}!`, {
+                id: `live-alert-${Date.now()}`,
+                duration: 6000
+            });
+
+            // Prepend new alert to alerts list and update metrics dynamically
+            setData(prev => {
+                if (!prev) return prev;
+                
+                const updatedAlerts = [newAlertItem, ...(prev.alerts || [])];
+                const updatedSummary = { ...prev.summary };
+                
+                updatedSummary.total = (updatedSummary.total || 0) + 1;
+                if (riskLevel === 'Cheating Detected') {
+                    updatedSummary.cheating = (updatedSummary.cheating || 0) + 1;
+                } else if (riskLevel === 'Suspicious Detected') {
+                    updatedSummary.suspicious = (updatedSummary.suspicious || 0) + 1;
+                } else {
+                    updatedSummary.lowConfidence = (updatedSummary.lowConfidence || 0) + 1;
+                }
+                
+                updatedSummary.flagged = (updatedSummary.flagged || 0) + 1;
+                updatedSummary.flaggedPct = Math.round((updatedSummary.flagged / updatedSummary.total) * 100);
+
+                return {
+                    ...prev,
+                    alerts: updatedAlerts,
+                    summary: updatedSummary
+                };
+            });
+        };
+
+        socket.on('proctoring_alert', handleLiveProctoringAlert);
+
+        return () => {
+            socket.off('proctoring_alert', handleLiveProctoringAlert);
+        };
+    }, [socket]);
 
     // ── Load data ──────────────────────────────────────────────────
     const loadData = async () => {
@@ -225,12 +290,23 @@ export default function ProctoringAlertsPage() {
                             </p>
                         </div>
                     </div>
-                    <button onClick={() => setSortBy(sortBy === 'latest' ? 'risk' : 'latest')}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all hover:opacity-80"
-                        style={{ backgroundColor: '#fff', border: '1px solid ' + P.border, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: P.primary }}>
-                        <SortAsc className="w-3.5 h-3.5" />
-                        Sort By: {sortBy === 'latest' ? 'Latest Alert' : 'Risk Level'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => router.push('/tutor/ai-buddy/proctoring/live')}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all hover:opacity-85 shadow-sm border border-red-200"
+                            style={{ backgroundColor: '#FEF2F2', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: '#DC2626' }}>
+                            <span className="relative flex h-2.5 w-2.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
+                            </span>
+                            Live Proctoring Center
+                        </button>
+                        <button onClick={() => setSortBy(sortBy === 'latest' ? 'risk' : 'latest')}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all hover:opacity-80"
+                            style={{ backgroundColor: '#fff', border: '1px solid ' + P.border, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: P.primary }}>
+                            <SortAsc className="w-3.5 h-3.5" />
+                            Sort By: {sortBy === 'latest' ? 'Latest Alert' : 'Risk Level'}
+                        </button>
+                    </div>
                 </div>
 
                 {/* ── Alert Summary + Proctoring Stats ───────────────────── */}

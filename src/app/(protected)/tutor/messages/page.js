@@ -8,6 +8,7 @@ import {
     MdPeople, MdDoneAll, MdCheck, MdChevronLeft 
 } from 'react-icons/md';
 import { C, T, S, R } from '@/constants/studentTokens';
+import { useSocket } from '@/contexts/SocketContext';
 
 // Focus Handlers
 const onFocusHandler = e => {
@@ -191,6 +192,71 @@ export default function TutorMessagesPage() {
             setSending(false);
         }
     };
+
+    const { socket } = useSocket();
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleIncomingChatMessage = (msg) => {
+            const partnerId = String(msg.studentId || '');
+            const isFromStudent = msg.senderRole === 'student';
+
+            if (!partnerId) return;
+
+            // If this message belongs to the current conversation
+            if (selectedStudentId && String(selectedStudentId) === partnerId) {
+                setMessages((prev) => {
+                    if (prev.some((m) => String(m._id) === String(msg._id))) {
+                        return prev;
+                    }
+                    const mappedMsg = {
+                        ...msg,
+                        isOwn: msg.senderRole === 'tutor'
+                    };
+                    return [...prev, mappedMsg];
+                });
+
+                if (isFromStudent) {
+                    api.patch(`/messages/conversations/${partnerId}/read`).catch(() => {});
+                }
+            }
+
+            // Update conversation sidebar list
+            setConversations((prevConvos) => {
+                const index = prevConvos.findIndex((c) => String(c.counterpartId) === partnerId);
+                if (index !== -1) {
+                    const updatedConvos = [...prevConvos];
+                    const existingConvo = updatedConvos[index];
+
+                    const isSelected = selectedStudentId && String(selectedStudentId) === partnerId;
+                    const newUnreadCount = (isFromStudent && !isSelected)
+                        ? existingConvo.unreadCount + 1
+                        : existingConvo.unreadCount;
+
+                    updatedConvos[index] = {
+                        ...existingConvo,
+                        lastMessage: {
+                            ...msg,
+                            isOwn: msg.senderRole === 'tutor'
+                        },
+                        unreadCount: newUnreadCount
+                    };
+
+                    return updatedConvos.sort((a, b) => new Date(b.lastMessage.sentAt) - new Date(a.lastMessage.sentAt));
+                } else {
+                    refreshConversations();
+                    return prevConvos;
+                }
+            });
+        };
+
+        socket.on('chat_message', handleIncomingChatMessage);
+
+        return () => {
+            socket.off('chat_message', handleIncomingChatMessage);
+        };
+    }, [socket, selectedStudentId]);
 
     const currentStudent = useMemo(() => {
         return students.find((student) => String(student._id) === String(selectedStudentId)) || null;

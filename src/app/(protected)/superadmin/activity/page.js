@@ -8,16 +8,93 @@ import {
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+import { useSocket } from '@/contexts/SocketContext';
+
+// Helper to map backend raw AuditLog schema object to the activity timeline object format
+const mapLogToActivity = (log) => {
+    const user = log.userId || { name: 'System', email: 'system@platform.com', role: 'system', profileImage: null };
+    let actionType = 'action';
+    
+    // Determine a friendly action type
+    const actionLower = (log.action || '').toLowerCase();
+    if (actionLower.includes('register') || actionLower.includes('signup') || actionLower.includes('institute')) {
+        actionType = 'registration';
+    } else if (actionLower.includes('login') || actionLower.includes('auth') || actionLower.includes('signin')) {
+        actionType = 'login';
+    } else if (log.method === 'POST') {
+        actionType = 'creation';
+    } else if (log.method === 'DELETE') {
+        actionType = 'deletion';
+    } else if (log.method === 'PUT' || log.method === 'PATCH') {
+        actionType = 'update';
+    }
+
+    // Make description human readable
+    let friendlyDesc = log.action;
+    if (log.action && log.action.includes(' ')) {
+        const parts = log.action.split(' ');
+        const method = parts[0];
+        const path = parts[1];
+        let actionVerb = 'accessed';
+        if (method === 'POST') actionVerb = 'created';
+        else if (method === 'DELETE') actionVerb = 'deleted';
+        else if (method === 'PUT' || method === 'PATCH') actionVerb = 'updated';
+        
+        friendlyDesc = `${user.name} ${actionVerb} resource at ${path}`;
+    }
+
+    return {
+        _id: log._id,
+        type: actionType,
+        user: {
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            profileImage: user.profileImage
+        },
+        description: friendlyDesc,
+        timestamp: log.createdAt,
+        platform: log.platform || 'web',
+        statusCode: log.statusCode,
+        path: log.path,
+        resource: log.resource
+    };
+};
 
 export default function SuperAdminActivityPage() {
     const [activities, setActivities] = useState([]);
+    const [platformFilter, setPlatformFilter] = useState('all');
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => { fetchActivity(); }, []);
+    const { socket } = useSocket();
+
+    useEffect(() => { 
+        fetchActivity(); 
+    }, [platformFilter]);
+
+    // WebSocket listener for real-time audit logs, appended instantly to activities
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleAuditLogCreated = (newLog) => {
+            // Apply current platform filter dynamically
+            if (platformFilter !== 'all' && newLog.platform !== platformFilter) return;
+
+            const mapped = mapLogToActivity(newLog);
+            setActivities(prev => [mapped, ...prev]);
+        };
+
+        socket.on('audit_log_created', handleAuditLogCreated);
+        return () => {
+            socket.off('audit_log_created', handleAuditLogCreated);
+        };
+    }, [socket, platformFilter]);
 
     const fetchActivity = async () => {
         try {
-            const res = await api.get('/superadmin/activity');
+            let query = '/superadmin/activity';
+            if (platformFilter !== 'all') query += `?platform=${platformFilter}`;
+            const res = await api.get(query);
             if (res.data.success) setActivities(res.data.activities);
         } catch (error) { 
             toast.error('Failed to load activity log'); 
@@ -84,6 +161,28 @@ export default function SuperAdminActivityPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <select
+                        value={platformFilter}
+                        onChange={e => setPlatformFilter(e.target.value)}
+                        style={{
+                            backgroundColor: C.cardBg,
+                            border: `1px solid ${C.cardBorder}`,
+                            borderRadius: '10px',
+                            color: C.heading,
+                            fontFamily: T.fontFamily,
+                            fontSize: T.size.xs,
+                            fontWeight: T.weight.bold,
+                            padding: '10px 16px',
+                            cursor: 'pointer',
+                            outline: 'none',
+                            boxShadow: S.card
+                        }}
+                    >
+                        <option value="all">All Platforms</option>
+                        <option value="web">Web App Only</option>
+                        <option value="mobile">Mobile App Only</option>
+                    </select>
+
                     <div className="flex items-center gap-2" style={{ backgroundColor: C.cardBg, padding: '10px 16px', borderRadius: '10px', border: `1px solid ${C.cardBorder}`, boxShadow: S.cardHover }}>
                         <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: C.success }}></div>
                         <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text }}>
@@ -183,11 +282,26 @@ export default function SuperAdminActivityPage() {
                                             </div>
 
                                             {/* Time & Stamp */}
-                                            <div className="flex flex-col items-end min-w-[100px] shrink-0 text-right">
-                                                <div className="flex items-center gap-1.5" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.btnPrimary, backgroundColor: C.innerBg, padding: '4px 10px', borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
-                                                    <MdAccessTime style={{ width: 12, height: 12 }} /> {timeAgo(activity.timestamp)}
+                                            <div className="flex flex-col items-end min-w-[120px] shrink-0 text-right gap-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span style={{
+                                                        padding: '2px 6px',
+                                                        borderRadius: '4px',
+                                                        fontSize: '9px',
+                                                        fontWeight: T.weight.black,
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: T.tracking.wider,
+                                                        backgroundColor: activity.platform === 'mobile' ? '#ECFDF5' : '#EFF6FF',
+                                                        color: activity.platform === 'mobile' ? '#059669' : '#2563EB',
+                                                        border: activity.platform === 'mobile' ? '1px solid #A7F3D0' : '1px solid #BFDBFE'
+                                                    }}>
+                                                        {activity.platform === 'mobile' ? 'App' : 'Web'}
+                                                    </span>
+                                                    <div className="flex items-center gap-1.5" style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.btnPrimary, backgroundColor: C.innerBg, padding: '4px 10px', borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                                                        <MdAccessTime style={{ width: 12, height: 12 }} /> {timeAgo(activity.timestamp)}
+                                                    </div>
                                                 </div>
-                                                <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, margin: 0, marginTop: '6px', textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, margin: 0, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
                                                     {new Date(activity.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                                                 </p>
                                             </div>

@@ -3559,9 +3559,8 @@ export default function CourseDetailPage({ params }) {
           exam={selectedExam}
           onClose={() => setShowExamHistoryModal(false)}
           onViewAttempt={(data) => {
-            setSelectedResult(data);
+            router.push(`/student/exams/${selectedExam._id}/result?attemptId=${data.attempt._id}`);
             setShowExamHistoryModal(false);
-            setShowResultModal(true);
           }}
           onStartExam={handleStartExam}
         />

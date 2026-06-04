@@ -38,11 +38,13 @@ import { useConfirm } from "@/components/providers/ConfirmProvider";
 import Link from "next/link";
 import { T } from "@/constants/studentTokens";
 import { useFaceProctoring } from "@/hooks/useFaceProctoring";
+import { useSocket } from "@/contexts/SocketContext";
 
 export default function TakeExamPage({ params }) {
   const { id } = use(params);
   const router = useRouter();
   const AUTOSAVE_KEY = `exam_autosave_${id}`;
+  const { socket, examBlocked, examBlockedMessage, clearExamBlock } = useSocket();
 
   const [exam, setExam] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -108,6 +110,18 @@ export default function TakeExamPage({ params }) {
   // 🔥 Proctoring Event Handler (Audio & Gaze Included)
   const handleProctoringEvent = useCallback((event) => {
     setProctoringEvents((prev) => [...prev, event]);
+
+    // Emit real-time proctoring alert to Tutor via WebSocket
+    if (socket && exam) {
+      socket.emit('proctoring_event', {
+        examId: id,
+        eventType: event.eventType,
+        severity: event.severity,
+        details: event.details || '',
+        attemptId: attemptIdRef?.current || null
+      });
+    }
+
     if (event.eventType === "no_face") {
       toast.error(
         "⚠️ Warning: Face not detected. Please stay in camera frame!",
@@ -149,7 +163,7 @@ export default function TakeExamPage({ params }) {
         duration: 4000,
       });
     }
-  }, []);
+  }, [socket, exam, id]);
 
   const {
     status: faceStatus,
@@ -216,6 +230,20 @@ export default function TakeExamPage({ params }) {
     }
     return null;
   };
+
+  // Connect to Socket.io and register this exam attempt session
+  useEffect(() => {
+    if (socket && step === "exam" && exam) {
+      console.log(`🔌 Registering active exam session for exam: ${id}`);
+      socket.emit('join_exam_attempt', { examId: id });
+      
+      return () => {
+        console.log(`🔌 Leaving active exam session...`);
+        socket.emit('leave_exam_attempt');
+        clearExamBlock();
+      };
+    }
+  }, [socket, step, exam, id]);
 
   useEffect(() => {
     timeLeftRef.current = timeLeft;
@@ -942,6 +970,14 @@ export default function TakeExamPage({ params }) {
     }
   };
 
+  // Auto-submit exam if blocked/terminated
+  useEffect(() => {
+    if (examBlocked && step === "exam" && !submitting) {
+      console.log("🚨 Exam blocked/terminated while running. Auto-submitting current answers...");
+      handleSubmit(true);
+    }
+  }, [examBlocked, step]);
+
   // ── Helpers ──────────────────────────────────────────────────────────
   const formatTime = (seconds) => {
     const h = Math.floor(seconds / 3600);
@@ -1019,6 +1055,37 @@ export default function TakeExamPage({ params }) {
         };
     }
   };
+
+  // ── Exam Session Lock Check ──────────────────────────────────────────
+  if (examBlocked) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/90 backdrop-blur-xl">
+        <div className="max-w-md w-full mx-4 p-8 rounded-3xl bg-slate-900 border border-red-500/30 shadow-2xl text-center flex flex-col items-center">
+          <div className="w-20 h-20 rounded-full bg-red-950/80 border border-red-500/50 flex items-center justify-center mb-6 animate-pulse">
+            <AlertCircle className="w-10 h-10 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-black text-white mb-3">
+            🚨 Exam Session Locked
+          </h2>
+          <p className="text-slate-300 text-sm leading-relaxed mb-6">
+            {examBlockedMessage || "Another active exam session or tab was detected for your account. To maintain test integrity, this window has been locked."}
+          </p>
+          <div className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 mb-6 text-[13px] text-slate-400 font-medium">
+            Please close any other tabs or devices running this exam to resume this session.
+          </div>
+          <Button
+            onClick={() => {
+              clearExamBlock();
+              router.push("/student/exams");
+            }}
+            className="w-full py-6 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-red-500/20 border-none"
+          >
+            Back to Exams List
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // ── Loading ──────────────────────────────────────────────────────────
   if (loading)

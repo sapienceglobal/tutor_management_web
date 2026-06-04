@@ -32,6 +32,15 @@ api.interceptors.response.use(
         if (canNormalize && response?.data) {
             response.data = normalizeMediaUrlsDeep(response.data);
         }
+        
+        // Trigger a custom event to sync subscription credits dynamically
+        if (typeof window !== 'undefined' && response?.config?.url) {
+            const url = response.config.url.toLowerCase();
+            if (url.includes('/ai/') || url.includes('/ai')) {
+                window.dispatchEvent(new Event('ai-quota-consumed'));
+            }
+        }
+
         return response;
     },
     (error) => {

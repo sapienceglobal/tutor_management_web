@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -26,7 +26,7 @@ import {
 } from 'react-icons/md';
 import toast from 'react-hot-toast';
 import {
-    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { C, T, S, R } from '@/constants/studentTokens';
 import StatCard from '@/components/StatCard';
@@ -147,18 +147,25 @@ const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload?.length) {
         return (
             <div style={{
-                backgroundColor: '#3D3B8E',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
                 fontFamily: T.fontFamily,
-                borderRadius: '10px',
-                padding: '8px 12px',
-                boxShadow: S.card,
+                borderRadius: '16px',
+                padding: '12px 16px',
+                boxShadow: '0 10px 30px -10px rgba(0,0,0,0.15)',
+                border: '1px solid rgba(124, 58, 237, 0.1)',
             }}>
-                <p style={{ fontSize: T.size.xs, fontWeight: T.weight.semibold, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>{label}</p>
-                {payload.map((p, i) => (
-                    <p key={i} style={{ fontSize: T.size.base, fontWeight: T.weight.bold, color: '#ffffff', margin: 0 }}>
-                        {p.name}: {p.value}
-                    </p>
-                ))}
+                <p style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6, margin: 0 }}>{label}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                    {payload.map((p, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: p.color }} />
+                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                                {p.name}: <strong style={{ color: '#1E293B', fontWeight: 800 }}>{p.value}</strong>
+                            </span>
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }
@@ -412,15 +419,29 @@ export default function SuperadminDashboard() {
                             </div>
                             <div className="h-[220px] w-full mt-auto">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={analyticsData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={`${C.btnPrimary}15`} />
+                                    <AreaChart data={analyticsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="colorStudentsSuper" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor={C.btnPrimary || "#7C3AED"} stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor={C.btnPrimary || "#7C3AED"} stopOpacity={0} />
+                                            </linearGradient>
+                                            <linearGradient id="colorInstructorsSuper" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor={C.success || "#10B981"} stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor={C.success || "#10B981"} stopOpacity={0} />
+                                            </linearGradient>
+                                            <linearGradient id="colorRevenueSuper" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor={C.warning || "#F59E0B"} stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor={C.warning || "#F59E0B"} stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={`${C.btnPrimary || "#7C3AED"}15`} />
                                         <XAxis dataKey="name" stroke={C.textFaint} tickLine={false} axisLine={false} tick={{ fill: C.textMuted, fontSize: 11, fontWeight: 600, fontFamily: T.fontFamily }} dy={10} />
                                         <YAxis stroke={C.textFaint} tickLine={false} axisLine={false} tick={{ fill: C.textMuted, fontSize: 11, fontWeight: 600, fontFamily: T.fontFamily }} dx={-10} />
-                                        <Tooltip content={<CustomTooltip />} />
-                                        <Line type="monotone" dataKey="revenue" stroke={C.warning} strokeWidth={3} dot={{ r: 4, fill: '#fff', stroke: C.warning, strokeWidth: 2 }} />
-                                        <Line type="monotone" dataKey="instructors" stroke={C.success} strokeWidth={3} dot={{ r: 4, fill: '#fff', stroke: C.success, strokeWidth: 2 }} />
-                                        <Line type="monotone" dataKey="students" stroke={C.btnPrimary} strokeWidth={3} dot={{ r: 4, fill: '#fff', stroke: C.btnPrimary, strokeWidth: 2 }} />
-                                    </LineChart>
+                                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: C.cardBorder, strokeWidth: 1, strokeDasharray: '3 3' }} />
+                                        <Area type="monotone" dataKey="revenue" stroke={C.warning || "#F59E0B"} strokeWidth={3} fillOpacity={1} fill="url(#colorRevenueSuper)" dot={{ r: 4, stroke: C.warning || "#F59E0B", strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6, stroke: C.warning || "#F59E0B", strokeWidth: 2, fill: '#fff' }} />
+                                        <Area type="monotone" dataKey="instructors" stroke={C.success || "#10B981"} strokeWidth={3} fillOpacity={1} fill="url(#colorInstructorsSuper)" dot={{ r: 4, stroke: C.success || "#10B981", strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6, stroke: C.success || "#10B981", strokeWidth: 2, fill: '#fff' }} />
+                                        <Area type="monotone" dataKey="students" stroke={C.btnPrimary || "#7C3AED"} strokeWidth={3} fillOpacity={1} fill="url(#colorStudentsSuper)" dot={{ r: 4, stroke: C.btnPrimary || "#7C3AED", strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6, stroke: C.btnPrimary || "#7C3AED", strokeWidth: 2, fill: '#fff' }} />
+                                    </AreaChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>

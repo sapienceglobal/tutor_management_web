@@ -10,6 +10,7 @@ import useInstitute from '@/hooks/useInstitute';
 import { useTenant } from '@/components/providers/TenantProvider';
 import { C, T } from '@/constants/tutorTokens';
 import FeatureGate from '@/components/FeatureGate';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 // ─── Sidebar-specific color constants (Exact match with StudentSidebar) ──────
 const SB = {
@@ -58,6 +59,45 @@ function checkIsActive(activePath, href) {
     }
     return false;
 }
+
+function BadgeComponent({ featureGate, activePlan }) {
+    let text = "Pro";
+    let gradient = "from-purple-400 to-pink-500";
+    
+    const planClean = (activePlan || 'Free').toLowerCase().trim();
+    const hasPremiumActive = ['starter', 'pro', 'enterprise'].includes(planClean);
+    
+    if (hasPremiumActive) {
+        if (planClean.includes("enterprise")) {
+            text = "Enterprise";
+            gradient = "from-amber-500 to-orange-600";
+        } else if (planClean.includes("pro")) {
+            text = "Pro";
+            gradient = "from-purple-400 to-pink-500";
+        } else {
+            text = "Starter";
+            gradient = "from-blue-400 to-indigo-500";
+        }
+    } else {
+        if (featureGate === "aiAssistant") {
+            text = "Starter";
+            gradient = "from-blue-400 to-indigo-500";
+        } else if (featureGate === "aiAssessment") {
+            text = "Pro";
+            gradient = "from-purple-400 to-pink-500";
+        } else if (featureGate === "aiIntelligence") {
+            text = "Enterprise";
+            gradient = "from-amber-500 to-orange-600";
+        }
+    }
+    
+    return (
+        <span className={`ml-2 text-[9px] font-bold tracking-widest uppercase bg-gradient-to-r ${gradient} text-white px-1.5 py-0.5 rounded-md shadow-sm`}>
+            {text}
+        </span>
+    );
+}
+
 export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) {
     const pathname = usePathname();
     const [expandedMenu, setExpandedMenu] = useState(null);
@@ -68,6 +108,38 @@ export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed })
     const { tenant } = useTenant() || { tenant: null };
     const { settings } = useSettings();
     const { institute } = useInstitute();
+    const subscription = useSubscription();
+
+    const planName = subscription?.planName || 'Free';
+    const personalSubscription = subscription?.personalSubscription || null;
+
+    const getHighestActivePlan = () => {
+        const weights = {
+            'none': 0,
+            'free': 0,
+            'starter': 1,
+            'pro': 2,
+            'enterprise': 3
+        };
+
+        const instPlanClean = (planName || 'Free').toLowerCase().trim();
+        const instWeight = weights[instPlanClean] || 0;
+
+        let personalWeight = 0;
+        let personalPlanClean = 'free';
+        if (personalSubscription?.isActive) {
+            personalPlanClean = (personalSubscription.planName || 'free').toLowerCase().trim();
+            personalWeight = weights[personalPlanClean] || 0;
+        }
+
+        if (instWeight >= personalWeight) {
+            return planName || 'Free';
+        } else {
+            return personalSubscription.planName || 'Free';
+        }
+    };
+
+    const activePlan = getHighestActivePlan();
 
     useEffect(() => {
         setMounted(true);
@@ -282,7 +354,7 @@ export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed })
                                                     <div className="flex items-center justify-between flex-1 truncate">
                                                         <span className="truncate">{child.title}</span>
                                                         {child.badge === 'Premium' && (
-                                                            <span className="ml-2 text-[9px] font-bold tracking-widest uppercase bg-gradient-to-r from-purple-400 to-pink-500 text-white px-1.5 py-0.5 rounded-md shadow-sm">Pro</span>
+                                                            <BadgeComponent featureGate={child.featureGate} activePlan={activePlan} />
                                                         )}
                                                         <MdChevronRight
                                                             className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
@@ -305,7 +377,7 @@ export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed })
                                                     <div className="flex items-center justify-between flex-1 truncate">
                                                         <span className="truncate">{child.title}</span>
                                                         {child.badge === 'Premium' && (
-                                                            <span className="ml-2 text-[9px] font-bold tracking-widest uppercase bg-gradient-to-r from-purple-400 to-pink-500 text-white px-1.5 py-0.5 rounded-md shadow-sm">Pro</span>
+                                                            <BadgeComponent featureGate={child.featureGate} activePlan={activePlan} />
                                                         )}
                                                     </div>
                                                 )}
@@ -365,7 +437,7 @@ export function TutorSidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed })
                                                                         }}>
                                                                         <span className="truncate">{sub.title}</span>
                                                                         {sub.badge === 'Premium' && showFull && (
-                                                                            <span className="ml-2 text-[9px] font-bold tracking-widest uppercase bg-gradient-to-r from-purple-400 to-pink-500 text-white px-1.5 py-0.5 rounded-md shadow-sm">Pro</span>
+                                                                            <BadgeComponent featureGate={sub.featureGate} activePlan={activePlan} />
                                                                         )}
                                                                     </Link>
                                                                 );

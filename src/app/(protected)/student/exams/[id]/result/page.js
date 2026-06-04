@@ -65,6 +65,170 @@ function StatusPill({ status }) {
     );
 }
 
+// Helper to render word-by-word subjective highlights
+const renderHighlightedText = (text, highlights) => {
+    if (!text) return '';
+    if (!highlights || !Array.isArray(highlights) || highlights.length === 0) {
+        return <span>{text}</span>;
+    }
+
+    // Step 1: Find all match intervals in the text
+    const intervals = [];
+    highlights.forEach((h, hIdx) => {
+        if (!h.phrase || typeof h.phrase !== 'string') return;
+        const phrase = h.phrase.trim();
+        if (!phrase) return;
+
+        let startIndex = 0;
+        const lowerText = text.toLowerCase();
+        const lowerPhrase = phrase.toLowerCase();
+
+        while (true) {
+            const index = lowerText.indexOf(lowerPhrase, startIndex);
+            if (index === -1) break;
+            
+            intervals.push({
+                start: index,
+                end: index + phrase.length,
+                phrase: text.substring(index, index + phrase.length),
+                type: h.type,
+                comment: h.comment,
+                hIdx
+            });
+            
+            startIndex = index + phrase.length;
+        }
+    });
+
+    // Step 2: Sort intervals
+    intervals.sort((a, b) => {
+        if (a.start !== b.start) {
+            return a.start - b.start;
+        }
+        return b.end - a.end;
+    });
+
+    // Step 3: Resolve overlaps
+    const nonOverlapping = [];
+    let lastEnd = 0;
+    for (const interval of intervals) {
+        if (interval.start >= lastEnd) {
+            nonOverlapping.push(interval);
+            lastEnd = interval.end;
+        }
+    }
+
+    // Step 4: Construct the final parts to render
+    const parts = [];
+    let currentIndex = 0;
+    
+    const getHighlightStyles = (type) => {
+        switch (type) {
+            case 'grammar':
+                return {
+                    bg: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px dashed rgba(239, 68, 68, 0.4)',
+                    underline: 'border-b-2 border-red-500 border-dashed pb-0.5',
+                    textColor: '#DC2626',
+                    icon: '📝'
+                };
+            case 'spelling':
+                return {
+                    bg: 'rgba(249, 115, 22, 0.15)',
+                    border: '1px dashed rgba(249, 115, 22, 0.4)',
+                    underline: 'border-b-2 border-orange-500 border-dashed pb-0.5',
+                    textColor: '#D97706',
+                    icon: '✏️'
+                };
+            case 'key_term':
+                return {
+                    bg: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    underline: 'border-b-2 border-emerald-500 pb-0.5',
+                    textColor: '#059669',
+                    icon: '💎'
+                };
+            case 'poor_phrasing':
+                return {
+                    bg: 'rgba(59, 130, 246, 0.15)',
+                    border: '1px dashed rgba(59, 130, 246, 0.4)',
+                    underline: 'border-b-2 border-blue-500 border-dotted pb-0.5',
+                    textColor: '#2563EB',
+                    icon: '💡'
+                };
+            case 'factual_error':
+                return {
+                    bg: 'rgba(220, 38, 38, 0.25)',
+                    border: '1px solid rgba(220, 38, 38, 0.5)',
+                    underline: 'border-b-2 border-red-700 pb-0.5',
+                    textColor: '#B91C1C',
+                    icon: '⚠️'
+                };
+            default:
+                return {
+                    bg: 'rgba(156, 163, 175, 0.15)',
+                    border: '1px solid rgba(156, 163, 175, 0.4)',
+                    underline: 'border-b border-gray-500 pb-0.5',
+                    textColor: '#4B5563',
+                    icon: '📌'
+                };
+        }
+    };
+
+    nonOverlapping.forEach((interval, index) => {
+        if (interval.start > currentIndex) {
+            parts.push(
+                <span key={`text-${currentIndex}`}>
+                    {text.substring(currentIndex, interval.start)}
+                </span>
+            );
+        }
+
+        const style = getHighlightStyles(interval.type);
+        parts.push(
+            <span
+                key={`highlight-${index}`}
+                className={`relative group inline-block px-1 py-0.5 rounded cursor-help ${style.underline}`}
+                style={{
+                    backgroundColor: style.bg,
+                    color: style.textColor,
+                }}
+            >
+                {interval.phrase}
+                
+                {/* Tooltip */}
+                <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 scale-0 rounded-lg p-2.5 text-xs text-white opacity-0 transition-all duration-200 ease-out group-hover:scale-100 group-hover:opacity-100 shadow-lg text-left"
+                    style={{
+                        backgroundColor: '#1E293B',
+                        lineHeight: '1.4',
+                        fontWeight: 'normal',
+                        whiteSpace: 'normal',
+                    }}
+                >
+                    <span className="font-bold flex items-center gap-1.5 border-b pb-1 mb-1" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+                        <span>{style.icon}</span>
+                        <span className="uppercase tracking-wider" style={{ fontSize: '9px' }}>{interval.type.replace('_', ' ')}</span>
+                    </span>
+                    <span>{interval.comment}</span>
+                    <span className="absolute top-full left-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-[3px] rotate-45" style={{ backgroundColor: '#1E293B' }} />
+                </span>
+            </span>
+        );
+
+        currentIndex = interval.end;
+    });
+
+    if (currentIndex < text.length) {
+        parts.push(
+            <span key={`text-${currentIndex}`}>
+                {text.substring(currentIndex)}
+            </span>
+        );
+    }
+
+    return <span>{parts}</span>;
+};
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 function ExamResultPageClient() {
     const params = useParams();
@@ -397,12 +561,22 @@ function ExamResultPageClient() {
                                                                 {/* Answer Comparison Boxes */}
                                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                                                     {/* Your Answer */}
-                                                                    <div className="p-4 border" style={{ backgroundColor: status === 'correct' ? C.successBg : status === 'incorrect' ? C.dangerBg : C.innerBg, borderColor: status === 'correct' ? C.successBorder : status === 'incorrect' ? C.dangerBorder : C.cardBorder, borderRadius: '10px' }}>
-                                                                        <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: status === 'correct' ? C.success : status === 'incorrect' ? C.danger : C.textMuted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>Your Answer</p>
-                                                                        <p style={{ fontSize: T.size.base, fontWeight: T.weight.bold, color: status === 'correct' ? '#065F46' : status === 'incorrect' ? '#7F1D1D' : C.heading, lineHeight: 1.5 }}>
-                                                                            {selectedAnswer}
-                                                                        </p>
-                                                                    </div>
+                                                                     <div className="p-4 border" style={{ backgroundColor: status === 'correct' ? C.successBg : status === 'incorrect' ? C.dangerBg : C.innerBg, borderColor: status === 'correct' ? C.successBorder : status === 'incorrect' ? C.dangerBorder : C.cardBorder, borderRadius: '10px' }}>
+                                                                         <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: status === 'correct' ? C.success : status === 'incorrect' ? C.danger : C.textMuted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>Your Answer</p>
+                                                                         {item.questionType === 'subjective' && item.aiHighlights && item.aiHighlights.length > 0 && (
+                                                                             <div className="flex flex-wrap gap-1.5 mb-3 mt-1 p-2 bg-black/5 rounded-lg text-[10px] font-semibold text-slate-700">
+                                                                                 <span className="text-slate-500 mr-1 self-center">AI Analysis Legend:</span>
+                                                                                 <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-800 border border-red-200">📝 Grammar</span>
+                                                                                 <span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200">✏️ Spelling</span>
+                                                                                 <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">💎 Key Term</span>
+                                                                                 <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">💡 Phrasing</span>
+                                                                                 <span className="px-1.5 py-0.5 rounded bg-red-200 text-red-950 border border-red-300">⚠️ Factual Error</span>
+                                                                             </div>
+                                                                         )}
+                                                                         <p style={{ fontSize: T.size.base, fontWeight: T.weight.bold, color: status === 'correct' ? '#065F46' : status === 'incorrect' ? '#7F1D1D' : C.heading, lineHeight: 1.5 }}>
+                                                                             {item.questionType === 'subjective' ? renderHighlightedText(selectedAnswer, item.aiHighlights) : selectedAnswer}
+                                                                         </p>
+                                                                     </div>
                                                                     {/* Correct Answer */}
                                                                     <div className="p-4 border shadow-sm" style={{ backgroundColor: C.innerBg, borderColor: C.cardBorder, borderRadius: '10px' }}>
                                                                         <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.btnPrimary, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>Correct Answer / Feedback</p>

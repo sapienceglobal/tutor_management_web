@@ -11,6 +11,8 @@ import {
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { C, T, S } from '@/constants/tutorTokens';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const AI_TOOLS = [
     { label: 'Generate Quiz',       icon: ClipboardList, color: '#6366F1', bg: '#EEF2FF' },
@@ -83,12 +85,33 @@ function MessageBubble({ msg }) {
                 style={{ background: 'linear-gradient(135deg,#4F46E5,#7C3AED)', boxShadow: '0 2px 8px rgba(99,102,241,.3)' }}>
                 <Bot className="w-5 h-5 text-white" />
             </div>
-            <div>
+            <div className="max-w-[400px] w-full">
                 <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: '#94A3B8', marginBottom: 4 }}>AI</p>
-                <div className="max-w-[400px] px-5 py-3 rounded-2xl rounded-bl-md whitespace-pre-wrap"
-                    style={{ backgroundColor: '#fff', border: '1px solid rgba(99,102,241,.15)', boxShadow: '0 2px 12px rgba(0,0,0,.06)', fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#1E293B', lineHeight: '1.6' }}>
-                    <span style={{ fontWeight: T.weight.bold }}>{msg.content?.split(' ').slice(0, 1).join(' ')} </span>
-                    {msg.content?.split(' ').slice(1).join(' ')}
+                <div className="px-5 py-3 rounded-2xl rounded-bl-md"
+                    style={{ backgroundColor: '#fff', border: '1px solid rgba(99,102,241,.15)', boxShadow: '0 2px 12px rgba(0,0,0,.06)', fontFamily: T.fontFamily, color: '#1E293B' }}>
+                    <div className="text-sm prose prose-sm max-w-none text-slate-700 leading-relaxed font-sans">
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                                h1: ({ node, ...props }) => <h1 className="text-base font-extrabold text-slate-900 mt-3 mb-1" {...props} />,
+                                h2: ({ node, ...props }) => <h2 className="text-sm font-bold text-slate-800 mt-3 mb-1" {...props} />,
+                                h3: ({ node, ...props }) => <h3 className="text-xs font-semibold text-slate-800 mt-2 mb-0.5" {...props} />,
+                                p: ({ node, ...props }) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
+                                ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2 space-y-1" {...props} />,
+                                ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2 space-y-1" {...props} />,
+                                li: ({ node, ...props }) => <li className="text-slate-700 text-sm leading-relaxed" {...props} />,
+                                strong: ({ node, ...props }) => <strong className="font-bold text-slate-900" {...props} />,
+                                a: ({ node, ...props }) => <a className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                                code: ({ node, inline, ...props }) => (
+                                    inline 
+                                        ? <code className="bg-slate-100 px-1 py-0.5 rounded text-xs font-mono text-purple-600" {...props} />
+                                        : <pre className="bg-slate-900 text-slate-100 p-3 rounded-xl overflow-x-auto text-xs font-mono my-2"><code {...props} /></pre>
+                                )
+                            }}
+                        >
+                            {msg.content}
+                        </ReactMarkdown>
+                    </div>
                 </div>
                 {time && <p className="mt-1" style={{ fontFamily: T.fontFamily, fontSize: '10px', color: '#94A3B8' }}>Delivered · {time}</p>}
             </div>
@@ -196,14 +219,18 @@ export default function AIAssistantChatPage() {
     const [sending, setSending]                 = useState(false);
     // ✅ stats state here
     const [stats, setStats]                     = useState(null);
-    const endRef = useRef(null);
+    const chatContainerRef = useRef(null);
 
     const activeTitle = useMemo(() =>
         sessions.find(s => s._id === activeSessionId)?.title || 'New Chat',
         [sessions, activeSessionId]
     );
 
-    useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, sending]);
+    useEffect(() => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+    }, [messages, sending]);
 
     useEffect(() => {
         const init = async () => {
@@ -378,7 +405,7 @@ export default function AIAssistantChatPage() {
                     </div>
                 )}
 
-                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5 custom-scrollbar">
+                <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-5 custom-scrollbar">
                     {messages.length === 0 && (
                         <div className="mt-3">
                             <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: T.weight.bold }}>
@@ -408,7 +435,6 @@ export default function AIAssistantChatPage() {
                             </div>
                         </div>
                     )}
-                    <div ref={endRef} />
                 </div>
 
                 <div className="px-4 pb-2 pt-1 flex items-center gap-2 flex-shrink-0 flex-wrap">

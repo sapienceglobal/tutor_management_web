@@ -10,6 +10,7 @@ import {
     MdPerson, MdLogout, MdMenu, MdChevronLeft, MdChevronRight,
     MdKeyboardArrowDown, MdSettings, MdClose
 } from 'react-icons/md';
+import NotificationPanel from '@/components/layout/NotificationPanel';
 import { C, T } from '@/constants/tutorTokens';
 
 // ─── Image Resolver for VPS/Hostinger Bug ─────────────────────────────────────
@@ -33,14 +34,24 @@ export function TutorHeader({ onMenuClick, onSidebarCollapse, isSidebarCollapsed
     const [searchResults, setSearchResults] = useState({});
     const [isSearching, setIsSearching] = useState(false);
     const [showResults, setShowResults] = useState(false);
+    const [showNotifs, setShowNotifs]       = useState(false);
+    const [unreadCount, setUnreadCount]     = useState(0);
     const dropdownRef = useRef(null);
     const searchContainerRef = useRef(null);
+
+    const fetchUnreadCount = async () => {
+        try {
+            const res = await api.get('/notifications/unread-count');
+            if (res.data?.count !== undefined) setUnreadCount(res.data.count);
+        } catch (_) {}
+    };
 
     useEffect(() => {
         setMounted(true);
         const userData = localStorage.getItem('user');
         if (userData) setUser(JSON.parse(userData));
         setUserRole(Cookies.get('user_role') || '');
+        fetchUnreadCount();
     }, []);
 
     useEffect(() => {
@@ -105,7 +116,8 @@ export function TutorHeader({ onMenuClick, onSidebarCollapse, isSidebarCollapsed
     }[userRole] || userRole;
 
     return (
-        <header
+        <>
+            <header
             className="h-[60px] backdrop-blur-sm flex items-center px-4 lg:px-5 sticky top-0 z-40 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] gap-3"
             style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.95)',
@@ -322,15 +334,19 @@ export function TutorHeader({ onMenuClick, onSidebarCollapse, isSidebarCollapsed
                 </div>
 
                 <div className="relative">
-                    <button className="flex items-center justify-center w-9 h-9 transition-colors border-none cursor-pointer"
+                    <button 
+                        onClick={() => setShowNotifs(!showNotifs)}
+                        className="flex items-center justify-center w-9 h-9 transition-colors border-none cursor-pointer"
                         style={{ backgroundColor: 'transparent', color: C.textMuted, borderRadius: '10px' }}
                         onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
                         onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
                         <MdNotifications style={{ width: 18, height: 18 }} />
-                        <span
-                            className="absolute top-1.5 right-1.5 w-2 h-2 border-[1.5px] border-white"
-                            style={{ backgroundColor: C.btnPrimary, borderRadius: '10px' }}
-                        />
+                        {unreadCount > 0 && (
+                            <span className="absolute top-1 right-1 min-w-[16px] h-4 text-white flex items-center justify-center px-1"
+                                style={{ backgroundColor: C.danger, fontSize: '9px', fontWeight: T.weight.bold, borderRadius: '10px', border: '1.5px solid white', fontFamily: T.fontFamily }}>
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                        )}
                     </button>
                 </div>
 
@@ -466,5 +482,9 @@ export function TutorHeader({ onMenuClick, onSidebarCollapse, isSidebarCollapsed
                 </div>
             </div>
         </header>
+        {showNotifs && (
+            <NotificationPanel onClose={() => { setShowNotifs(false); fetchUnreadCount(); }} />
+        )}
+        </>
     );
 }    

@@ -37,8 +37,14 @@ export default function FeatureGate({
         e.preventDefault();
         e.stopPropagation();
         
-        // Dono Admin aur Tutor ke liye Premium Modal khulega!
-        openUpsellModal(); 
+        if (role === 'tutor') {
+            router.push('/tutor/subscription');
+        } else if (role === 'student') {
+            router.push('/student/subscription');
+        } else {
+            // Only admin opens the Institute UpsellModal
+            openUpsellModal(); 
+        }
     };
 
     return (

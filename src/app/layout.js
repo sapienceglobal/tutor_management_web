@@ -2,6 +2,7 @@ import { Inter, Plus_Jakarta_Sans, Sora, Outfit, Kanit, Nunito } from 'next/font
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import ErrorBoundary from "@/components/providers/ErrorBoundary";
+import { SocketProvider } from "@/contexts/SocketContext";
 
 // Fonts Configuration
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
@@ -39,9 +40,9 @@ export default function RootLayout({ children }) {
                 if (token) {
                   var sessionActive = document.cookie.includes('session_active=1');
                   if (!sessionActive && (sessionType === 'session' || sessionType === 'persistent')) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    localStorage.removeItem('session_type');
+                     localStorage.removeItem('token');
+                     localStorage.removeItem('user');
+                     localStorage.removeItem('session_type');
                   }
                 }
               } catch (e) {}
@@ -51,23 +52,25 @@ export default function RootLayout({ children }) {
       </head>
       <body suppressHydrationWarning={true} className="antialiased">
         <ErrorBoundary>
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 3500,
-              style: {
-                borderRadius: "12px",
-                fontSize: "13px",
-                fontWeight: "500",
-                boxShadow: "0 4px 24px 0 rgba(0,0,0,0.10)",
-              },
-              success: {
-                iconTheme: { primary: "var(--theme-primary)", secondary: "#fff" },
-              },
-              error: { iconTheme: { primary: "#ef4444", secondary: "#fff" } },
-            }}
-          />
-          {children}
+          <SocketProvider>
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 3500,
+                style: {
+                  borderRadius: "12px",
+                  fontSize: "13px",
+                  fontWeight: "500",
+                  boxShadow: "0 4px 24px 0 rgba(0,0,0,0.10)",
+                },
+                success: {
+                  iconTheme: { primary: "var(--theme-primary)", secondary: "#fff" },
+                },
+                error: { iconTheme: { primary: "#ef4444", secondary: "#fff" } },
+              }}
+            />
+            {children}
+          </SocketProvider>
         </ErrorBoundary>
       </body>
     </html>

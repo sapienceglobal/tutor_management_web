@@ -9,7 +9,7 @@ const SubscriptionContext = createContext();
 
 // --- PREMIUM UPSELL MODAL COMPONENT ---
 
-const UpsellModal = ({ isOpen, onClose, role }) => {
+const UpsellModal = ({ isOpen, onClose, role, planName }) => {
     const router = useRouter();
     const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -27,7 +27,7 @@ const UpsellModal = ({ isOpen, onClose, role }) => {
     const fetchPlans = async () => {
         try {
             setLoading(true);
-            const { data } = await api.get('/subscriptions'); 
+            const { data } = await api.get('/subscriptions?planType=institute'); 
             if (data.success) {
                 setPlans(data.plans || []);
             }
@@ -133,7 +133,11 @@ const UpsellModal = ({ isOpen, onClose, role }) => {
                                             })}
                                         </div>
 
-                                        {role === 'admin' ? (
+                                        {planName && planName.toLowerCase().trim() === plan.name.toLowerCase().trim() ? (
+                                             <button disabled className="w-full py-3 rounded-xl font-black text-sm bg-emerald-100 text-emerald-600 border border-emerald-200 cursor-not-allowed">
+                                                 🏫 Current Active Plan
+                                             </button>
+                                         ) : role === 'admin' ? (
                                             <button onClick={() => { onClose(); router.push('/admin/subscription'); }} className={`w-full py-3 rounded-xl font-black text-sm transition-all ${plan.isPopular ? 'bg-[#6B4DF1] text-white hover:bg-[#5839D6] shadow-md' : 'bg-gray-100 text-gray-800 hover:bg-gray-200 border-none cursor-pointer'}`}>
                                                 Upgrade to {plan.name}
                                             </button>
@@ -192,9 +196,9 @@ export const SubscriptionProvider = ({ children }) => {
     // Upsell Modal State
     const [isUpsellOpen, setIsUpsellOpen] = useState(false);
 
-    const fetchSubscriptionData = async () => {
+    const fetchSubscriptionData = async (isSilent = false) => {
         try {
-            setLoading(true);
+            if (!isSilent) setLoading(true);
             const { data } = await api.get('/auth/me'); 
             
             if (data.success && data.user) {
@@ -211,11 +215,27 @@ export const SubscriptionProvider = ({ children }) => {
         } catch (error) {
             console.error("Failed to fetch subscription context", error);
         } finally {
-            setLoading(false);
+            if (!isSilent) setLoading(false);
         }
     };
 
-    useEffect(() => { fetchSubscriptionData(); }, []);
+    useEffect(() => {
+        fetchSubscriptionData();
+
+        const handleQuotaConsumed = () => {
+            fetchSubscriptionData(true);
+        };
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('ai-quota-consumed', handleQuotaConsumed);
+        }
+
+        return () => {
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('ai-quota-consumed', handleQuotaConsumed);
+            }
+        };
+    }, []);
 
     const hasFeature = (featureKey, options = {}) => {
         if (role === 'superadmin') return true;
@@ -241,7 +261,7 @@ export const SubscriptionProvider = ({ children }) => {
             refreshSubscription: fetchSubscriptionData 
         }}>
             {children}
-            <UpsellModal isOpen={isUpsellOpen} onClose={closeUpsellModal} role={role} />
+            <UpsellModal isOpen={isUpsellOpen} onClose={closeUpsellModal} role={role} planName={planName} />
         </SubscriptionContext.Provider>
     );
 };

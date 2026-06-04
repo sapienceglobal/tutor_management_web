@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
     BrainCircuit, LayoutGrid, ChevronLeft, ChevronRight,
     Bot, HelpCircle, FileStack, NotebookPen,
@@ -69,7 +69,9 @@ function AiSubSidebar({ collapsed, setCollapsed }) {
     const [sidebarStats, setSidebarStats] = useState({ totalSessions: null, totalTasks: null });
     
     // 🌟 Load subscription details
-    const { planName, features, personalSubscription, openUpsellModal } = useSubscription();
+    const { planName, features, personalSubscription, openUpsellModal, instituteCredits, instituteUsage } = useSubscription();
+    const router = useRouter();
+    const remainingInstCredits = Math.max(0, (instituteCredits || 0) - (instituteUsage || 0));
 
     useEffect(() => {
         api.get('/ai/tutor-dashboard-stats')
@@ -225,9 +227,9 @@ function AiSubSidebar({ collapsed, setCollapsed }) {
                             🏫 Institute Quota ({planName || 'Free'})
                         </p>
                         <div className="flex items-center justify-between">
-                            <span style={{ fontFamily: T.fontFamily, fontSize: '11px', color: '#64748B', fontWeight: T.weight.medium }}>AI Credits</span>
+                            <span style={{ fontFamily: T.fontFamily, fontSize: '11px', color: '#64748B', fontWeight: T.weight.medium }}>AI Credits Remaining</span>
                             <span className="text-[12px] font-black text-[#4F46E5]">
-                                {features.aiCreditsPerMonth !== undefined ? `${features.aiCreditsPerMonth}` : '0'}
+                                {remainingInstCredits} / {instituteCredits || 0} Left
                             </span>
                         </div>
                     </div>
@@ -250,7 +252,7 @@ function AiSubSidebar({ collapsed, setCollapsed }) {
                                     Using private/global assets? Upgrade to get individual credits.
                                 </p>
                                 <button 
-                                    onClick={openUpsellModal}
+                                    onClick={() => router.push('/tutor/subscription')}
                                     className="w-full py-1.5 px-2 bg-gradient-to-r from-[#DB2777] to-[#F43F5E] text-white text-[10px] font-black rounded-lg border-none cursor-pointer hover:opacity-90 shadow-sm transition-all text-center uppercase tracking-wider whitespace-nowrap"
                                 >
                                     Get Personal Plan
@@ -282,7 +284,8 @@ export default function AiBuddyLayout({ children }) {
     const pathname = usePathname();
     
     // 🌟 2. Context se details nikali
-    const { hasFeature, loading, openUpsellModal } = useSubscription();
+    const { hasFeature, role, loading, openUpsellModal } = useSubscription();
+    const router = useRouter();
 
     // 🌟 3. Current page ke liye kaunsi chaabi chahiye?
     const requiredFeature = getRequiredFeatureForPath(pathname);
@@ -318,7 +321,15 @@ export default function AiBuddyLayout({ children }) {
                             </p>
                             
                             <button 
-                                onClick={openUpsellModal}
+                                onClick={() => {
+                                    if (role === 'tutor') {
+                                        router.push('/tutor/subscription');
+                                    } else if (role === 'student') {
+                                        router.push('/student/subscription');
+                                    } else {
+                                        openUpsellModal();
+                                    }
+                                }}
                                 className="w-full py-3.5 bg-[#6B4DF1] text-white text-[14px] font-bold rounded-xl hover:bg-[#5839D6] transition-colors shadow-lg shadow-[#6B4DF1]/30 flex items-center justify-center gap-2 border-none cursor-pointer"
                             >
                                 <Crown size={18} /> View Upgrade Options

@@ -53,7 +53,10 @@ async function proxy(request, params, method) {
     const auth = request.headers.get('authorization');
     const contentType = request.headers.get('content-type');
 
-    const headers = { 'x-api-key': API_KEY };
+    const headers = { 
+        'x-api-key': API_KEY,
+        'x-client-platform': 'web'
+    };
     if (contentType) headers['Content-Type'] = contentType;
     if (auth) headers['Authorization'] = auth;
 

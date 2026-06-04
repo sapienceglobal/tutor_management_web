@@ -9,6 +9,7 @@ import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
 import StatCard from '@/components/StatCard';
+import { useSocket } from '@/contexts/SocketContext';
 
 // ─── Base Input Style ─────────────────────────────────────────────────────────
 const baseInputStyle = {
@@ -30,16 +31,77 @@ export default function SuperAdminReportsPage() {
     const [kpis, setKpis] = useState({ totalReports: 0, pendingCount: 0, reviewedCount: 0, resolvedCount: 0, dismissedCount: 0 });
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('all');
+    const [platformFilter, setPlatformFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
+
+    const { socket } = useSocket();
 
     useEffect(() => {
         fetchReports();
-    }, [statusFilter]);
+    }, [statusFilter, platformFilter]);
+
+    // WebSocket listener for real-time report creations and updates
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleReportCreated = (newReport) => {
+            // Apply current filters dynamically
+            if (statusFilter !== 'all' && newReport.status.toLowerCase() !== statusFilter) return;
+            if (platformFilter !== 'all' && newReport.platform !== platformFilter) return;
+
+            setReports(prev => [newReport, ...prev]);
+            setKpis(prev => ({
+                ...prev,
+                totalReports: prev.totalReports + 1,
+                pendingCount: prev.pendingCount + 1
+            }));
+            toast.error(`🚨 New abuse report: ${newReport.reason}`, { id: `report-${newReport._id}` });
+        };
+
+        const handleReportStatusChanged = (updatedReport) => {
+            setReports(prev => {
+                const index = prev.findIndex(r => r._id === updatedReport._id);
+                if (index === -1) {
+                    // Fits the filter now?
+                    if (statusFilter === 'all' || updatedReport.status.toLowerCase() === statusFilter) {
+                        if (platformFilter === 'all' || updatedReport.platform === platformFilter) {
+                            return [updatedReport, ...prev];
+                        }
+                    }
+                    return prev;
+                }
+                
+                // Exclude due to statusFilter/platformFilter?
+                if (statusFilter !== 'all' && updatedReport.status.toLowerCase() !== statusFilter) {
+                    return prev.filter(r => r._id !== updatedReport._id);
+                }
+                if (platformFilter !== 'all' && updatedReport.platform !== platformFilter) {
+                    return prev.filter(r => r._id !== updatedReport._id);
+                }
+
+                // Just update
+                return prev.map(r => r._id === updatedReport._id ? updatedReport : r);
+            });
+
+            // Fetch reports again to fully re-synchronize KPIs
+            fetchReports();
+        };
+
+        socket.on('report_created', handleReportCreated);
+        socket.on('report_status_changed', handleReportStatusChanged);
+
+        return () => {
+            socket.off('report_created', handleReportCreated);
+            socket.off('report_status_changed', handleReportStatusChanged);
+        };
+    }, [socket, statusFilter, platformFilter, searchTerm]);
 
     const fetchReports = async () => {
         setLoading(true);
         try {
-            const res = await api.get(`/superadmin/reports?status=${statusFilter}`);
+            let query = `/superadmin/reports?status=${statusFilter}`;
+            if (platformFilter !== 'all') query += `&platform=${platformFilter}`;
+            const res = await api.get(query);
             if (res.data.success) {
                 setReports(res.data.data.reports);
                 setKpis(res.data.data.kpis);
@@ -167,16 +229,34 @@ export default function SuperAdminReportsPage() {
                     ))}
                 </div>
                 
-                <form onSubmit={handleSearch} className="relative w-full xl:w-[320px]">
-                    <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2" style={{ width: 18, height: 18, color: C.textFaint }} />
-                    <input 
-                        type="text" 
-                        placeholder="Search reporter or target..." 
-                        style={{ ...baseInputStyle, paddingLeft: '44px' }}
-                        value={searchTerm} 
-                        onChange={e => setSearchTerm(e.target.value)} 
-                    />
-                </form>
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
+                    <select
+                        value={platformFilter}
+                        onChange={e => setPlatformFilter(e.target.value)}
+                        style={{
+                            ...baseInputStyle,
+                            width: 'auto',
+                            padding: '10px 16px',
+                            cursor: 'pointer',
+                            fontSize: T.size.sm
+                        }}
+                    >
+                        <option value="all">All Platforms</option>
+                        <option value="web">Web App Only</option>
+                        <option value="mobile">Mobile App Only</option>
+                    </select>
+
+                    <form onSubmit={(e) => e.preventDefault()} className="relative w-full sm:w-[250px]">
+                        <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2" style={{ width: 18, height: 18, color: C.textFaint }} />
+                        <input 
+                            type="text" 
+                            placeholder="Search reporter or target..." 
+                            style={{ ...baseInputStyle, paddingLeft: '44px', paddingTop: '10px', paddingBottom: '10px', fontSize: T.size.sm }}
+                            value={searchTerm} 
+                            onChange={e => setSearchTerm(e.target.value)} 
+                        />
+                    </form>
+                </div>
             </div>
 
             {/* ── Reports Grid ── */}
@@ -277,9 +357,22 @@ export default function SuperAdminReportsPage() {
 
                             {/* Card Footer Actions */}
                             <div className="p-4 flex items-center justify-between gap-3" style={{ borderTop: `1px solid ${C.cardBorder}`, backgroundColor: C.innerBg, borderBottomLeftRadius: R['2xl'], borderBottomRightRadius: R['2xl'] }}>
-                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>
-                                    {new Date(report.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>
+                                        {new Date(report.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                    </span>
+                                    <span style={{
+                                        padding: '2px 6px',
+                                        borderRadius: '4px',
+                                        fontSize: '10px',
+                                        fontWeight: T.weight.bold,
+                                        backgroundColor: report.platform === 'mobile' ? '#ECFDF5' : '#EFF6FF',
+                                        color: report.platform === 'mobile' ? '#059669' : '#2563EB',
+                                        border: report.platform === 'mobile' ? '1px solid #A7F3D0' : '1px solid #BFDBFE'
+                                    }}>
+                                        {report.platform === 'mobile' ? 'App' : 'Web'}
+                                    </span>
+                                </div>
                                 
                                 <select 
                                     value={report.status} 

@@ -9,6 +9,7 @@ import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
 import StatCard from '@/components/StatCard';
+import { useSocket } from '@/contexts/SocketContext';
 
 // ─── Base Input Style ─────────────────────────────────────────────────────────
 const baseInputStyle = {
@@ -30,19 +31,57 @@ export default function SuperAdminSecurityPage() {
     const [kpis, setKpis] = useState({ totalLogs: 0, criticalActions: 0, failedAttempts: 0 });
     const [loading, setLoading] = useState(true);
     const [methodFilter, setMethodFilter] = useState('all');
+    const [platformFilter, setPlatformFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     
     // Modal for viewing JSON details
     const [selectedLog, setSelectedLog] = useState(null);
 
+    const { socket } = useSocket();
+
     useEffect(() => {
         fetchLogs();
-    }, [methodFilter]);
+    }, [methodFilter, platformFilter]);
+
+    // WebSocket listener for real-time log updates
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleAuditLogCreated = (newLog) => {
+            // Apply current filters dynamically on incoming real-time logs
+            if (methodFilter !== 'all' && newLog.method !== methodFilter) return;
+            if (platformFilter !== 'all' && newLog.platform !== platformFilter) return;
+            if (searchTerm) {
+                const searchLower = searchTerm.toLowerCase();
+                const matches = 
+                    (newLog.action && newLog.action.toLowerCase().includes(searchLower)) ||
+                    (newLog.path && newLog.path.toLowerCase().includes(searchLower)) ||
+                    (newLog.ip && newLog.ip.toLowerCase().includes(searchLower));
+                if (!matches) return;
+            }
+
+            // Prepend the new log to the display array
+            setLogs(prev => [newLog, ...prev]);
+
+            // Update KPIs in real time
+            setKpis(prev => ({
+                totalLogs: prev.totalLogs + 1,
+                criticalActions: ['POST', 'PUT', 'PATCH', 'DELETE'].includes(newLog.method) ? prev.criticalActions + 1 : prev.criticalActions,
+                failedAttempts: newLog.statusCode >= 400 ? prev.failedAttempts + 1 : prev.failedAttempts
+            }));
+        };
+
+        socket.on('audit_log_created', handleAuditLogCreated);
+        return () => {
+            socket.off('audit_log_created', handleAuditLogCreated);
+        };
+    }, [socket, methodFilter, platformFilter, searchTerm]);
 
     const fetchLogs = async () => {
         setLoading(true);
         try {
             let query = `/superadmin/security/logs?method=${methodFilter}&limit=100`;
+            if (platformFilter !== 'all') query += `&platform=${platformFilter}`;
             if (searchTerm) query += `&search=${searchTerm}`;
             
             const res = await api.get(query);
@@ -153,16 +192,34 @@ export default function SuperAdminSecurityPage() {
                     ))}
                 </div>
                 
-                <form onSubmit={handleSearch} className="relative w-full xl:w-[350px]">
-                    <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2" style={{ width: 18, height: 18, color: C.textFaint }} />
-                    <input 
-                        type="text" 
-                        placeholder="Search IP, Path, or Action..." 
-                        style={{ ...baseInputStyle, paddingLeft: '44px' }}
-                        value={searchTerm} 
-                        onChange={e => setSearchTerm(e.target.value)} 
-                    />
-                </form>
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
+                    <select
+                        value={platformFilter}
+                        onChange={e => setPlatformFilter(e.target.value)}
+                        style={{
+                            ...baseInputStyle,
+                            width: 'auto',
+                            padding: '10px 16px',
+                            cursor: 'pointer',
+                            fontSize: T.size.sm
+                        }}
+                    >
+                        <option value="all">All Platforms</option>
+                        <option value="web">Web App Only</option>
+                        <option value="mobile">Mobile App Only</option>
+                    </select>
+
+                    <form onSubmit={handleSearch} className="relative w-full sm:w-[250px]">
+                        <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2" style={{ width: 18, height: 18, color: C.textFaint }} />
+                        <input 
+                            type="text" 
+                            placeholder="Search IP, Path, or Action..." 
+                            style={{ ...baseInputStyle, paddingLeft: '44px', paddingTop: '10px', paddingBottom: '10px', fontSize: T.size.sm }}
+                            value={searchTerm} 
+                            onChange={e => setSearchTerm(e.target.value)} 
+                        />
+                    </form>
+                </div>
             </div>
 
             {/* ── Logs Table ── */}
@@ -299,9 +356,22 @@ export default function SuperAdminSecurityPage() {
                                                 <p className="flex items-center gap-1.5 mb-1.5" style={{ fontFamily: T.fontFamilyMono, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text, margin: 0 }}>
                                                     <MdPublic style={{ width: 14, height: 14, color: C.textMuted }}/> {log.ip || 'Unknown IP'}
                                                 </p>
-                                                <p className="truncate max-w-[150px]" title={log.userAgent} style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>
-                                                    {log.userAgent || 'Unknown Device'}
-                                                </p>
+                                                <div className="flex items-center gap-2">
+                                                    <span style={{
+                                                        padding: '2px 6px',
+                                                        borderRadius: '4px',
+                                                        fontSize: '10px',
+                                                        fontWeight: T.weight.bold,
+                                                        backgroundColor: log.platform === 'mobile' ? '#ECFDF5' : '#EFF6FF',
+                                                        color: log.platform === 'mobile' ? '#059669' : '#2563EB',
+                                                        border: log.platform === 'mobile' ? '1px solid #A7F3D0' : '1px solid #BFDBFE'
+                                                    }}>
+                                                        {log.platform === 'mobile' ? 'App' : 'Web'}
+                                                    </span>
+                                                    <p className="truncate max-w-[120px]" title={log.userAgent} style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>
+                                                        {log.userAgent || 'Unknown Device'}
+                                                    </p>
+                                                </div>
                                             </td>
 
                                             {/* Details Button */}
