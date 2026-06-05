@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Script from 'next/script';
 import api from '@/lib/axios';
 import {
     MdArticle,
@@ -134,14 +135,15 @@ export default function PaymentsPage() {
         setRetrying(paymentId);
         try {
             const res = await api.post(`/payments/${paymentId}/retry`);
-            if (res.data.success && res.data.razorpayOrder) {
+            const orderData = res.data.order || res.data.razorpayOrder;
+            if (res.data.success && orderData) {
                 const options = {
                     key: res.data.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-                    amount: res.data.razorpayOrder.amount,
-                    currency: res.data.razorpayOrder.currency,
+                    amount: orderData.amount,
+                    currency: orderData.currency,
                     name: 'Sapience LMS',
                     description: 'Payment Retry',
-                    order_id: res.data.razorpayOrder.id,
+                    order_id: orderData.id,
                     handler: async function (response) {
                         try {
                             await api.post('/payments/verify', {
@@ -269,7 +271,7 @@ export default function PaymentsPage() {
                             </button>
                         </div>
                         <div className="p-6">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
                                 <StatCard
                                     label="Total Due"
                                     value={`₹${totalDue.toLocaleString('en-IN')}`}
@@ -306,16 +308,6 @@ export default function PaymentsPage() {
                                     style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: '10px', boxShadow: S.btn, fontSize: T.size.base, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}
                                 >
                                     View Due Payments
-                                </button>
-                                <button type="button" className="inline-flex items-center gap-1 cursor-pointer transition-opacity hover:opacity-80 bg-transparent border-none"
-                                    style={{ color: C.btnPrimary, fontSize: T.size.base, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
-                                    <MdDownload className="w-4 h-4" /> Save filter
-                                </button>
-                                <button type="button" className="p-1.5 cursor-pointer border-none transition-colors"
-                                    style={{ backgroundColor: 'transparent', color: C.textMuted, borderRadius: '10px' }}
-                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = C.innerBg}
-                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                                    <MdMoreVert className="w-5 h-5" />
                                 </button>
                             </div>
                         </div>
@@ -538,6 +530,7 @@ export default function PaymentsPage() {
                     </div>
                 </div>
             </div>
+            <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
         </div>
     );
 }

@@ -124,7 +124,7 @@ export default function StatCard({ icon: Icon, value, label, href, isAI, subtext
             <div className="flex items-baseline gap-1.5 mt-0.5">
               <p style={{
                 fontFamily: T.fontFamily,
-                fontSize:   T.size.stat,
+                fontSize:   value && value.toString().length > 6 ? (value.toString().length > 8 ? '18px' : '22px') : T.size.stat,
                 fontWeight: T.weight.bold,
                 color:      isAI ? '#ffffff' : C.headingDark,
                 lineHeight: 1,

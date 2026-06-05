@@ -251,9 +251,14 @@ export default function StudentBatchesPage() {
                                             </p>
                                             <div className="flex items-center gap-2 mt-2">
                                                 <img
-                                                    src={batch.tutorId?.userId?.profileImage || `https://ui-avatars.com/api/?name=${batch.tutorId?.userId?.name}`}
+                                                    src={batch.tutorId?.userId?.profileImage && !batch.tutorId.userId.profileImage.includes('placeholder')
+                                                        ? batch.tutorId.userId.profileImage
+                                                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(batch.tutorId?.userId?.name || 'T')}`}
                                                     alt=""
-                                                    style={{ width: 20, height: 20, borderRadius: R.full }}
+                                                    style={{ width: 20, height: 20, borderRadius: R.full, objectFit: 'cover' }}
+                                                    onError={(e) => {
+                                                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(batch.tutorId?.userId?.name || 'T')}`;
+                                                    }}
                                                 />
                                                 <span style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, fontWeight: T.weight.semibold }}>
                                                     {batch.tutorId?.userId?.name}
@@ -505,9 +510,14 @@ export default function StudentBatchesPage() {
                                     <div className="p-5 flex items-center justify-between gap-4">
                                         <div className="flex items-center gap-2 min-w-0">
                                             <img
-                                                src={batch.tutorId?.userId?.profileImage || `https://ui-avatars.com/api/?name=${batch.tutorId?.userId?.name || 'T'}`}
+                                                src={batch.tutorId?.userId?.profileImage && !batch.tutorId.userId.profileImage.includes('placeholder')
+                                                    ? batch.tutorId.userId.profileImage
+                                                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(batch.tutorId?.userId?.name || 'T')}`}
                                                 alt=""
-                                                style={{ width: 32, height: 32, borderRadius: R.full, flexShrink: 0 }}
+                                                style={{ width: 32, height: 32, borderRadius: R.full, flexShrink: 0, objectFit: 'cover' }}
+                                                onError={(e) => {
+                                                    e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(batch.tutorId?.userId?.name || 'T')}`;
+                                                }}
                                             />
                                             <div className="min-w-0">
                                                 <p className="truncate"
