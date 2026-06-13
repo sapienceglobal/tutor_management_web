@@ -457,7 +457,19 @@ export default function SubscriptionPlansPage() {
                                     )}
                                     
                                     {advancedFeatures.map(feat => {
-                                        if (plan.planType === 'personal' && !feat.key.startsWith('ai')) return null;
+                                        if (plan.planType === 'personal') {
+                                            const isTutorOrAll = plan.planRole === 'tutor' || plan.planRole === 'all';
+                                            const isTutorPersonalFeature = feat.key === 'hlsStreaming' || feat.key === 'zoomIntegration';
+                                            
+                                            if (!feat.key.startsWith('ai')) {
+                                                if (!isTutorOrAll || !isTutorPersonalFeature) {
+                                                    return null;
+                                                }
+                                            }
+                                            
+                                            // Dynamic Student Role Filter: Only allow student-centric AI Assistant
+                                            if (plan.planRole === 'student' && feat.key !== 'aiAssistant') return null;
+                                        }
 
                                         return (
                                             <div key={feat.key} className="flex items-center gap-3">
@@ -656,9 +668,16 @@ export default function SubscriptionPlansPage() {
                                 <h4 style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.black, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, marginTop: '8px', marginBottom: '12px', margin: 0 }}>Advanced Modules</h4>
                                 <div className="grid grid-cols-1 gap-2.5">
                                     {advancedFeatures.map((feat) => {
-                                        // Hide non-AI features for personal plans
+                                        // Hide non-AI features for personal plans, except HLS and Zoom for Tutors/All
                                         if (formData.planType === 'personal') {
-                                            if (!feat.key.startsWith('ai')) return null;
+                                            const isTutorOrAll = formData.planRole === 'tutor' || formData.planRole === 'all';
+                                            const isTutorPersonalFeature = feat.key === 'hlsStreaming' || feat.key === 'zoomIntegration';
+                                            
+                                            if (!feat.key.startsWith('ai')) {
+                                                if (!isTutorOrAll || !isTutorPersonalFeature) {
+                                                    return null;
+                                                }
+                                            }
                                             
                                             // Dynamic Student Role Filter: Only allow student-centric AI Assistant
                                             if (formData.planRole === 'student' && feat.key !== 'aiAssistant') return null;

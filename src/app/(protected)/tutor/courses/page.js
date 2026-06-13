@@ -238,7 +238,7 @@ function CourseGridCard({ course, onDelete }) {
                         </button>
                     </Link>
 
-                    <Link href={`/tutor/courses/${course._id}/edit`} className="flex-1">
+                    <Link href={`/tutor/courses/${course._id}`} className="flex-1">
                         <button
                             className="w-full flex items-center justify-center gap-1.5 transition-all hover:opacity-85"
                             style={{

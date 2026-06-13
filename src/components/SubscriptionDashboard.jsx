@@ -259,10 +259,12 @@ export default function SubscriptionDashboard() {
 
                         {/* Feature checklist */}
                         <div className="space-y-1">
-                            <h3 className="text-xs font-black uppercase tracking-widest text-[#7D8DA6] mb-3">AI Plan Features</h3>
+                            <h3 className="text-xs font-black uppercase tracking-widest text-[#7D8DA6] mb-3">Personal Plan Features</h3>
                             {renderFeatureRow('AI Assistant Chat', Boolean(personalSubscription?.isActive && personalSubscription.features?.aiAssistant), 'Conversational tutor and study buddy')}
-                            {renderFeatureRow('AI Homework Assessment', Boolean(personalSubscription?.isActive && personalSubscription.features?.aiAssessment), 'Automatically evaluate subjective answer files')}
-                            {renderFeatureRow('AI Student Weakness Predictor', Boolean(personalSubscription?.isActive && personalSubscription.features?.aiIntelligence), 'Identify dropouts and predict academic weak areas')}
+                            {role === 'tutor' && renderFeatureRow('AI Homework Assessment', Boolean(personalSubscription?.isActive && personalSubscription.features?.aiAssessment), 'Automatically evaluate subjective answer files')}
+                            {role === 'tutor' && renderFeatureRow('AI Student Weakness Predictor', Boolean(personalSubscription?.isActive && personalSubscription.features?.aiIntelligence), 'Identify dropouts and predict academic weak areas')}
+                            {role === 'tutor' && renderFeatureRow('HLS Video Security', Boolean(personalSubscription?.isActive && personalSubscription.features?.hlsStreaming), 'AES-128 secure video streaming encryption')}
+                            {role === 'tutor' && renderFeatureRow('Zoom Live Classes', Boolean(personalSubscription?.isActive && personalSubscription.features?.zoomIntegration), 'Host real-time dynamic live lecture classes')}
                         </div>
                     </div>
 

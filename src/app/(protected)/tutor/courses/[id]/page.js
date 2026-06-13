@@ -32,12 +32,16 @@ import {
     MdPersonAdd,
     MdCheck,
     MdBlock,
+    MdHelpOutline,
 } from 'react-icons/md';
 import Link from 'next/link';
 import api from '@/lib/axios';
+import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+import FeatureGate from '@/components/FeatureGate';
+
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
@@ -87,6 +91,31 @@ function ModalLabel({ children }) {
     );
 }
 
+const getVideoDuration = (file) => {
+    return new Promise((resolve) => {
+        try {
+            const video = document.createElement("video");
+            video.preload = "metadata";
+            video.onloadedmetadata = () => {
+                window.URL.revokeObjectURL(video.src);
+                resolve(video.duration || 0);
+            };
+            video.onerror = () => {
+                resolve(0);
+            };
+            video.src = URL.createObjectURL(file);
+        } catch {
+            resolve(0);
+        }
+    });
+};
+
+const getYouTubeId = (url) => {
+    if (!url) return null;
+    const m = url.match(/(?:youtu\.be\/|v\/|watch\?v=|embed\/)([^#&?]{11})/);
+    return m ? m[1] : null;
+};
+
 export default function ManageCoursePage({ params }) {
     const router = useRouter();
     const { id }  = use(params);
@@ -124,7 +153,9 @@ export default function ManageCoursePage({ params }) {
     const [editingModuleTitle, setEditingModuleTitle] = useState('');
     const [editingLessonId,    setEditingLessonId]    = useState(null);
     const [publishing,         setPublishing]         = useState(false);
-    const [isUploadingVideo,   setIsUploadingVideo]   = useState(false);
+    const [uploadType,         setUploadType]         = useState(null); // null, 'hls', 'standard'
+    const [uploadProgress,      setUploadProgress]      = useState(0);
+    const [showHlsInfo,         setShowHlsInfo]         = useState(false);
     const { confirmDialog }                           = useConfirm();
 
     // ── Shared modal input style ────────────────────────────────────────────
@@ -347,9 +378,7 @@ export default function ManageCoursePage({ params }) {
                 toast.success('Document uploaded');
             }
         } catch { toast.error('Failed to upload document'); }
-    };
-
-    const handleVideoUpload = async (e) => {
+    };    const handleVideoUpload = async (e) => {
         const file = e.target.files[0]; if (!file) return;
         const resolveUrl = (raw) => {
             if (!raw) return '';
@@ -357,22 +386,115 @@ export default function ManageCoursePage({ params }) {
             const base = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/api\/?$/, '').replace(/\/+$/, '');
             return base ? `${base}${raw.startsWith('/') ? '' : '/'}${raw}` : raw;
         };
-        const fd = new FormData(); fd.append('video', file);
-        setIsUploadingVideo(true);
+        
+        // Auto-detect duration
+        const durSecs = await getVideoDuration(file);
+        const durMins = Math.round(durSecs / 60) || 1;
+        
+        setUploadType('hls');
+        setUploadProgress(0);
+        const isPersonal = !course?.instituteId;
+        
         try {
-            const res = await api.post('/upload/video-hls', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-            if (res.data.success) { setLessonForm(prev => ({ ...prev, videoUrl: resolveUrl(res.data.estimatedPlaylistUrl) })); toast.success('Video uploaded and is processing for HLS!'); }
-        } catch (error) {
-            const msg = error.response?.data?.message || '';
-            if (error.response?.status === 403 && /(hls|feature|subscription)/i.test(msg)) {
-                try {
-                    const fd2 = new FormData(); fd2.append('file', file);
-                    const fb = await api.post('/upload/file', fd2, { headers: { 'Content-Type': 'multipart/form-data' } });
-                    if (fb.data.success) { setLessonForm(prev => ({ ...prev, videoUrl: fb.data.fileUrl })); toast.success('Video uploaded (standard mode).'); return; }
-                } catch { /* ignore */ }
+            // Get Cloudinary upload signature from backend for HLS type
+            const sigRes = await api.post('/upload/cloudinary-signature', {
+                type: 'hls',
+                courseId: id,
+                isPersonal
+            });
+            if (!sigRes.data.success) {
+                throw new Error('Failed to obtain HLS upload signature');
             }
+            const { signature, timestamp, cloudName, apiKey, folder, eager, eager_async } = sigRes.data;
+
+            const fd = new FormData();
+            fd.append('file', file);
+            fd.append('api_key', apiKey);
+            fd.append('timestamp', timestamp);
+            fd.append('signature', signature);
+            fd.append('folder', folder);
+            fd.append('eager', eager);
+            fd.append('eager_async', eager_async ? 'true' : 'false');
+
+            const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
+            
+            const res = await axios.post(uploadUrl, fd, { 
+                headers: { 'Content-Type': 'multipart/form-data' },
+                onUploadProgress: (progressEvent) => {
+                    const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    setUploadProgress(percent);
+                }
+            });
+
+            if (res.data.public_id) { 
+                const playlistUrl = `https://res.cloudinary.com/${cloudName}/video/upload/sp_auto/${res.data.public_id}.m3u8`;
+                setLessonForm(prev => ({ 
+                    ...prev, 
+                    videoUrl: resolveUrl(playlistUrl),
+                    duration: durMins.toString(),
+                })); 
+                toast.success('Video uploaded directly to Cloudinary and is processing for HLS! 🚀'); 
+            }
+        } catch (error) {
+            const msg = error.response?.data?.message || error.message || '';
             toast.error(msg || 'Failed to upload video');
-        } finally { setIsUploadingVideo(false); }
+        } finally { 
+            setUploadType(null); 
+            setUploadProgress(0);
+            e.target.value = '';
+        }
+    };
+
+    const handleVideoUploadStandard = async (e) => {
+        const file = e.target.files[0]; if (!file) return;
+        
+        // Auto-detect duration
+        const durSecs = await getVideoDuration(file);
+        const durMins = Math.round(durSecs / 60) || 1;
+        
+        setUploadType('standard');
+        setUploadProgress(0);
+        try {
+            // Get Cloudinary upload signature from our backend
+            const sigRes = await api.post('/upload/cloudinary-signature');
+            if (!sigRes.data.success) {
+                throw new Error('Failed to obtain upload signature');
+            }
+            const { signature, timestamp, cloudName, apiKey, folder } = sigRes.data;
+
+            const fd = new FormData();
+            fd.append('file', file);
+            fd.append('api_key', apiKey);
+            fd.append('timestamp', timestamp);
+            fd.append('signature', signature);
+            fd.append('folder', folder);
+
+            const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
+            const res = await axios.post(uploadUrl, fd, { 
+                headers: { 'Content-Type': 'multipart/form-data' },
+                onUploadProgress: (progressEvent) => {
+                    const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    setUploadProgress(percent);
+                }
+            });
+            
+            if (res.data.secure_url || res.data.url) { 
+                const fileUrl = res.data.secure_url || res.data.url;
+                setLessonForm(prev => ({ 
+                    ...prev, 
+                    videoUrl: fileUrl,
+                    duration: durMins.toString(),
+                })); 
+                toast.success('Video uploaded (standard mode).'); 
+            }
+        } catch (error) {
+            const msg = error.response?.data?.message || error.message || '';
+            toast.error(msg || 'Failed to upload standard video');
+        } finally { 
+            setUploadType(null); 
+            setUploadProgress(0);
+            e.target.value = '';
+        }
     };
 
     // ── Loading ──────────────────────────────────────────────────────────────
@@ -546,11 +668,12 @@ export default function ManageCoursePage({ params }) {
                             fontFamily: T.fontFamily,
                             fontSize: T.size.base,
                             fontWeight: T.weight.semibold,
+                            borderTop: 'none',
+                            borderLeft: 'none',
+                            borderRight: 'none',
                             borderBottom: activeTab === key ? `2px solid ${C.btnPrimary}` : '2px solid transparent',
                             color: activeTab === key ? C.btnPrimary : C.text,
                             background: 'transparent',
-                            border: 'none',
-                            borderBottom: activeTab === key ? `2px solid ${C.btnPrimary}` : '2px solid transparent',
                             cursor: 'pointer',
                         }}>
                         <Icon style={{ width: 16, height: 16 }} /> {label}
@@ -1188,33 +1311,185 @@ export default function ManageCoursePage({ params }) {
                                 </div>
 
                                 {/* Video specific */}
-                                {lessonForm.type === 'video' && (
-                                    <div className="space-y-3">
-                                        <ModalLabel>Video Content</ModalLabel>
-                                        <input type="file" onChange={handleVideoUpload} accept="video/mp4,video/x-m4v,video/*"
-                                            className="hidden" id="video-upload" disabled={isUploadingVideo} />
-                                        <label htmlFor="video-upload"
-                                            className={`flex items-center justify-center gap-2 w-full border-2 border-dashed ${isUploadingVideo ? 'opacity-50 cursor-wait' : 'cursor-pointer'} transition-all`}
-                                            style={{ padding: '14px 0', borderColor: C.btnPrimary, color: C.btnPrimary, backgroundColor: C.btnViewAllBg, fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, borderRadius: '10px' }}>
-                                            {isUploadingVideo
-                                                ? <><div className="rounded-full border-2 animate-spin" style={{ width: 16, height: 16, borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} /> Uploading & Processing…</>
-                                                : <><MdVideocam style={{ width: 16, height: 16 }} /> Upload Video (Auto HLS)</>}
-                                        </label>
-                                        <div className="flex items-center gap-3"
-                                            style={{ color: C.text, fontSize: T.size.xs, fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                                            <div style={{ height: 1, flex: 1, backgroundColor: C.cardBorder }} />
-                                            or paste URL
-                                            <div style={{ height: 1, flex: 1, backgroundColor: C.cardBorder }} />
-                                        </div>
-                                        <input type="url" value={lessonForm.videoUrl}
-                                            onChange={e => setLessonForm(prev => ({ ...prev, videoUrl: e.target.value }))}
-                                            placeholder="https://example.com/video.mp4"
-                                            style={inp} onFocus={applyFocus} onBlur={removeFocus} />
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
-                                            Direct video link or YouTube URL
-                                        </p>
-                                    </div>
-                                )}
+                                 {lessonForm.type === 'video' && (
+                                     <div className="space-y-3">
+                                         <ModalLabel>Video Content</ModalLabel>
+                                         
+                                         {lessonForm.videoUrl ? (
+                                             <div className="space-y-3 p-4 rounded-xl border" style={{ backgroundColor: C.innerBg, borderColor: C.cardBorder }}>
+                                                 <div className="flex items-center justify-between">
+                                                     <div className="flex items-center gap-2 min-w-0">
+                                                         <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 shrink-0">
+                                                             <MdVideocam style={{ width: 18, height: 18 }} />
+                                                         </div>
+                                                         <div className="min-w-0">
+                                                             <h5 className="m-0 font-bold" style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.heading }}>
+                                                                 {lessonForm.videoUrl.includes('.m3u8') 
+                                                                   ? '🔒 Secure HLS Playlist' 
+                                                                   : getYouTubeId(lessonForm.videoUrl) 
+                                                                     ? '📺 YouTube Video Link' 
+                                                                     : '📹 Standard Video File'}
+                                                             </h5>
+                                                             <p className="m-0 text-[10px] text-gray-400 truncate" style={{ maxWidth: '280px' }} title={lessonForm.videoUrl}>
+                                                                 {lessonForm.videoUrl}
+                                                             </p>
+                                                         </div>
+                                                     </div>
+                                                     <button type="button" 
+                                                         onClick={() => setLessonForm(prev => ({ ...prev, videoUrl: '' }))}
+                                                         className="flex items-center justify-center border-none cursor-pointer transition-colors p-1.5 shrink-0"
+                                                         style={{ borderRadius: '8px', backgroundColor: C.dangerBg, color: C.danger }}
+                                                     >
+                                                         <MdDelete style={{ width: 16, height: 16 }} />
+                                                     </button>
+                                                 </div>
+                                                 
+                                                 {lessonForm.videoUrl.includes('.m3u8') ? (
+                                                     <div className="flex flex-col items-center justify-center p-4 border border-dashed rounded-lg bg-gray-50/50">
+                                                         <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-1">
+                                                             <MdCheckCircle style={{ width: 16, height: 16 }} />
+                                                         </div>
+                                                         <p className="m-0 font-bold text-[11px] text-emerald-700">AES-128 HLS Transcoding Active</p>
+                                                         <p className="m-0 text-[9px] text-gray-400">Stream will play securely in student portal player.</p>
+                                                     </div>
+                                                 ) : getYouTubeId(lessonForm.videoUrl) ? (
+                                                     <div className="rounded-lg overflow-hidden border" style={{ height: '140px' }}>
+                                                         <iframe 
+                                                             src={`https://www.youtube.com/embed/${getYouTubeId(lessonForm.videoUrl)}`} 
+                                                             style={{ width: '100%', height: '100%', border: 'none', display: 'block' }} 
+                                                             allowFullScreen 
+                                                         />
+                                                     </div>
+                                                 ) : (
+                                                     <div className="space-y-2">
+                                                         <div className="rounded-lg overflow-hidden border">
+                                                             <video src={lessonForm.videoUrl && lessonForm.videoUrl.includes('/uploads/') && typeof window !== 'undefined' ? `${lessonForm.videoUrl}${lessonForm.videoUrl.includes('?') ? '&' : '?'}token=${encodeURIComponent(localStorage.getItem('token') || '')}` : lessonForm.videoUrl} controls 
+                                                                 onLoadedMetadata={(e) => {
+                                                                     const secs = e.target.duration;
+                                                                     if (secs) {
+                                                                         const mins = Math.round(secs / 60) || 1;
+                                                                         setLessonForm(prev => ({ ...prev, duration: mins.toString() }));
+                                                                     }
+                                                                 }}
+                                                                 style={{ width: '100%', maxHeight: '140px', display: 'block' }} />
+                                                         </div>
+                                                         <div className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-emerald-50/30" style={{ borderColor: 'rgba(16, 185, 129, 0.2)' }}>
+                                                             <MdCheckCircle style={{ width: 14, height: 14, color: '#10B981' }} />
+                                                             <div>
+                                                                 <p className="m-0 font-bold text-[10px]" style={{ color: '#047857', fontFamily: T.fontFamily }}>Standard Video Active</p>
+                                                                 <p className="m-0 text-[8px] text-gray-400" style={{ fontFamily: T.fontFamily }}>Standard direct loading enabled for this lesson.</p>
+                                                             </div>
+                                                         </div>
+                                                     </div>
+                                                 )}
+                                             </div>
+                                         ) : (
+                                             <>
+                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                     {/* HLS Video Upload Option (Gated) */}
+                                                     <div>
+                                                         <input type="file" onChange={handleVideoUpload} accept="video/mp4,video/x-m4v,video/*"
+                                                             className="hidden" id="video-upload-hls" disabled={uploadType !== null} />
+                                                          <FeatureGate featureName="hlsStreaming" mode="lock" isPersonal={!course?.instituteId}>
+                                                              <label htmlFor="video-upload-hls"
+                                                                  className={`flex items-center justify-center gap-2 w-full border-2 border-dashed ${uploadType !== null ? 'cursor-wait' : 'cursor-pointer'} transition-all`}
+                                                                  style={{ 
+                                                                      position: 'relative',
+                                                                      overflow: 'hidden',
+                                                                      padding: '12px 0', 
+                                                                      borderColor: C.btnPrimary, 
+                                                                      color: C.btnPrimary, 
+                                                                      backgroundColor: C.btnViewAllBg, 
+                                                                      fontFamily: T.fontFamily, 
+                                                                      fontSize: T.size.sm, 
+                                                                      fontWeight: T.weight.semibold, 
+                                                                      borderRadius: '10px' 
+                                                                  }}>
+                                                                  {uploadType === 'hls' && (
+                                                                      <div style={{
+                                                                          position: 'absolute',
+                                                                          top: 0,
+                                                                          left: 0,
+                                                                          bottom: 0,
+                                                                          width: `${uploadProgress}%`,
+                                                                          backgroundColor: `${C.btnPrimary}25`,
+                                                                          zIndex: 0,
+                                                                          transition: 'width 0.1s ease-out',
+                                                                      }} />
+                                                                  )}
+                                                                  <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                      {uploadType === 'hls'
+                                                                          ? <><div className="rounded-full border-2 animate-spin" style={{ width: 14, height: 14, borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} /> Uploading {uploadProgress}%</>
+                                                                          : <><MdVideocam style={{ width: 16, height: 16 }} /> Secure HLS Video</>}
+                                                                  </span>
+                                                              </label>
+                                                          </FeatureGate>
+                                                          <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, marginTop: '4px', textAlign: 'center', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                                              Encrypted streaming (Premium)
+                                                              <span onClick={() => setShowHlsInfo(true)} style={{ color: C.btnPrimary, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }} title="What is HLS Security?">
+                                                                  <MdHelpOutline style={{ width: 12, height: 12 }} />
+                                                              </span>
+                                                          </p>
+                                                     </div>
+
+                                                     {/* Standard Video Upload Option (Always Unlocked) */}
+                                                     <div>
+                                                         <input type="file" onChange={handleVideoUploadStandard} accept="video/mp4,video/x-m4v,video/*"
+                                                             className="hidden" id="video-upload-standard" disabled={uploadType !== null} />
+                                                         <label htmlFor="video-upload-standard"
+                                                             className={`flex items-center justify-center gap-2 w-full border-2 border-dashed ${uploadType !== null ? 'cursor-wait' : 'cursor-pointer'} transition-all`}
+                                                             style={{ 
+                                                                 position: 'relative',
+                                                                 overflow: 'hidden',
+                                                                 padding: '12px 0', 
+                                                                 borderColor: uploadType === 'standard' ? C.btnPrimary : C.cardBorder, 
+                                                                 color: uploadType === 'standard' ? C.btnPrimary : C.heading, 
+                                                                 backgroundColor: C.innerBg, 
+                                                                 fontFamily: T.fontFamily, 
+                                                                 fontSize: T.size.sm, 
+                                                                 fontWeight: T.weight.semibold, 
+                                                                 borderRadius: '10px' 
+                                                             }}>
+                                                             {uploadType === 'standard' && (
+                                                                 <div style={{
+                                                                     position: 'absolute',
+                                                                     top: 0,
+                                                                     left: 0,
+                                                                     bottom: 0,
+                                                                     width: `${uploadProgress}%`,
+                                                                     backgroundColor: `${C.btnPrimary}25`,
+                                                                     zIndex: 0,
+                                                                     transition: 'width 0.1s ease-out',
+                                                                 }} />
+                                                             )}
+                                                             <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                 {uploadType === 'standard'
+                                                                     ? <><div className="rounded-full border-2 animate-spin" style={{ width: 14, height: 14, borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} /> Uploading {uploadProgress}%</>
+                                                                     : <><MdVideocam style={{ width: 16, height: 16, color: C.textMuted }} /> Standard Video</>}
+                                                             </span>
+                                                         </label>
+                                                         <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: C.textMuted, marginTop: '4px', textAlign: 'center', fontWeight: 'bold' }}>
+                                                             Direct MP4 load (Free)
+                                                         </p>
+                                                     </div>
+                                                 </div>
+                                                 <div className="flex items-center gap-3"
+                                                     style={{ color: C.text, fontSize: T.size.xs, fontWeight: T.weight.bold, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                                     <div style={{ height: 1, flex: 1, backgroundColor: C.cardBorder }} />
+                                                     or paste URL
+                                                     <div style={{ height: 1, flex: 1, backgroundColor: C.cardBorder }} />
+                                                 </div>
+                                                 <input type="url" value={lessonForm.videoUrl}
+                                                     onChange={e => setLessonForm(prev => ({ ...prev, videoUrl: e.target.value }))}
+                                                     placeholder="https://example.com/video.mp4"
+                                                     style={inp} onFocus={applyFocus} onBlur={removeFocus} />
+                                                 <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text }}>
+                                                     Direct video link or YouTube URL
+                                                 </p>
+                                             </>
+                                         )}
+                                     </div>
+                                 )}
 
                                 {/* Document specific */}
                                 {lessonForm.type === 'document' && (
@@ -1278,14 +1553,15 @@ export default function ManageCoursePage({ params }) {
 
                                 {/* Duration + Free */}
                                 {lessonForm.type !== 'quiz' && (
-                                    <>
-                                        <div>
-                                            <ModalLabel>Duration (minutes)</ModalLabel>
-                                            <input type="number" value={lessonForm.duration}
-                                                onChange={e => setLessonForm(prev => ({ ...prev, duration: e.target.value }))}
-                                                placeholder="15" style={inp}
-                                                onFocus={applyFocus} onBlur={removeFocus} />
-                                        </div>
+                                    <>                                        {lessonForm.type !== 'video' && (
+                                            <div>
+                                                <ModalLabel>Duration (minutes)</ModalLabel>
+                                                <input type="number" value={lessonForm.duration}
+                                                    onChange={e => setLessonForm(prev => ({ ...prev, duration: e.target.value }))}
+                                                    placeholder="15" style={inp}
+                                                    onFocus={applyFocus} onBlur={removeFocus} />
+                                            </div>
+                                        )}
                                         <label className="flex items-center gap-3 cursor-pointer"
                                             style={{ backgroundColor: C.innerBg, borderRadius: '10px', padding: 14 }}>
                                             <input type="checkbox" id="isFree" checked={lessonForm.isFree}
@@ -1495,6 +1771,135 @@ export default function ManageCoursePage({ params }) {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* HLS Info Modal */}
+            {showHlsInfo && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100vw',
+                    height: '100vh',
+                    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                    backdropFilter: 'blur(8px)',
+                    zIndex: 9999,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '20px',
+                }}>
+                    <div style={{
+                        backgroundColor: '#ffffff',
+                        borderRadius: '24px',
+                        border: `1px solid ${C.cardBorder}`,
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        maxWidth: '550px',
+                        width: '100%',
+                        overflow: 'hidden',
+                        fontFamily: T.fontFamily,
+                    }}>
+                        {/* Modal Header */}
+                        <div style={{
+                            padding: '24px 24px 16px',
+                            background: 'linear-gradient(135deg, #1e1b4b, #3b0764)',
+                            color: '#ffffff',
+                            position: 'relative',
+                        }}>
+                            <h3 style={{ margin: 0, fontSize: T.size.lg, fontWeight: T.weight.extrabold, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                Secure HLS Streaming vs Standard MP4
+                            </h3>
+                            <p style={{ margin: '6px 0 0', fontSize: T.size.xs, opacity: 0.8, fontWeight: T.weight.medium }}>
+                                Why top academies use HLS to protect their content
+                            </p>
+                            <button type="button" onClick={() => setShowHlsInfo(false)} style={{
+                                position: 'absolute',
+                                top: '20px',
+                                right: '20px',
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#ffffff',
+                                cursor: 'pointer',
+                                opacity: 0.8,
+                                display: 'flex',
+                                alignItems: 'center',
+                            }}>
+                                <MdClose style={{ width: 20, height: 20 }} />
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div style={{ padding: '24px' }}>
+                            <div style={{ fontSize: T.size.sm, color: C.text, lineHeight: 1.6, marginBottom: '20px' }}>
+                                <strong>HLS (HTTP Live Streaming)</strong> with AES-128 Encryption splits your video into tiny encrypted chunks, blocking students from downloading and leaking your paid courses on social media.
+                            </div>
+
+                            {/* Comparison Table */}
+                            <div style={{
+                                border: `1px solid ${C.cardBorder}`,
+                                borderRadius: '16px',
+                                overflow: 'hidden',
+                                fontSize: T.size.xs,
+                                marginBottom: '24px',
+                            }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', backgroundColor: C.innerBg, fontWeight: 'bold', padding: '12px 16px', borderBottom: `1px solid ${C.cardBorder}`, color: C.heading }}>
+                                    <div>Feature</div>
+                                    <div style={{ color: C.text }}>Standard MP4</div>
+                                    <div style={{ color: C.btnPrimary }}>Secure HLS</div>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', padding: '12px 16px', borderBottom: `1px solid ${C.cardBorder}` }}>
+                                    <div style={{ fontWeight: 'bold', color: C.heading }}>Anti-Piracy (IDM Block)</div>
+                                    <div style={{ color: '#EF4444' }}>Block Failed (Easy Download)</div>
+                                    <div style={{ color: '#10B981', fontWeight: 'bold' }}>Protected (Fully Blocked)</div>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', padding: '12px 16px', borderBottom: `1px solid ${C.cardBorder}` }}>
+                                    <div style={{ fontWeight: 'bold', color: C.heading }}>Adapt Bitrate (No Buffering)</div>
+                                    <div style={{ color: C.text }}>No (High buffering)</div>
+                                    <div style={{ color: '#10B981', fontWeight: 'bold' }}>Yes (Smooth adjust)</div>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', padding: '12px 16px', borderBottom: `1px solid ${C.cardBorder}` }}>
+                                    <div style={{ fontWeight: 'bold', color: C.heading }}>Link Sharing Block</div>
+                                    <div style={{ color: C.text }}>No (Publicly shared)</div>
+                                    <div style={{ color: '#10B981', fontWeight: 'bold' }}>Yes (JWT Gated key)</div>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', padding: '12px 16px' }}>
+                                    <div style={{ fontWeight: 'bold', color: C.heading }}>Loading Time</div>
+                                    <div style={{ color: C.text }}>Slow (Full load)</div>
+                                    <div style={{ color: '#10B981', fontWeight: 'bold' }}>Instant (5s chunks)</div>
+                                </div>
+                            </div>
+
+                            {/* Action / Upgrade Callout */}
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                backgroundColor: '#F5F3FF',
+                                border: '1px solid #DDD6FE',
+                                borderRadius: '16px',
+                                padding: '16px',
+                            }}>
+                                <div style={{ flex: 1, paddingRight: '12px' }}>
+                                    <p style={{ margin: 0, fontWeight: 'bold', fontSize: T.size.xs, color: '#4C1D95' }}>Protect your content today</p>
+                                    <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#6D28D9' }}>Upgrade your subscription to unlock industry standard HLS protection.</p>
+                                </div>
+                                <button type="button" onClick={() => setShowHlsInfo(false)} style={{
+                                    backgroundColor: '#7C3AED',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    padding: '8px 16px',
+                                    borderRadius: '10px',
+                                    fontSize: '11px',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    boxShadow: S.btn,
+                                }}>
+                                    Got it
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

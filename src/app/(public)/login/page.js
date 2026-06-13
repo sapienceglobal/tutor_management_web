@@ -30,6 +30,12 @@ const LoginPageClient = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [rememberMe, setRememberMe] = useState(false);
 
+  // ── 2FA States ────────────────────────────────────────────────────────────
+  const [show2fa, setShow2fa] = useState(false);
+  const [tempToken, setTempToken] = useState("");
+  const [totpCode, setTotpCode] = useState("");
+  const [twoFactorError, setTwoFactorError] = useState("");
+
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -66,6 +72,15 @@ const LoginPageClient = () => {
 
     try {
       const response = await api.post("/auth/login", formData);
+      
+      // ── Check if 2FA is required ─────────────────────────────────
+      if (response.data?.requires2FA) {
+        setTempToken(response.data.tempToken);
+        setShow2fa(true);
+        setIsLoading(false);
+        return;
+      }
+
       const { token, user } = response.data;
 
       // ── Auth tokens ──────────────────────────────────────────────
@@ -122,6 +137,77 @@ const LoginPageClient = () => {
         setOauthResetEmail(formData.email.trim());
       }
       setError(apiError?.message || "Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handle2faSubmit = async (e) => {
+    e.preventDefault();
+    if (!totpCode || totpCode.length !== 6) {
+      setTwoFactorError("Please enter a valid 6-digit code");
+      return;
+    }
+    setIsLoading(true);
+    setTwoFactorError("");
+
+    try {
+      const response = await api.post("/auth/verify-2fa-login", {
+        tempToken,
+        token: totpCode,
+      });
+      const { token, user } = response.data;
+
+      // ── Auth tokens ──────────────────────────────────────────────
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      if (rememberMe) {
+        Cookies.set("token", token, { expires: 1 });
+        Cookies.set("user_role", user.role, { expires: 1 });
+        localStorage.setItem("session_type", "persistent");
+        Cookies.set("session_active", "1", { expires: 1 });
+      } else {
+        Cookies.set("token", token);
+        Cookies.set("user_role", user.role);
+        localStorage.setItem("session_type", "session");
+        Cookies.set("session_active", "1");
+      }
+
+      // ── userRole for ThemeContext ─────────────────────────────────
+      const themeRole =
+        user.role === "student"
+          ? "student"
+          : user.role === "tutor"
+            ? "tutor"
+            : "admin";
+      localStorage.setItem("userRole", themeRole);
+
+      // ── Invite redirect ──────────────────────────────────────────
+      const loginRedirect = sessionStorage.getItem("loginRedirect");
+      const inviteEmail = sessionStorage.getItem("inviteEmail");
+      sessionStorage.removeItem("loginRedirect");
+      sessionStorage.removeItem("inviteEmail");
+      sessionStorage.removeItem("emailLocked");
+
+      if (
+        loginRedirect &&
+        inviteEmail &&
+        user.email.toLowerCase() === inviteEmail.toLowerCase()
+      ) {
+        router.push(loginRedirect);
+        return;
+      }
+
+      // ── Role-based redirect ──────────────────────────────────────
+      if (user.role === "superadmin") router.push("/superadmin");
+      else if (user.role === "admin") router.push("/admin/dashboard");
+      else if (user.role === "tutor") router.push("/tutor/dashboard");
+      else router.push("/student/dashboard");
+    } catch (err) {
+      console.error("2FA Login error:", err);
+      const apiError = err.response?.data;
+      setTwoFactorError(apiError?.message || "Invalid or expired 2FA verification code.");
     } finally {
       setIsLoading(false);
     }
@@ -195,202 +281,285 @@ const LoginPageClient = () => {
           {/* Right Form */}
           <div className="p-8 lg:p-12 flex flex-col justify-center bg-[#f3f3f3]">
             <div className="max-w-md mx-auto w-full">
-              <div className="text-center mb-10">
-                <h1 className="text-3xl font-bold text-slate-800 mb-2">
-                  Welcome Back
-                </h1>
-                <p className="text-slate-500">
-                  Sign in to continue your journey
-                </p>
-              </div>
-
-              {error && (
-                <div className="mb-6 space-y-3">
-                  <div className="flex items-center gap-3 rounded-xl bg-red-50/80 p-4 text-sm font-medium text-red-600 border border-red-100">
-                    <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                    <p>{error}</p>
+              {show2fa ? (
+                <div>
+                  <div className="text-center mb-10">
+                    <div className="inline-flex p-3 rounded-full bg-indigo-50 text-indigo-600 mb-3">
+                      <Lock className="w-8 h-8" />
+                    </div>
+                    <h1 className="text-3xl font-bold text-slate-800 mb-2">
+                      2FA Verification
+                    </h1>
+                    <p className="text-slate-500">
+                      Enter the 6-digit OTP code to continue
+                    </p>
                   </div>
-                  {oauthResetEmail && (
-                    <a
-                      href={`/forgot-password?email=${encodeURIComponent(oauthResetEmail)}`}
-                      className="inline-flex text-sm font-semibold text-indigo-600 hover:underline"
-                    >
-                      Set password via email
-                    </a>
-                  )}
-                </div>
-              )}
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="email"
-                    className="text-slate-700 font-bold ml-1"
-                  >
-                    Email
-                  </Label>
-                  <div className="relative group">
-                    <Mail className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      required
-                      placeholder="name@example.com"
-                      className={cn(
-                        "pl-12 h-12 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl",
-                        isClient && sessionStorage.getItem("inviteEmail")
-                          ? "bg-gray-100 cursor-not-allowed"
-                          : "",
+                  {twoFactorError && (
+                    <div className="mb-6 flex items-center gap-3 rounded-xl bg-red-50/80 p-4 text-sm font-medium text-red-600 border border-red-100 border-solid">
+                      <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                      <p>{twoFactorError}</p>
+                    </div>
+                  )}
+
+                  <form onSubmit={handle2faSubmit} className="space-y-5">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="totpCode"
+                        className="text-slate-700 font-bold ml-1"
+                      >
+                        Verification Code
+                      </Label>
+                      <div className="relative group">
+                        <Input
+                          id="totpCode"
+                          name="totpCode"
+                          type="text"
+                          pattern="[0-9]*"
+                          inputMode="numeric"
+                          maxLength={6}
+                          required
+                          placeholder="000000"
+                          className="text-center text-2xl tracking-[0.5em] font-mono h-12 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl"
+                          value={totpCode}
+                          onChange={(e) => {
+                            setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                            setTwoFactorError("");
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={isLoading || totpCode.length !== 6}
+                      className="cursor-pointer w-full h-12 text-base font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] mt-2"
+                      style={{ boxShadow: "rgba(149,157,165,0.18) 0px 8px 24px" }}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Verifying...
+                        </>
+                      ) : (
+                        "Verify Code"
                       )}
-                      style={{
-                        boxShadow: "rgba(149,157,165,0.18) 0px 8px 24px",
-                      }}
-                      value={formData.email}
-                      onChange={handleChange}
-                      disabled={
-                        isClient && !!sessionStorage.getItem("inviteEmail")
-                      }
-                    />
-                    {isClient && sessionStorage.getItem("inviteEmail") && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Email is locked for invite-based login
-                      </p>
-                    )}
-                  </div>
-                </div>
+                    </Button>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between ml-1">
-                    <Label
-                      htmlFor="password"
-                      className="text-slate-700 font-bold"
-                    >
-                      Password
-                    </Label>
-                    <a
-                      href="/forgot-password"
-                      className="text-xs font-semibold text-indigo-600 hover:text-indigo-500"
-                    >
-                      Forgot password?
-                    </a>
-                  </div>
-                  <div className="relative group">
-                    <Lock className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      placeholder="••••••••"
-                      className="pl-12 h-12 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl"
-                      style={{
-                        boxShadow: "rgba(149,157,165,0.18) 0px 8px 24px",
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShow2fa(false);
+                        setTotpCode("");
+                        setTwoFactorError("");
+                        setError("");
                       }}
-                      value={formData.password}
-                      onChange={handleChange}
-                    />
+                      className="w-full text-center text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors mt-4 bg-transparent border-none cursor-pointer"
+                    >
+                      Back to Sign In
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <>
+                  <div className="text-center mb-10">
+                    <h1 className="text-3xl font-bold text-slate-800 mb-2">
+                      Welcome Back
+                    </h1>
+                    <p className="text-slate-500">
+                      Sign in to continue your journey
+                    </p>
                   </div>
-                </div>
-                <div className="flex items-center space-x-2 pt-2 pb-1">
-                  <input
-                    type="checkbox"
-                    id="rememberMe"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 focus:ring-2 focus:ring-offset-1 transition-colors cursor-pointer"
-                  />
-                  <Label
-                    htmlFor="rememberMe"
-                    className="text-sm font-medium text-slate-700 cursor-pointer"
-                  >
-                    Keep me logged in on this device
-                  </Label>
-                </div>
 
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="cursor-pointer w-full h-12 text-base font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] mt-2"
-                  style={{ boxShadow: "rgba(149,157,165,0.18) 0px 8px 24px" }}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    <>
-                      Sign In <ArrowRight className="ml-2 h-5 w-5" />
-                    </>
+                  {error && (
+                    <div className="mb-6 space-y-3">
+                      <div className="flex items-center gap-3 rounded-xl bg-red-50/80 p-4 text-sm font-medium text-red-600 border border-red-100">
+                        <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                        <p>{error}</p>
+                      </div>
+                      {oauthResetEmail && (
+                        <a
+                          href={`/forgot-password?email=${encodeURIComponent(oauthResetEmail)}`}
+                          className="inline-flex text-sm font-semibold text-indigo-600 hover:underline"
+                        >
+                          Set password via email
+                        </a>
+                      )}
+                    </div>
                   )}
-                </Button>
-              </form>
 
-              <div className="mt-8 mb-8 relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-slate-200" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-transparent px-2 text-slate-500 font-medium">
-                    Or continue with
-                  </span>
-                </div>
-              </div>
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="email"
+                        className="text-slate-700 font-bold ml-1"
+                      >
+                        Email
+                      </Label>
+                      <div className="relative group">
+                        <Mail className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          required
+                          placeholder="name@example.com"
+                          className={cn(
+                            "pl-12 h-12 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl",
+                            isClient && sessionStorage.getItem("inviteEmail")
+                              ? "bg-gray-100 cursor-not-allowed"
+                              : "",
+                          )}
+                          style={{
+                            boxShadow: "rgba(149,157,165,0.18) 0px 8px 24px",
+                          }}
+                          value={formData.email}
+                          onChange={handleChange}
+                          disabled={
+                            isClient && !!sessionStorage.getItem("inviteEmail")
+                          }
+                        />
+                        {isClient && sessionStorage.getItem("inviteEmail") && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Email is locked for invite-based login
+                          </p>
+                        )}
+                      </div>
+                    </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <Button
-                  variant="outline"
-                  type="button"
-                  onClick={handleGoogleLogin}
-                  className="cursor-pointer h-12 border-slate-200 hover:bg-white/60 rounded-xl bg-white/40 transition-all hover:scale-[1.02]"
-                  style={{ boxShadow: "rgba(149,157,165,0.18) 0px 8px 24px" }}
-                >
-                  <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
-                    <path
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      fill="#4285F4"
-                    />
-                    <path
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      fill="#34A853"
-                    />
-                    <path
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      fill="#FBBC05"
-                    />
-                    <path
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      fill="#EA4335"
-                    />
-                  </svg>
-                  Google
-                </Button>
-                <Button
-                  variant="outline"
-                  type="button"
-                  onClick={handleGitHubLogin}
-                  className="cursor-pointer h-12 border-slate-200 hover:bg-white/60 rounded-xl bg-white/40 transition-all hover:scale-[1.02]"
-                  style={{ boxShadow: "rgba(149,157,165,0.18) 0px 8px 24px" }}
-                >
-                  <svg
-                    className="mr-2 h-5 w-5 fill-slate-900"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                  </svg>
-                  GitHub
-                </Button>
-              </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between ml-1">
+                        <Label
+                          htmlFor="password"
+                          className="text-slate-700 font-bold"
+                        >
+                          Password
+                        </Label>
+                        <a
+                          href="/forgot-password"
+                          className="text-xs font-semibold text-indigo-600 hover:text-indigo-500"
+                        >
+                          Forgot password?
+                        </a>
+                      </div>
+                      <div className="relative group">
+                        <Lock className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                        <Input
+                          id="password"
+                          name="password"
+                          type="password"
+                          placeholder="••••••••"
+                          className="pl-12 h-12 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl"
+                          style={{
+                            boxShadow: "rgba(149,157,165,0.18) 0px 8px 24px",
+                          }}
+                          value={formData.password}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 pt-2 pb-1">
+                      <input
+                        type="checkbox"
+                        id="rememberMe"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 focus:ring-2 focus:ring-offset-1 transition-colors cursor-pointer"
+                      />
+                      <Label
+                        htmlFor="rememberMe"
+                        className="text-sm font-medium text-slate-700 cursor-pointer"
+                      >
+                        Keep me logged in on this device
+                      </Label>
+                    </div>
 
-              <p className="text-center text-sm text-slate-600 mt-8">
-                Don&apos;t have an account?{" "}
-                <a
-                  href="/register"
-                  className="font-bold text-indigo-600 hover:underline"
-                >
-                  Create free account
-                </a>
-              </p>
+                    <Button
+                      type="submit"
+                      disabled={isLoading}
+                      className="cursor-pointer w-full h-12 text-base font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] mt-2"
+                      style={{ boxShadow: "rgba(149,157,165,0.18) 0px 8px 24px" }}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Verifying...
+                        </>
+                      ) : (
+                        <>
+                          Sign In <ArrowRight className="ml-2 h-5 w-5" />
+                        </>
+                      )}
+                    </Button>
+                  </form>
+
+                  <div className="mt-8 mb-8 relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-slate-200" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-transparent px-2 text-slate-500 font-medium">
+                        Or continue with
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={handleGoogleLogin}
+                      className="cursor-pointer h-12 border-slate-200 hover:bg-white/60 rounded-xl bg-white/40 transition-all hover:scale-[1.02]"
+                      style={{ boxShadow: "rgba(149,157,165,0.18) 0px 8px 24px" }}
+                    >
+                      <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+                        <path
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                          fill="#4285F4"
+                        />
+                        <path
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                          fill="#34A853"
+                        />
+                        <path
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                          fill="#FBBC05"
+                        />
+                        <path
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                          fill="#EA4335"
+                        />
+                      </svg>
+                      Google
+                    </Button>
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={handleGitHubLogin}
+                      className="cursor-pointer h-12 border-slate-200 hover:bg-white/60 rounded-xl bg-white/40 transition-all hover:scale-[1.02]"
+                      style={{ boxShadow: "rgba(149,157,165,0.18) 0px 8px 24px" }}
+                    >
+                      <svg
+                        className="mr-2 h-5 w-5 fill-slate-900"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                      </svg>
+                      GitHub
+                    </Button>
+                  </div>
+
+                  <p className="text-center text-sm text-slate-600 mt-8">
+                    Don&apos;t have an account?{" "}
+                    <a
+                      href="/register"
+                      className="font-bold text-indigo-600 hover:underline"
+                    >
+                      Create free account
+                    </a>
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>

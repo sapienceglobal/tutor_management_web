@@ -7,13 +7,15 @@ import {
     FileQuestion, PlayCircle, X, MessageSquare, Brain, Sparkles, Loader2,
     Star, ThumbsUp, ThumbsDown, BookOpen, PenLine, Clock, ChevronUp,
     RotateCcw, Award, AlertCircle, Menu, Settings, Download, Share2,
-    Target, Zap, ListChecks, Bookmark, BookmarkCheck, Users, Bot, Send, Trash2
+    Target, Zap, ListChecks, Bookmark, BookmarkCheck, Users, Bot, Send, Trash2,
+    Bold, Underline, List, Plus
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { toast } from 'react-hot-toast';
 import Hls from 'hls.js';
 import ReactMarkdown from 'react-markdown';
+import Cookies from 'js-cookie';
 
 // ─── Dark gradient constant ──────────────────────────────────────────────────
 const dg = { background: 'linear-gradient(135deg, #1e1b4b, #4338ca)' };
@@ -51,6 +53,7 @@ export default function LessonPlayerModal({
 }) {
     const videoRef = useRef(null);
     const playerRef = useRef(null);
+    const editorRef = useRef(null);
 
     // ── Player State ────────────────────────────────────────────────────────
     const [currentIndex, setCurrentIndex] = useState(initialIndex);
@@ -68,12 +71,86 @@ export default function LessonPlayerModal({
     const [activeTab, setActiveTab] = useState('overview');
     const [controlsTimer, setControlsTimer] = useState(null);
     const [bookmarked, setBookmarked] = useState(false);
+    const [courseProgress, setCourseProgress] = useState([]);
+    const courseProgressRef = useRef([]);
+
+    useEffect(() => {
+        courseProgressRef.current = courseProgress;
+    }, [courseProgress]);
+
+    const copyAiToClipboard = () => {
+        if (!aiContent) return;
+        const text = typeof aiContent === 'string' ? aiContent : JSON.stringify(aiContent, null, 2);
+        navigator.clipboard.writeText(text)
+            .then(() => toast.success('Copied to clipboard! 📋'))
+            .catch(() => toast.error('Failed to copy'));
+    };
+
+    const cleanText = (html) => {
+        if (typeof window === 'undefined') return '';
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        return (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
+    };
+
+    const appendAiToNotes = async () => {
+        if (!aiContent) return;
+        const textToAppend = typeof aiContent === 'string' ? aiContent : JSON.stringify(aiContent, null, 2);
+        
+        // Simple regex replace for basic md-to-html conversion so it looks nice in rich text
+        const formattedHtml = textToAppend
+            .replace(/\n\n/g, '</p><p>')
+            .replace(/\n/g, '<br/>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/-(.*?)(<br\/>|<\/p>)/g, '<li>$1</li>$2');
+            
+        const dividerHtml = notes 
+            ? '<br/><hr/><br/><h3>📝 <strong>AI Assistant Insights:</strong></h3><p>' 
+            : '<h3>📝 <strong>AI Assistant Insights:</strong></h3><p>';
+            
+        const updatedNotes = notes + dividerHtml + formattedHtml + '</p>';
+        setNotes(updatedNotes);
+        if (editorRef.current) {
+            editorRef.current.innerHTML = updatedNotes;
+        }
+        
+        setSavingNote(true);
+        try {
+            const plainText = cleanText(updatedNotes);
+            const title = plainText.substring(0, 30) + (plainText.length > 30 ? '...' : '') || 'Untitled Note';
+            
+            const payload = selectedNote 
+                ? { noteId: selectedNote._id, content: updatedNotes, title }
+                : { courseId, lessonId: lesson._id, content: updatedNotes, title };
+
+            const res = await api.post('/notes', payload);
+            if (res.data?.success && res.data.note) {
+                const saved = res.data.note;
+                setSavedNotes(prev => {
+                    const currentList = prev[lesson._id] || [];
+                    let newList;
+                    if (selectedNote) {
+                        newList = currentList.map(n => n._id === saved._id ? saved : n);
+                    } else {
+                        newList = [saved, ...currentList];
+                    }
+                    return { ...prev, [lesson._id]: newList };
+                });
+                setSelectedNote(saved);
+                toast.success('AI insights appended and saved to your notes! 📚');
+            }
+        } catch (_) {
+            toast.error('Failed to save notes');
+        } finally {
+            setSavingNote(false);
+        }
+    };
 
     // ── Notes State ─────────────────────────────────────────────────────────
     const [notes, setNotes] = useState('');
     const [savedNotes, setSavedNotes] = useState({});
     const [savingNote, setSavingNote] = useState(false);
     const [noteMode, setNoteMode] = useState('write');
+    const [selectedNote, setSelectedNote] = useState(null);
 
     // ── Quiz State ──────────────────────────────────────────────────────────
     const [quiz, setQuiz] = useState(null);
@@ -116,10 +193,22 @@ export default function LessonPlayerModal({
     const lesson = lessons[currentIndex];
 
     // ── Normalise lesson content ─────────────────────────────────────────────
-    // content may be a nested object {videoUrl, duration, attachments, documents}
-    // or the videoUrl may be at the top-level
     const contentObj = (lesson?.content && typeof lesson.content === 'object') ? lesson.content : {};
-    const videoUrl = contentObj.videoUrl || lesson?.videoUrl || null;
+    const rawVideoUrl = contentObj.videoUrl || lesson?.videoUrl || null;
+    const getAuthenticatedVideoUrl = (url) => {
+        if (!url) return url;
+        if (url.includes('/uploads/')) {
+            const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || Cookies.get('token')) : null;
+            if (token) {
+                const separator = url.includes('?') ? '&' : '?';
+                if (!url.includes('token=')) {
+                    return `${url}${separator}token=${encodeURIComponent(token)}`;
+                }
+            }
+        }
+        return url;
+    };
+    const videoUrl = getAuthenticatedVideoUrl(rawVideoUrl);
     const attachments = contentObj.attachments || lesson?.attachments || [];
     const lessonDesc = typeof lesson?.description === 'string' ? lesson.description
         : typeof lesson?.content === 'string' ? lesson.content
@@ -136,9 +225,9 @@ export default function LessonPlayerModal({
     const isPDF = lesson?.type === 'pdf';
     const isDocument = lesson?.type === 'document';
 
-    // ── Load progress + user ─────────────────────────────────────────────────
     useEffect(() => {
         loadProgress();
+        loadNotes();
         const mIds = modules?.map(m => m._id) || [];
         setExpandedMods(mIds);
         api.get('/auth/me').then(r => { if (r.data?.success) setCurrentUser(r.data.user); }).catch(() => { });
@@ -147,11 +236,30 @@ export default function LessonPlayerModal({
     const syncIntervalRef = useRef(null);
 
     useEffect(() => {
-        const saved = savedNotes[lesson?._id] || '';
-        setNotes(saved);
+        const saved = savedNotes[lesson?._id];
+        const activeNotes = Array.isArray(saved) ? saved : [];
+        if (activeNotes.length > 0) {
+            setSelectedNote(activeNotes[0]);
+            setNotes(activeNotes[0].content || '');
+            if (editorRef.current) {
+                editorRef.current.innerHTML = activeNotes[0].content || '';
+            }
+        } else {
+            setSelectedNote(null);
+            setNotes('');
+            if (editorRef.current) {
+                editorRef.current.innerHTML = '';
+            }
+        }
         setQuiz(null); setQuizAnswers({}); setQuizSubmitted(false); setQuizResult(null); setAiContent(null);
         setComments([]); setCommentText('');
-        if (isQuiz && lesson?._id) loadQuiz(lesson._id);
+        setDuration(0);
+        if (isQuiz && lesson?._id) {
+            loadQuiz(lesson._id);
+            setActiveTab('quiz');
+        } else if (activeTab === 'quiz') {
+            setActiveTab('overview');
+        }
         if (videoRef.current) { videoRef.current.currentTime = 0; setProgress(0); setCurrTime(0); }
         // Clear sync interval on lesson change
         if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
@@ -168,7 +276,16 @@ export default function LessonPlayerModal({
             setProgress((videoRef.current.currentTime / videoRef.current.duration) * 100 || 0);
         };
         const handleLoadedMeta = () => {
-            if (videoRef.current) setDuration(videoRef.current.duration);
+            if (videoRef.current) {
+                const dur = videoRef.current.duration;
+                setDuration(dur);
+                // Resume from lastWatchedPosition
+                const prog = courseProgressRef.current.find(p => p.lessonId?.toString() === lesson?._id?.toString());
+                if (prog && prog.lastWatchedPosition > 0 && prog.lastWatchedPosition < dur - 5) {
+                    videoRef.current.currentTime = prog.lastWatchedPosition;
+                    toast.success(`Resumed from ${fmtTime(prog.lastWatchedPosition)} ↩️`);
+                }
+            }
         };
         const handlePlay = () => setPlaying(true);
         const handlePause = () => setPlaying(false);
@@ -177,10 +294,20 @@ export default function LessonPlayerModal({
         let hls;
         if (videoUrl.includes('.m3u8')) {
             if (Hls.isSupported()) {
-                hls = new Hls({
+                const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || Cookies.get('token')) : null;
+                const hlsConfig = {
                     startLevel: -1, capLevelToPlayerSize: true, debug: false,
                     maxBufferLength: 30, maxMaxBufferLength: 600
-                });
+                };
+                if (token) {
+                    hlsConfig.xhrSetup = (xhr, url) => {
+                        const isCloudinary = url.includes('cloudinary') || url.includes('/video/upload/');
+                        if (!isCloudinary) {
+                            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                        }
+                    };
+                }
+                hls = new Hls(hlsConfig);
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
                     if (videoRef.current) setDuration(videoRef.current.duration);
                 });
@@ -223,12 +350,54 @@ export default function LessonPlayerModal({
         setControlsTimer(t);
     }, [playing, controlsTimer]);
 
+    const loadNotes = async () => {
+        try {
+            const res = await api.get(`/notes/course/${courseId}`);
+            if (res.data?.success && res.data.notes) {
+                const notesObj = res.data.notes.reduce((acc, note) => {
+                    const lid = note.lessonId?.toString();
+                    if (!acc[lid]) acc[lid] = [];
+                    acc[lid].push(note);
+                    return acc;
+                }, {});
+                setSavedNotes(notesObj);
+                const activeNotes = notesObj[lesson?._id] || [];
+                if (lesson && activeNotes.length > 0) {
+                    setSelectedNote(activeNotes[0]);
+                    setNotes(activeNotes[0].content || '');
+                    if (editorRef.current) {
+                        editorRef.current.innerHTML = activeNotes[0].content || '';
+                    }
+                } else {
+                    setSelectedNote(null);
+                    setNotes('');
+                    if (editorRef.current) {
+                        editorRef.current.innerHTML = '';
+                    }
+                }
+            }
+        } catch (_) { }
+    };
+
     const loadProgress = async () => {
         try {
             const res = await api.get(`/progress/course/${courseId}`);
             if (res.data?.progress) {
                 const ids = res.data.progress.filter(p => p.completed).map(p => p.lessonId?.toString());
                 setCompletedIds(ids);
+                setCourseProgress(res.data.progress);
+
+                // Race condition: if video metadata is already loaded before API returns, seek now
+                if (videoRef.current && videoRef.current.readyState >= 1 && lesson) {
+                    const currentLessonProg = res.data.progress.find(p => p.lessonId?.toString() === lesson._id?.toString());
+                    if (currentLessonProg && currentLessonProg.lastWatchedPosition > 0) {
+                        const dur = videoRef.current.duration;
+                        if (dur && currentLessonProg.lastWatchedPosition < dur - 5 && videoRef.current.currentTime < 2) {
+                            videoRef.current.currentTime = currentLessonProg.lastWatchedPosition;
+                            toast.success(`Resumed from ${fmtTime(currentLessonProg.lastWatchedPosition)} ↩️`);
+                        }
+                    }
+                }
             }
         } catch (_) { }
     };
@@ -254,6 +423,12 @@ export default function LessonPlayerModal({
             });
             if (res.data?.success) {
                 setCompletedIds(prev => [...new Set([...prev, lesson._id.toString()])]);
+                if (res.data.progress) {
+                    setCourseProgress(prev => {
+                        const filtered = prev.filter(p => p.lessonId?.toString() !== lesson._id.toString());
+                        return [...filtered, res.data.progress];
+                    });
+                }
                 onLessonComplete?.();
                 toast.success('Lesson marked complete! 🎉');
             } else {
@@ -265,25 +440,94 @@ export default function LessonPlayerModal({
     const syncProgress = async () => {
         if (!videoRef.current || !lesson || lesson.type !== 'video') return;
         try {
-            await api.post('/progress', {
+            const res = await api.post('/progress', {
                 courseId,
                 lessonId: lesson._id,
                 lastWatchedPosition: Math.floor(videoRef.current.currentTime),
                 timeSpent: Math.floor(videoRef.current.currentTime),
                 completed: false,
             });
+            if (res.data?.success && res.data.progress) {
+                setCourseProgress(prev => {
+                    const filtered = prev.filter(p => p.lessonId?.toString() !== lesson._id.toString());
+                    return [...filtered, res.data.progress];
+                });
+            }
         } catch (_) { }
     };
 
+    const loadNoteIntoEditor = (note) => {
+        setSelectedNote(note);
+        setNotes(note.content || '');
+        if (editorRef.current) {
+            editorRef.current.innerHTML = note.content || '';
+        }
+    };
+
+    const startNewNote = () => {
+        setSelectedNote(null);
+        setNotes('');
+        if (editorRef.current) {
+            editorRef.current.innerHTML = '';
+        }
+    };
+
+    const handleDeleteNote = async (noteId) => {
+        const ok = await confirmDialog('Delete Note', 'Are you sure you want to delete this note?', { variant: 'destructive' });
+        if (!ok) return;
+        try {
+            const res = await api.delete(`/notes/${noteId}`);
+            if (res.data?.success) {
+                setSavedNotes(prev => {
+                    const currentList = prev[lesson._id] || [];
+                    const newList = currentList.filter(n => n._id !== noteId);
+                    return { ...prev, [lesson._id]: newList };
+                });
+                if (selectedNote?._id === noteId) {
+                    startNewNote();
+                }
+                toast.success('Note deleted!');
+            }
+        } catch (_) {
+            toast.error('Failed to delete note');
+        }
+    };
+
     const saveNote = async () => {
-        if (!lesson || !notes.trim()) return;
+        if (!lesson || !notes.replace(/<[^>]*>/g, '').trim()) {
+            toast.error('Note cannot be empty');
+            return;
+        }
         setSavingNote(true);
         try {
-            await api.post('/notes', { courseId, lessonId: lesson._id, content: notes });
-            setSavedNotes(prev => ({ ...prev, [lesson._id]: notes }));
-            toast.success('Note saved!');
-        } catch (_) { toast.error('Failed to save note'); }
-        finally { setSavingNote(false); }
+            const plainText = cleanText(notes);
+            const title = plainText.substring(0, 30) + (plainText.length > 30 ? '...' : '') || 'Untitled Note';
+            
+            const payload = selectedNote 
+                ? { noteId: selectedNote._id, content: notes, title }
+                : { courseId, lessonId: lesson._id, content: notes, title };
+
+            const res = await api.post('/notes', payload);
+            if (res.data?.success && res.data.note) {
+                const saved = res.data.note;
+                setSavedNotes(prev => {
+                    const currentList = prev[lesson._id] || [];
+                    let newList;
+                    if (selectedNote) {
+                        newList = currentList.map(n => n._id === saved._id ? saved : n);
+                    } else {
+                        newList = [saved, ...currentList];
+                    }
+                    return { ...prev, [lesson._id]: newList };
+                });
+                setSelectedNote(saved);
+                toast.success('Note saved!');
+            }
+        } catch (_) {
+            toast.error('Failed to save note');
+        } finally {
+            setSavingNote(false);
+        }
     };
 
     const fetchComments = async () => {
@@ -408,7 +652,7 @@ export default function LessonPlayerModal({
     // ── Keyboard shortcuts ───────────────────────────────────────────────────
     useEffect(() => {
         const handler = (e) => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
             if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
             if (e.code === 'ArrowRight') skip(10);
             if (e.code === 'ArrowLeft') skip(-10);
@@ -421,7 +665,6 @@ export default function LessonPlayerModal({
 
     if (!lesson) return null;
 
-    // ─────────────────────────────────────────────────────────────────────────
     return (
         <div className="fixed inset-0 z-50 flex flex-col" style={{ fontFamily: "'DM Sans', sans-serif", background: '#0a0b14' }}>
 
@@ -453,7 +696,7 @@ export default function LessonPlayerModal({
             </div>
 
             {/* ── Main Area ───────────────────────────────────────────── */}
-            <div className="flex flex-1 overflow-hidden">
+            <div className="flex flex-1 overflow-hidden relative">
 
                 {/* ── LEFT: Video + Content ─────────────────────────── */}
                 <div className="flex-1 flex flex-col overflow-hidden">
@@ -461,7 +704,7 @@ export default function LessonPlayerModal({
                     {/* Video Player */}
                     <div ref={playerRef}
                         className="relative bg-black flex-shrink-0"
-                        style={{ aspectRatio: '16/9', maxHeight: sidebarOpen ? '55vh' : '65vh' }}
+                        style={{ aspectRatio: '16/9', maxHeight: sidebarOpen ? '65vh' : '75vh' }}
                         onMouseMove={resetControlsTimer}
                         onClick={isVideo ? togglePlay : undefined}>
 
@@ -555,7 +798,8 @@ export default function LessonPlayerModal({
                         {/* Video Controls Overlay */}
                         {isVideo && (
                             <div className={`absolute inset-0 flex flex-col justify-end transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}
-                                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 50%)' }}>
+                                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 50%)' }}
+                                onClick={e => e.stopPropagation()}>
 
                                 {/* Center Play/Pause big button */}
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -629,139 +873,344 @@ export default function LessonPlayerModal({
                         )}
                     </div>
 
-                    {/* ── Below Video: Tabs ──────────────────────────── */}
-                    <div className="flex-1 overflow-y-auto" style={{ background: '#0d0e1c' }}>
-
-                        {/* Quiz score bar */}
-                        {quizResult && (
-                            <div className={`mx-4 mt-3 px-4 py-3 rounded-2xl flex items-center gap-3 border ${quizResult.passed ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
-                                {quizResult.passed ? <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" /> : <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />}
-                                <span className={`text-sm font-black ${quizResult.passed ? 'text-emerald-400' : 'text-red-400'}`}>
-                                    {quizResult.passed ? '🎉' : '😓'} You scored {quizResult.score}% — {quizResult.passed ? 'Passed!' : 'Try again'}
-                                </span>
+                    {/* ── Below Video: Title & Actions ──────────────── */}
+                    <div className="px-6 py-5 border-b border-white/5 space-y-4 shrink-0" style={{ background: '#11121e' }}>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div>
+                                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider
+                                        ${isDone ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                            : 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30'}`}>
+                                        {isDone ? '✓ Completed' : 'In Progress'}
+                                    </span>
+                                    <span className="px-2.5 py-0.5 bg-white/5 border border-white/10 rounded-full text-[10px] font-bold text-slate-400 capitalize">
+                                        {lesson.type || 'video'}
+                                    </span>
+                                    {lesson.duration > 0 && (
+                                        <span className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+                                            <Clock className="w-3 h-3" />
+                                            {Math.floor(lesson.duration / 60)}:{String(lesson.duration % 60).padStart(2, '0')}
+                                        </span>
+                                    )}
+                                </div>
+                                <h2 className="text-lg md:text-xl font-black text-white leading-tight">{lesson.title}</h2>
                             </div>
-                        )}
-
-                        {/* Tab bar */}
-                        <div className="flex border-b border-white/8 px-4 overflow-x-auto" style={{ background: '#11121e' }}>
-                            <TabBtn active={activeTab === 'overview'} onClick={() => setActiveTab('overview')}>Overview</TabBtn>
-                            <TabBtn active={activeTab === 'notes'} onClick={() => setActiveTab('notes')}>Notes</TabBtn>
-                            {isQuiz && <TabBtn active={activeTab === 'quiz'} onClick={() => setActiveTab('quiz')}>Quiz</TabBtn>}
-                            <TabBtn active={activeTab === 'ai'} onClick={() => setActiveTab('ai')}>AI Tools</TabBtn>
-                            <TabBtn active={activeTab === 'discussion'} onClick={() => setActiveTab('discussion')}>Discussion</TabBtn>
-                            <TabBtn active={activeTab === 'resources'} onClick={() => setActiveTab('resources')}>Resources</TabBtn>
+                            <div className="flex items-center gap-2 shrink-0">
+                                <button onClick={() => setBookmarked(!bookmarked)}
+                                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${bookmarked ? 'bg-amber-500/20 text-amber-400' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>
+                                    {bookmarked ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+                                </button>
+                                {!isDone ? (
+                                    <DBtn onClick={markComplete} className="px-4 py-2 text-xs flex items-center gap-1.5 shadow-lg">
+                                        <CheckCircle className="w-4 h-4" /> Mark Complete
+                                    </DBtn>
+                                ) : (
+                                    <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs font-black flex items-center gap-1.5">
+                                        <CheckCircle className="w-4 h-4" /> Lesson Completed
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        <div className="p-4 space-y-4">
+                        {/* Navigation buttons */}
+                        <div className="flex gap-3 pt-2">
+                            <button onClick={() => goToLesson(currentIndex - 1)} disabled={currentIndex === 0}
+                                className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-xs font-black text-slate-300 disabled:opacity-30 flex items-center justify-center gap-1.5 transition-all">
+                                <ChevronLeft className="w-4 h-4" /> Previous
+                            </button>
+                            {!isDone ? (
+                                <DBtn onClick={markComplete} className="flex-1 py-2.5 text-xs flex items-center justify-center gap-1.5">
+                                    <CheckCircle className="w-3.5 h-3.5" /> Complete & Next
+                                </DBtn>
+                            ) : (
+                                <button onClick={() => goToLesson(currentIndex + 1)} disabled={currentIndex === lessons.length - 1}
+                                    className="flex-1 py-2.5 rounded-2xl text-xs font-black text-white flex items-center justify-center gap-1.5 disabled:opacity-30 transition-all hover:opacity-90"
+                                    style={dg}>
+                                    Next Lesson <ChevronRight className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
 
-                            {/* ── OVERVIEW ────────────────────────────── */}
+                {/* ── RIGHT: Unified Tabbed Sidebar ──────────────── */}
+                {sidebarOpen && (
+                    <div className="w-full md:w-[400px] xl:w-[440px] flex flex-col border-l border-white/8 shrink-0 relative transition-all duration-300" style={{ background: '#11121e' }}>
+                        
+                        {/* Sidebar Header: Course Progress & Collapse */}
+                        <div className="px-4 py-3.5 border-b border-white/8 shrink-0">
+                            <div className="flex items-center justify-between mb-3">
+                                <p className="text-xs font-black text-white uppercase tracking-[0.06em]">Course Dashboard</p>
+                                <button onClick={() => setSidebarOpen(false)} className="w-6 h-6 rounded-lg bg-white/8 hover:bg-white/15 flex items-center justify-center text-slate-400 transition-colors">
+                                    <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-slate-400 font-medium">{completedIds.length} of {lessons.length} completed</span>
+                                    <span className="text-[10px] font-black text-indigo-400">{Math.round((completedIds.length / lessons.length) * 100)}%</span>
+                                </div>
+                                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                    <div className="h-full bg-indigo-500 rounded-full transition-all"
+                                        style={{ width: `${(completedIds.length / lessons.length) * 100}%` }} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Sidebar Tabs Headers Row */}
+                        <div className="flex border-b border-white/8 bg-[#161726] shrink-0 overflow-x-auto">
+                            {[
+                                { id: 'lessons', label: 'Lessons', icon: Menu },
+                                { id: 'overview', label: 'Overview', icon: BookOpen },
+                                { id: 'notes', label: 'Notes', icon: PenLine },
+                                ...(isQuiz ? [{ id: 'quiz', label: 'Quiz', icon: FileQuestion }] : []),
+                                { id: 'ai', label: 'AI Tools', icon: Brain },
+                                { id: 'discussion', label: 'Chat', icon: MessageSquare },
+                                { id: 'resources', label: 'Files', icon: Download },
+                            ].map(t => {
+                                const active = activeTab === t.id;
+                                const IconComponent = t.icon;
+                                return (
+                                    <button key={t.id} onClick={() => setActiveTab(t.id)}
+                                        className={`flex-1 min-w-[52px] flex flex-col items-center justify-center py-2.5 px-0.5 border-b-2 transition-all
+                                            ${active ? 'border-indigo-500 text-indigo-400 bg-white/[0.02]' : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-white/[0.01]'}`}>
+                                        <IconComponent className="w-4 h-4 mb-1" />
+                                        <span className="text-[9px] font-black uppercase tracking-wider whitespace-nowrap">{t.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Tab Content Panel (Scrollable) */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ background: '#0d0e1c' }}>
+                            
+                            {/* ── LESSONS CURRICULUM ── */}
+                            {activeTab === 'lessons' && (
+                                <div className="space-y-1">
+                                    {modules && modules.length > 0 ? (
+                                        modules.map((mod, mi) => {
+                                            const mLessons = getLessonsByModule(mod._id);
+                                            const isExp = expandedModules.includes(mod._id);
+                                            const mDone = mLessons.filter(l => isLessonDone(l)).length;
+                                            return (
+                                                <div key={mod._id} className="border-b border-white/5 last:border-0">
+                                                    {/* Module header */}
+                                                    <button onClick={() => setExpandedMods(prev => isExp ? prev.filter(id => id !== mod._id) : [...prev, mod._id])}
+                                                        className="w-full flex items-center gap-3 px-3 py-3 hover:bg-white/5 transition-colors">
+                                                        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform shrink-0 ${isExp ? '' : '-rotate-90'}`} />
+                                                        <div className="flex-1 min-w-0 text-left">
+                                                            <p className="text-xs font-black text-white truncate">{mod.title}</p>
+                                                            <p className="text-[10px] text-slate-500 font-medium">{mDone}/{mLessons.length} done</p>
+                                                        </div>
+                                                        {mDone === mLessons.length && mLessons.length > 0 && <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />}
+                                                    </button>
+                                                    {/* Module lessons */}
+                                                    {isExp && mLessons.map((l, li) => {
+                                                        const isAct = l._id === lesson._id;
+                                                        const done = isLessonDone(l);
+                                                        return (
+                                                            <button key={l._id} onClick={() => goToLesson(lessons.findIndex(x => x._id === l._id))}
+                                                                className={`w-full flex items-start gap-3 px-3.5 py-2.5 border-t border-white/5 transition-all text-left
+                                                                    ${isAct ? 'bg-indigo-500/15 border-l-2 border-l-indigo-500' : 'hover:bg-white/5'}`}>
+                                                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${done ? 'bg-emerald-500/20' : isAct ? 'bg-indigo-500/20' : 'bg-white/8'}`}>
+                                                                    {done ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                                                                        : l.type === 'quiz' ? <FileQuestion className="w-3 h-3 text-amber-400" />
+                                                                            : l.type === 'pdf' ? <FileText className="w-3 h-3 text-slate-400" />
+                                                                                : isAct ? <Play className="w-3 h-3 text-indigo-400 fill-indigo-400 ml-0.5" />
+                                                                                    : <Play className="w-3 h-3 text-slate-500 fill-slate-500 ml-0.5" />}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className={`text-xs font-bold leading-snug truncate ${isAct ? 'text-indigo-300' : done ? 'text-slate-400' : 'text-slate-200'}`}>{l.title}</p>
+                                                                    {l.duration > 0 && <p className="text-[10px] text-slate-500 font-medium mt-0.5">{Math.floor(l.duration / 60)}:{String(l.duration % 60).padStart(2, '0')}</p>}
+                                                                </div>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        // Flat list (no modules)
+                                        lessons.map((l, li) => {
+                                            const isAct = l._id === lesson._id;
+                                            const done = isLessonDone(l);
+                                            return (
+                                                <button key={l._id} onClick={() => goToLesson(li)}
+                                                    className={`w-full flex items-start gap-3 px-3 py-3 border-b border-white/5 transition-all text-left
+                                                        ${isAct ? 'bg-indigo-500/15 border-l-2 border-l-indigo-500' : 'hover:bg-white/5'}`}>
+                                                    <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 text-[10px] font-black mt-0.5
+                                                        ${done ? 'bg-emerald-500/20 text-emerald-400' : isAct ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/8 text-slate-500'}`}>
+                                                        {done ? <CheckCircle className="w-3.5 h-3.5" /> : li + 1}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className={`text-xs font-bold leading-snug ${isAct ? 'text-indigo-300' : done ? 'text-slate-400 line-through decoration-slate-600' : 'text-slate-200'}`}>{l.title}</p>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            <span className={`text-[10px] font-medium capitalize ${l.type === 'quiz' ? 'text-amber-400' : l.type === 'pdf' ? 'text-blue-400' : 'text-slate-500'}`}>
+                                                                {l.type || 'video'}
+                                                            </span>
+                                                            {l.duration > 0 && <span className="text-[10px] text-slate-600 font-medium">{Math.floor(l.duration / 60)}:{String(l.duration % 60).padStart(2, '0')}</span>}
+                                                        </div>
+                                                    </div>
+                                                    {isAct && <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0 mt-2" />}
+                                                </button>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            )}
+
+                            {/* ── OVERVIEW ── */}
                             {activeTab === 'overview' && (
-                                <div className="space-y-5">
-                                    {/* Lesson header */}
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider
-                                                    ${isDone ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                                                        : 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30'}`}>
-                                                    {isDone ? '✓ Completed' : 'In Progress'}
+                                <div className="space-y-4">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="px-2.5 py-0.5 bg-white/5 border border-white/10 rounded-full text-[10px] font-bold text-slate-400 capitalize">
+                                                {lesson.type || 'video'}
+                                            </span>
+                                            {lesson.duration > 0 && (
+                                                <span className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+                                                    <Clock className="w-3 h-3" />
+                                                    {Math.floor(lesson.duration / 60)}:{String(lesson.duration % 60).padStart(2, '0')}
                                                 </span>
-                                                <span className="px-2.5 py-0.5 bg-white/5 border border-white/10 rounded-full text-[10px] font-bold text-slate-400 capitalize">
-                                                    {lesson.type || 'video'}
-                                                </span>
-                                                {lesson.duration > 0 && (
-                                                    <span className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
-                                                        <Clock className="w-3 h-3" />
-                                                        {Math.floor(lesson.duration / 60)}:{String(lesson.duration % 60).padStart(2, '0')}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <h2 className="text-base font-black text-white leading-snug">{lesson.title}</h2>
-                                        </div>
-                                        <div className="flex items-center gap-2 shrink-0">
-                                            <button onClick={() => setBookmarked(!bookmarked)}
-                                                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${bookmarked ? 'bg-amber-500/20 text-amber-400' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>
-                                                {bookmarked ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
-                                            </button>
-                                            {!isDone && (
-                                                <DBtn onClick={markComplete} className="px-3 py-2 text-[11px] flex items-center gap-1.5">
-                                                    <CheckCircle className="w-3.5 h-3.5" /> Mark Done
-                                                </DBtn>
                                             )}
                                         </div>
+                                        <h3 className="text-sm font-black text-white leading-snug">{lesson.title}</h3>
                                     </div>
 
-                                    {/* Lesson description */}
-                                    {lessonDesc && (
+                                    {lessonDesc ? (
                                         <div className="p-4 bg-white/4 border border-white/8 rounded-2xl">
-                                            <p className="text-sm text-slate-300 leading-relaxed font-medium whitespace-pre-line">{lessonDesc}</p>
+                                            <p className="text-xs text-slate-300 leading-relaxed font-medium whitespace-pre-line">{lessonDesc}</p>
+                                        </div>
+                                    ) : (
+                                        <div className="p-4 bg-white/4 border border-white/8 rounded-2xl text-center">
+                                            <p className="text-xs text-slate-500">No description available for this lesson.</p>
                                         </div>
                                     )}
+                                </div>
+                            )}
 
-                                    {/* Prev / Next navigation */}
-                                    <div className="flex gap-3 pt-2">
-                                        <button onClick={() => goToLesson(currentIndex - 1)} disabled={currentIndex === 0}
-                                            className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-xs font-black text-slate-300 disabled:opacity-30 flex items-center justify-center gap-1.5 transition-all">
-                                            <ChevronLeft className="w-4 h-4" /> Previous
-                                        </button>
-                                        {!isDone ? (
-                                            <DBtn onClick={markComplete} className="flex-1 py-2.5 text-xs flex items-center justify-center gap-1.5">
-                                                <CheckCircle className="w-3.5 h-3.5" /> Complete & Next
-                                            </DBtn>
-                                        ) : (
-                                            <button onClick={() => goToLesson(currentIndex + 1)} disabled={currentIndex === lessons.length - 1}
-                                                className="flex-1 py-2.5 rounded-2xl text-xs font-black text-white flex items-center justify-center gap-1.5 disabled:opacity-30 transition-all hover:opacity-90"
-                                                style={dg}>
-                                                Next Lesson <ChevronRight className="w-4 h-4" />
+                            {/* ── NOTES ── */}
+                            {activeTab === 'notes' && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1.5">
+                                            <PenLine className="w-4 h-4 text-indigo-400" />
+                                            <p className="text-xs font-black text-white">My Notes</p>
+                                        </div>
+                                        {selectedNote && (
+                                            <button onClick={startNewNote}
+                                                className="px-2.5 py-1 text-[10px] font-black text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/15 border border-indigo-500/20 rounded-lg transition-colors flex items-center gap-1">
+                                                <Plus className="w-3 h-3" /> New Note
                                             </button>
                                         )}
                                     </div>
-                                </div>
-                            )}
 
-                            {/* ── NOTES ───────────────────────────────── */}
-                            {activeTab === 'notes' && (
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-2">
-                                        <PenLine className="w-4 h-4 text-indigo-400" />
-                                        <p className="text-sm font-black text-white">My Notes</p>
-                                        <span className="text-[10px] text-slate-400 ml-auto">{lesson.title}</span>
+                                    {/* Scrollable list of existing notes */}
+                                    {Array.isArray(savedNotes[lesson._id]) && savedNotes[lesson._id].length > 0 && (
+                                        <div className="space-y-1.5">
+                                            <p className="text-[9px] uppercase tracking-wider font-bold text-slate-500">Saved Notes ({savedNotes[lesson._id].length})</p>
+                                            <div className="grid grid-cols-2 gap-2 max-h-[140px] overflow-y-auto pr-1">
+                                                {savedNotes[lesson._id].map((n, i) => {
+                                                    const isCurrent = selectedNote?._id === n._id;
+                                                    const excerpt = cleanText(n.content) || 'Empty note';
+                                                    const dateStr = new Date(n.updatedAt || n.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                                    return (
+                                                        <div key={n._id} onClick={() => loadNoteIntoEditor(n)}
+                                                            className={`group relative p-2.5 rounded-xl border text-left cursor-pointer transition-all
+                                                                ${isCurrent ? 'bg-indigo-500/15 border-indigo-500/50' : 'bg-white/4 border-white/8 hover:bg-white/8'}`}>
+                                                            <div className="pr-5">
+                                                                <p className="text-[10px] font-bold text-white line-clamp-1">{n.title || `Note #${i + 1}`}</p>
+                                                                <p className="text-[9px] text-slate-400 line-clamp-1 mt-0.5">{excerpt}</p>
+                                                                <p className="text-[8px] text-slate-500 font-medium mt-1">{dateStr}</p>
+                                                            </div>
+                                                            <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteNote(n._id); }}
+                                                                className="absolute top-1 right-1 p-1 text-slate-500 hover:text-red-400 hover:bg-white/5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <Trash2 className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Editor UI Mode selector */}
+                                    <div className="flex items-center justify-between border-t border-white/5 pt-3">
+                                        <p className="text-[10px] text-slate-400 font-bold">
+                                            {selectedNote ? `Editing: ${selectedNote.title || 'Untitled Note'}` : 'Creating New Note'}
+                                        </p>
+                                        <div className="flex items-center gap-1 bg-white/5 p-0.5 rounded-lg border border-white/5">
+                                            <button onClick={() => setNoteMode('write')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-colors ${noteMode === 'write' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:text-slate-200'}`}>Write</button>
+                                            <button onClick={() => setNoteMode('preview')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-colors ${noteMode === 'preview' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:text-slate-200'}`}>Preview</button>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2 mb-2 mt-4">
-                                        <button onClick={() => setNoteMode('write')} className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${noteMode === 'write' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:bg-white/5'}`}>Write</button>
-                                        <button onClick={() => setNoteMode('preview')} className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${noteMode === 'preview' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:bg-white/5'}`}>Preview</button>
-                                    </div>
+
                                     {noteMode === 'write' ? (
-                                        <textarea
-                                            value={notes}
-                                            onChange={e => setNotes(e.target.value)}
-                                            rows={8}
-                                            placeholder="Write your notes here… (supports markdown)"
-                                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 resize-none font-medium transition-all"
-                                        />
+                                        <div className="flex flex-col border border-white/10 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
+                                            {/* Toolbar */}
+                                            <div className="flex flex-wrap items-center gap-1 p-1.5 bg-white/4 border-b border-white/8 select-none">
+                                                <button type="button" onClick={() => { if (typeof document !== 'undefined') document.execCommand('bold', false, null); }} className="p-1 text-slate-400 hover:text-white hover:bg-white/5 rounded transition-colors" title="Bold">
+                                                    <Bold className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button type="button" onClick={() => { if (typeof document !== 'undefined') document.execCommand('underline', false, null); }} className="p-1 text-slate-400 hover:text-white hover:bg-white/5 rounded transition-colors" title="Underline">
+                                                    <Underline className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button type="button" onClick={() => { if (typeof document !== 'undefined') document.execCommand('insertUnorderedList', false, null); }} className="p-1 text-slate-400 hover:text-white hover:bg-white/5 rounded transition-colors" title="Bullet List">
+                                                    <List className="w-3.5 h-3.5" />
+                                                </button>
+                                                
+                                                <div className="w-[1px] h-3.5 bg-white/10 mx-1" />
+                                                
+                                                {/* Color buttons */}
+                                                <div className="flex items-center gap-1">
+                                                    {['#ffffff', '#fbbf24', '#34d399', '#60a5fa', '#f87171'].map(color => (
+                                                        <button key={color} type="button" onClick={() => { if (typeof document !== 'undefined') document.execCommand('foreColor', false, color); }}
+                                                            style={{ backgroundColor: color }}
+                                                            className="w-3 h-3 rounded-full border border-black/40 hover:scale-110 active:scale-95 transition-transform" />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            
+                                            {/* ContentEditable editor */}
+                                            <div
+                                                ref={editorRef}
+                                                contentEditable
+                                                onInput={e => setNotes(e.target.innerHTML)}
+                                                placeholder="Type your formatted notes here..."
+                                                className="w-full px-4 py-3 min-h-[220px] max-h-[350px] bg-white/5 text-xs text-slate-200 focus:outline-none overflow-y-auto prose prose-invert prose-xs max-w-none placeholder:text-slate-600 [&:empty]:before:content-[attr(placeholder)] [&:empty]:before:text-slate-600 [&:empty]:before:pointer-events-none"
+                                            />
+                                        </div>
                                     ) : (
-                                        <div className="w-full px-4 py-3 min-h-[200px] bg-white/5 border border-white/10 rounded-2xl text-sm text-slate-200 font-medium overflow-y-auto prose prose-invert prose-sm max-w-none">
-                                            {notes ? <ReactMarkdown>{notes}</ReactMarkdown> : <p className="text-slate-500 m-0">Nothing to preview.</p>}
-                                        </div>
+                                        <div className="w-full px-4 py-3 min-h-[250px] max-h-[350px] bg-white/5 border border-white/10 rounded-2xl text-xs text-slate-200 font-medium overflow-y-auto prose prose-invert prose-xs max-w-none"
+                                            dangerouslySetInnerHTML={{ __html: notes || '<p class="text-slate-500 m-0">Nothing to preview.</p>' }}
+                                        />
                                     )}
+
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[11px] text-slate-500 font-medium">{notes.length} chars</span>
-                                        <DBtn onClick={saveNote} disabled={savingNote || !notes.trim()} className="px-4 py-2 text-xs flex items-center gap-1.5">
-                                            {savingNote ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BookOpen className="w-3.5 h-3.5" />}
-                                            Save Note
-                                        </DBtn>
-                                    </div>
-                                    {savedNotes[lesson._id] && (
-                                        <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                                            <p className="text-[11px] text-emerald-400 font-black flex items-center gap-1.5"><CheckCircle className="w-3 h-3" /> Note saved for this lesson</p>
+                                        <span className="text-[10px] text-slate-500 font-medium">{cleanText(notes).length} characters</span>
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={startNewNote} className="px-3 py-2 border border-white/10 hover:bg-white/5 text-slate-300 text-[11px] font-bold rounded-xl transition-all">Clear</button>
+                                            <DBtn onClick={saveNote} disabled={savingNote || !cleanText(notes).trim()} className="px-4 py-2 text-[11px] flex items-center gap-1.5">
+                                                {savingNote ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BookOpen className="w-3.5 h-3.5" />}
+                                                Save Note
+                                            </DBtn>
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                             )}
 
-                            {/* ── QUIZ ────────────────────────────────── */}
+                            {/* ── QUIZ ── */}
                             {activeTab === 'quiz' && isQuiz && (
-                                <div className="space-y-5">
+                                <div className="space-y-4">
+                                    {quizResult && (
+                                        <div className={`px-4 py-3 rounded-2xl flex items-center gap-3 border ${quizResult.passed ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+                                            {quizResult.passed ? <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" /> : <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />}
+                                            <span className={`text-xs font-black ${quizResult.passed ? 'text-emerald-400' : 'text-red-400'}`}>
+                                                Score: {quizResult.score}% — {quizResult.passed ? 'Passed! 🎉' : 'Failed 😓'}
+                                            </span>
+                                        </div>
+                                    )}
+
                                     {loadingQuiz ? (
                                         <div className="flex items-center justify-center py-10">
                                             <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
@@ -770,12 +1219,12 @@ export default function LessonPlayerModal({
                                         <>
                                             <div className="flex items-center justify-between">
                                                 <div>
-                                                    <h3 className="text-sm font-black text-white">{quiz.title || 'Lesson Quiz'}</h3>
-                                                    <p className="text-[11px] text-slate-400 mt-0.5">{quiz.questions?.length} questions · {quiz.passingScore || 60}% to pass</p>
+                                                    <h3 className="text-xs font-black text-white">{quiz.title || 'Lesson Quiz'}</h3>
+                                                    <p className="text-[10px] text-slate-400 mt-0.5">{quiz.questions?.length} questions · {quiz.passingScore || 60}% to pass</p>
                                                 </div>
                                                 {quizSubmitted && (
                                                     <button onClick={() => { setQuizAnswers({}); setQuizSubmitted(false); setQuizResult(null); }}
-                                                        className="flex items-center gap-1 px-3 py-1.5 bg-white/8 hover:bg-white/15 rounded-xl text-[11px] font-black text-slate-300">
+                                                        className="flex items-center gap-1 px-2.5 py-1.5 bg-white/8 hover:bg-white/15 rounded-xl text-[10px] font-black text-slate-300 transition-colors">
                                                         <RotateCcw className="w-3 h-3" /> Retry
                                                     </button>
                                                 )}
@@ -783,8 +1232,8 @@ export default function LessonPlayerModal({
 
                                             <div className="space-y-4">
                                                 {quiz.questions?.map((q, qi) => (
-                                                    <div key={qi} className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3">
-                                                        <p className="text-sm font-bold text-white">{qi + 1}. {q.question}</p>
+                                                    <div key={qi} className="p-3.5 bg-white/4 border border-white/8 rounded-2xl space-y-3">
+                                                        <p className="text-xs font-bold text-white">{qi + 1}. {q.question}</p>
                                                         <div className="space-y-2">
                                                             {q.options?.map((opt, oi) => {
                                                                 const isSelected = quizAnswers[qi] === oi;
@@ -793,13 +1242,13 @@ export default function LessonPlayerModal({
                                                                 return (
                                                                     <button key={oi} disabled={quizSubmitted}
                                                                         onClick={() => setQuizAnswers(prev => ({ ...prev, [qi]: oi }))}
-                                                                        className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold border-2 transition-all
+                                                                        className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all
                                                                             ${isCorrect ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300'
                                                                                 : isWrong ? 'bg-red-500/15 border-red-500/50 text-red-300'
                                                                                     : isSelected ? 'bg-indigo-500/15 border-indigo-500/50 text-indigo-300'
                                                                                         : 'bg-white/4 border-white/10 text-slate-300 hover:bg-white/8 hover:border-white/20'}`}>
                                                                         <span className="inline-flex items-center gap-2">
-                                                                            <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center text-[9px] font-black
+                                                                            <span className={`w-5 h-5 rounded-full border border-2 flex items-center justify-center text-[9px] font-black
                                                                                 ${isCorrect ? 'border-emerald-400 bg-emerald-400 text-white'
                                                                                     : isWrong ? 'border-red-400 bg-red-400 text-white'
                                                                                         : isSelected ? 'border-indigo-400 bg-indigo-400 text-white'
@@ -814,7 +1263,7 @@ export default function LessonPlayerModal({
                                                         </div>
                                                         {quizSubmitted && q.explanation && (
                                                             <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl mt-2">
-                                                                <p className="text-[11px] text-indigo-300 font-medium"><span className="font-black">Explanation: </span>{q.explanation}</p>
+                                                                <p className="text-[10px] text-indigo-300 font-medium"><span className="font-black">Explanation: </span>{q.explanation}</p>
                                                             </div>
                                                         )}
                                                     </div>
@@ -823,7 +1272,7 @@ export default function LessonPlayerModal({
                                             {!quizSubmitted && (
                                                 <DBtn onClick={submitQuiz}
                                                     disabled={Object.keys(quizAnswers).length < (quiz.questions?.length || 0)}
-                                                    className="w-full py-3 text-sm flex items-center justify-center gap-2">
+                                                    className="w-full py-2.5 text-xs flex items-center justify-center gap-2">
                                                     <ListChecks className="w-4 h-4" /> Submit Quiz
                                                 </DBtn>
                                             )}
@@ -831,77 +1280,102 @@ export default function LessonPlayerModal({
                                     ) : (
                                         <div className="text-center py-10">
                                             <FileQuestion className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-                                            <p className="text-slate-400 text-sm font-medium">No quiz for this lesson</p>
+                                            <p className="text-slate-400 text-xs font-medium">No quiz for this lesson</p>
                                         </div>
                                     )}
                                 </div>
                             )}
 
-                            {/* ── AI TOOLS ────────────────────────────── */}
+                            {/* ── AI TOOLS ── */}
                             {activeTab === 'ai' && (
-                                <div className="space-y-5">
-                                    <div className="flex items-center gap-2.5 p-4 rounded-2xl relative overflow-hidden"
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2.5 p-3 rounded-2xl relative overflow-hidden"
                                         style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)' }}>
                                         <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '14px 14px' }} />
-                                        <div className="relative w-9 h-9 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
-                                            <Brain className="w-5 h-5 text-indigo-200" />
+                                        <div className="relative w-8 h-8 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
+                                            <Brain className="w-4.5 h-4.5 text-indigo-200" />
                                         </div>
                                         <div className="relative">
-                                            <p className="text-sm font-black text-white">AI Study Tools</p>
-                                            <p className="text-[11px] text-indigo-300 font-medium">Powered by Sapience AI</p>
+                                            <p className="text-xs font-black text-white">AI Study Assistant</p>
+                                            <p className="text-[9px] text-indigo-300 font-bold">Powered by Sapience AI</p>
                                         </div>
                                     </div>
 
-                                    {/* Tool buttons */}
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {[
-                                            { type: 'summarize', label: 'Summarize', desc: 'Quick summary', icon: Sparkles, color: '#7c3aed' },
-                                            { type: 'explain', label: 'Explain', desc: 'Deep explanation', icon: Target, color: '#0891b2' },
-                                            { type: 'practice', label: 'Practice', desc: 'MCQ questions', icon: ListChecks, color: '#059669' },
-                                            { type: 'revision', label: 'Revision', desc: 'Revision notes', icon: FileText, color: '#d97706' },
-                                        ].map(tool => (
-                                            <button key={tool.type} onClick={() => handleAI(tool.type)} disabled={!!aiLoading}
-                                                className="p-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-2xl text-left transition-all disabled:opacity-50 group">
-                                                <div className="w-8 h-8 rounded-xl flex items-center justify-center mb-2" style={{ background: tool.color + '33' }}>
-                                                    {aiLoading === tool.type
-                                                        ? <Loader2 className="w-4 h-4 animate-spin" style={{ color: tool.color }} />
-                                                        : <tool.icon className="w-4 h-4" style={{ color: tool.color }} />}
-                                                </div>
-                                                <p className="text-xs font-black text-white">{tool.label}</p>
-                                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">{tool.desc}</p>
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    {/* AI Result */}
-                                    {aiContent && (
-                                        <div className="p-4 bg-indigo-500/8 border border-indigo-500/20 rounded-2xl space-y-3">
-                                            <div className="flex items-center justify-between">
-                                                <p className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.06em] flex items-center gap-1.5">
-                                                    <Sparkles className="w-3.5 h-3.5" />
-                                                    {aiType === 'summarize' ? 'Summary' : aiType === 'explain' ? 'Explanation' : aiType === 'practice' ? 'Practice Qs' : 'Revision Notes'}
-                                                </p>
-                                                <button onClick={() => setAiContent(null)} className="text-slate-500 hover:text-slate-300"><X className="w-4 h-4" /></button>
+                                    {aiLoading ? (
+                                        <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                                            <div className="relative w-16 h-16 flex items-center justify-center">
+                                                <div className="absolute inset-0 rounded-full border-4 border-indigo-500/10 border-t-indigo-500 animate-spin" />
+                                                <div className="absolute inset-2 rounded-full border-4 border-purple-500/10 border-t-purple-500 animate-spin animate-reverse" />
+                                                <Sparkles className="w-5 h-5 text-indigo-400 animate-pulse" />
                                             </div>
-                                            <div className="text-sm text-slate-300 leading-relaxed font-medium overflow-y-auto max-h-[400px] custom-scrollbar pr-2 prose prose-invert prose-sm max-w-none">
+                                            <div className="text-center space-y-1">
+                                                <p className="text-xs font-black text-indigo-300 animate-pulse">Generating insights...</p>
+                                                <p className="text-[9px] text-slate-500">Connecting to Groq AI LLM model</p>
+                                            </div>
+                                        </div>
+                                    ) : aiContent ? (
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between p-2 bg-white/5 rounded-xl border border-white/5">
+                                                <span className="text-[10px] text-indigo-300 font-black uppercase tracking-wider pl-1.5">
+                                                    {aiType === 'summarize' ? '✨ Summary' : aiType === 'explain' ? '🔍 Explanation' : aiType === 'practice' ? '📝 Practice Questions' : '📚 Revision Notes'}
+                                                </span>
+                                                <button onClick={() => setAiContent(null)}
+                                                    className="px-2.5 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] text-slate-300 font-bold transition-colors">
+                                                    Back to Tools
+                                                </button>
+                                            </div>
+
+                                            <div className="p-4 bg-white/4 border border-white/8 rounded-2xl max-h-[350px] overflow-y-auto prose prose-invert prose-xs max-w-none text-xs text-slate-300 leading-relaxed font-medium">
                                                 {typeof aiContent === 'string' ? (
                                                     <ReactMarkdown>{aiContent}</ReactMarkdown>
                                                 ) : (
-                                                    <pre className="whitespace-pre-wrap m-0 bg-transparent p-0 text-slate-300 font-mono text-xs">{JSON.stringify(aiContent, null, 2)}</pre>
+                                                    <pre className="whitespace-pre-wrap m-0 bg-transparent p-0 text-slate-300 font-mono text-[10px]">{JSON.stringify(aiContent, null, 2)}</pre>
                                                 )}
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button onClick={copyAiToClipboard}
+                                                    className="py-2 px-3 bg-white/5 hover:bg-white/10 border border-white/8 rounded-xl text-[10px] font-black text-slate-300 flex items-center justify-center gap-1.5 transition-colors">
+                                                    <ListChecks className="w-3.5 h-3.5 text-slate-400" /> Copy Text
+                                                </button>
+                                                <button onClick={appendAiToNotes} disabled={savingNote}
+                                                    className="py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50">
+                                                    {savingNote ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BookOpen className="w-3.5 h-3.5" />} Add to Notes
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Select an AI helper tool:</p>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {[
+                                                    { type: 'summarize', label: 'Summarize', desc: 'Quick summary', icon: Sparkles, color: '#7c3aed' },
+                                                    { type: 'explain', label: 'Explain', desc: 'Deep explanation', icon: Target, color: '#0891b2' },
+                                                    { type: 'practice', label: 'Practice', desc: 'MCQ questions', icon: ListChecks, color: '#059669' },
+                                                    { type: 'revision', label: 'Revision', desc: 'Revision notes', icon: FileText, color: '#d97706' },
+                                                ].map(tool => (
+                                                    <button key={tool.type} onClick={() => handleAI(tool.type)}
+                                                        className="p-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-2xl text-left transition-all group">
+                                                        <div className="w-8 h-8 rounded-xl flex items-center justify-center mb-2" style={{ background: tool.color + '33' }}>
+                                                            <tool.icon className="w-4 h-4" style={{ color: tool.color }} />
+                                                        </div>
+                                                        <p className="text-xs font-black text-white">{tool.label}</p>
+                                                        <p className="text-[10px] text-slate-400 font-medium mt-0.5">{tool.desc}</p>
+                                                    </button>
+                                                ))}
                                             </div>
                                         </div>
                                     )}
                                 </div>
                             )}
 
-                            {/* ── DISCUSSION ─────────────────────────── */}
+                            {/* ── DISCUSSION / CHAT ── */}
                             {activeTab === 'discussion' && (
                                 <div className="space-y-4">
                                     {/* Comment form */}
                                     <form onSubmit={handlePostComment} className="space-y-2">
-                                        <div className="flex gap-3">
-                                            <div className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center text-white text-xs font-black" style={dg}>
+                                        <div className="flex gap-2">
+                                            <div className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center text-white text-xs font-black font-sans" style={dg}>
                                                 {currentUser?.name?.[0] || 'U'}
                                             </div>
                                             <textarea
@@ -909,12 +1383,12 @@ export default function LessonPlayerModal({
                                                 onChange={e => setCommentText(e.target.value)}
                                                 placeholder="Add a comment…"
                                                 rows={2}
-                                                className="flex-1 px-3 py-2 bg-white/5 border border-white/10 focus:border-indigo-500/50 rounded-xl text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none font-medium transition-all"
+                                                className="flex-1 px-3 py-2 bg-white/5 border border-white/10 focus:border-indigo-500/50 rounded-xl text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none resize-none font-medium transition-all"
                                             />
                                         </div>
                                         <div className="flex justify-end">
-                                            <DBtn type="submit" disabled={!commentText.trim()} className="px-4 py-2 text-xs flex items-center gap-1.5">
-                                                <Send className="w-3.5 h-3.5" /> Post
+                                            <DBtn type="submit" disabled={!commentText.trim()} className="px-3 py-1.5 text-xs flex items-center gap-1">
+                                                <Send className="w-3 h-3" /> Post
                                             </DBtn>
                                         </div>
                                     </form>
@@ -923,7 +1397,7 @@ export default function LessonPlayerModal({
                                     {loadingComments ? (
                                         <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-indigo-400" /></div>
                                     ) : comments.length > 0 ? (
-                                        <div className="space-y-3">
+                                        <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
                                             {comments.map(c => {
                                                 const avatarUrl = getCommentAvatar(c);
                                                 const authorName = getCommentAuthorName(c);
@@ -932,38 +1406,35 @@ export default function LessonPlayerModal({
                                                 const showDelete = isOwnComment(c);
 
                                                 return (
-                                                    <div key={c._id} className="flex gap-3 group p-3 bg-white/4 border border-white/8 rounded-2xl">
-                                                        <div className="w-8 h-8 rounded-xl shrink-0 overflow-hidden border border-white/10">
+                                                    <div key={c._id} className="flex gap-2.5 group p-2.5 bg-white/4 border border-white/8 rounded-2xl">
+                                                        <div className="w-7 h-7 rounded-lg shrink-0 overflow-hidden border border-white/10">
                                                             {avatarUrl
                                                                 ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-                                                                : <div className="w-full h-full flex items-center justify-center text-xs font-black text-white bg-slate-700">{authorName[0] || '?'}</div>}
+                                                                : <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-white bg-slate-700">{authorName[0] || '?'}</div>}
                                                         </div>
-                                                        <div className="flex-1 min-w-0 space-y-2">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className="text-xs font-black text-white">{authorName}</span>
-                                                                <span className="text-[10px] text-slate-500">{new Date(c.createdAt).toLocaleString()}</span>
+                                                        <div className="flex-1 min-w-0 space-y-1">
+                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                <span className="text-[11px] font-black text-white">{authorName}</span>
+                                                                <span className="text-[9px] text-slate-500">{new Date(c.createdAt).toLocaleString()}</span>
                                                                 {moderationStatus !== 'visible' && (
-                                                                    <span className="px-1.5 py-0.5 rounded-md text-[9px] uppercase tracking-wide font-black border border-emerald-500/30 text-emerald-300 bg-emerald-500/10">
+                                                                    <span className="px-1.5 py-0.5 rounded-md text-[8px] uppercase tracking-wide font-black border border-emerald-500/30 text-emerald-300 bg-emerald-500/10">
                                                                         {moderationStatus}
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <p className="text-sm text-slate-300 font-medium leading-relaxed whitespace-pre-wrap">{c.text}</p>
+                                                            <p className="text-xs text-slate-300 font-medium leading-normal whitespace-pre-wrap">{c.text}</p>
 
                                                             {hasTutorReply && (
-                                                                <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-2.5">
-                                                                    <p className="text-[10px] font-black uppercase tracking-[0.06em] text-indigo-300">Tutor Reply</p>
-                                                                    <p className="text-xs text-slate-200 font-medium mt-1 whitespace-pre-wrap">{c.tutorReply.text}</p>
-                                                                    {c.tutorReply?.repliedAt && (
-                                                                        <p className="text-[10px] text-slate-500 mt-1">{new Date(c.tutorReply.repliedAt).toLocaleString()}</p>
-                                                                    )}
+                                                                <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-2 mt-1.5">
+                                                                    <p className="text-[9px] font-black uppercase tracking-wider text-indigo-300">Tutor Reply</p>
+                                                                    <p className="text-xs text-slate-200 font-medium mt-0.5 whitespace-pre-wrap">{c.tutorReply.text}</p>
                                                                 </div>
                                                             )}
                                                         </div>
                                                         {showDelete && (
                                                             <button onClick={() => handleDeleteComment(c._id)}
-                                                                className="md:opacity-0 md:group-hover:opacity-100 opacity-100 w-8 h-8 md:w-6 md:h-6 text-red-400 bg-red-500/10 md:bg-transparent md:hover:bg-red-500/15 rounded-lg flex items-center justify-center transition-all shrink-0">
-                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                                className="opacity-0 group-hover:opacity-100 w-6 h-6 text-red-400 bg-red-500/10 hover:bg-red-500/15 rounded-md flex items-center justify-center transition-all shrink-0">
+                                                                <Trash2 className="w-3 h-3" />
                                                             </button>
                                                         )}
                                                     </div>
@@ -972,136 +1443,36 @@ export default function LessonPlayerModal({
                                         </div>
                                     ) : (
                                         <div className="text-center py-8">
-                                            <MessageSquare className="w-10 h-10 text-slate-700 mx-auto mb-3" />
-                                            <p className="text-slate-500 text-sm font-medium">No comments yet. Start the discussion!</p>
+                                            <MessageSquare className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                                            <p className="text-slate-500 text-xs font-medium">No comments yet. Start the discussion!</p>
                                         </div>
                                     )}
                                 </div>
                             )}
 
-                            {/* ── RESOURCES ───────────────────────────── */}
+                            {/* ── RESOURCES / ATTACHMENTS ── */}
                             {activeTab === 'resources' && (
                                 <div className="space-y-3">
-                                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.06em]">Lesson Resources</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lesson Resources</p>
                                     {attachments?.length > 0 ? attachments.map((r, i) => (
                                         <a key={i} href={r.url} target="_blank" rel="noreferrer"
-                                            className="flex items-center gap-3 p-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all group">
-                                            <div className="w-9 h-9 bg-indigo-500/15 rounded-xl flex items-center justify-center shrink-0">
+                                            className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all group">
+                                            <div className="w-8 h-8 bg-indigo-500/15 rounded-xl flex items-center justify-center shrink-0">
                                                 <FileText className="w-4 h-4 text-indigo-400" />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-bold text-white truncate">{r.name || r.url}</p>
-                                                <p className="text-[10px] text-slate-400 font-medium capitalize">{r.type || 'PDF'}</p>
+                                                <p className="text-xs font-bold text-white truncate">{r.name || r.url}</p>
+                                                <p className="text-[9px] text-slate-400 font-medium capitalize">{r.type || 'PDF'}</p>
                                             </div>
-                                            <Download className="w-4 h-4 text-slate-400 group-hover:text-indigo-400 transition-colors" />
+                                            <Download className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-400 transition-colors" />
                                         </a>
                                     )) : (
                                         <div className="text-center py-10">
-                                            <Download className="w-10 h-10 text-slate-700 mx-auto mb-3" />
-                                            <p className="text-slate-500 text-sm font-medium">No resources for this lesson</p>
+                                            <Download className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                                            <p className="text-slate-500 text-xs font-medium">No resources for this lesson</p>
                                         </div>
                                     )}
                                 </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* ── RIGHT: Lesson Sidebar ─────────────────────────── */}
-                {sidebarOpen && (
-                    <div className="w-80 xl:w-96 flex flex-col border-l border-white/8 shrink-0" style={{ background: '#11121e' }}>
-
-                        {/* Sidebar header */}
-                        <div className="px-4 py-3.5 border-b border-white/8 shrink-0">
-                            <div className="flex items-center justify-between mb-3">
-                                <p className="text-xs font-black text-white uppercase tracking-[0.06em]">Course Content</p>
-                                <button onClick={() => setSidebarOpen(false)} className="w-6 h-6 rounded-lg bg-white/8 hover:bg-white/15 flex items-center justify-center text-slate-400 transition-colors">
-                                    <ChevronRight className="w-3.5 h-3.5" />
-                                </button>
-                            </div>
-                            {/* Overall progress bar */}
-                            <div className="space-y-1.5">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[10px] text-slate-400 font-medium">{completedIds.length} of {lessons.length} completed</span>
-                                    <span className="text-[10px] font-black text-indigo-400">{Math.round((completedIds.length / lessons.length) * 100)}%</span>
-                                </div>
-                                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                    <div className="h-full bg-indigo-500 rounded-full transition-all"
-                                        style={{ width: `${(completedIds.length / lessons.length) * 100}%` }} />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Lesson list */}
-                        <div className="flex-1 overflow-y-auto">
-                            {modules && modules.length > 0 ? (
-                                modules.map((mod, mi) => {
-                                    const mLessons = getLessonsByModule(mod._id);
-                                    const isExp = expandedModules.includes(mod._id);
-                                    const mDone = mLessons.filter(l => isLessonDone(l)).length;
-                                    return (
-                                        <div key={mod._id}>
-                                            {/* Module header */}
-                                            <button onClick={() => setExpandedMods(prev => isExp ? prev.filter(id => id !== mod._id) : [...prev, mod._id])}
-                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 border-b border-white/5 transition-colors">
-                                                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform shrink-0 ${isExp ? '' : '-rotate-90'}`} />
-                                                <div className="flex-1 min-w-0 text-left">
-                                                    <p className="text-xs font-black text-white truncate">{mod.title}</p>
-                                                    <p className="text-[10px] text-slate-500 font-medium">{mDone}/{mLessons.length} done</p>
-                                                </div>
-                                                {mDone === mLessons.length && mLessons.length > 0 && <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />}
-                                            </button>
-                                            {/* Module lessons */}
-                                            {isExp && mLessons.map((l, li) => {
-                                                const isAct = l._id === lesson._id;
-                                                const done = isLessonDone(l);
-                                                return (
-                                                    <button key={l._id} onClick={() => goToLesson(lessons.findIndex(x => x._id === l._id))}
-                                                        className={`w-full flex items-start gap-3 px-4 py-3 border-b border-white/5 transition-all text-left
-                                                            ${isAct ? 'bg-indigo-500/15 border-l-2 border-l-indigo-500' : 'hover:bg-white/5'}`}>
-                                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${done ? 'bg-emerald-500/20' : isAct ? 'bg-indigo-500/20' : 'bg-white/8'}`}>
-                                                            {done ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                                                                : l.type === 'quiz' ? <FileQuestion className="w-3 h-3 text-amber-400" />
-                                                                    : l.type === 'pdf' ? <FileText className="w-3 h-3 text-slate-400" />
-                                                                        : isAct ? <Play className="w-3 h-3 text-indigo-400 fill-indigo-400 ml-0.5" />
-                                                                            : <Play className="w-3 h-3 text-slate-500 fill-slate-500 ml-0.5" />}
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className={`text-xs font-bold leading-snug truncate ${isAct ? 'text-indigo-300' : done ? 'text-slate-400' : 'text-slate-200'}`}>{l.title}</p>
-                                                            {l.duration > 0 && <p className="text-[10px] text-slate-500 font-medium mt-0.5">{Math.floor(l.duration / 60)}:{String(l.duration % 60).padStart(2, '0')}</p>}
-                                                        </div>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    );
-                                })
-                            ) : (
-                                // Flat list (no modules)
-                                lessons.map((l, li) => {
-                                    const isAct = l._id === lesson._id;
-                                    const done = isLessonDone(l);
-                                    return (
-                                        <button key={l._id} onClick={() => goToLesson(li)}
-                                            className={`w-full flex items-start gap-3 px-4 py-3 border-b border-white/5 transition-all text-left
-                                                ${isAct ? 'bg-indigo-500/15 border-l-2 border-l-indigo-500' : 'hover:bg-white/5'}`}>
-                                            <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 text-[10px] font-black mt-0.5
-                                                ${done ? 'bg-emerald-500/20 text-emerald-400' : isAct ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/8 text-slate-500'}`}>
-                                                {done ? <CheckCircle className="w-3.5 h-3.5" /> : li + 1}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className={`text-xs font-bold leading-snug ${isAct ? 'text-indigo-300' : done ? 'text-slate-400 line-through decoration-slate-600' : 'text-slate-200'}`}>{l.title}</p>
-                                                <div className="flex items-center gap-2 mt-0.5">
-                                                    <span className={`text-[10px] font-medium capitalize ${l.type === 'quiz' ? 'text-amber-400' : l.type === 'pdf' ? 'text-blue-400' : 'text-slate-500'}`}>
-                                                        {l.type || 'video'}
-                                                    </span>
-                                                    {l.duration > 0 && <span className="text-[10px] text-slate-600 font-medium">{Math.floor(l.duration / 60)}:{String(l.duration % 60).padStart(2, '0')}</span>}
-                                                </div>
-                                            </div>
-                                            {isAct && <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0 mt-2" />}
-                                        </button>
-                                    );
-                                })
                             )}
                         </div>
                     </div>

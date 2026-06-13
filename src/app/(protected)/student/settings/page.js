@@ -38,6 +38,78 @@ export default function StudentSettingsPage() {
     const [sessions, setSessions] = useState([]);
     const [revoking, setRevoking] = useState(null);
 
+    // Two-Factor Authentication (2FA) State
+    const [twoFactorLoading, setTwoFactorLoading] = useState(false);
+    const [twoFactorSetupData, setTwoFactorSetupData] = useState(null);
+    const [otpCode, setOtpCode] = useState('');
+    const [showDisableForm, setShowDisableForm] = useState(false);
+
+    const handleInitiate2FA = async () => {
+        setTwoFactorLoading(true);
+        try {
+            const res = await api.post('/auth/enable-2fa');
+            if (res.data?.success) {
+                setTwoFactorSetupData({
+                    secret: res.data.secret,
+                    qrCode: res.data.qrCode
+                });
+                setOtpCode('');
+            } else {
+                toast.error(res.data?.message || 'Failed to initiate 2FA setup');
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to initiate 2FA setup');
+        } finally {
+            setTwoFactorLoading(false);
+        }
+    };
+
+    const handleVerify2FA = async () => {
+        if (!otpCode || otpCode.length !== 6) {
+            toast.error('Please enter a 6-digit verification code');
+            return;
+        }
+        setTwoFactorLoading(true);
+        try {
+            const res = await api.post('/auth/verify-2fa', { token: otpCode });
+            if (res.data?.success) {
+                toast.success('Two-factor authentication enabled successfully!');
+                setUser(prev => ({ ...prev, twoFactorEnabled: true }));
+                setTwoFactorSetupData(null);
+                setOtpCode('');
+            } else {
+                toast.error(res.data?.message || 'Verification failed');
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Verification failed');
+        } finally {
+            setTwoFactorLoading(false);
+        }
+    };
+
+    const handleDisable2FA = async () => {
+        if (!otpCode || otpCode.length !== 6) {
+            toast.error('Please enter a 6-digit verification code');
+            return;
+        }
+        setTwoFactorLoading(true);
+        try {
+            const res = await api.post('/auth/disable-2fa', { token: otpCode });
+            if (res.data?.success) {
+                toast.success('Two-factor authentication disabled.');
+                setUser(prev => ({ ...prev, twoFactorEnabled: false }));
+                setShowDisableForm(false);
+                setOtpCode('');
+            } else {
+                toast.error(res.data?.message || 'Failed to disable 2FA');
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to disable 2FA');
+        } finally {
+            setTwoFactorLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -187,6 +259,134 @@ export default function StudentSettingsPage() {
                                             Change Password
                                         </Link>
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Two-Factor Authentication Section */}
+                            <div className="rounded-2xl border overflow-hidden animate-in fade-in duration-300" style={cardStyle}>
+                                <div className="px-6 py-5 border-b" style={{ borderColor: 'var(--theme-border)' }}>
+                                    <div className="flex items-center gap-2">
+                                        <Shield className="w-5 h-5" style={{ color: 'var(--theme-primary)' }} />
+                                        <h2 className="font-black text-lg" style={{ color: 'var(--theme-foreground)' }}>Two-Factor Authentication (2FA)</h2>
+                                    </div>
+                                    <p className="text-xs mt-1" style={{ color: 'var(--theme-foreground)', opacity: 0.5 }}>
+                                        Add an extra layer of security to your account by requiring a verification code when signing in.
+                                    </p>
+                                </div>
+                                <div className="p-6 space-y-4">
+                                    {user?.twoFactorEnabled ? (
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                                                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-sm font-bold block" style={{ color: 'var(--theme-foreground)' }}>2FA is Enabled</span>
+                                                        <span className="text-xs block mt-0.5" style={{ color: 'var(--theme-foreground)', opacity: 0.5 }}>Your account is protected with two-factor authentication.</span>
+                                                    </div>
+                                                </div>
+                                                {!showDisableForm && (
+                                                    <button onClick={() => { setShowDisableForm(true); setOtpCode(''); }}
+                                                        className="px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer text-red-500"
+                                                        style={{ backgroundColor: 'transparent', borderColor: 'var(--theme-border)' }}
+                                                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fef2f2'; e.currentTarget.style.borderColor = '#fca5a5'; }}
+                                                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = 'var(--theme-border)'; }}>
+                                                        Disable 2FA
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {showDisableForm && (
+                                                <div className="p-4 rounded-xl border space-y-3 bg-red-50/5" style={{ borderColor: 'color-mix(in srgb, #ef4444 20%, transparent)' }}>
+                                                    <span className="text-xs font-bold block text-red-500">Confirm Deactivation</span>
+                                                    <p className="text-xs" style={{ color: 'var(--theme-foreground)', opacity: 0.6 }}>
+                                                        Enter the 6-digit verification code from your authenticator app to disable 2FA.
+                                                    </p>
+                                                    <div className="flex items-center gap-3 max-w-sm">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="000000"
+                                                            maxLength={6}
+                                                            className="flex-1 px-3 py-2 rounded-lg text-sm font-semibold border bg-white focus:outline-none"
+                                                            style={{ borderColor: 'var(--theme-border)' }}
+                                                            value={otpCode}
+                                                            onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                                        />
+                                                        <button onClick={handleDisable2FA} disabled={twoFactorLoading || otpCode.length !== 6}
+                                                            className="px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer bg-red-500 text-white border-none disabled:opacity-50">
+                                                            {twoFactorLoading ? 'Disabling...' : 'Confirm Disable'}
+                                                        </button>
+                                                        <button onClick={() => setShowDisableForm(false)}
+                                                            className="px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer bg-transparent border text-slate-500"
+                                                            style={{ borderColor: 'var(--theme-border)' }}>
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {!twoFactorSetupData ? (
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <span className="text-sm font-bold block" style={{ color: 'var(--theme-foreground)' }}>2FA is Disabled</span>
+                                                        <span className="text-xs block mt-0.5" style={{ color: 'var(--theme-foreground)', opacity: 0.5 }}>Protect your account with a secondary security layer.</span>
+                                                    </div>
+                                                    <button onClick={handleInitiate2FA} disabled={twoFactorLoading}
+                                                        className="px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer"
+                                                        style={{ backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)', color: '#fff' }}
+                                                        onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
+                                                        onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}>
+                                                        {twoFactorLoading ? 'Initializing...' : 'Enable 2FA'}
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-4 p-5 rounded-xl border bg-slate-50/50" style={{ borderColor: 'var(--theme-border)' }}>
+                                                    <div className="flex flex-col md:flex-row gap-6 items-center">
+                                                        <div className="bg-white p-3 rounded-xl border" style={{ borderColor: 'var(--theme-border)' }}>
+                                                            <img src={twoFactorSetupData.qrCode} alt="2FA QR Code" className="w-40 h-40 object-contain" />
+                                                        </div>
+                                                        <div className="flex-1 space-y-3">
+                                                            <span className="text-sm font-bold block" style={{ color: 'var(--theme-foreground)' }}>Scan with Authenticator App</span>
+                                                            <p className="text-xs" style={{ color: 'var(--theme-foreground)', opacity: 0.6 }}>
+                                                                Scan the QR code with your Google Authenticator or other TOTP app. If you cannot scan, enter the key below manually:
+                                                            </p>
+                                                            <div className="bg-white px-3 py-2 rounded-lg border text-xs font-mono select-all flex items-center justify-between" style={{ borderColor: 'var(--theme-border)' }}>
+                                                                <span className="tracking-wider text-slate-700">{twoFactorSetupData.secret}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="pt-2 space-y-2 max-w-sm">
+                                                        <label className="text-xs font-bold" style={{ color: 'var(--theme-foreground)' }}>Enter Verification Code</label>
+                                                        <div className="flex items-center gap-3">
+                                                            <input
+                                                                type="text"
+                                                                placeholder="000000"
+                                                                maxLength={6}
+                                                                className="flex-1 px-3 py-2 rounded-lg text-sm font-semibold border bg-white focus:outline-none"
+                                                                style={{ borderColor: 'var(--theme-border)' }}
+                                                                value={otpCode}
+                                                                onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                                            />
+                                                            <button onClick={handleVerify2FA} disabled={twoFactorLoading || otpCode.length !== 6}
+                                                                className="px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-white border-none disabled:opacity-50"
+                                                                style={{ backgroundColor: 'var(--theme-primary)' }}>
+                                                                {twoFactorLoading ? 'Enabling...' : 'Verify & Enable'}
+                                                            </button>
+                                                            <button onClick={() => setTwoFactorSetupData(null)}
+                                                                className="px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer bg-transparent border text-slate-500"
+                                                                style={{ borderColor: 'var(--theme-border)' }}>
+                                                                Cancel
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

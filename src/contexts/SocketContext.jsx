@@ -54,7 +54,7 @@ export const SocketProvider = ({ children }) => {
         token,
         userName
       },
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       autoConnect: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 2000

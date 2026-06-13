@@ -376,10 +376,17 @@ export default function TutorSettingsPage() {
                         <div className="p-6 space-y-6" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                             <div className="pb-4 border-b" style={{ borderColor: C.cardBorder }}>
                                 <h2 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 4px 0' }}>Security Settings</h2>
-                                <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>Secure your account with a strong password.</p>
+                                <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0 }}>Manage your password and security settings.</p>
                             </div>
-                            <div className="max-w-md">
-                                <SecuritySettings hasPassword={user?.hasPassword} />
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 divide-y lg:divide-y-0 lg:divide-x" style={{ borderColor: C.cardBorder }}>
+                                <div className="space-y-4 pr-0 lg:pr-8">
+                                    <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>Change Password</h3>
+                                    <SecuritySettings hasPassword={user?.hasPassword} />
+                                </div>
+                                <div className="space-y-4 pt-6 lg:pt-0 pl-0 lg:pl-8" style={{ borderColor: C.cardBorder }}>
+                                    <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>Two-Factor Authentication (2FA)</h3>
+                                    <TutorTwoFactorSettings user={user} setUser={setUser} />
+                                </div>
                             </div>
                         </div>
                     )}
@@ -434,5 +441,208 @@ function SecuritySettings({ hasPassword }) {
                 </button>
             </div>
         </form>
+    );
+}
+
+function TutorTwoFactorSettings({ user, setUser }) {
+    const [loading, setLoading] = useState(false);
+    const [setupData, setSetupData] = useState(null);
+    const [otpCode, setOtpCode] = useState('');
+    const [showDisableForm, setShowDisableForm] = useState(false);
+
+    const handleInitiate = async () => {
+        setLoading(true);
+        try {
+            const res = await api.post('/auth/enable-2fa');
+            if (res.data?.success) {
+                setSetupData({
+                    secret: res.data.secret,
+                    qrCode: res.data.qrCode
+                });
+                setOtpCode('');
+            } else {
+                toast.error(res.data?.message || 'Failed to initiate 2FA');
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to initiate 2FA');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerify = async () => {
+        if (!otpCode || otpCode.length !== 6) {
+            toast.error('Please enter a 6-digit code');
+            return;
+        }
+        setLoading(true);
+        try {
+            const res = await api.post('/auth/verify-2fa', { token: otpCode });
+            if (res.data?.success) {
+                toast.success('2FA enabled successfully!');
+                const updated = { ...user, twoFactorEnabled: true };
+                setUser(updated);
+                localStorage.setItem('user', JSON.stringify(updated));
+                setSetupData(null);
+                setOtpCode('');
+            } else {
+                toast.error(res.data?.message || 'Verification failed');
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Verification failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDisable = async () => {
+        if (!otpCode || otpCode.length !== 6) {
+            toast.error('Please enter a 6-digit code');
+            return;
+        }
+        setLoading(true);
+        try {
+            const res = await api.post('/auth/disable-2fa', { token: otpCode });
+            if (res.data?.success) {
+                toast.success('2FA disabled successfully');
+                const updated = { ...user, twoFactorEnabled: false };
+                setUser(updated);
+                localStorage.setItem('user', JSON.stringify(updated));
+                setShowDisableForm(false);
+                setOtpCode('');
+            } else {
+                toast.error(res.data?.message || 'Deactivation failed');
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Deactivation failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div style={{ fontFamily: T.fontFamily, color: C.text }} className="space-y-4">
+            {user?.twoFactorEnabled ? (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4" style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                        <div>
+                            <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, display: 'block' }}>2FA is Currently Enabled</span>
+                            <span style={{ fontSize: T.size.xs, color: C.textMuted, display: 'block', marginTop: '2px' }}>Your account is protected with TOTP authenticator.</span>
+                        </div>
+                        {!showDisableForm && (
+                            <button onClick={() => { setShowDisableForm(true); setOtpCode(''); }}
+                                className="px-4 h-9 cursor-pointer transition-opacity hover:opacity-85 border-none font-bold text-xs shrink-0 text-red-500"
+                                style={{ backgroundColor: C.dangerBg, color: C.danger, borderRadius: '8px', border: `1px solid ${C.dangerBorder}` }}>
+                                Disable
+                            </button>
+                        )}
+                    </div>
+
+                    {showDisableForm && (
+                        <div className="p-4 space-y-3" style={{ border: `1px dashed ${C.dangerBorder}`, borderRadius: '10px', backgroundColor: 'rgba(239, 68, 68, 0.02)' }}>
+                            <span style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.danger, display: 'block' }}>Confirm Disabling 2FA</span>
+                            <p style={{ fontSize: T.size.xs, color: C.textMuted, margin: 0 }}>Enter the 6-digit code from your authenticator app to disable 2FA protection.</p>
+                            <div className="flex gap-3 max-w-sm">
+                                <input
+                                    type="text"
+                                    placeholder="000000"
+                                    maxLength={6}
+                                    style={{
+                                        backgroundColor: C.surfaceWhite,
+                                        border: `1.5px solid ${C.cardBorder}`,
+                                        borderRadius: '8px',
+                                        color: C.heading,
+                                        fontSize: T.size.sm,
+                                        fontWeight: T.weight.semibold,
+                                        padding: '8px 12px',
+                                        outline: 'none',
+                                        flex: 1
+                                    }}
+                                    value={otpCode}
+                                    onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                />
+                                <button onClick={handleDisable} disabled={loading || otpCode.length !== 6}
+                                    className="px-4 h-9 cursor-pointer transition-opacity hover:opacity-85 border-none font-bold text-xs text-white"
+                                    style={{ backgroundColor: '#ef4444', borderRadius: '8px' }}>
+                                    {loading ? 'Disabling...' : 'Confirm'}
+                                </button>
+                                <button onClick={() => setShowDisableForm(false)}
+                                    className="px-3 h-9 cursor-pointer transition-opacity hover:opacity-85 font-bold text-xs"
+                                    style={{ backgroundColor: 'transparent', border: `1.5px solid ${C.cardBorder}`, color: C.textMuted, borderRadius: '8px' }}>
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {!setupData ? (
+                        <div className="flex items-center justify-between p-4" style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                            <div>
+                                <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, display: 'block' }}>2FA is Disabled</span>
+                                <span style={{ fontSize: T.size.xs, color: C.textMuted, display: 'block', marginTop: '2px' }}>Increase security by requiring verification codes.</span>
+                            </div>
+                            <button onClick={handleInitiate} disabled={loading}
+                                className="px-4 h-9 cursor-pointer transition-opacity hover:opacity-85 border-none font-bold text-xs text-white"
+                                style={{ background: C.gradientBtn, borderRadius: '8px' }}>
+                                {loading ? 'Initializing...' : 'Enable 2FA'}
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="p-4 space-y-4" style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                            <div className="flex flex-col sm:flex-row gap-4 items-center">
+                                <div style={{ backgroundColor: '#fff', padding: '8px', borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
+                                    <img src={setupData.qrCode} alt="2FA QR Code" style={{ width: '120px', height: '120px', objectFit: 'contain' }} />
+                                </div>
+                                <div className="flex-1 space-y-2 text-center sm:text-left">
+                                    <span style={{ fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, display: 'block' }}>Scan QR Code</span>
+                                    <p style={{ fontSize: T.size.xs, color: C.textMuted, margin: 0 }}>
+                                        Scan with Google Authenticator or enter secret key manually:
+                                    </p>
+                                    <div style={{ backgroundColor: '#fff', border: `1px solid ${C.cardBorder}`, borderRadius: '6px', padding: '6px 10px', fontSize: '11px', fontFamily: 'monospace', wordBreak: 'break-all', userSelect: 'all', color: '#334155' }}>
+                                        {setupData.secret}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5 max-w-sm">
+                                <label style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted }}>Enter 6-digit Code</label>
+                                <div className="flex gap-3">
+                                    <input
+                                        type="text"
+                                        placeholder="000000"
+                                        maxLength={6}
+                                        style={{
+                                            backgroundColor: C.surfaceWhite,
+                                            border: `1.5px solid ${C.cardBorder}`,
+                                            borderRadius: '8px',
+                                            color: C.heading,
+                                            fontSize: T.size.sm,
+                                            fontWeight: T.weight.semibold,
+                                            padding: '8px 12px',
+                                            outline: 'none',
+                                            flex: 1
+                                        }}
+                                        value={otpCode}
+                                        onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    />
+                                    <button onClick={handleVerify} disabled={loading || otpCode.length !== 6}
+                                        className="px-4 h-9 cursor-pointer transition-opacity hover:opacity-85 border-none font-bold text-xs text-white"
+                                        style={{ backgroundColor: C.btnPrimary, borderRadius: '8px' }}>
+                                        {loading ? 'Enabling...' : 'Verify'}
+                                    </button>
+                                    <button onClick={() => setSetupData(null)}
+                                        className="px-3 h-9 cursor-pointer transition-opacity hover:opacity-85 font-bold text-xs"
+                                        style={{ backgroundColor: 'transparent', border: `1.5px solid ${C.cardBorder}`, color: C.textMuted, borderRadius: '8px' }}>
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
     );
 }

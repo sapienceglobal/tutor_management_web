@@ -104,8 +104,16 @@ export function Header({ onMenuClick, onSidebarCollapse, isSidebarCollapsed, ins
         student: 'Student',
     }[userRole] || userRole;
 
-    const profilePath = userRole === 'tutor' ? '/tutor/settings' : '/admin/profile';
-    const settingsPath = userRole === 'tutor' ? '/tutor/settings' : '/admin/settings';
+    const profilePath = userRole === 'tutor'
+        ? '/tutor/settings'
+        : userRole === 'superadmin'
+            ? '/superadmin/profile'
+            : '/admin/profile';
+    const settingsPath = userRole === 'tutor'
+        ? '/tutor/settings'
+        : userRole === 'superadmin'
+            ? '/superadmin/settings'
+            : '/admin/settings';
     const dashboardPath = userRole === 'tutor'
         ? '/tutor/dashboard'
         : userRole === 'superadmin'
@@ -218,7 +226,7 @@ export function Header({ onMenuClick, onSidebarCollapse, isSidebarCollapsed, ins
                                 <div className="text-center py-6">
                                     <MdSearch className="mx-auto mb-2 text-gray-300" style={{ width: 32, height: 32 }} />
                                     <p style={{ margin: 0, fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>No matches found</p>
-                                    <p style={{ margin: '4px 0 0 0', fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>No results match "{searchTerm}"</p>
+                                    <p style={{ margin: '4px 0 0 0', fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted }}>No results match &quot;{searchTerm}&quot;</p>
                                 </div>
                             ) : (
                                 <div className="flex flex-col gap-4">
