@@ -2,6 +2,7 @@ import { Lock, PlayCircle } from 'lucide-react';
 import { cn } from '@/lib/utils'; // Assuming you have this utility
 import { useRef, useEffect } from 'react';
 import Hls from 'hls.js';
+import Cookies from 'js-cookie';
 
 export function VideoPlayer({
     videoUrl,
@@ -40,12 +41,27 @@ export function VideoPlayer({
         let hls = null;
         if (videoRef.current && videoUrl) {
             if (videoUrl.includes('.m3u8')) {
+                const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || Cookies.get('token')) : null;
                 if (Hls.isSupported()) {
-                    hls = new Hls();
+                    const hlsConfig = {
+                        startLevel: -1, capLevelToPlayerSize: true, debug: false,
+                        maxBufferLength: 30, maxMaxBufferLength: 600
+                    };
+                    if (token) {
+                        hlsConfig.xhrSetup = (xhr, url) => {
+                            const isCloudinaryDirect = url.includes('cloudinary.com');
+                            if (!isCloudinaryDirect) {
+                                xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                            }
+                        };
+                    }
+                    hls = new Hls(hlsConfig);
                     hls.loadSource(videoUrl);
                     hls.attachMedia(videoRef.current);
                 } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-                    videoRef.current.src = videoUrl;
+                    // Safari native HLS
+                    const urlWithToken = token ? `${videoUrl}${videoUrl.includes('?') ? '&' : '?'}token=${token}` : videoUrl;
+                    videoRef.current.src = urlWithToken;
                 }
             } else {
                 videoRef.current.src = videoUrl;

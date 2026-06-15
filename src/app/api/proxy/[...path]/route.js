@@ -52,6 +52,7 @@ async function proxy(request, params, method) {
     const url = `${BACKEND_BASE.replace(/\/$/, '')}/api/${rest}${query ? '?' + query : ''}`;
     const auth = request.headers.get('authorization');
     const contentType = request.headers.get('content-type');
+    const range = request.headers.get('range');
 
     const headers = { 
         'x-api-key': API_KEY,
@@ -59,6 +60,7 @@ async function proxy(request, params, method) {
     };
     if (contentType) headers['Content-Type'] = contentType;
     if (auth) headers['Authorization'] = auth;
+    if (range) headers['Range'] = range;
 
     const opts = { method, headers };
     if (method !== 'GET' && method !== 'HEAD') {
@@ -83,6 +85,14 @@ async function proxy(request, params, method) {
             if (contentType) responseHeaders.set('Content-Type', contentType);
             const contentDisposition = res.headers.get('Content-Disposition');
             if (contentDisposition) responseHeaders.set('Content-Disposition', contentDisposition);
+            
+            const acceptRanges = res.headers.get('Accept-Ranges');
+            if (acceptRanges) responseHeaders.set('Accept-Ranges', acceptRanges);
+            const contentRange = res.headers.get('Content-Range');
+            if (contentRange) responseHeaders.set('Content-Range', contentRange);
+            const contentLength = res.headers.get('Content-Length');
+            if (contentLength) responseHeaders.set('Content-Length', contentLength);
+
             return new Response(blob, { status: res.status, headers: responseHeaders });
         }
         const data = await res.text();

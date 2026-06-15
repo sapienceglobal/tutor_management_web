@@ -301,8 +301,8 @@ export default function LessonPlayerModal({
                 };
                 if (token) {
                     hlsConfig.xhrSetup = (xhr, url) => {
-                        const isCloudinary = url.includes('cloudinary') || url.includes('/video/upload/');
-                        if (!isCloudinary) {
+                        const isCloudinaryDirect = url.includes('cloudinary.com');
+                        if (!isCloudinaryDirect) {
                             xhr.setRequestHeader('Authorization', `Bearer ${token}`);
                         }
                     };
@@ -315,7 +315,8 @@ export default function LessonPlayerModal({
                 hls.attachMedia(videoRef.current);
             } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
                 // Safari native HLS
-                videoRef.current.src = videoUrl;
+                const urlWithToken = token ? `${videoUrl}${videoUrl.includes('?') ? '&' : '?'}token=${token}` : videoUrl;
+                videoRef.current.src = urlWithToken;
             }
         }
 
