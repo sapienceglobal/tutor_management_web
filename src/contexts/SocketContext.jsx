@@ -90,6 +90,27 @@ export const SocketProvider = ({ children }) => {
       setExamBlockedMessage(data.reason || 'This exam attempt has been terminated by the proctor/tutor.');
     });
 
+    socketInstance.on('notification', (data) => {
+      console.log('🔔 Notification received via WebSocket:', data);
+      if (data && data.message) {
+        const isWarning = data.type === 'direct_message' || data.message.includes('⚠️') || data.title?.includes('check-in');
+        toast(data.message, {
+          icon: isWarning ? '⚠️' : '🔔',
+          duration: isWarning ? 10000 : 6000,
+          id: `notif-${data._id || Date.now()}`,
+          style: isWarning ? {
+            border: '2px solid #ef4444',
+            padding: '16px',
+            color: '#ef4444',
+            background: '#fef2f2',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            zIndex: 9999
+          } : undefined
+        });
+      }
+    });
+
     socketInstance.on('connect_error', (err) => {
       console.error('Socket connection error:', err.message);
     });

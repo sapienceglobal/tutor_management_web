@@ -186,6 +186,52 @@ export default function LiveProctoringCenter() {
       });
     };
 
+    // Handle student joining the exam session
+    const handleStudentJoinedExam = (session) => {
+      console.log("✍️ Student joined exam session:", session);
+      
+      setSessions((prevSessions) => {
+        const exists = prevSessions.some(
+          (s) => s.studentId === session.studentId && s.examId === session.examId
+        );
+        if (exists) {
+          // If already in list, make sure it is marked as connected
+          return prevSessions.map((s) => {
+            if (s.studentId === session.studentId && s.examId === session.examId) {
+              return {
+                ...s,
+                isConnected: true,
+                socketId: session.socketId,
+              };
+            }
+            return s;
+          });
+        }
+        
+        // Add new session
+        const enriched = {
+          ...session,
+          violationsCount: 0,
+          violationsList: [],
+          tabSwitchCount: 0,
+          faceCount: 1,
+          riskScore: 0,
+          riskLevel: "Safe",
+          isConnected: true,
+        };
+
+        // Add exam title to exam options filter if not present
+        setExamOptions((prev) => {
+          if (!prev.includes(session.examTitle)) {
+            return [...prev, session.examTitle];
+          }
+          return prev;
+        });
+
+        return [enriched, ...prevSessions];
+      });
+    };
+
     // Handle student leaving or finishing the exam session
     const handleStudentLeftExam = (data) => {
       console.log("🚪 Student left exam session:", data);
@@ -206,17 +252,27 @@ export default function LiveProctoringCenter() {
         });
       });
 
-      // Remove the session completely after 3.5 seconds
+      // Remove the session completely after 3.5 seconds if they haven't reconnected
       setTimeout(() => {
         setSessions((prev) =>
           prev.filter(
-            (s) => !(s.studentId === data.studentId && s.examId === data.examId)
+            (s) => {
+              if (s.studentId === data.studentId && s.examId === data.examId) {
+                return s.isConnected; // Keep if reconnected, remove if still disconnected
+              }
+              return true;
+            }
           )
         );
-        // If the drawer was open for this student, close it
+        // If the drawer was open for this student, close it if they are still disconnected
         setSelectedSessionLogs((prevLogs) => {
           if (prevLogs && prevLogs.studentId === data.studentId) {
-            return null;
+            const current = sessionsRef.current.find(
+              (s) => s.studentId === data.studentId && s.examId === data.examId
+            );
+            if (current && !current.isConnected) {
+              return null;
+            }
           }
           return prevLogs;
         });
@@ -225,10 +281,12 @@ export default function LiveProctoringCenter() {
 
     socket.on("proctoring_alert", handleLiveProctoringAlert);
     socket.on("student_left_exam", handleStudentLeftExam);
+    socket.on("student_joined_exam", handleStudentJoinedExam);
 
     return () => {
       socket.off("proctoring_alert", handleLiveProctoringAlert);
       socket.off("student_left_exam", handleStudentLeftExam);
+      socket.off("student_joined_exam", handleStudentJoinedExam);
     };
   }, [socket]);
 

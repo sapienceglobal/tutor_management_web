@@ -626,7 +626,11 @@ export default function TakeExamPage({ params }) {
                   ) {
                     setTimeLeft(remainingTime);
                   } else {
-                    setTimeLeft(0); // Time is up agar tab band kar rakha tha der tak
+                    // Time is up in the saved session. Clear it and start fresh.
+                    try {
+                      localStorage.removeItem(AUTOSAVE_KEY);
+                    } catch (e) {}
+                    setTimeLeft(fetchedExam.duration * 60);
                   }
                 } else if (
                   typeof parsed.timeLeft === "number" &&
@@ -911,6 +915,7 @@ export default function TakeExamPage({ params }) {
 
   // ── Submit ───────────────────────────────────────────────────────────
   const handleSubmit = async (autoSubmit = false) => {
+    if (submitting || attemptIdRef.current) return;
     if (!autoSubmit) {
       const isConfirmed = await confirmDialog(
         "Finish Test",
