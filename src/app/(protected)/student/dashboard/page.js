@@ -21,8 +21,14 @@ import {
   MdPerson,
   MdFlashOn,
   MdAccessTime,
+  MdClose,
+  MdEventNote,
+  MdChevronLeft,
+  MdChevronRight,
+  MdCalendarMonth,
 } from "react-icons/md";
 import Link from "next/link";
+import { getAudienceDisplay } from "@/lib/audienceDisplay";
 import api from "@/lib/axios";
 import {
   AreaChart,
@@ -271,6 +277,7 @@ export default function StudentDashboard() {
   const [allExams, setAllExams] = useState([]); // Today's exam filter karne ke liye
   const [todayCarouselIdx, setTodayCarouselIdx] = useState(0);
   const [batchPage, setBatchPage] = useState(1);
+  const [selectedExam, setSelectedExam] = useState(null);
 
   const router = useRouter();
 
@@ -356,7 +363,7 @@ export default function StudentDashboard() {
           setActivityData([]);
         }
         try {
-          const batchRes = await api.get(`/batches/student/my-batches${s}`);
+          const batchRes = await api.get(`/batches/my${s}`);
           if (batchRes.data.success)
             setBatches(batchRes.data.batches?.slice(0, 4) || []);
         } catch {}
@@ -987,8 +994,9 @@ export default function StudentDashboard() {
 
                 // 2. REAL EXAMS FOR THIS BATCH ONLY (No Fake Fallbacks)
                 const displayUpcomingExams = currentBatch
-                  ? upcomingExams
+                  ? allExams
                       .filter((e) => {
+                        if (e.isCompleted) return false;
                         const eBatchId = e.batchId?._id || e.batchId;
                         const audienceBatchIds = e.audience?.batchIds || [];
                         return (
@@ -1287,24 +1295,43 @@ export default function StudentDashboard() {
                                           fontWeight: T.weight.bold,
                                         }}
                                       >
-                                        Batch in {daysLeft} days
+                                        {exam.startDate && new Date(exam.startDate) > new Date()
+                                          ? `Starts in ${daysLeft} days`
+                                          : "Available to take"}
                                       </p>
                                     </div>
                                   </div>
-                                  <Link
-                                    href={`/student/exams/${exam._id}`}
-                                    className="text-white shrink-0 ml-3 transition-opacity hover:opacity-80 text-decoration-none"
-                                    style={{
-                                      backgroundColor: C.btnPrimary,
-                                      fontFamily: T.fontFamily,
-                                      fontSize: T.size.xs,
-                                      fontWeight: T.weight.bold,
-                                      padding: "6px 12px",
-                                      borderRadius: "10px",
-                                    }}
-                                  >
-                                    Attempt
-                                  </Link>
+                                  {exam.startDate && new Date(exam.startDate) > new Date() ? (
+                                    <button
+                                      onClick={() => setSelectedExam(exam)}
+                                      className="text-white shrink-0 ml-3 transition-opacity hover:opacity-80 cursor-pointer border-none"
+                                      style={{
+                                        backgroundColor: C.btnPrimary,
+                                        fontFamily: T.fontFamily,
+                                        fontSize: T.size.xs,
+                                        fontWeight: T.weight.bold,
+                                        padding: "6px 12px",
+                                        borderRadius: "10px",
+                                      }}
+                                    >
+                                      View Info
+                                    </button>
+                                  ) : (
+                                    <Link
+                                      href={`/student/exams/${exam._id}/take`}
+                                      className="text-white shrink-0 ml-3 transition-opacity hover:opacity-80 text-decoration-none"
+                                      style={{
+                                        backgroundColor: C.btnPrimary,
+                                        fontFamily: T.fontFamily,
+                                        fontSize: T.size.xs,
+                                        fontWeight: T.weight.bold,
+                                        padding: "6px 12px",
+                                        borderRadius: "10px",
+                                      }}
+                                    >
+                                      Attempt
+                                    </Link>
+                                  )}
                                 </div>
                               );
                             })
@@ -1997,10 +2024,333 @@ export default function StudentDashboard() {
                   ))}
                 </div>
               </SidePanel>
+            {selectedExam && (
+              <ExamInfoModal exam={selectedExam} onClose={() => setSelectedExam(null)} />
+            )}
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ExamInfoModal({ exam, onClose }) {
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const difference = +new Date(exam.startDate) - +new Date();
+      if (difference <= 0) return null;
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+      };
+    };
+
+    setTimeLeft(calculateTimeLeft());
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [exam.startDate]);
+
+  const aud = getAudienceDisplay(exam);
+  const formattedStartDate = new Date(exam.startDate).toLocaleString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-300"
+      onClick={onClose}
+      style={{ zIndex: 9999 }}
+    >
+      <div
+        className="shadow-2xl max-w-md w-full p-6 relative overflow-hidden transition-all duration-300"
+        style={{
+          backgroundColor: C.cardBg,
+          borderRadius: R["2xl"],
+          border: `1px solid ${C.cardBorder}`,
+          animation: "modalSlideIn 0.3s ease-out",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <style>{`
+          @keyframes modalSlideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+          }
+        `}</style>
+
+        {/* Header */}
+        <div
+          className="flex items-center justify-between mb-5 pb-4"
+          style={{ borderBottom: `1px solid ${C.cardBorder}` }}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 flex items-center justify-center rounded-lg"
+              style={{ backgroundColor: C.innerBg }}
+            >
+              <MdEventNote style={{ width: 20, height: 20, color: C.btnPrimary }} />
+            </div>
+            <h3
+              style={{
+                fontFamily: T.fontFamily,
+                fontSize: T.size.lg,
+                fontWeight: T.weight.bold,
+                color: C.heading,
+                margin: 0,
+              }}
+            >
+              Exam Scheduled
+            </h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center cursor-pointer border-none transition-colors"
+            style={{
+              backgroundColor: C.innerBg,
+              color: C.heading,
+              borderRadius: "8px",
+              border: `1px solid ${C.cardBorder}`,
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = C.btnPrimary + "15")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = C.innerBg)
+            }
+          >
+            <MdClose style={{ width: 16, height: 16 }} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="space-y-4 mb-6">
+          <div>
+            <h2
+              style={{
+                fontFamily: T.fontFamily,
+                fontSize: T.size.xl,
+                fontWeight: T.weight.bold,
+                color: C.heading,
+                margin: "0 0 6px 0",
+                lineHeight: T.leading.snug,
+              }}
+            >
+              {exam.title}
+            </h2>
+            <span
+              className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-[10px] uppercase tracking-wider font-extrabold ${aud.badgeClass}`}
+            >
+              {aud.label} Scope
+            </span>
+          </div>
+
+          {exam.description ? (
+            <div
+              className="p-3.5 rounded-lg border italic"
+              style={{
+                backgroundColor: C.innerBg,
+                borderColor: C.cardBorder,
+                color: C.text,
+                fontSize: T.size.base,
+                lineHeight: T.leading.normal,
+              }}
+            >
+              {exam.description}
+            </div>
+          ) : (
+            <p
+              style={{
+                fontFamily: T.fontFamily,
+                fontSize: T.size.base,
+                color: C.textMuted,
+                margin: "4px 0",
+                fontStyle: "italic",
+              }}
+            >
+              No description provided for this exam.
+            </p>
+          )}
+
+          {/* Countdown */}
+          <div
+            className="p-4 rounded-lg border text-center"
+            style={{ backgroundColor: C.innerBg, borderColor: C.cardBorder }}
+          >
+            <p
+              style={{
+                fontFamily: T.fontFamily,
+                fontSize: "10px",
+                fontWeight: T.weight.bold,
+                color: C.statLabel,
+                textTransform: "uppercase",
+                letterSpacing: T.tracking.wider,
+                marginBottom: 8,
+                marginTop: 0,
+              }}
+            >
+              Countdown to Start
+            </p>
+            {timeLeft ? (
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  ["Days", timeLeft.days],
+                  ["Hours", timeLeft.hours],
+                  ["Mins", timeLeft.minutes],
+                  ["Secs", timeLeft.seconds],
+                ].map(([label, val]) => (
+                  <div
+                    key={label}
+                    className="p-2 bg-white rounded-md border shadow-sm"
+                    style={{ borderColor: C.cardBorder }}
+                  >
+                    <p
+                      style={{
+                        fontFamily: T.fontFamily,
+                        fontSize: T.size.lg,
+                        fontWeight: T.weight.black,
+                        color: C.btnPrimary,
+                        margin: 0,
+                      }}
+                    >
+                      {String(val).padStart(2, "0")}
+                    </p>
+                    <p
+                      style={{
+                        fontFamily: T.fontFamily,
+                        fontSize: "9px",
+                        fontWeight: T.weight.bold,
+                        color: C.textMuted,
+                        textTransform: "uppercase",
+                        margin: 0,
+                        marginTop: 2,
+                      }}
+                    >
+                      {label}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p
+                style={{
+                  fontFamily: T.fontFamily,
+                  fontSize: T.size.base,
+                  fontWeight: T.weight.bold,
+                  color: C.success,
+                  margin: 0,
+                }}
+              >
+                Exam is starting now! Refresh the page.
+              </p>
+            )}
+          </div>
+
+          {/* Metadata Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              { label: "Starts At", value: formattedStartDate, icon: MdCalendarMonth },
+              { label: "Duration", value: `${exam.duration} Minutes`, icon: MdAccessTime },
+              { label: "Questions", value: `${exam.totalQuestions} Questions`, icon: MdArticle },
+              { label: "Course", value: exam.courseTitle || "General", icon: MdMenuBook },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={item.label}
+                  className="p-3 border rounded-lg flex items-start gap-2.5"
+                  style={{ backgroundColor: C.innerBg, borderColor: C.cardBorder }}
+                >
+                  <Icon
+                    style={{
+                      width: 16,
+                      height: 16,
+                      color: C.btnPrimary,
+                      marginTop: 2,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <div>
+                    <p
+                      style={{
+                        fontFamily: T.fontFamily,
+                        fontSize: "9px",
+                        fontWeight: T.weight.bold,
+                        color: C.textMuted,
+                        textTransform: "uppercase",
+                        letterSpacing: T.tracking.wider,
+                        margin: 0,
+                      }}
+                    >
+                      {item.label}
+                    </p>
+                    <p
+                      style={{
+                        fontFamily: T.fontFamily,
+                        fontSize: T.size.base,
+                        color: C.heading,
+                        fontWeight: T.weight.bold,
+                        margin: "2px 0 0 0",
+                        lineHeight: T.leading.snug,
+                      }}
+                    >
+                      {item.value}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Audience reason info */}
+          <div
+            className="p-3.5 rounded-lg border text-xs"
+            style={{
+              backgroundColor: "#EEF2FF",
+              borderColor: "#C7D2FE",
+              color: "#3730A3",
+              fontWeight: T.weight.semibold,
+            }}
+          >
+            {aud.reason}
+          </div>
+        </div>
+
+        {/* Footer action */}
+        <button
+          onClick={onClose}
+          className="w-full py-3 text-white cursor-pointer border-none transition-all hover:opacity-90 font-bold"
+          style={{
+            backgroundColor: C.btnPrimary,
+            fontFamily: T.fontFamily,
+            fontSize: T.size.base,
+            borderRadius: "10px",
+            boxShadow: S.btn,
+          }}
+        >
+          Okay, Got It
+        </button>
+      </div>
     </div>
   );
 }
