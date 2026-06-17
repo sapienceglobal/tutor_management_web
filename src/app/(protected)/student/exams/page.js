@@ -493,11 +493,21 @@ export default function StudentExamsPage() {
                             }}
                           >
                             <MdAccessTime size={13} className="text-red-300" />
-                            Ends{" "}
-                            {new Date(exam.endDate).toLocaleTimeString(
-                              "en-US",
-                              { hour: "2-digit", minute: "2-digit" },
-                            )}
+                            {(() => {
+                              const endDate = new Date(exam.endDate);
+                              const now = new Date();
+                              const timeStr = endDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+                              if (endDate.toDateString() === now.toDateString()) {
+                                return `Ends today at ${timeStr}`;
+                              }
+                              const tomorrow = new Date();
+                              tomorrow.setDate(now.getDate() + 1);
+                              if (endDate.toDateString() === tomorrow.toDateString()) {
+                                return `Ends tomorrow at ${timeStr}`;
+                              }
+                              const dateStr = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                              return `Ends ${dateStr} at ${timeStr}`;
+                            })()}
                           </span>
                         )}
                       </div>
