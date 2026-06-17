@@ -93,12 +93,12 @@ export function ConfirmProvider({ children }) {
                                 ? "bg-red-600 hover:bg-red-700 text-white"
                                 : isTutorRoute
                                     ? "text-white hover:opacity-90"
-                                    : "bg-[var(--theme-primary)] text-white hover:opacity-90"}
+                                    : "text-white hover:text-white hover:opacity-90"}
                             style={options.variant === 'destructive'
                                 ? undefined
                                 : isTutorRoute
                                     ? { backgroundColor: C.btnPrimary }
-                                    : undefined}
+                                    : { backgroundColor: 'var(--theme-primary)' }}
                             onClick={handleConfirm}
                         >
                             {options.confirmText}

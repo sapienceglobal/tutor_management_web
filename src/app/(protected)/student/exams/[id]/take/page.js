@@ -961,8 +961,8 @@ export default function TakeExamPage({ params }) {
         clearAutoSave();
         toast.success("Test Submitted Successfully!");
 
-        if (exam.showResultImmediately) {
-          router.replace(`/student/exams/${res.data.attemptId}/result`);
+        if (exam?.showResultImmediately !== false) {
+          router.replace(`/student/exams/${id}/result?attemptId=${res.data.attemptId}`);
         } else {
           router.replace("/student/exams");
           toast.success("Results will be published later by your tutor.");
@@ -2018,6 +2018,8 @@ export default function TakeExamPage({ params }) {
                 {(currentQ?.type || currentQ?.questionType) === "numeric" && (
                   <div className="mt-6">
                     <input
+                      key={`numeric-${currentQuestionIndex}`}
+                      autoFocus
                       type="number"
                       step="any"
                       value={currentSel.numericAnswer || ""}
@@ -2034,6 +2036,8 @@ export default function TakeExamPage({ params }) {
                   "subjective" && (
                   <div className="mt-6">
                     <textarea
+                      key={`subjective-${currentQuestionIndex}`}
+                      autoFocus
                       value={currentSel.textAnswer || ""}
                       onChange={(e) => handleSubjectiveAnswer(e.target.value)}
                       disabled={isQuestionLocked(currentQuestionIndex)}

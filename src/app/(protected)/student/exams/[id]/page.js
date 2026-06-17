@@ -405,6 +405,8 @@ export default function ExamPlayerPage() {
                                 <div className="mt-5">
                                     <label className="block text-sm font-semibold text-slate-600 mb-2">Type your detailed answer:</label>
                                     <textarea
+                                        key={`subjective-${currentQuestion._id}`}
+                                        autoFocus
                                         value={answers[currentQuestion._id]?.textAnswer || ''}
                                         onChange={e => handleSubjectiveAnswer(currentQuestion._id, e.target.value)}
                                         placeholder="Type your detailed answer here..."
@@ -418,7 +420,11 @@ export default function ExamPlayerPage() {
                             {currentQuestion.questionType === 'numeric' && (
                                 <div className="mt-5">
                                     <label className="block text-sm font-semibold text-slate-600 mb-2">Type your numeric answer:</label>
-                                    <input type="number" step="any"
+                                    <input 
+                                        key={`numeric-${currentQuestion._id}`}
+                                        autoFocus
+                                        type="number" 
+                                        step="any"
                                         value={answers[currentQuestion._id]?.value || ''}
                                         onChange={e => handleNumericAnswer(currentQuestion._id, e.target.value)}
                                         className="w-full max-w-sm px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[var(--theme-primary)] focus:ring-0 text-lg font-bold text-slate-800 transition-colors"
