@@ -53,8 +53,8 @@ export default function NotificationsPage() {
     }, []);
 
     const handleDraft = async () => {
-        if (!contextTopic.trim()) return toast.error('Please provide a context or reason.');
-        if (!targetStudent.trim()) return toast.error('Please specify a target student/course.');
+        if (!contextTopic.trim()) return toast.error('Context or reason is required.');
+        if (!targetStudent.trim()) return toast.error('Target student or course is required.');
 
         setDrafting(true);
         try {
@@ -78,7 +78,7 @@ export default function NotificationsPage() {
 
     const handleSend = async () => {
         if (!draftedMessage.trim()) return toast.error('Cannot send empty message.');
-        if (!targetStudent.trim()) return toast.error('Please specify target student name.');
+        if (!targetStudent.trim()) return toast.error('Target student name is required.');
 
         const newLog = {
             id: Date.now(),

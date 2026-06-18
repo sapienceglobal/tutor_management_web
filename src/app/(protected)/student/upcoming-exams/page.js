@@ -120,8 +120,15 @@ export default function UpcomingExamsPage() {
     }, [exams]);
 
     const getUrgencyBadge = (date) => {
-        const diff = new Date(date) - new Date();
-        const days  = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        const todayMidnight = new Date();
+        todayMidnight.setHours(0, 0, 0, 0);
+
+        const examDateMidnight = new Date(date);
+        examDateMidnight.setHours(0, 0, 0, 0);
+
+        const diffTime = examDateMidnight - todayMidnight;
+        const days = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
         if (days <= 0)  return { bg: C.successBg, color: C.success, border: C.successBorder, label: 'Today' };
         if (days === 1) return { bg: C.warningBg, color: C.warning, border: C.warningBorder, label: 'Tomorrow' };
         if (days <= 3)  return { bg: C.dangerBg,  color: C.danger,  border: C.dangerBorder,  label: `${days}d` };

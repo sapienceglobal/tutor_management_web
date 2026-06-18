@@ -222,8 +222,8 @@ export default function CourseBuilderPage() {
 
     // ── Generate ──────────────────────────────────────────────────────
     const handleGenerate = async () => {
-        if (!topic.trim()) return toast.error('Please enter a course topic');
-        if (!selectedCategory) return toast.error('Please select a category');
+        if (!topic.trim()) return toast.error('Course topic is required');
+        if (!selectedCategory) return toast.error('Category selection is required');
         setGenerating(true);
         setCourse(null);
         setActiveModule(null);

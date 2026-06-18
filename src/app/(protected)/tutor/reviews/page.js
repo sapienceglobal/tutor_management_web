@@ -77,7 +77,7 @@ export default function TutorReviewsPage() {
     };
 
     const handleReply = async (reviewId) => {
-        if (!replyComment.trim()) { toast.error('Please enter a reply'); return; }
+        if (!replyComment.trim()) { toast.error('Reply content is required'); return; }
         setSubmittingReply(true);
         try {
             const res = await api.post(`/reviews/${reviewId}/reply`, { comment: replyComment });

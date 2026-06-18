@@ -126,7 +126,7 @@ export default function AddInstructorWizardModal({ isOpen, onClose, onSubmit, us
             if (!formData.state.trim()) return toast.error('State is required');
         }
         else if (currentStep === 4) {
-            if (formData.subjects.length === 0) return toast.error('Please assign at least one subject to the instructor.');
+            if (formData.subjects.length === 0) return toast.error('At least one subject must be assigned to the instructor.');
         }
         
         if (currentStep < 5) setCurrentStep(curr => curr + 1);

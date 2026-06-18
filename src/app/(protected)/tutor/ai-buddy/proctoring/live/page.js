@@ -361,7 +361,7 @@ export default function LiveProctoringCenter() {
 
   // Send Direct Warning Notification
   const sendWarningNotification = async () => {
-    if (!warningMessage.trim()) return toast.error("Please enter a warning message");
+    if (!warningMessage.trim()) return toast.error("Warning message is required");
 
     setSendingWarning(true);
     try {

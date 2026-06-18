@@ -472,7 +472,7 @@ function TutorTwoFactorSettings({ user, setUser }) {
 
     const handleVerify = async () => {
         if (!otpCode || otpCode.length !== 6) {
-            toast.error('Please enter a 6-digit code');
+            toast.error('6-digit code is required');
             return;
         }
         setLoading(true);
@@ -497,7 +497,7 @@ function TutorTwoFactorSettings({ user, setUser }) {
 
     const handleDisable = async () => {
         if (!otpCode || otpCode.length !== 6) {
-            toast.error('Please enter a 6-digit code');
+            toast.error('6-digit code is required');
             return;
         }
         setLoading(true);

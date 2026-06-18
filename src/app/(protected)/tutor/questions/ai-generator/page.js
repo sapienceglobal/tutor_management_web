@@ -53,7 +53,7 @@ export default function BulkAIGeneratorPage() {
     };
 
     const handleGenerate = async () => {
-        if (!aiParams.topic) return toast.error('Please provide a topic or text excerpt.');
+        if (!aiParams.topic) return toast.error('Topic or text excerpt is required.');
         setLoading(true);
         setGeneratedQuestions([]);
         try {
@@ -69,8 +69,8 @@ export default function BulkAIGeneratorPage() {
 
     const handleSaveAll = async () => {
         if (generatedQuestions.length === 0) return toast.error('No questions to save');
-        if (!metaParams.topicId) return toast.error('Please assign a Topic');
-        if (!metaParams.skillId) return toast.error('Please assign a Skill');
+        if (!metaParams.topicId) return toast.error('Topic assignment is required');
+        if (!metaParams.skillId) return toast.error('Skill assignment is required');
 
         setSaving(true);
         let successCount = 0, failCount = 0;

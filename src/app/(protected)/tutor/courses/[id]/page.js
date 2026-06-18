@@ -288,7 +288,7 @@ export default function ManageCoursePage({ params }) {
     // ── Announcements ─────────────────────────────────────────────────────────
     const handlePostAnnouncement = async (e) => {
         e.preventDefault();
-        if (!announcementForm.title.trim() || !announcementForm.message.trim()) return toast.error('Please provide both title and message');
+        if (!announcementForm.title.trim() || !announcementForm.message.trim()) return toast.error('Title and message are required');
         setSubmitting(true);
         try {
             const res = await api.post(`/courses/${id}/announcements`, announcementForm);

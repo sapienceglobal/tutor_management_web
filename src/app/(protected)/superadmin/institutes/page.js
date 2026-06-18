@@ -9,6 +9,7 @@ import {
 } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 import Link from 'next/link';
 import { C, T, S, R, cx, pageStyle } from '@/constants/studentTokens';
 import StatCard from '@/components/StatCard';
@@ -29,6 +30,7 @@ const baseInputStyle = {
 };
 
 export default function InstitutesPage() {
+    const { confirmDialog } = useConfirm();
     const [institutes, setInstitutes] = useState([]);
     const [availablePlans, setAvailablePlans] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -89,7 +91,7 @@ export default function InstitutesPage() {
     const handleCreate = async (e) => {
         e.preventDefault();
         if (!formData.planId && availablePlans.length > 0) {
-            return toast.error("Please select a subscription plan");
+            return toast.error("Subscription plan selection is required");
         }
         try {
             const data = await createInstitute(formData);
@@ -105,7 +107,12 @@ export default function InstitutesPage() {
     };
 
     const toggleStatus = async (id, currentStatus) => {
-        if (!confirm(`Are you sure you want to ${currentStatus ? 'suspend' : 'activate'} this institute?`)) return;
+        const confirmed = await confirmDialog(
+            `${currentStatus ? 'Suspend' : 'Activate'} Institute`,
+            `Are you sure you want to ${currentStatus ? 'suspend' : 'activate'} this institute?`,
+            { variant: currentStatus ? 'destructive' : 'default' }
+        );
+        if (!confirmed) return;
         try {
             const data = await updateInstituteStatus(id, !currentStatus);
             if (data.success) {
@@ -118,7 +125,12 @@ export default function InstitutesPage() {
     };
 
     const handleDeleteInstitute = async (id) => {
-        if (!confirm("🚨 DANGER: Are you sure you want to PERMANENTLY delete this institute? All associated users, courses, and data will be lost. This cannot be undone.")) return;
+        const confirmed = await confirmDialog(
+            'Delete Institute Permanently',
+            '🚨 DANGER: Are you sure you want to PERMANENTLY delete this institute? All associated users, courses, and data will be lost. This cannot be undone.',
+            { variant: 'destructive' }
+        );
+        if (!confirmed) return;
 
         try {
             const data = await deleteInstitute(id);

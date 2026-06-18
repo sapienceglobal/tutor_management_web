@@ -528,7 +528,7 @@ export default function CourseDetailPage({ params }) {
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (reviewForm.rating === 0) {
-      toast.error("Please select a rating");
+      toast.error("Rating selection is required");
       return;
     }
     if (reviewForm.comment.trim().length < 10) {

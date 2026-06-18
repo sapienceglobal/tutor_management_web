@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast';
 import api from '@/lib/axios';
 import StatCard from '@/components/StatCard';
 import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 const baseInputStyle = {
     backgroundColor: C.surfaceWhite,
@@ -25,6 +26,7 @@ const baseInputStyle = {
 };
 
 export default function AdminLeavesPage() {
+    const { confirmDialog } = useConfirm();
     const [leaves, setLeaves] = useState([]);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('all');
@@ -62,14 +64,16 @@ export default function AdminLeavesPage() {
     };
 
     const handleAction = async (id, status) => {
+        const confirmed = await confirmDialog(
+            `${status === 'approved' ? 'Approve' : 'Reject'} Leave`,
+            `Are you sure you want to ${status} this leave request?`,
+            { variant: status === 'rejected' ? 'destructive' : 'default' }
+        );
+        if (!confirmed) return;
+
         setActionLoading(id);
         try {
-            const comment = status === 'rejected' ? prompt("Enter rejection reason (optional):") : '';
-            if (comment === null) {
-                setActionLoading(null);
-                return; // User cancelled
-            }
-
+            const comment = status === 'rejected' ? 'Rejected by admin' : '';
             const response = await api.put(`/leaves/${id}/status`, {
                 status,
                 adminComment: comment

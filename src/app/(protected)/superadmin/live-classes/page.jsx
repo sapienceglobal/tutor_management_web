@@ -7,10 +7,12 @@ import {
 } from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { C, T, S, R, cx, pageStyle } from '@/constants/studentTokens';
 import StatCard from '@/components/StatCard';
 
 export default function SuperAdminLiveRadar() {
+    const { confirmDialog } = useConfirm();
     const [sessions, setSessions] = useState([]);
     const [kpis, setKpis] = useState({ totalActiveStreams: 0, totalCCU: 0, streamsToday: 0 });
     const [loading, setLoading] = useState(true);
@@ -37,7 +39,12 @@ export default function SuperAdminLiveRadar() {
     };
 
     const handleForceKill = async (id, title) => {
-        if (!confirm(`🚨 DANGER: Are you sure you want to FORCE KILL the live stream: "${title}"? All participants will be disconnected immediately.`)) return;
+        const confirmed = await confirmDialog(
+            'Force Terminate Stream',
+            `🚨 DANGER: Are you sure you want to FORCE KILL the live stream: "${title}"? All participants will be disconnected immediately.`,
+            { variant: 'destructive' }
+        );
+        if (!confirmed) return;
 
         try {
             const res = await api.patch(`/superadmin/live-classes/${id}/force-kill`);

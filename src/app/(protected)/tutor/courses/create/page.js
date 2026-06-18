@@ -522,14 +522,14 @@ export default function CreateCoursePage() {
   const handleStep1Submit = async (e) => {
     e.preventDefault();
     if (isUploadingThumbnail)
-      return toast.error("Please wait for thumbnail upload to finish");
+      return toast.error("Thumbnail upload in progress. Wait for completion.");
     if (
       !courseData.title ||
       !courseData.description ||
       !courseData.category ||
       !courseData.price
     )
-      return toast.error("Please fill in all required fields");
+      return toast.error("Required fields are missing");
     setLoading(true);
     try {
       const payload = {

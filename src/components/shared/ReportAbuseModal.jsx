@@ -17,7 +17,7 @@ export function ReportAbuseModal({ isOpen, onClose, targetId, targetType = 'Cour
 
     const handleSubmit = async () => {
         if (!reason) {
-            toast.error('Please select a reason');
+            toast.error('Reason selection is required');
             return;
         }
 
@@ -31,14 +31,14 @@ export function ReportAbuseModal({ isOpen, onClose, targetId, targetType = 'Cour
             });
 
             if (res.data.success) {
-                toast.success('Report submitted. Thank you for helping keep our community safe.');
+                toast.success('Report submitted successfully.');
                 onClose();
                 setReason('');
                 setDescription('');
             }
         } catch (error) {
             console.error('Report error:', error);
-            toast.error('Failed to submit report. Please try again.');
+            toast.error('Failed to submit report. Try again.');
         } finally {
             setLoading(false);
         }
@@ -75,7 +75,7 @@ export function ReportAbuseModal({ isOpen, onClose, targetId, targetType = 'Cour
                     <div className="grid gap-2">
                         <Label>Additional Details (Optional)</Label>
                         <Textarea
-                            placeholder="Please provide more details..."
+                            placeholder="Provide additional details here..."
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             rows={4}

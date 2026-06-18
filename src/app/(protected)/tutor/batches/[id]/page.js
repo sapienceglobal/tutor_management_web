@@ -22,6 +22,7 @@ import api from "@/lib/axios";
 import Link from "next/link";
 import { C, T, S, R } from "@/constants/studentTokens";
 import StatCard from "@/components/StatCard";
+import { useConfirm } from "@/components/providers/ConfirmProvider";
 
 // Focus Handlers
 const onFocusHandler = (e) => {
@@ -48,6 +49,7 @@ const baseInputStyle = {
 };
 
 export default function BatchDetailsPage() {
+  const { confirmDialog } = useConfirm();
   const params = useParams();
   const router = useRouter();
   const { id } = params;
@@ -123,7 +125,8 @@ export default function BatchDetailsPage() {
   };
 
   const handleRemoveStudent = async (studentId) => {
-    if (!window.confirm("Remove this student from the batch?")) return;
+    const isConfirmed = await confirmDialog("Remove Student", "Remove this student from the batch?", { variant: "destructive" });
+    if (!isConfirmed) return;
 
     try {
       const newStudentsList = batch.students

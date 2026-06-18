@@ -5,6 +5,7 @@ import {
     X, Check, ChevronRight, ChevronLeft, Loader2,
     Building2, MapPin, User, Mail, Phone, Globe, FileText, Tag, Plus
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const INDIAN_STATES = [
     'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
@@ -317,10 +318,10 @@ export default function AddBranchWizardModal({ onClose, onSuccess, initialData =
 
     const validateStep = () => {
         if (step === 1) {
-            if (!form.campusName.trim()) { alert('Branch name is required'); return false; }
+            if (!form.campusName.trim()) { toast.error('Branch name is required'); return false; }
         }
         if (step === 2) {
-            if (!form.contactPhone.trim()) { alert('Contact phone is required'); return false; }
+            if (!form.contactPhone.trim()) { toast.error('Contact phone is required'); return false; }
         }
         return true;
     };
@@ -336,7 +337,6 @@ export default function AddBranchWizardModal({ onClose, onSuccess, initialData =
         setSaving(true);
         try {
             const { default: api } = await import('@/lib/axios');
-            const { toast } = await import('react-hot-toast');
 
             const payload = {
                 campusName: form.campusName,
@@ -367,7 +367,6 @@ export default function AddBranchWizardModal({ onClose, onSuccess, initialData =
                 setSaved(true);
             }
         } catch (err) {
-            const { toast } = await import('react-hot-toast');
             toast.error(err.response?.data?.message || 'Failed to save branch');
         } finally {
             setSaving(false);

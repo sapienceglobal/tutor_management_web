@@ -8,6 +8,7 @@ import {
     MdChevronLeft, MdChevronRight, MdDashboard
 } from 'react-icons/md';
 import toast from 'react-hot-toast';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 // API services import
 import { 
@@ -35,6 +36,7 @@ const baseInputStyle = {
 };
 
 export default function SubscriptionPlansPage() {
+    const { confirmDialog } = useConfirm();
     const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -129,7 +131,12 @@ export default function SubscriptionPlansPage() {
     };
 
     const handleDelete = async (id) => {
-        if(confirm("Are you sure you want to delete this plan?")) {
+        const confirmed = await confirmDialog(
+            'Delete Plan',
+            'Are you sure you want to delete this plan?',
+            { variant: 'destructive' }
+        );
+        if (confirmed) {
             await deleteSubscriptionPlan(id);
             toast.success("Plan deleted successfully");
             loadPlans();

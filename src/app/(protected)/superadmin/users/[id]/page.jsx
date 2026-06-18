@@ -12,8 +12,10 @@ import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
 import StatCard from '@/components/StatCard';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 export default function SuperAdminUserProfile() {
+    const { confirmDialog } = useConfirm();
     const params = useParams();
     const router = useRouter();
     const { id } = params;
@@ -41,7 +43,12 @@ export default function SuperAdminUserProfile() {
     };
 
     const handleToggleStatus = async () => {
-        if (!confirm(`Are you sure you want to ${profileData.user.isBlocked ? 'unblock' : 'block'} this user?`)) return;
+        const confirmed = await confirmDialog(
+            `${profileData.user.isBlocked ? 'Unblock' : 'Block'} User`,
+            `Are you sure you want to ${profileData.user.isBlocked ? 'unblock' : 'block'} this user?`,
+            { variant: profileData.user.isBlocked ? 'default' : 'destructive' }
+        );
+        if (!confirmed) return;
         setStatusLoading(true);
         try {
             const res = await api.patch(`/superadmin/users/${id}/status`);

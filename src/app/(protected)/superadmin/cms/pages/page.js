@@ -9,6 +9,7 @@ import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 // ─── Base Input Style ─────────────────────────────────────────────────────────
 const baseInputStyle = {
@@ -26,6 +27,7 @@ const baseInputStyle = {
 };
 
 export default function CMSPages() {
+    const { confirmDialog } = useConfirm();
     const [pages, setPages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -87,7 +89,12 @@ export default function CMSPages() {
     };
 
     const handleDelete = async (id) => {
-        if (!confirm('🚨 Are you sure you want to permanently delete this page?')) return;
+        const confirmed = await confirmDialog(
+            'Delete Page',
+            'Are you sure you want to permanently delete this page?',
+            { variant: 'destructive' }
+        );
+        if (!confirmed) return;
         try {
             await api.delete(`/cms/pages/${id}`);
             setPages(pages.filter(p => p._id !== id));

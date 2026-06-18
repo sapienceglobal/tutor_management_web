@@ -51,7 +51,7 @@ import FeatureGate from "@/components/FeatureGate";
 
 const examDetailsSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
-  courseId: z.string().min(1, "Please select a course/category"),
+  courseId: z.string().min(1, "Course or category selection is required"),
   type: z.string(),
   duration: z.number().min(1, "Duration must be at least 1 minute"),
   passingMarks: z.number().min(0),
@@ -570,7 +570,7 @@ function CreateExamPageClient() {
   };
   const handleAIGenerate = async () => {
     if (!aiParams?.topic) {
-      toast.error("Please enter a topic");
+      toast.error("Topic is required");
       return;
     }
     setAiLoading(true);
@@ -789,7 +789,7 @@ function CreateExamPageClient() {
 
   const handleStepChange = (newStep) => {
     if (newStep === "settings" && !examData?.title) {
-      toast.error("Please enter a title first");
+      toast.error("Title is required before proceeding");
       return;
     }
     setActiveTab(newStep);

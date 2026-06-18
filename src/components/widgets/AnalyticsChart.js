@@ -60,10 +60,17 @@ export default function AnalyticsChart({ data, title = "Course Performance" }) {
                 </h3>
                 
                 {/* Switcher Pattern */}
-                <div className="relative flex items-center p-1"
-                    style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px' }}>
+                <div className="relative grid p-1"
+                    style={{ 
+                        backgroundColor: C.innerBg, 
+                        border: `1px solid ${C.cardBorder}`, 
+                        borderRadius: '10px',
+                        width: '180px',
+                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'
+                    }}>
                     <div className="absolute top-1 bottom-1 w-[calc(50%-4px)] transition-transform duration-300 ease-in-out z-0"
                         style={{ 
+                            left: '4px',
                             backgroundColor: C.btnPrimary, 
                             transform: activeRange === 'weekly' ? 'translateX(0)' : 'translateX(100%)',
                             boxShadow: `0 2px 10px ${C.btnPrimary}40`,
@@ -71,13 +78,14 @@ export default function AnalyticsChart({ data, title = "Course Performance" }) {
                         }} />
                     {['weekly', 'monthly'].map(range => (
                         <button key={range} onClick={() => setActiveTab(range)}
-                            className="relative z-10 px-4 py-1.5 capitalize transition-colors duration-300 border-none cursor-pointer"
+                            className="relative z-10 px-2 py-1.5 capitalize transition-colors duration-300 border-none cursor-pointer text-center"
                             style={{ 
                                 fontFamily: T.fontFamily, 
                                 fontSize: T.size.xs, 
                                 fontWeight: T.weight.bold,
                                 color: activeRange === range ? '#ffffff' : C.text, 
-                                background: 'transparent' 
+                                background: 'transparent',
+                                whiteSpace: 'nowrap'
                             }}>
                             {range}
                         </button>

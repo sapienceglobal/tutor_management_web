@@ -10,6 +10,7 @@ import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
 import StatCard from '@/components/StatCard';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 // ─── Section Header Component ─────────────────────────────────────────────────
 function SectionHeader({ icon: Icon, title }) {
@@ -30,6 +31,7 @@ function SectionHeader({ icon: Icon, title }) {
 }
 
 export default function SuperAdminFinancePage() {
+    const { confirmDialog } = useConfirm();
     const [loading, setLoading] = useState(true);
     const [processingRefund, setProcessingRefund] = useState(null);
     const [financeData, setFinanceData] = useState({
@@ -64,7 +66,11 @@ export default function SuperAdminFinancePage() {
     };
 
     const handleProcessPayout = async (instituteId, amount) => {
-        if (!confirm(`Process payout of ₹${amount} to this institute?`)) return;
+        const confirmed = await confirmDialog(
+            'Process Payout',
+            `Process payout of ₹${amount} to this institute?`
+        );
+        if (!confirmed) return;
         try {
             const res = await api.post(`/superadmin/finance/payouts/${instituteId}`);
             if (res.data.success) {
@@ -77,13 +83,17 @@ export default function SuperAdminFinancePage() {
     };
 
     const handleRefund = async (paymentId, amount) => {
-        const reason = prompt(`Are you sure you want to refund ₹${amount}? This will issue an instant refund via Razorpay and instantly revoke course/subscription access. Enter a reason (optional):`);
-        if (reason === null) return; // User cancelled
+        const confirmed = await confirmDialog(
+            'Refund Payment',
+            `Are you sure you want to refund ₹${amount}? This will issue an instant refund via Razorpay and instantly revoke course/subscription access.`,
+            { variant: 'destructive' }
+        );
+        if (!confirmed) return; // User cancelled
         
         setProcessingRefund(paymentId);
         const toastId = toast.loading('Initiating instant Razorpay refund...');
         try {
-            const res = await api.post(`/superadmin/finance/refund/${paymentId}`, { reason });
+            const res = await api.post(`/superadmin/finance/refund/${paymentId}`, { reason: 'Refunded by Superadmin' });
             if (res.data.success) {
                 toast.success('Refund issued successfully through Razorpay and access revoked!', { id: toastId });
                 fetchFinanceOverview();

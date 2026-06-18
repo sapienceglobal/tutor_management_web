@@ -6,6 +6,7 @@ import { Building2, Users, Calendar, Settings, Plus, Eye, Edit, Trash2, Crown, U
 import api from '@/lib/axios';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { toast } from 'react-hot-toast';
 
 export default function TutorInstitutesPage() {
     const router = useRouter();
@@ -73,7 +74,7 @@ export default function TutorInstitutesPage() {
                 // Copy invite link to clipboard
                 const inviteLink = `${window.location.origin}/join/invite/${res.data.inviteToken}`;
                 await navigator.clipboard.writeText(inviteLink);
-                alert('Invite link copied to clipboard!');
+                toast.success('Invite link copied to clipboard!');
             }
         } catch (err) {
             setError('Failed to generate invite');

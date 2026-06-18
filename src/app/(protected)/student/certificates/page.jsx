@@ -7,6 +7,7 @@ import {
     MdVisibility, MdContentCopy, MdQrCode, MdShield, MdNotifications,
     MdDoneAll, MdClose, MdHelpOutline, MdCampaign, MdSchool, MdErrorOutline, MdMessage, MdAccessTime
 } from 'react-icons/md';
+import { FaLinkedin } from 'react-icons/fa';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
@@ -256,6 +257,19 @@ function CertCard({ cert }) {
         toast.success('Verification link copied!');
     };
 
+    const handleLinkedInShare = () => {
+        const certName = encodeURIComponent(cert.courseName || cert.title || 'Certificate of Completion');
+        const orgName = encodeURIComponent(cert.instituteName || 'Sapience LMS');
+        const certUrl = encodeURIComponent(`${window.location.origin}/verify/${cert.credentialId || cert._id}`);
+        const certId = encodeURIComponent(cert.credentialId || cert._id);
+        const issueDate = new Date(cert.issuedAt || cert.completedAt);
+        const year = issueDate.getFullYear();
+        const month = issueDate.getMonth() + 1; // 1-indexed for LinkedIn API
+        
+        const url = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${certName}&organizationName=${orgName}&issueMonth=${month}&issueYear=${year}&certUrl=${certUrl}&certId=${certId}`;
+        window.open(url, '_blank');
+    };
+
     return (
         <div className="overflow-hidden transition-all group"
             style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: R['2xl'], boxShadow: S.card }}
@@ -312,17 +326,27 @@ function CertCard({ cert }) {
                         </button>
                     )}
                     <button onClick={handleCopyLink}
+                        title="Copy Verification Link"
                         className="flex items-center justify-center cursor-pointer border-none transition-colors shrink-0"
                         style={{ width: 36, height: 36, backgroundColor: C.btnViewAllBg, borderRadius: '10px' }}
                         onMouseEnter={e => e.currentTarget.style.backgroundColor = C.innerBg}
                         onMouseLeave={e => e.currentTarget.style.backgroundColor = C.btnViewAllBg}>
                         <MdContentCopy style={{ width: 16, height: 16, color: C.btnViewAllText }} />
                     </button>
+                    <button onClick={handleLinkedInShare}
+                        title="Share on LinkedIn"
+                        className="flex items-center justify-center cursor-pointer border-none transition-colors shrink-0"
+                        style={{ width: 36, height: 36, backgroundColor: '#0A66C2', borderRadius: '10px' }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#004182'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#0A66C2'}>
+                        <FaLinkedin style={{ width: 16, height: 16, color: '#ffffff' }} />
+                    </button>
                     <button onClick={() => {
                         const url = `${window.location.origin}/verify/${cert.credentialId || cert._id}`;
                         if (navigator.share) navigator.share({ title: cert.courseName, url });
                         else { navigator.clipboard.writeText(url); toast.success('Link copied!'); }
                     }}
+                        title="Share"
                         className="flex items-center justify-center cursor-pointer border-none transition-colors shrink-0"
                         style={{ width: 36, height: 36, backgroundColor: C.btnViewAllBg, borderRadius: '10px' }}
                         onMouseEnter={e => e.currentTarget.style.backgroundColor = C.innerBg}
@@ -415,10 +439,17 @@ export default function CertificatesPage() {
                     </div>
 
                     {/* Tab switcher */}
-                    <div className="relative flex items-center p-1 self-start md:self-auto"
-                        style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px' }}>
+                    <div className="relative grid p-1 self-start md:self-auto"
+                        style={{ 
+                            backgroundColor: C.innerBg, 
+                            border: `1px solid ${C.cardBorder}`, 
+                            borderRadius: '10px', 
+                            width: '300px',
+                            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'
+                        }}>
                         <div className="absolute top-1 bottom-1 w-[calc(50%-4px)] transition-transform duration-300 ease-in-out z-0"
                             style={{
+                                left: '4px',
                                 backgroundColor: C.btnPrimary,
                                 transform: tab === 'earned' ? 'translateX(0)' : 'translateX(100%)',
                                 boxShadow: `0 2px 10px ${C.btnPrimary}40`,
@@ -426,11 +457,12 @@ export default function CertificatesPage() {
                             }} />
                         {tabs.map(t => (
                             <button key={t.key} onClick={() => setTab(t.key)}
-                                className="flex-1 relative z-10 px-4 py-1.5 capitalize transition-colors duration-300 border-none cursor-pointer flex items-center justify-center gap-2"
+                                className="relative z-10 px-2 py-1.5 capitalize transition-colors duration-300 border-none cursor-pointer flex items-center justify-center gap-1.5"
                                 style={{
                                     fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold,
                                     color: tab === t.key ? '#ffffff' : C.text,
-                                    background: 'transparent', borderRadius: '10px'
+                                    background: 'transparent', borderRadius: '10px',
+                                    whiteSpace: 'nowrap'
                                 }}>
                                 {t.label}
                                 {t.count > 0 && (

@@ -20,6 +20,7 @@ import {
 import BulkInviteModal from '@/components/admin/BulkInviteModal';
 import StatCard from '@/components/StatCard';
 import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 const baseInputStyle = {
     backgroundColor: C.surfaceWhite,
@@ -36,6 +37,7 @@ const baseInputStyle = {
 };
 
 export default function AdminInvitesPage() {
+    const { confirmDialog } = useConfirm();
     const [invites, setInvites] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showBulkModal, setShowBulkModal] = useState(false);
@@ -108,9 +110,8 @@ export default function AdminInvitesPage() {
     };
 
     const handleRevokeInvite = async (inviteId) => {
-        if (!confirm('Are you sure you want to revoke this invite?')) {
-            return;
-        }
+        const isConfirmed = await confirmDialog('Revoke Invite', 'Are you sure you want to revoke this invite?', { variant: 'destructive' });
+        if (!isConfirmed) return;
 
         try {
             const res = await api.delete(`/admin/invites/${inviteId}`);

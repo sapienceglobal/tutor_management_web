@@ -9,8 +9,10 @@ import { toast } from 'react-hot-toast';
 import {
     Building2, MapPin, Plus, Loader2, Trash2, Edit3, Phone, Mail, Globe, X
 } from 'lucide-react';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 export default function AdminFacilitiesPage() {
+    const { confirmDialog } = useConfirm();
     const [facilities, setFacilities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -80,7 +82,12 @@ export default function AdminFacilitiesPage() {
     };
 
     const handleDelete = async (id) => {
-        if (!confirm('Are you sure you want to delete this facility?')) return;
+        const confirmed = await confirmDialog(
+            'Delete Facility',
+            'Are you sure you want to delete this facility?',
+            { variant: 'destructive' }
+        );
+        if (!confirmed) return;
         try {
             await api.delete(`/facilities/${id}`);
             setFacilities(prev => prev.filter(f => f._id !== id));

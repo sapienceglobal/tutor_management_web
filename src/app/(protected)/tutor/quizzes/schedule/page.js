@@ -55,7 +55,7 @@ export default function ScheduleQuizPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!selectedExamId) return toast.error('Please select an exam');
+        if (!selectedExamId) return toast.error('Exam selection is required');
         if (!schedule.startDate || !schedule.endDate) return toast.error('Start and End dates are required');
 
         setLoading(true);

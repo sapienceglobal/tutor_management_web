@@ -184,7 +184,7 @@ export default function PlagiarismPage() {
 
     // ── Check plagiarism ──────────────────────────────────────────────
     const handleCheck = async () => {
-        if (!text.trim() && !fileBuffer) return toast.error('Please paste text or upload a file');
+        if (!text.trim() && !fileBuffer) return toast.error('Text content or file upload is required');
 
         setLoading(true);
         setResult(null);

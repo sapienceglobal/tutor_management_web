@@ -83,7 +83,7 @@ export default function CourseCreateForm() {
     try {
       // Validate institute selection for institute scope
       if (formData.visibilityScope === 'institute' && !formData.instituteId) {
-        toast.error('Please select an institute for institute-only courses');
+        toast.error('Institute selection is required for institute-only courses');
         return;
       }
 

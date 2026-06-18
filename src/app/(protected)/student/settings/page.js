@@ -66,7 +66,7 @@ export default function StudentSettingsPage() {
 
     const handleVerify2FA = async () => {
         if (!otpCode || otpCode.length !== 6) {
-            toast.error('Please enter a 6-digit verification code');
+            toast.error('6-digit code is required');
             return;
         }
         setTwoFactorLoading(true);
@@ -89,7 +89,7 @@ export default function StudentSettingsPage() {
 
     const handleDisable2FA = async () => {
         if (!otpCode || otpCode.length !== 6) {
-            toast.error('Please enter a 6-digit verification code');
+            toast.error('6-digit code is required');
             return;
         }
         setTwoFactorLoading(true);

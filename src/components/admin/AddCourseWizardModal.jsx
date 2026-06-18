@@ -92,7 +92,7 @@ export default function AddCourseWizardModal({ isOpen, onClose, onSubmit, course
         // Simple valid checks
         if (currentStep === 1) {
             if (!formData.title || !formData.categoryId) {
-                toast.error("Please fill required fields (Title, Category)");
+                toast.error("Required fields are missing: Title, Category");
                 return;
             }
         }

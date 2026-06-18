@@ -13,6 +13,7 @@ import { toast } from 'react-hot-toast';
 import { C, T, S, R, cx } from '@/constants/tutorTokens';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 // ─── Purple palette (matching image) ─────────────────────────────────────────
 const P = {
@@ -230,6 +231,7 @@ function HistoryItem({ note, isActive, onClick }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function NotesSimplifierPage() {
+    const { confirmDialog } = useConfirm();
     // ── Input ──────────────────────────────────────────────────────
     const [rawText, setRawText]           = useState('');
     const [activeTab, setActiveTab]       = useState('text'); // 'text' | 'file'
@@ -291,8 +293,8 @@ export default function NotesSimplifierPage() {
     // ── Simplify ───────────────────────────────────────────────────
     const handleSimplify = async () => {
         if (simplifying) return;
-        if (activeTab === 'text' && rawText.trim().length < 20) return toast.error('Please enter at least 20 characters');
-        if (activeTab === 'file' && !uploadedFile) return toast.error('Please upload a file');
+        if (activeTab === 'text' && rawText.trim().length < 20) return toast.error('Content must be at least 20 characters');
+        if (activeTab === 'file' && !uploadedFile) return toast.error('File upload is required');
 
         setSimplifying(true);
         setResult(null);
@@ -356,7 +358,8 @@ export default function NotesSimplifierPage() {
     // ── Delete note ────────────────────────────────────────────────
     const handleDelete = async (noteId, e) => {
         e.stopPropagation();
-        if (!confirm('Delete this note?')) return;
+        const isConfirmed = await confirmDialog('Delete Note', 'Are you sure you want to delete this note?', { variant: 'destructive' });
+        if (!isConfirmed) return;
         try {
             await api.delete(`/ai/simplified-notes/${noteId}`);
             setHistory(prev => prev.filter(n => n._id?.toString() !== noteId?.toString()));

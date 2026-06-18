@@ -503,13 +503,13 @@ export default function AddBatchWizardModal({ onClose, onSuccess, initialData = 
     const validateStep = () => {
         if (step === 1) {
             if (!form.name.trim()) { toast.error('Batch name is required'); return false; }
-            if (!form.courseId) { toast.error('Please select a course'); return false; }
-            if (!form.grade) { toast.error('Please select a grade'); return false; }
+            if (!form.courseId) { toast.error('Course selection is required'); return false; }
+            if (!form.grade) { toast.error('Grade selection is required'); return false; }
             if (!form.startDate) { toast.error('Start date is required'); return false; }
             if (!form.endDate) { toast.error('End date is required'); return false; }
         }
         if (step === 2) {
-            if (selectedInstructors.length === 0) { toast.error('Please select at least one instructor'); return false; }
+            if (selectedInstructors.length === 0) { toast.error('At least one instructor must be selected'); return false; }
         }
         return true;
     };

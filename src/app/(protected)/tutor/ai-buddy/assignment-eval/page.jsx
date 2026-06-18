@@ -12,6 +12,7 @@ import {
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { C, T, S, R } from '@/constants/tutorTokens';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 // ─── Purple palette ───────────────────────────────────────────────────────────
 const P = {
@@ -160,6 +161,7 @@ function SubmissionRow({ sub, isActive, onSelect, onEvaluate, evaluating }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function AssignmentEvaluatorPage() {
+    const { confirmDialog } = useConfirm();
     // ── Data ───────────────────────────────────────────────────────
     const [assignments, setAssignments] = useState([]);
     const [courses, setCourses] = useState([]);
@@ -259,7 +261,8 @@ export default function AssignmentEvaluatorPage() {
         if (!selectedAssignment) return;
         const pending = submissions.filter(s => s.status === 'submitted').length;
         if (pending === 0) return toast.error('No pending submissions to evaluate');
-        if (!confirm(`AI will evaluate ${pending} pending submission(s). Continue?`)) return;
+        const isConfirmed = await confirmDialog("Bulk Evaluation", `AI will evaluate ${pending} pending submission(s). Continue?`);
+        if (!isConfirmed) return;
 
         setBulkEvaluating(true);
         try {

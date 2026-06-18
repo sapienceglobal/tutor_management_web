@@ -101,8 +101,8 @@ export default function UploadAssignmentPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!selectedAssignmentId) { toast.error('Please select an assignment'); return; }
-        if (files.length === 0)    { toast.error('Please add at least one file');  return; }
+        if (!selectedAssignmentId) { toast.error('Assignment selection is required'); return; }
+        if (files.length === 0)    { toast.error('At least one file must be uploaded');  return; }
         setSubmitting(true);
         try {
             const attachments = [];

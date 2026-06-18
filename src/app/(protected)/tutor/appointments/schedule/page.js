@@ -135,7 +135,7 @@ export default function ScheduleManagementPage() {
         const date = e.target.date.value;
         const reason = e.target.reason.value;
         const slots = e.target.slots.value.split(',').map(s => s.trim()).filter(s => /^\d{2}:\d{2}-\d{2}:\d{2}$/.test(s));
-        if (!slots.length) { toast.error('Please enter valid slots (e.g. 09:00-10:00)'); return; }
+        if (!slots.length) { toast.error('Valid slots are required (e.g. 09:00-10:00)'); return; }
         try {
             const res = await api.post('/appointments/schedule/custom-slots', { date, reason, slots });
             if (res?.data?.success) { toast.success('Custom slots set successfully'); setDateOverrides(res.data.dateOverrides); e.target.reset(); }

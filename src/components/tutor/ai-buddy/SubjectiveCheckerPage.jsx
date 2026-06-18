@@ -149,8 +149,8 @@ export default function SubjectiveCheckPage() {
 
     // ── Evaluate ──────────────────────────────────────────────────────
     const handleEvaluate = async () => {
-        if (!question.trim())       return toast.error('Please enter the question');
-        if (!studentAnswer.trim())  return toast.error('Please enter the student answer');
+        if (!question.trim())       return toast.error('Question is required');
+        if (!studentAnswer.trim())  return toast.error('Student answer is required');
 
         setLoading(true);
         setResult(null);

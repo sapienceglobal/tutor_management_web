@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Calendar, Clock, ArrowLeft, Tag, User, Share2 } from 'lucide-react';
 import api from '@/lib/axios';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { toast } from 'react-hot-toast';
 
 export default function BlogDetailPage() {
     const { slug } = useParams();
@@ -52,7 +53,7 @@ export default function BlogDetailPage() {
             navigator.share({ title: blog.title, url: window.location.href });
         } else {
             navigator.clipboard.writeText(window.location.href);
-            alert('Link copied to clipboard!');
+            toast.success('Link copied to clipboard!');
         }
     };
 

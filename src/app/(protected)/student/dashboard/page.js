@@ -635,16 +635,18 @@ export default function StudentDashboard() {
         {/* Animated Switcher */}
         {myInstitutes.length > 0 && (
           <div
-            className="relative flex items-center p-1 rounded-xl self-start sm:self-auto"
+            className="relative grid p-1 rounded-xl self-start sm:self-auto"
             style={{
-              width: 240,
+              width: '260px',
               backgroundColor: C.cardBg,
               border: `1px solid ${C.cardBorder}`,
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'
             }}
           >
             <div
               className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg transition-transform duration-300 ease-in-out z-0"
               style={{
+                left: '4px',
                 backgroundColor: C.btnPrimary,
                 transform:
                   activeTab === "institute"
@@ -658,7 +660,7 @@ export default function StudentDashboard() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className="flex-1 relative z-10 px-5 py-1.5 capitalize transition-colors duration-300"
+                className="relative z-10 px-2 py-1.5 capitalize transition-colors duration-300 text-center"
                 style={{
                   fontFamily: T.fontFamily,
                   fontSize: T.size.base,
@@ -668,6 +670,7 @@ export default function StudentDashboard() {
                   border: "none",
                   cursor: "pointer",
                   borderRadius: "10px",
+                  whiteSpace: "nowrap"
                 }}
               >
                 {tab === "institute" ? "My Institute" : "Global"}

@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast';
 import Cookies from 'js-cookie';
 import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
 import StatCard from '@/components/StatCard';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 // ─── Base Input Style ─────────────────────────────────────────────────────────
 const baseInputStyle = {
@@ -28,6 +29,7 @@ const baseInputStyle = {
 };
 
 export default function SuperAdminUsersPage() {
+    const { confirmDialog } = useConfirm();
     const router = useRouter();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -57,7 +59,12 @@ export default function SuperAdminUsersPage() {
     };
 
     const handleBlock = async (id, currentStatus) => {
-        if (!confirm(`Are you sure you want to ${currentStatus ? 'unblock' : 'block'} this user?`)) return;
+        const confirmed = await confirmDialog(
+            `${currentStatus ? 'Unblock' : 'Block'} User`,
+            `Are you sure you want to ${currentStatus ? 'unblock' : 'block'} this user?`,
+            { variant: currentStatus ? 'default' : 'destructive' }
+        );
+        if (!confirmed) return;
         try {
             await api.put(`/superadmin/users/${id}`, { isBlocked: !currentStatus });
             setUsers(users.map(u => u._id === id ? { ...u, isBlocked: !currentStatus } : u));
@@ -66,7 +73,11 @@ export default function SuperAdminUsersPage() {
     };
 
     const handleRoleChange = async (id, newRole) => {
-        if (!confirm(`Change user role to ${newRole.toUpperCase()}?`)) return;
+        const confirmed = await confirmDialog(
+            'Change User Role',
+            `Are you sure you want to change this user's role to ${newRole.toUpperCase()}?`
+        );
+        if (!confirmed) return;
         try {
             await api.put(`/superadmin/users/${id}`, { role: newRole });
             setUsers(users.map(u => u._id === id ? { ...u, role: newRole } : u));
@@ -75,7 +86,12 @@ export default function SuperAdminUsersPage() {
     };
 
     const handleDelete = async (id) => {
-        if (!confirm('🚨 DANGER: Are you sure you want to delete this user permanently? This cannot be undone.')) return;
+        const confirmed = await confirmDialog(
+            'Delete User Permanently',
+            '🚨 DANGER: Are you sure you want to delete this user permanently? This cannot be undone.',
+            { variant: 'destructive' }
+        );
+        if (!confirmed) return;
         try {
             await api.delete(`/superadmin/users/${id}`);
             setUsers(users.filter(u => u._id !== id));
@@ -86,7 +102,12 @@ export default function SuperAdminUsersPage() {
     // 🌟 The "God Mode" Login Feature
     const handleImpersonate = async (userId, userName, userRole) => {
         if (userRole === 'superadmin') return toast.error('Cannot impersonate another superadmin');
-        if (!confirm(`Enter "God Mode": Login as "${userName}"?`)) return;
+        
+        const confirmed = await confirmDialog(
+            'Enter God Mode',
+            `Are you sure you want to login as "${userName}"?`
+        );
+        if (!confirmed) return;
         
         setImpersonatingId(userId);
         try {

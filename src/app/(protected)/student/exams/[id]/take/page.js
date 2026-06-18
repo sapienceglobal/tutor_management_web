@@ -698,7 +698,7 @@ export default function TakeExamPage({ params }) {
 
   const handleAdaptiveSubmitAnswer = async () => {
     if (adaptiveSelection === null) {
-      toast.error("Please select an option.");
+      toast.error("Option selection is required.");
       return;
     }
     const q = adaptiveQuestion;

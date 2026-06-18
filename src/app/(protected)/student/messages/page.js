@@ -286,8 +286,8 @@ export default function StudentMessagesPage() {
 
     const handleSend = async () => {
         const body = draft.trim();
-        if (!selectedTutorId) return toast.error('Please select a tutor');
-        if (!body) return toast.error('Write a message first');
+        if (!selectedTutorId) return toast.error('Tutor selection is required');
+        if (!body) return toast.error('Message body cannot be empty');
 
         try {
             setSending(true);

@@ -86,7 +86,7 @@ export default function CreateQuestionPage() {
     };
 
     const handleAIGenerate = async () => {
-        if (!aiParams.topic) { toast.error("Please enter a topic"); return; }
+        if (!aiParams.topic) { toast.error("Topic is required"); return; }
         setAiLoading(true);
         try {
             const res = await api.post('/ai/generate-questions', { ...aiParams, count: 1 });

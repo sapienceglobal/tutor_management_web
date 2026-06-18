@@ -169,7 +169,7 @@ export default function LectureSummaryPage() {
     };
 
     const handleShareSubmit = async () => {
-        if (!shareCourseId) return toast.error('Please select a course to share with.');
+        if (!shareCourseId) return toast.error('Target course selection is required.');
         setSharingInProgress(true);
         try {
             const res = await api.patch(`/ai/lecture-summaries/${result._id}/share`, {
@@ -258,10 +258,10 @@ export default function LectureSummaryPage() {
         if (generating) return;
 
         // Validate
-        if (sourceTab === 'file'    && !uploadedFile) return toast.error('Please upload a file');
-        if (sourceTab === 'text'    && pastedText.trim().length < 20) return toast.error('Please paste at least 20 characters');
-        if (sourceTab === 'youtube' && !youtubeUrl.trim()) return toast.error('Please enter a YouTube URL');
-        if (sourceTab === 'lesson'  && !lessonId) return toast.error('Please select a lesson');
+        if (sourceTab === 'file'    && !uploadedFile) return toast.error('File upload is required');
+        if (sourceTab === 'text'    && pastedText.trim().length < 20) return toast.error('Pasted content must be at least 20 characters');
+        if (sourceTab === 'youtube' && !youtubeUrl.trim()) return toast.error('YouTube URL is required');
+        if (sourceTab === 'lesson'  && !lessonId) return toast.error('Lesson selection is required');
 
         setGenerating(true);
         setResult(null);

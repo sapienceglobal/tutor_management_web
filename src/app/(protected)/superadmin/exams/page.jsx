@@ -10,6 +10,7 @@ import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
 import StatCard from '@/components/StatCard';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 // ─── Base Input Style ─────────────────────────────────────────────────────────
 const baseInputStyle = {
@@ -27,6 +28,7 @@ const baseInputStyle = {
 };
 
 export default function SuperAdminExamsPage() {
+    const { confirmDialog } = useConfirm();
     const [exams, setExams] = useState([]);
     const [kpis, setKpis] = useState({ totalExams: 0, activeExams: 0, totalGlobalAttempts: 0, globalCheatingAlerts: 0 });
     const [loading, setLoading] = useState(true);
@@ -64,7 +66,12 @@ export default function SuperAdminExamsPage() {
         const newStatus = currentStatus === 'suspended' ? 'published' : 'suspended';
         const actionText = newStatus === 'suspended' ? 'SUSPEND' : 'RESTORE';
 
-        if (!confirm(`🚨 Are you sure you want to ${actionText} the course: "${title}"?`)) return;
+        const confirmed = await confirmDialog(
+            `${actionText === 'SUSPEND' ? 'Suspend' : 'Restore'} Course`,
+            `Are you sure you want to ${actionText.toLowerCase()} the course: "${title}"?`,
+            { variant: newStatus === 'suspended' ? 'destructive' : 'default' }
+        );
+        if (!confirmed) return;
 
         try {
             const res = await api.patch(`/superadmin/courses/${id}/status`, { status: newStatus });

@@ -137,11 +137,18 @@ export default function StudentBatchesPage() {
                 </div>
 
                 {/* Tab switcher — exact animated pill pattern */}
-                <div className="relative flex items-center p-1 self-start"
-                    style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px' }}>
+                <div className="relative grid p-1 self-start"
+                    style={{ 
+                        backgroundColor: C.cardBg, 
+                        border: `1px solid ${C.cardBorder}`, 
+                        borderRadius: '10px',
+                        width: '360px',
+                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'
+                    }}>
                     <div
                         className="absolute top-1 bottom-1 w-[calc(50%-4px)] transition-transform duration-300 ease-in-out z-0"
                         style={{
+                            left: '4px',
                             backgroundColor: C.btnPrimary,
                             transform: activeTab === 'my' ? 'translateX(0)' : 'translateX(100%)',
                             boxShadow: `0 2px 10px ${C.btnPrimary}40`,
@@ -153,7 +160,7 @@ export default function StudentBatchesPage() {
                         { key: 'discover', label: 'Discover Batches', Icon: MdLanguage },
                     ].map(({ key, label, Icon }) => (
                         <button key={key} onClick={() => setActiveTab(key)}
-                            className="flex items-center gap-2 px-4 py-2 flex-1 relative z-10 transition-colors duration-300"
+                            className="flex items-center justify-center gap-1.5 px-2 py-2 relative z-10 transition-colors duration-300"
                             style={{
                                 fontFamily: T.fontFamily,
                                 fontSize: T.size.base,
@@ -163,6 +170,7 @@ export default function StudentBatchesPage() {
                                 border: 'none',
                                 cursor: 'pointer',
                                 borderRadius: '10px',
+                                whiteSpace: 'nowrap'
                             }}>
                             <Icon style={{ width: 16, height: 16 }} /> {label}
                         </button>

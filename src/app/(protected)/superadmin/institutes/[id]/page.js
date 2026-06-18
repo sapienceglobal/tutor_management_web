@@ -9,6 +9,7 @@ import {
 } from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 import Cookies from 'js-cookie';
 import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
 
@@ -27,6 +28,7 @@ const baseInputStyle = {
 };
 
 export default function InstituteDetailPage() {
+    const { confirmDialog } = useConfirm();
     const { id } = useParams();
     const router = useRouter();
     const [institute, setInstitute] = useState(null);
@@ -53,7 +55,11 @@ export default function InstituteDetailPage() {
     };
 
     const handleImpersonate = async (userId, userName) => {
-        if (!confirm(`Are you sure you want to login as "${userName}"? You will be redirected to their dashboard.`)) return;
+        const confirmed = await confirmDialog(
+            'Login As User',
+            `Are you sure you want to login as "${userName}"? You will be redirected to their dashboard.`
+        );
+        if (!confirmed) return;
         setImpersonatingId(userId);
         try {
             const res = await api.post(`/superadmin/impersonate/${userId}`);

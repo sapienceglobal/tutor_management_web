@@ -443,15 +443,18 @@ export default function FindTutorsPage() {
                 {/* Institute / Global Switcher */}
                 {myInstitutes.length > 0 && (
                     <div
-                        className="relative flex items-center p-1 rounded-xl self-start md:self-auto shrink-0"
+                        className="relative grid p-1 rounded-xl self-start md:self-auto shrink-0"
                         style={{
                             backgroundColor: C.cardBg,
                             border:          `1px solid ${C.cardBorder}`,
+                            width:           '260px',
+                            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'
                         }}
                     >
                         <div
                             className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg transition-transform duration-300 ease-in-out z-0"
                             style={{
+                                left:            '4px',
                                 backgroundColor: C.btnPrimary,
                                 transform:       activeTab === 'institute' ? 'translateX(0)' : 'translateX(100%)',
                                 boxShadow:       `0 2px 10px ${C.btnPrimary}40`,
@@ -461,7 +464,7 @@ export default function FindTutorsPage() {
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className="flex-1 relative z-10 px-5 py-1.5 capitalize transition-colors duration-300 border-none cursor-pointer"
+                                className="relative z-10 px-2 py-1.5 capitalize transition-colors duration-300 border-none cursor-pointer text-center"
                                 style={{
                                     fontFamily:  T.fontFamily,
                                     fontSize:    T.size.base,
@@ -469,6 +472,7 @@ export default function FindTutorsPage() {
                                     color:       activeTab === tab ? '#ffffff' : C.text,
                                     background:  'transparent',
                                     borderRadius:'10px',
+                                    whiteSpace:  'nowrap'
                                 }}
                             >
                                 {tab === 'institute' ? 'My Institute' : 'Global'}

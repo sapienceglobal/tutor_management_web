@@ -140,7 +140,7 @@ export default function StudentAssignmentDetailsPage({ params }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!content.trim() && attachments.length === 0) return toast.error('Please add some text or attach a file.');
+        if (!content.trim() && attachments.length === 0) return toast.error('Text response or file attachment is required.');
         setSubmitting(true);
         try {
             const res = await assignmentService.submitAssignment(assignmentId, { content, attachments });

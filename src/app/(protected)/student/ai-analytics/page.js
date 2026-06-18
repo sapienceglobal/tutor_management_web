@@ -12,7 +12,8 @@ import {
   MdArticle,
   MdDownload,
   MdPrint,
-  MdViewList
+  MdViewList,
+  MdShield
 } from "react-icons/md";
 import api from "@/lib/axios";
 import {
@@ -336,10 +337,18 @@ export default function ReportsAnalyticsPage() {
         </div>
 
         {/* Tab Switcher Pattern */}
-        <div className="relative flex items-center p-1 self-start xl:self-auto no-print"
-          style={{ width: '100%', maxWidth: '380px', backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, borderRadius: '10px' }}>
+        <div className="relative grid p-1 self-start xl:self-auto no-print"
+          style={{ 
+            width: '100%', 
+            maxWidth: '380px', 
+            backgroundColor: C.innerBg, 
+            border: `1px solid ${C.cardBorder}`, 
+            borderRadius: '10px',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'
+          }}>
           <div className="absolute top-1 bottom-1 w-[calc(50%-4px)] transition-transform duration-300 ease-in-out z-0"
             style={{ 
+              left: '4px',
               backgroundColor: C.btnPrimary, 
               transform: activeTab === 'analytics' ? 'translateX(0)' : 'translateX(100%)',
               boxShadow: `0 2px 10px ${C.btnPrimary}40`,
@@ -347,14 +356,15 @@ export default function ReportsAnalyticsPage() {
             }} />
           {[{ id: 'analytics', label: 'Analytics', icon: MdBarChart }, { id: 'reports', label: 'Reports & Downloads', icon: MdArticle }].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className="flex-1 relative z-10 px-3 py-2 transition-colors duration-300 border-none cursor-pointer flex items-center justify-center gap-2"
+              className="relative z-10 px-2 py-2 transition-colors duration-300 border-none cursor-pointer flex items-center justify-center gap-1.5"
               style={{ 
                 fontFamily: T.fontFamily, 
                 fontSize: T.size.base, 
                 fontWeight: T.weight.bold,
                 color: activeTab === tab.id ? '#ffffff' : C.text, 
                 background: 'transparent', 
-                borderRadius: '10px' 
+                borderRadius: '10px',
+                whiteSpace: 'nowrap'
               }}>
               <tab.icon style={{ width: 16, height: 16 }} />
               <span className="hidden sm:inline">{tab.label}</span>
@@ -859,23 +869,23 @@ export default function ReportsAnalyticsPage() {
             </div>
 
             {/* Summary Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
               {[
                 {
                   label: "Total Exams",
                   val: reportData?.summary?.totalExams || 0,
                 },
                 {
-                  label: "Passed Exams",
-                  val: reportData?.summary?.passedExams || 0,
-                },
-                {
-                  label: "Average Score",
+                  label: "Average Exam Score",
                   val: `${reportData?.summary?.avgScore || 0}%`,
                 },
                 {
-                  label: "Active Courses",
-                  val: reportData?.summary?.totalCourses || 0,
+                  label: "Total Assignments",
+                  val: reportData?.summary?.totalAssignments || 0,
+                },
+                {
+                  label: "Avg Assignment Score",
+                  val: reportData?.summary?.avgAssignmentScore !== null ? `${reportData.summary.avgAssignmentScore}%` : '—',
                 },
               ].map((stat, i) => (
                 <div
@@ -913,6 +923,85 @@ export default function ReportsAnalyticsPage() {
               ))}
             </div>
 
+            {/* Detailed Course Enrollments */}
+            <h3
+              style={{
+                fontSize: T.size.lg,
+                fontWeight: T.weight.bold,
+                color: C.heading,
+                marginBottom: "16px",
+              }}
+            >
+              Enrolled Courses ({reportData?.summary?.totalCourses || 0})
+            </h3>
+
+            <div className="overflow-x-auto mb-10">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr style={{ borderBottom: `2px solid ${C.cardBorder}` }}>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider" style={{ color: C.textMuted, fontSize: T.size.xs }}>
+                      Course Title
+                    </th>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider" style={{ color: C.textMuted, fontSize: T.size.xs }}>
+                      Category
+                    </th>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider" style={{ color: C.textMuted, fontSize: T.size.xs }}>
+                      Enrollment Date
+                    </th>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider text-right" style={{ color: C.textMuted, fontSize: T.size.xs }}>
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reportData?.enrollments?.length > 0 ? (
+                    reportData.enrollments.map((course, idx) => (
+                      <tr
+                        key={idx}
+                        className="transition-colors hover:bg-black/5"
+                        style={{ borderBottom: `1px solid ${C.cardBorder}` }}
+                      >
+                        <td className="py-4 px-4 font-semibold" style={{ color: C.heading, fontSize: T.size.base }}>
+                          {course.title}
+                        </td>
+                        <td className="py-4 px-4 capitalize" style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>
+                          {course.category || 'General'}
+                        </td>
+                        <td className="py-4 px-4" style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>
+                          {new Date(course.enrolledAt).toLocaleDateString()}
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          <span
+                            className="px-3 py-1 uppercase tracking-wider"
+                            style={{
+                              backgroundColor: course.status === 'active' ? C.successBg : C.btnViewAllBg,
+                              color: course.status === 'active' ? C.success : C.text,
+                              border: `1px solid ${course.status === 'active' ? C.successBorder : C.cardBorder}`,
+                              borderRadius: '10px',
+                              fontSize: T.size.xs,
+                              fontWeight: T.weight.bold
+                            }}
+                          >
+                            {course.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="4"
+                        className="py-8 text-center"
+                        style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.semibold }}
+                      >
+                        No course enrollments available.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
             {/* Detailed Exam History */}
             <h3
               style={{
@@ -925,7 +1014,7 @@ export default function ReportsAnalyticsPage() {
               Exam Performance History
             </h3>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto mb-10">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr style={{ borderBottom: `2px solid ${C.cardBorder}` }}>
@@ -996,6 +1085,122 @@ export default function ReportsAnalyticsPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Detailed Assignment Submissions */}
+            <h3
+              style={{
+                fontSize: T.size.lg,
+                fontWeight: T.weight.bold,
+                color: C.heading,
+                marginBottom: "16px",
+              }}
+            >
+              Assignment Submission Grades ({reportData?.summary?.totalAssignments || 0})
+            </h3>
+
+            <div className="overflow-x-auto mb-10">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr style={{ borderBottom: `2px solid ${C.cardBorder}` }}>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider" style={{ color: C.textMuted, fontSize: T.size.xs }}>
+                      Assignment Title
+                    </th>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider" style={{ color: C.textMuted, fontSize: T.size.xs }}>
+                      Submission Date
+                    </th>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider text-center" style={{ color: C.textMuted, fontSize: T.size.xs }}>
+                      Grade
+                    </th>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider text-center" style={{ color: C.textMuted, fontSize: T.size.xs }}>
+                      Percentage
+                    </th>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider text-right" style={{ color: C.textMuted, fontSize: T.size.xs }}>
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reportData?.assignments?.length > 0 ? (
+                    reportData.assignments.map((assignment, idx) => (
+                      <tr
+                        key={idx}
+                        className="transition-colors hover:bg-black/5"
+                        style={{ borderBottom: `1px solid ${C.cardBorder}` }}
+                      >
+                        <td className="py-4 px-4 font-semibold" style={{ color: C.heading, fontSize: T.size.base }}>
+                          <div>
+                            <p style={{ margin: 0 }}>{assignment.title}</p>
+                            {assignment.feedback && (
+                              <p style={{ margin: '4px 0 0 0', fontSize: T.size.xs, color: C.textMuted, fontStyle: 'italic' }}>
+                                "Feedback: {assignment.feedback}"
+                              </p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4" style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>
+                          {new Date(assignment.submittedAt).toLocaleDateString()}
+                        </td>
+                        <td className="py-4 px-4 text-center" style={{ color: C.text, fontSize: T.size.sm, fontWeight: T.weight.semibold }}>
+                          {assignment.status === 'graded' ? `${assignment.grade} / ${assignment.totalMarks}` : '—'}
+                        </td>
+                        <td className="py-4 px-4 text-center font-bold" style={{ color: C.heading, fontSize: T.size.base }}>
+                          {assignment.status === 'graded' ? `${assignment.pct}%` : '—'}
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          <span
+                            className="px-3 py-1 uppercase tracking-wider"
+                            style={{
+                              backgroundColor: assignment.status === 'graded' ? C.successBg : C.warningBg,
+                              color: assignment.status === 'graded' ? C.success : C.warning,
+                              border: `1px solid ${assignment.status === 'graded' ? C.successBorder : C.warningBorder}`,
+                              borderRadius: '10px',
+                              fontSize: T.size.xs,
+                              fontWeight: T.weight.bold
+                            }}
+                          >
+                            {assignment.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="5"
+                        className="py-8 text-center"
+                        style={{ color: C.textMuted, fontSize: T.size.sm, fontWeight: T.weight.semibold }}
+                      >
+                        No assignment history available.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Signature & Seal Block */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between border-t pt-8 mt-12 gap-6" style={{ borderColor: C.cardBorder }}>
+              <div>
+                <p style={{ color: C.textMuted, fontSize: '11px', fontFamily: T.fontFamilyMono, margin: 0 }}>
+                  Report Verification Code: SEC-REP-{(reportData?.student?.id || 'STUDENT').substring(0, 8).toUpperCase()}-{new Date().getFullYear()}
+                </p>
+                <p style={{ color: C.textMuted, fontSize: T.size.xs, marginTop: 4, margin: 0 }}>
+                  This is an official academic transcript generated automatically by Sapience LMS.
+                </p>
+              </div>
+              <div className="flex items-center gap-4 text-right self-end md:self-auto">
+                <div style={{ display: 'inline-block', width: '100px', borderBottom: `1px dashed ${C.textMuted}`, paddingBottom: '30px' }}>
+                  {/* Digital Signature Placeholder */}
+                  <span style={{ fontSize: '10px', color: C.textMuted, fontStyle: 'italic' }}>Authorized Sign</span>
+                </div>
+                <div 
+                  className="flex items-center justify-center shrink-0 border rounded-lg"
+                  style={{ width: '48px', height: '48px', borderColor: C.cardBorder, backgroundColor: C.innerBg }}
+                >
+                  <MdShield style={{ width: 24, height: 24, color: C.success }} />
+                </div>
+              </div>
             </div>
           </div>
         </div>

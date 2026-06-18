@@ -258,7 +258,7 @@ export default function StudyPlanPage() {
 
     // ── Generate plan ─────────────────────────────────────────────────
     const handleGenerate = async () => {
-        if (!selectedStudent) return toast.error('Please select a student');
+        if (!selectedStudent) return toast.error('Student selection is required');
         if (!selectedTopics.length) return toast.error('Select at least one weak topic');
 
         setGenerating(true);
