@@ -247,14 +247,48 @@ export function NotificationPanel({ onClose }) {
 
 // ─── CERTIFICATES SECTION ─────────────────────────────────────────────────────
 
+const fallbackCopyToClipboard = (text) => {
+    try {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.top = '0';
+        textArea.style.left = '0';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        return successful;
+    } catch (err) {
+        console.error('Fallback copy failed', err);
+        return false;
+    }
+};
+
+const copyText = (text) => {
+    if (typeof window !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text)
+            .then(() => true)
+            .catch(() => fallbackCopyToClipboard(text));
+    }
+    return Promise.resolve(fallbackCopyToClipboard(text));
+};
+
 function CertCard({ cert }) {
     const [showShare, setShowShare] = useState(false);
     const issued = new Date(cert.issuedAt || cert.completedAt);
 
     const handleCopyLink = () => {
         const url = `${window.location.origin}/verify/${cert.credentialId || cert._id}`;
-        navigator.clipboard.writeText(url);
-        toast.success('Verification link copied!');
+        copyText(url).then((success) => {
+            if (success) {
+                toast.success('Verification link copied!');
+            } else {
+                toast.error('Failed to copy. Please copy manually: ' + url);
+            }
+        });
     };
 
     const handleLinkedInShare = () => {
@@ -314,7 +348,7 @@ function CertCard({ cert }) {
 
                 <div className="flex items-center gap-2">
                     {cert.downloadUrl ? (
-                        <a href={cert.downloadUrl} target="_blank" rel="noreferrer"
+                        <a href={cert.downloadUrl.startsWith('/api/') ? cert.downloadUrl.replace(/^\/api\//, '/api/proxy/') : cert.downloadUrl} target="_blank" rel="noreferrer"
                             className="flex-1 flex items-center justify-center gap-1.5 transition-opacity hover:opacity-90 text-decoration-none"
                             style={{ background: C.gradientBtn, color: '#ffffff', padding: '8px 0', borderRadius: '10px', fontSize: T.size.xs, fontWeight: T.weight.bold, boxShadow: S.btn }}>
                             <MdDownload style={{ width: 14, height: 14 }} /> Download
@@ -343,8 +377,18 @@ function CertCard({ cert }) {
                     </button>
                     <button onClick={() => {
                         const url = `${window.location.origin}/verify/${cert.credentialId || cert._id}`;
-                        if (navigator.share) navigator.share({ title: cert.courseName, url });
-                        else { navigator.clipboard.writeText(url); toast.success('Link copied!'); }
+                        if (typeof window !== 'undefined' && navigator.share) {
+                            navigator.share({ title: cert.courseName || cert.title, url })
+                                .catch(() => {
+                                    copyText(url).then(success => {
+                                        if (success) toast.success('Link copied!');
+                                    });
+                                });
+                        } else {
+                            copyText(url).then(success => {
+                                if (success) toast.success('Link copied!');
+                            });
+                        }
                     }}
                         title="Share"
                         className="flex items-center justify-center cursor-pointer border-none transition-colors shrink-0"
