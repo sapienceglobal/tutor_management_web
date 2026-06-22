@@ -19,8 +19,8 @@ const onBlurHandler = e => {
 };
 
 const baseInputStyle = {
-    backgroundColor: '#E3DFF8',
-    border: '1.5px solid transparent',
+    backgroundColor: C.innerBg,
+    border: `1.5px solid ${C.cardBorder}`,
     borderRadius: R.xl,
     color: C.heading,
     fontFamily: T.fontFamily,
@@ -110,14 +110,14 @@ export default function BulkAIGeneratorPage() {
     }[d] || { bg: C.surfaceWhite, color: C.textMuted, border: C.cardBorder });
 
     return (
-        <div className="w-full min-h-screen p-6" style={{ backgroundColor: '#dfdaf3', fontFamily: T.fontFamily, color: C.text }}>
+        <div className="w-full min-h-screen p-6" style={{ backgroundColor: C.pageBg, fontFamily: T.fontFamily, color: C.text }}>
             
             {/* Header */}
-            <div className="flex flex-col md:flex-row sm:items-center justify-between gap-4 p-5 mb-6" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+            <div className="flex flex-col md:flex-row sm:items-center justify-between gap-4 p-5 mb-6" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                 <div className="flex items-center gap-4">
                     <Link href="/tutor/questions" className="text-decoration-none">
                         <button className="w-10 h-10 flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-80 shrink-0"
-                            style={{ backgroundColor: '#E3DFF8', borderRadius: R.full }}>
+                            style={{ backgroundColor: C.innerBg, borderRadius: R.full }}>
                             <ArrowLeft size={18} color={C.heading} />
                         </button>
                     </Link>
@@ -138,8 +138,8 @@ export default function BulkAIGeneratorPage() {
                 <div className="lg:col-span-1 space-y-6">
 
                     {/* AI Prompt Card */}
-                    <div className="overflow-hidden" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                        <div className="px-5 py-4" style={{ backgroundColor: '#E3DFF8', borderBottom: `1px solid ${C.cardBorder}` }}>
+                    <div className="overflow-hidden" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                        <div className="px-5 py-4" style={{ backgroundColor: C.innerBg, borderBottom: `1px solid ${C.cardBorder}` }}>
                             <h2 className="flex items-center gap-2" style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: 0 }}>
                                 <Sparkles size={16} color={C.btnPrimary} /> 1. AI Prompt
                             </h2>
@@ -187,8 +187,8 @@ export default function BulkAIGeneratorPage() {
                     </div>
 
                     {/* Metadata Card */}
-                    <div className="overflow-hidden transition-opacity" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card, opacity: generatedQuestions.length === 0 ? 0.4 : 1, pointerEvents: generatedQuestions.length === 0 ? 'none' : 'auto' }}>
-                        <div className="px-5 py-4" style={{ backgroundColor: '#E3DFF8', borderBottom: `1px solid ${C.cardBorder}` }}>
+                    <div className="overflow-hidden transition-opacity" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card, opacity: generatedQuestions.length === 0 ? 0.4 : 1, pointerEvents: generatedQuestions.length === 0 ? 'none' : 'auto' }}>
+                        <div className="px-5 py-4" style={{ backgroundColor: C.innerBg, borderBottom: `1px solid ${C.cardBorder}` }}>
                             <h2 style={{ fontSize: T.size.sm, fontWeight: T.weight.black, color: C.heading, margin: '0 0 2px 0' }}>2. Assign Metadata to Bank</h2>
                             <p style={{ fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.textMuted, margin: 0 }}>Tag these questions before saving.</p>
                         </div>
@@ -225,7 +225,7 @@ export default function BulkAIGeneratorPage() {
                 {/* ── Right Panel ─────────────────────────────────── */}
                 <div className="lg:col-span-2 space-y-4">
                     {loading ? (
-                        <div className="min-h-[400px] flex flex-col items-center justify-center p-8 text-center" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px dashed ${C.cardBorder}` }}>
+                        <div className="min-h-[400px] flex flex-col items-center justify-center p-8 text-center" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px dashed ${C.cardBorder}` }}>
                             <BrainCircuit size={48} color={C.btnPrimary} className="animate-pulse mb-4" />
                             <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>AI is thinking...</h3>
                             <p style={{ fontSize: T.size.sm, fontWeight: T.weight.medium, color: C.textMuted, margin: 0, maxWidth: 300 }}>Analyzing topic and generating high-quality questions.</p>
@@ -244,8 +244,8 @@ export default function BulkAIGeneratorPage() {
                                 {generatedQuestions.map((q, idx) => {
                                     const diffSty = difficultyStyle(q.difficulty);
                                     return (
-                                        <div key={idx} className="overflow-hidden" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
-                                            <div className="px-5 py-3 flex items-center justify-between" style={{ backgroundColor: '#E3DFF8', borderBottom: `1px solid ${C.cardBorder}` }}>
+                                        <div key={idx} className="overflow-hidden" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                                            <div className="px-5 py-3 flex items-center justify-between" style={{ backgroundColor: C.innerBg, borderBottom: `1px solid ${C.cardBorder}` }}>
                                                 <span style={{ fontSize: T.size.xs, fontWeight: T.weight.black, color: C.heading, textTransform: 'uppercase' }}>Question {idx + 1}</span>
                                                 <div className="flex gap-2">
                                                     <span style={{ fontSize: '10px', fontWeight: T.weight.black, backgroundColor: diffSty.bg, color: diffSty.color, border: `1px solid ${diffSty.border}`, padding: '2px 8px', borderRadius: R.md, textTransform: 'uppercase' }}>
@@ -310,8 +310,8 @@ export default function BulkAIGeneratorPage() {
                             </div>
                         </>
                     ) : (
-                        <div className="min-h-[400px] flex flex-col items-center justify-center p-8 text-center" style={{ backgroundColor: '#EAE8FA', borderRadius: R['2xl'], border: `1px dashed ${C.cardBorder}` }}>
-                            <div className="w-14 h-14 flex items-center justify-center mb-4" style={{ backgroundColor: '#E3DFF8', borderRadius: R.xl }}>
+                        <div className="min-h-[400px] flex flex-col items-center justify-center p-8 text-center" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px dashed ${C.cardBorder}` }}>
+                            <div className="w-14 h-14 flex items-center justify-center mb-4" style={{ backgroundColor: C.innerBg, borderRadius: R.xl }}>
                                 <AlertCircle size={28} color={C.btnPrimary} />
                             </div>
                             <h3 style={{ fontSize: T.size.md, fontWeight: T.weight.bold, color: C.heading, margin: '0 0 4px 0' }}>No Questions Yet</h3>

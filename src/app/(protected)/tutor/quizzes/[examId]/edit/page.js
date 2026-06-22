@@ -28,6 +28,7 @@ import AudienceSelector from '@/components/shared/AudienceSelector';
 import useInstitute from '@/hooks/useInstitute';
 import { C, T, S, R } from '@/constants/studentTokens';
 import FeatureGate from '@/components/FeatureGate';
+import { Modal } from '@/components/ui/modal';
 
 // ─── Focus Handlers ───────────────────────────────────────────────────────────
 const onFocusHandler = e => {
@@ -189,6 +190,10 @@ export default function EditExamPage({ params }) {
     const [availableBatches, setAvailableBatches]   = useState([]);
     const [availableStudents, setAvailableStudents] = useState([]);
 
+    const [isAIOpen, setIsAIOpen] = useState(false);
+    const [aiParams, setAiParams] = useState({ topic: '', count: 5, difficulty: 'medium' });
+    const [aiLoading, setAiLoading] = useState(false);
+
     const [examData, setExamData] = useState({
         title: '', courseId: '', duration: 30, passingMarks: 10, passingPercentage: 33,
         description: '', allowRetake: false, maxAttempts: 1,
@@ -286,6 +291,40 @@ export default function EditExamPage({ params }) {
 
     const handleDeleteQuestion = (index) => {
         setExamData({ ...examData, questions: examData.questions.filter((_, i) => i !== index) });
+    };
+
+    const handleAIGenerate = async () => {
+        if (!aiParams?.topic) {
+            toast.error('Topic is required');
+            return;
+        }
+        setAiLoading(true);
+        try {
+            const res = await api.post('/ai/generate-questions', aiParams);
+            if (res?.data?.success) {
+                const newQs = res.data.questions.map(q => ({
+                    question: q.question,
+                    options: q.options.map(opt => ({
+                        text: opt,
+                        isCorrect: opt === q.correctAnswer
+                    })),
+                    explanation: q.explanation,
+                    points: 1,
+                    difficulty: q.difficulty.toLowerCase(),
+                    type: 'mcq'
+                }));
+                setExamData(prev => ({
+                    ...prev,
+                    questions: [...prev.questions, ...newQs]
+                }));
+                setIsAIOpen(false);
+                toast.success(`Generated ${newQs.length} questions!`);
+            }
+        } catch (error) {
+            toast.error(error?.response?.data?.message || 'Failed to generate questions. Please try again.');
+        } finally {
+            setAiLoading(false);
+        }
     };
 
     const handleUpdateExam = async (newStatus = null) => {
@@ -666,6 +705,15 @@ export default function EditExamPage({ params }) {
 
                         {/* Add Question Buttons */}
                         <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+                            <FeatureGate featureName="aiAssessment" mode="lock">
+                                <button
+                                    onClick={() => setIsAIOpen(true)}
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-80 border-2 border-dashed"
+                                    style={{ backgroundColor: C.cardBg, color: C.btnPrimary, borderColor: C.cardBorder, borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}
+                                >
+                                    <MdAutoAwesome style={{ width: 16, height: 16 }} /> AI Generate
+                                </button>
+                            </FeatureGate>
                             <button
                                 onClick={() => handleAddQuestion('mcq')}
                                 className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-80 border-2 border-dashed"
@@ -908,7 +956,64 @@ export default function EditExamPage({ params }) {
                         </div>
                     </div>
                 </div>
+                    </div>
+                </div>
             )}
+
+            {/* ── AI Generate Modal ── */}
+            <Modal isOpen={isAIOpen} onClose={() => setIsAIOpen(false)} title="Generate Questions with AI">
+                <div style={{ backgroundColor: C.cardBg, padding: 24, borderRadius: R['2xl'] }}>
+                    <div className="space-y-6">
+                        <div className="space-y-3">
+                            <label style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, display: 'block' }}>Topic or Subject</label>
+                            <input
+                                placeholder="e.g. Newton's Laws of Motion"
+                                value={aiParams.topic}
+                                onChange={e => setAiParams({ ...aiParams, topic: e.target.value })}
+                                style={baseInputStyle}
+                                onFocus={onFocusHandler} onBlur={onBlurHandler}
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-5">
+                            <div className="space-y-3">
+                                <label style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, display: 'block' }}>Number of Questions</label>
+                                <input
+                                    type="number" min="1" max="20"
+                                    value={aiParams.count}
+                                    onChange={e => setAiParams({ ...aiParams, count: parseInt(e.target.value) || 5 })}
+                                    style={baseInputStyle}
+                                    onFocus={onFocusHandler} onBlur={onBlurHandler}
+                                />
+                            </div>
+                            <div className="space-y-3">
+                                <label style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, display: 'block' }}>Difficulty</label>
+                                <select
+                                    value={aiParams.difficulty}
+                                    onChange={e => setAiParams({ ...aiParams, difficulty: e.target.value })}
+                                    style={baseInputStyle}
+                                    onFocus={onFocusHandler} onBlur={onBlurHandler}
+                                >
+                                    <option value="easy">Easy</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="hard">Hard</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button
+                            onClick={handleAIGenerate} disabled={aiLoading}
+                            className="w-full flex items-center justify-center gap-2 cursor-pointer transition-all hover:opacity-90"
+                            style={{ background: C.gradientBtn, color: '#ffffff', border: 'none', borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, boxShadow: S.btn, height: 48 }}
+                        >
+                            {aiLoading ? (
+                                <div className="rounded-full border-2 animate-spin" style={{ width: 20, height: 20, borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fff' }} />
+                            ) : (
+                                <MdAutoAwesome style={{ width: 20, height: 20 }} />
+                            )}
+                            Generate Now
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }

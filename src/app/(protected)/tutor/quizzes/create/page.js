@@ -594,8 +594,8 @@ function CreateExamPageClient() {
         setIsAIOpen(false);
         toast.success(`Generated ${newQs.length} questions!`);
       }
-    } catch {
-      toast.error("Failed to generate questions. Try a different topic.");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to generate questions. Please try again.");
     } finally {
       setAiLoading(false);
     }

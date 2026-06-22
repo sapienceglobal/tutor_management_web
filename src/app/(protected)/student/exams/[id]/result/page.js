@@ -6,7 +6,7 @@ import {
     MdCheckCircle, MdCancel, MdHome, MdReplay, MdEmojiEvents, MdDownload, MdPrint,
     MdTrendingUp, MdAutoAwesome, MdArticle, MdKeyboardArrowDown, 
     MdKeyboardArrowUp, MdStar, MdTrackChanges, MdErrorOutline, 
-    MdClose, MdChatBubbleOutline, MdInsertChartOutlined, MdMenuBook
+    MdClose, MdChatBubbleOutline, MdInsertChartOutlined, MdMenuBook, MdWarning, MdSend
 } from 'react-icons/md';
 import { Loader2 } from 'lucide-react'; // Loader ke liye spinner
 import api from '@/lib/axios';
@@ -16,6 +16,7 @@ import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import { C, T, S, R } from '@/constants/studentTokens';
 import StatCard from '@/components/StatCard';
+import { Modal } from '@/components/ui/modal';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const getStatus = (item) => {
@@ -244,6 +245,12 @@ function ExamResultPageClient() {
     const [expandedRow, setExpandedRow] = useState(null);
     const [qFilter, setQFilter] = useState('all');
 
+    // Re-evaluation state
+    const [isRevalOpen, setIsRevalOpen] = useState(false);
+    const [revalReason, setRevalReason] = useState('');
+    const [revalLoading, setRevalLoading] = useState(false);
+    const [hasRevalReq, setHasRevalReq] = useState(false);
+
     useEffect(() => {
         const fetchResult = async () => {
             if (!attemptId) {
@@ -259,6 +266,15 @@ function ExamResultPageClient() {
                     setExamTitle(attempt.examTitle || '');
                     setExamData({ duration: attempt.duration || null, totalMarks: attempt.totalMarks });
                     if (attempt.isPassed) triggerConfetti();
+                }
+
+                try {
+                    const revalRes = await api.get(`/student/exams/re-evaluation-requests?attemptId=${attemptId}`);
+                    if (revalRes.data?.success && revalRes.data.requests.length > 0) {
+                        setHasRevalReq(true);
+                    }
+                } catch (e) {
+                    // Ignore
                 }
             } catch {
                 toast.error('Failed to load result details');
@@ -277,6 +293,26 @@ function ExamResultPageClient() {
             if (Date.now() > end) return clearInterval(t);
             confetti({ particleCount: 40, startVelocity: 30, spread: 360, origin: { x: rand(0.1, 0.9), y: rand(0.1, 0.5) } });
         }, 250);
+    };
+
+    const submitRevaluation = async () => {
+        if (!revalReason || revalReason.trim().length < 15) {
+            toast.error("Please provide a reason of at least 15 characters.");
+            return;
+        }
+        setRevalLoading(true);
+        try {
+            const res = await api.post(`/student/exams/attempt/${attemptId}/re-evaluation-request`, { reason: revalReason });
+            if (res.data?.success) {
+                toast.success('Re-evaluation request submitted successfully!');
+                setIsRevalOpen(false);
+                setHasRevalReq(true);
+            }
+        } catch (error) {
+            toast.error(error?.response?.data?.message || 'Failed to submit request');
+        } finally {
+            setRevalLoading(false);
+        }
     };
 
     if (loading) return (
@@ -355,6 +391,18 @@ function ExamResultPageClient() {
                                 style={{ background: C.gradientBtn, borderRadius: '10px', fontSize: T.size.base, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
                                 <MdReplay className="w-4 h-4" /> Retake Test
                             </button>
+                        )}
+                        {!hasRevalReq ? (
+                            <button onClick={() => { setRevalReason(''); setIsRevalOpen(true); }}
+                                className="flex items-center gap-2 px-4 py-2 text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors shadow-sm cursor-pointer"
+                                style={{ borderRadius: '10px', fontSize: T.size.base, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                <MdWarning className="w-4 h-4" /> Request Re-evaluation
+                            </button>
+                        ) : (
+                            <div className="flex items-center gap-2 px-4 py-2 text-amber-600 bg-amber-50 border border-amber-200 shadow-sm"
+                                style={{ borderRadius: '10px', fontSize: T.size.base, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
+                                <MdWarning className="w-4 h-4" /> Re-evaluation Pending
+                            </div>
                         )}
                     </div>
                 </div>
@@ -600,6 +648,20 @@ function ExamResultPageClient() {
                                                                         </div>
                                                                     </div>
                                                                 )}
+                                                                
+                                                                {/* Report Issue Button for Question */}
+                                                                {!hasRevalReq && (
+                                                                    <div className="mt-4 flex justify-end border-t pt-4" style={{ borderColor: C.cardBorder }}>
+                                                                        <button onClick={() => {
+                                                                            setRevalReason(`Regarding Q${item.questionNumber || idx + 1}: `);
+                                                                            setIsRevalOpen(true);
+                                                                        }}
+                                                                        className="flex items-center gap-2 px-3 py-1.5 text-xs text-red-600 bg-red-50 hover:bg-red-100 transition-colors cursor-pointer border border-red-200"
+                                                                        style={{ borderRadius: '6px', fontWeight: T.weight.bold }}>
+                                                                            <MdWarning className="w-3 h-3" /> Report Issue in Evaluation
+                                                                        </button>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </motion.div>
                                                     )}
@@ -667,6 +729,64 @@ function ExamResultPageClient() {
                     </div>
                 </div>
             </div>
+
+            {/* ── Re-evaluation Modal ── */}
+            <Modal isOpen={isRevalOpen} onClose={() => setIsRevalOpen(false)} title="Request Re-evaluation">
+                <div style={{ backgroundColor: C.cardBg, padding: 24, borderRadius: R['2xl'] }}>
+                    <div className="space-y-4">
+                        <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-3">
+                            <MdWarning className="text-amber-600 w-5 h-5 shrink-0 mt-0.5" />
+                            <p className="text-sm text-amber-800 m-0 leading-relaxed font-medium">
+                                If you feel there was an error in grading, please provide a clear reason. Note that re-evaluation can take up to 48 hours and the tutor's decision will be final.
+                            </p>
+                        </div>
+                        
+                        <div className="space-y-2">
+                            <label style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading }}>Reason for Re-evaluation <span className="text-red-500">*</span></label>
+                            <textarea
+                                value={revalReason}
+                                onChange={(e) => setRevalReason(e.target.value)}
+                                placeholder="E.g., Regarding Q3: The correct answer should be option B according to chapter 4 of the textbook..."
+                                style={{
+                                    width: '100%',
+                                    minHeight: 120,
+                                    backgroundColor: C.innerBg,
+                                    border: `1px solid ${C.cardBorder}`,
+                                    borderRadius: '10px',
+                                    padding: 16,
+                                    color: C.heading,
+                                    fontFamily: T.fontFamily,
+                                    fontSize: T.size.base,
+                                    resize: 'vertical',
+                                    outline: 'none'
+                                }}
+                            />
+                            <p className="text-xs text-right text-gray-400 font-medium">
+                                Minimum 15 characters
+                            </p>
+                        </div>
+
+                        <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+                            <button
+                                onClick={() => setIsRevalOpen(false)}
+                                className="px-5 py-2.5 rounded-lg border text-sm font-bold transition-colors cursor-pointer"
+                                style={{ backgroundColor: C.surfaceWhite, color: C.textMuted, borderColor: C.cardBorder }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={submitRevaluation}
+                                disabled={revalLoading}
+                                className="px-6 py-2.5 rounded-lg text-white text-sm font-bold flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-70 disabled:active:scale-100 border-none cursor-pointer"
+                                style={{ background: C.gradientBtn, boxShadow: S.btn }}
+                            >
+                                {revalLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MdSend className="w-4 h-4" />}
+                                Submit Request
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }
