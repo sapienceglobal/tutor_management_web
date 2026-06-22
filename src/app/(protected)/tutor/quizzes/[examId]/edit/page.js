@@ -878,6 +878,15 @@ export default function EditExamPage({ params }) {
                                     No questions yet. Add some!
                                 </p>
                                 <div className="flex gap-3">
+                                    <FeatureGate featureName="aiAssessment" mode="lock">
+                                        <button
+                                            onClick={() => setIsAIOpen(true)}
+                                            className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-80 border-2 border-dashed"
+                                            style={{ backgroundColor: C.cardBg, color: C.btnPrimary, borderColor: C.cardBorder, borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}
+                                        >
+                                            <MdAutoAwesome style={{ width: 14, height: 14 }} /> AI Generate
+                                        </button>
+                                    </FeatureGate>
                                     <button
                                         onClick={() => handleAddQuestion('mcq')}
                                         className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-80 border-2 border-dashed"
@@ -954,8 +963,6 @@ export default function EditExamPage({ params }) {
                                 </button>
                             </div>
                         </div>
-                    </div>
-                </div>
                     </div>
                 </div>
             )}
