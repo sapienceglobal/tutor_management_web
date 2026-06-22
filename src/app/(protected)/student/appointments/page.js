@@ -3,9 +3,16 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
 import { Calendar, Clock, Video, AlertCircle } from 'lucide-react';
+import { 
+    MdCalendarMonth, 
+    MdCheckCircleOutline, 
+    MdTrendingUp, 
+    MdHourglassEmpty 
+} from 'react-icons/md';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
+import StatCard from '@/components/StatCard';
 import { C, T, S, R, cx, pageStyle } from '@/constants/studentTokens';
 
 export default function StudentAppointmentsPage() {
@@ -47,6 +54,11 @@ export default function StudentAppointmentsPage() {
         if (activeTab === 'history')  return ['completed', 'cancelled'].includes(apt.status);
         return true;
     });
+
+    const totalBooked = appointments.length;
+    const completedSessions = appointments.filter(a => a.status === 'completed').length;
+    const pendingApproval = appointments.filter(a => a.status === 'pending').length;
+    const confirmedSessions = appointments.filter(a => a.status === 'confirmed').length;
 
     // ── Status badge ─────────────────────────────────────────────────────────
     const statusStyle = (status) => {
@@ -98,18 +110,78 @@ export default function StudentAppointmentsPage() {
                 </div>
             </div>
 
-            {/* ── Tabs ──────────────────────────────────────────────────── */}
-            <div className="flex gap-1" style={{ borderBottom: `1px solid ${C.cardBorder}` }}>
+            {/* ── Stats Grid ───────────────────────────────────────────── */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard
+                    icon={MdCalendarMonth}
+                    value={totalBooked}
+                    label="Total Bookings"
+                    iconBg="#EEF2FF"
+                    iconColor="#4F46E5"
+                />
+                <StatCard
+                    icon={MdCheckCircleOutline}
+                    value={confirmedSessions}
+                    label="Confirmed Classes"
+                    iconBg="#ECFDF5"
+                    iconColor="#10B981"
+                />
+                <StatCard
+                    icon={MdTrendingUp}
+                    value={completedSessions}
+                    label="Completed Sessions"
+                    iconBg="#EBF8FF"
+                    iconColor="#3182CE"
+                />
+                <StatCard
+                    icon={MdHourglassEmpty}
+                    value={pendingApproval}
+                    label="Pending Approvals"
+                    iconBg="#FFF7ED"
+                    iconColor="#F59E0B"
+                />
+            </div>
+
+            {/* ── Tabs (Segmented Switcher) ────────────────────────────────── */}
+            <div className="relative flex items-center p-1 rounded-xl self-start"
+                style={{
+                    width: '360px',
+                    backgroundColor: C.cardBg,
+                    border: `1px solid ${C.cardBorder}`,
+                    height: '42px'
+                }}
+            >
+                <div className="absolute top-1 bottom-1 transition-transform duration-300 ease-in-out z-0"
+                    style={{
+                        width: 'calc(33.33% - 4px)',
+                        backgroundColor: C.btnPrimary,
+                        transform:
+                            activeTab === 'upcoming'
+                                ? 'translateX(0)'
+                                : activeTab === 'pending'
+                                ? 'translateX(100%)'
+                                : 'translateX(200%)',
+                        boxShadow: `0 2px 10px ${C.btnPrimary}40`,
+                        borderRadius: '8px',
+                        left: '4px'
+                    }}
+                />
                 {[
                     { id: 'upcoming', label: 'Upcoming' },
                     { id: 'pending',  label: 'Pending' },
                     { id: 'history',  label: 'History' },
                 ].map(tab => (
                     <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                        className="pb-3 px-4 text-sm border-b-2 transition-all"
-                        style={activeTab === tab.id
-                            ? { borderBottomColor: C.btnPrimary, color: C.btnPrimary, fontFamily: T.fontFamily, fontWeight: T.weight.bold }
-                            : { borderBottomColor: 'transparent', color: C.textMuted, fontFamily: T.fontFamily, fontWeight: T.weight.medium }}>
+                        className="flex-1 relative z-10 py-1.5 capitalize transition-colors duration-300 border-none cursor-pointer flex items-center justify-center"
+                        style={{
+                            fontFamily: T.fontFamily,
+                            fontSize: T.size.sm,
+                            fontWeight: T.weight.bold,
+                            color: activeTab === tab.id ? '#ffffff' : C.text,
+                            background: 'transparent',
+                            borderRadius: '8px',
+                        }}
+                    >
                         {tab.label}
                     </button>
                 ))}

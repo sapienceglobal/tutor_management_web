@@ -39,6 +39,53 @@ export default function AdminBatchesPage() {
 
     const [showModal, setShowModal] = useState(false);
     const [editingBatch, setEditingBatch] = useState(null);
+    const [selectedIds, setSelectedIds] = useState([]);
+
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedIds(filtered.map(b => b._id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectRow = (id) => {
+        setSelectedIds(prev => 
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
+
+    const handleBulkDelete = async () => {
+        const isConfirmed = await confirmDialog("Bulk Delete Batches", `Are you sure you want to delete the ${selectedIds.length} selected batches? This action is permanent.`, { variant: 'destructive' });
+        if (!isConfirmed) return;
+        
+        try {
+            await Promise.all(selectedIds.map(id => api.delete(`/batches/${id}`)));
+            toast.success('Selected batches deleted successfully');
+            setBatches(prev => prev.filter(b => !selectedIds.includes(b._id)));
+            setSelectedIds([]);
+        } catch (error) {
+            toast.error('Failed to delete some batches');
+            fetchBatches();
+        }
+    };
+
+    const handleBulkStatusChange = async (newStatus) => {
+        const actionMap = { 'active': 'Activate', 'upcoming': 'Mark Upcoming', 'completed': 'Complete' };
+        const actionName = actionMap[newStatus] || newStatus;
+        const isConfirmed = await confirmDialog(`Bulk ${actionName} Batches`, `Are you sure you want to change status to ${newStatus} for the ${selectedIds.length} selected batches?`, { variant: newStatus === 'completed' ? 'destructive' : 'default' });
+        if (!isConfirmed) return;
+
+        try {
+            await Promise.all(selectedIds.map(id => api.put(`/batches/${id}`, { status: newStatus })));
+            toast.success(`Selected batches status updated successfully`);
+            setBatches(prev => prev.map(b => selectedIds.includes(b._id) ? { ...b, status: newStatus } : b));
+            setSelectedIds([]);
+        } catch (error) {
+            toast.error(`Failed to update some batches' status`);
+            fetchBatches();
+        }
+    };
 
     useEffect(() => { fetchBatches(); }, []);
 
@@ -61,10 +108,12 @@ export default function AdminBatchesPage() {
             await api.delete(`/batches/${id}`);
             setBatches(batches.filter(b => b._id !== id));
             toast.success('Batch deleted');
+            setSelectedIds(prev => prev.filter(x => x !== id));
         } catch {
             toast.error('Failed to delete batch');
         }
     };
+
 
     // Compute unique grades from batches for filter dropdown
     const uniqueGrades = [...new Set(batches.map(b => b.grade).filter(Boolean))].sort();
@@ -219,6 +268,14 @@ export default function AdminBatchesPage() {
                         <table className="w-full text-left border-collapse min-w-[900px]">
                             <thead style={{ backgroundColor: C.innerBg }}>
                                 <tr>
+                                    <th style={{ width: '48px', padding: '16px 0 16px 24px', borderBottom: `1px solid ${C.cardBorder}` }}>
+                                        <input 
+                                            type="checkbox"
+                                            checked={filtered.length > 0 && selectedIds.length === filtered.length}
+                                            onChange={handleSelectAll}
+                                            style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }}
+                                        />
+                                    </th>
                                     <th style={{ padding: '16px 24px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Batch Name</th>
                                     <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Course</th>
                                     <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Grade</th>
@@ -236,7 +293,16 @@ export default function AdminBatchesPage() {
                                         <tr key={batch._id} className="transition-colors group" style={{ backgroundColor: C.cardBg, borderBottom: `1px solid ${C.cardBorder}` }}
                                             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }}
                                             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.cardBg; }}>
+                                            <td style={{ padding: '16px 0 16px 24px' }}>
+                                                <input 
+                                                    type="checkbox"
+                                                    checked={selectedIds.includes(batch._id)}
+                                                    onChange={() => handleSelectRow(batch._id)}
+                                                    style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }}
+                                                />
+                                            </td>
                                             <td style={{ padding: '16px 24px' }}>
+
                                                 <div className="flex flex-col">
                                                     <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading }}>
                                                         {batch.name}
@@ -323,6 +389,57 @@ export default function AdminBatchesPage() {
                 </div>
             )}
 
+            {/* Floating Bulk Actions Bar */}
+            {selectedIds.length > 0 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between gap-6 px-6 py-4 rounded-2xl shadow-2xl border transition-all duration-300 animate-in slide-in-from-bottom-5"
+                     style={{
+                         backgroundColor: 'rgba(39, 34, 91, 0.95)',
+                         backdropFilter: 'blur(10px)',
+                         borderColor: 'rgba(255, 255, 255, 0.1)',
+                         boxShadow: '0 20px 40px -15px rgba(0,0,0,0.5)',
+                         minWidth: '320px',
+                         maxWidth: '90%',
+                         width: 'max-content'
+                     }}>
+                    <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold" style={{ backgroundColor: C.btnPrimary, color: '#ffffff', fontSize: T.size.sm }}>
+                            {selectedIds.length}
+                        </div>
+                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: '#ffffff' }}>
+                            Batches Selected
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                        <button onClick={() => handleBulkStatusChange('active')}
+                                className="flex items-center gap-1.5 transition-opacity hover:opacity-90 cursor-pointer border-none font-bold"
+                                style={{ padding: '8px 16px', backgroundColor: C.successBg, color: C.success, borderRadius: '8px', fontSize: T.size.sm }}>
+                            <MdCheckCircle style={{ width: 16, height: 16 }} /> Activate
+                        </button>
+                        <button onClick={() => handleBulkStatusChange('upcoming')}
+                                className="flex items-center gap-1.5 transition-opacity hover:opacity-90 cursor-pointer border-none font-bold"
+                                style={{ padding: '8px 16px', backgroundColor: C.warningBg, color: C.warning, borderRadius: '8px', fontSize: T.size.sm }}>
+                            <MdHourglassEmpty style={{ width: 16, height: 16 }} /> Upcoming
+                        </button>
+                        <button onClick={() => handleBulkStatusChange('completed')}
+                                className="flex items-center gap-1.5 transition-opacity hover:opacity-90 cursor-pointer border-none font-bold"
+                                style={{ padding: '8px 16px', backgroundColor: C.btnViewAllBg, color: C.btnPrimary, borderRadius: '8px', fontSize: T.size.sm }}>
+                            <MdCheckCircle style={{ width: 16, height: 16 }} /> Complete
+                        </button>
+                        <button onClick={handleBulkDelete}
+                                className="flex items-center gap-1.5 transition-opacity hover:opacity-90 cursor-pointer border-none font-bold"
+                                style={{ padding: '8px 16px', backgroundColor: C.dangerBg, color: C.danger, borderRadius: '8px', fontSize: T.size.sm }}>
+                            <MdDelete style={{ width: 16, height: 16 }} /> Delete
+                        </button>
+                        <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255,255,255,0.1)' }} />
+                        <button onClick={() => setSelectedIds([])}
+                                className="transition-colors hover:text-white cursor-pointer border-none bg-transparent font-bold"
+                                style={{ color: 'rgba(255,255,255,0.5)', fontSize: T.size.sm }}>
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            )}
             {/* ── Wizard Modal ── */}
             {showModal && (
                 <AddBatchWizardModal

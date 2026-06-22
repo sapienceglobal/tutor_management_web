@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
     MdSearch, 
@@ -51,11 +51,175 @@ export default function AdminTutorsPage() {
     const router = useRouter();
     const [tutors, setTutors] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [statusFilter, setStatusFilter] = useState('All');
+    const [subjectFilter, setSubjectFilter] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
     const { confirmDialog } = useConfirm();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [stats, setStats] = useState(null);
+    const [isImporting, setIsImporting] = useState(false);
+    const fileInputRef = useRef(null);
+    const [selectedIds, setSelectedIds] = useState([]);
+
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedIds(filteredTutors.map(t => t._id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectRow = (id) => {
+        setSelectedIds(prev => 
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
+
+    const handleBulkDelete = async () => {
+        const isConfirmed = await confirmDialog("Bulk Delete Tutors", `Are you sure you want to delete the ${selectedIds.length} selected instructors? This action is permanent.`, { variant: 'destructive' });
+        if (!isConfirmed) return;
+        
+        try {
+            await Promise.all(selectedIds.map(id => api.delete(`/admin/users/${id}`)));
+            toast.success('Selected instructors deleted successfully');
+            setTutors(prev => prev.filter(t => !selectedIds.includes(t._id)));
+            setSelectedIds([]);
+        } catch (error) {
+            toast.error('Failed to delete some instructors');
+            fetchTutors();
+        }
+    };
+
+    const handleBulkBlock = async (shouldBlock) => {
+        const action = shouldBlock ? "Block" : "Unblock";
+        const isConfirmed = await confirmDialog(`Bulk ${action} Tutors`, `Are you sure you want to ${action.toLowerCase()} the ${selectedIds.length} selected instructors?`, { variant: shouldBlock ? 'destructive' : 'default' });
+        if (!isConfirmed) return;
+
+        try {
+            await Promise.all(selectedIds.map(id => api.put(`/admin/users/${id}/status`, { isBlocked: shouldBlock })));
+            toast.success(`Selected instructors ${action.toLowerCase()}ed successfully`);
+            setTutors(prev => prev.map(t => selectedIds.includes(t._id) ? { ...t, isBlocked: shouldBlock } : t));
+            setSelectedIds([]);
+        } catch (error) {
+            toast.error(`Failed to update status`);
+            fetchTutors();
+        }
+    };
+
+    const handleBulkImport = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const isConfirmed = await confirmDialog("Bulk Import", `Are you sure you want to import tutors from ${file.name}?`);
+        if (!isConfirmed) {
+            e.target.value = ''; // Reset input
+            return;
+        }
+
+        setIsImporting(true);
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const text = event.target.result;
+                const rows = text.split('\n').map(row => row.trim()).filter(row => row);
+                if (rows.length < 2) throw new Error("CSV file must contain a header row and at least one tutor data row.");
+
+                const headers = rows[0].split(',').map(h => h.trim().toLowerCase().replace(/^"|"$/g, '').replace(/""/g, '"'));
+                const nameIdx = headers.findIndex(h => h.includes('name'));
+                const emailIdx = headers.findIndex(h => h.includes('email'));
+                const phoneIdx = headers.findIndex(h => h.includes('phone') || h.includes('mobile'));
+
+                if (nameIdx === -1 || emailIdx === -1) {
+                    throw new Error("CSV must contain 'Name' and 'Email' columns.");
+                }
+
+                let successCount = 0;
+                let failCount = 0;
+                let skipCount = 0;
+
+                for (let i = 1; i < rows.length; i++) {
+                    const columns = rows[i].split(',').map(c => c.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+                    const name = columns[nameIdx];
+                    const email = columns[emailIdx];
+                    const phone = phoneIdx !== -1 ? columns[phoneIdx] : '';
+
+                    if (!name || !email) continue;
+
+                    // Duplicate check
+                    const emailExists = tutors.some(t => t.email?.toLowerCase() === email.toLowerCase());
+                    if (emailExists) {
+                        skipCount++;
+                        continue;
+                    }
+
+                    const payload = {
+                        name,
+                        email,
+                        phone,
+                        password: 'Password@123',
+                        role: 'tutor',
+                        isVerified: true
+                    };
+
+                    try {
+                        await api.post('/admin/users', payload);
+                        successCount++;
+                    } catch (err) {
+                        failCount++;
+                    }
+                }
+
+                toast.success(`Bulk import completed: ${successCount} successful, ${skipCount} skipped (already exists), ${failCount} failed.`);
+                fetchTutors();
+            } catch (err) {
+                toast.error(err.message || "Failed to process CSV file.");
+            } finally {
+                setIsImporting(false);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    const handleDownloadReport = () => {
+        if (filteredTutors.length === 0) {
+            toast.error("No tutor data available to export");
+            return;
+        }
+
+        const headers = ["ID", "Name", "Email", "Phone", "Status", "Blocked", "Verified"];
+        const csvRows = [headers.join(",")];
+
+        for (const tutor of filteredTutors) {
+            const status = tutor.isBlocked ? "Inactive" : tutor.isVerified ? "Verified" : "Pending";
+            const rowData = [
+                tutor._id,
+                tutor.name,
+                tutor.email,
+                tutor.phone || "N/A",
+                status,
+                tutor.isBlocked ? "Yes" : "No",
+                tutor.isVerified ? "Yes" : "No"
+            ];
+            
+            const escapedRow = rowData.map(val => {
+                const escapedStr = String(val).replace(/"/g, '""');
+                return `"${escapedStr}"`;
+            });
+            csvRows.push(escapedRow.join(","));
+        }
+
+        const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `tutors_report_${Date.now()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Tutor report downloaded successfully!");
+    };
 
     useEffect(() => {
         fetchTutors();
@@ -162,10 +326,34 @@ export default function AdminTutorsPage() {
         }
     };
 
-    const filteredTutors = tutors.filter(tutor =>
-        tutor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tutor.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredTutors = tutors.filter(tutor => {
+        // Search Term filter
+        const matchesSearch = tutor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              tutor.email.toLowerCase().includes(searchTerm.toLowerCase());
+        if (!matchesSearch) return false;
+
+        // Status Filter
+        if (statusFilter !== 'All') {
+            if (statusFilter === 'Active') {
+                const isActive = !tutor.isBlocked && tutor.isVerified;
+                if (!isActive) return false;
+            } else if (statusFilter === 'Inactive') {
+                if (!tutor.isBlocked) return false;
+            } else if (statusFilter === 'Pending') {
+                const isPending = !tutor.isVerified && !tutor.isBlocked;
+                if (!isPending) return false;
+            }
+        }
+
+        // Subject Filter
+        if (subjectFilter !== 'All') {
+            const tutorSubjects = tutor.subjects || [];
+            const hasSubject = tutorSubjects.some(subj => subj.toLowerCase() === subjectFilter.toLowerCase());
+            if (!hasSubject) return false;
+        }
+
+        return true;
+    });
 
     if (loading) {
         return (
@@ -234,15 +422,27 @@ export default function AdminTutorsPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                    <select style={{ ...baseInputStyle, width: 'auto', minWidth: '120px' }}>
-                        <option>All Status</option>
-                        <option>Active</option>
-                        <option>Inactive</option>
+                    <select 
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        style={{ ...baseInputStyle, width: 'auto', minWidth: '120px' }}
+                    >
+                        <option value="All">All Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Pending">Pending</option>
                     </select>
-                    <select style={{ ...baseInputStyle, width: 'auto', minWidth: '120px' }}>
-                        <option>All Subjects</option>
-                        <option>Mathematics</option>
-                        <option>Physics</option>
+                    <select 
+                        value={subjectFilter}
+                        onChange={(e) => setSubjectFilter(e.target.value)}
+                        style={{ ...baseInputStyle, width: 'auto', minWidth: '120px' }}
+                    >
+                        <option value="All">All Subjects</option>
+                        <option value="Mathematics">Mathematics</option>
+                        <option value="Physics">Physics</option>
+                        <option value="Chemistry">Chemistry</option>
+                        <option value="Biology">Biology</option>
+                        <option value="Computer Science">Computer Science</option>
                     </select>
                     <button className="flex items-center justify-center transition-colors cursor-pointer border-none"
                         style={{ width: 44, height: 44, backgroundColor: C.btnViewAllBg, color: C.btnPrimary, borderRadius: '10px' }}
@@ -267,7 +467,10 @@ export default function AdminTutorsPage() {
                         <thead style={{ backgroundColor: C.innerBg }}>
                             <tr>
                                 <th style={{ padding: '16px 20px', width: '48px', borderBottom: `1px solid ${C.cardBorder}` }}>
-                                    <input type="checkbox" style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }} />
+                                    <input type="checkbox" 
+                                           checked={filteredTutors.length > 0 && selectedIds.length === filteredTutors.length}
+                                           onChange={handleSelectAll}
+                                           style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }} />
                                 </th>
                                 <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Instructor</th>
                                 <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Email</th>
@@ -284,7 +487,10 @@ export default function AdminTutorsPage() {
                                         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }}
                                         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.cardBg; }}>
                                         <td style={{ padding: '16px 20px' }}>
-                                            <input type="checkbox" style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }} />
+                                            <input type="checkbox" 
+                                                   checked={selectedIds.includes(tutor._id)}
+                                                   onChange={() => handleSelectRow(tutor._id)}
+                                                   style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }} />
                                         </td>
                                         <td style={{ padding: '16px 16px' }}>
                                             <div className="flex items-center gap-3">
@@ -318,7 +524,7 @@ export default function AdminTutorsPage() {
                                         </td>
                                         <td style={{ padding: '16px 16px' }}>
                                             <span style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', backgroundColor: C.btnViewAllBg, color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, borderRadius: '10px', width: 'fit-content' }}>
-                                                <MdChevronRight style={{ width: 14, height: 14 }} /> {tutor.subject || 'Mathematics'}
+                                                <MdChevronRight style={{ width: 14, height: 14 }} /> {tutor.subjects && tutor.subjects.length > 0 ? tutor.subjects.join(', ') : 'Mathematics'}
                                             </span>
                                         </td>
                                         <td style={{ padding: '16px 16px' }}>
@@ -471,15 +677,15 @@ export default function AdminTutorsPage() {
                             </div>
                             <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.btnPrimary }}>Add New Instructor</span>
                         </button>
-                        <button className="w-full flex items-center gap-3 px-4 py-3 transition-colors border-none cursor-pointer group" style={{ backgroundColor: C.warningBg, borderRadius: '10px' }}
+                        <button disabled={isImporting} onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-3 transition-colors border-none cursor-pointer group disabled:opacity-50" style={{ backgroundColor: C.warningBg, borderRadius: '10px' }}
                             onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
                             onMouseLeave={e => e.currentTarget.style.opacity = 1}>
                             <div className="flex items-center justify-center shrink-0" style={{ width: 32, height: 32, borderRadius: '10px', backgroundColor: C.warning, color: '#ffffff' }}>
-                                <MdCloudUpload style={{ width: 18, height: 18 }} />
+                                {isImporting ? <MdHourglassEmpty style={{ width: 18, height: 18 }} className="animate-spin" /> : <MdCloudUpload style={{ width: 18, height: 18 }} />}
                             </div>
-                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.warning }}>Bulk Import</span>
+                            <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.warning }}>{isImporting ? 'Importing...' : 'Bulk Import'}</span>
                         </button>
-                        <button className="w-full flex items-center gap-3 px-4 py-3 transition-colors border-none cursor-pointer group" style={{ backgroundColor: C.successBg, borderRadius: '10px' }}
+                        <button onClick={handleDownloadReport} className="w-full flex items-center gap-3 px-4 py-3 transition-colors border-none cursor-pointer group" style={{ backgroundColor: C.successBg, borderRadius: '10px' }}
                             onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
                             onMouseLeave={e => e.currentTarget.style.opacity = 1}>
                             <div className="flex items-center justify-center shrink-0" style={{ width: 32, height: 32, borderRadius: '10px', backgroundColor: C.success, color: '#ffffff' }}>
@@ -487,6 +693,7 @@ export default function AdminTutorsPage() {
                             </div>
                             <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.success }}>Download Report</span>
                         </button>
+                        <input type="file" accept=".csv" ref={fileInputRef} onChange={handleBulkImport} className="hidden" />
                     </div>
                 </div>
 
@@ -526,6 +733,53 @@ export default function AdminTutorsPage() {
                 onSubmit={handleSubmitUser}
                 user={editingUser}
             />
+
+            {/* Floating Bulk Actions Bar */}
+            {selectedIds.length > 0 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between gap-6 px-6 py-4 rounded-2xl shadow-2xl border transition-all duration-300 animate-in slide-in-from-bottom-5"
+                     style={{
+                         backgroundColor: 'rgba(39, 34, 91, 0.95)',
+                         backdropFilter: 'blur(10px)',
+                         borderColor: 'rgba(255, 255, 255, 0.1)',
+                         boxShadow: '0 20px 40px -15px rgba(0,0,0,0.5)',
+                         minWidth: '320px',
+                         maxWidth: '90%',
+                         width: 'max-content'
+                     }}>
+                    <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold" style={{ backgroundColor: C.btnPrimary, color: '#ffffff', fontSize: T.size.sm }}>
+                            {selectedIds.length}
+                        </div>
+                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: '#ffffff' }}>
+                            Tutors Selected
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                        <button onClick={() => handleBulkBlock(true)}
+                                className="flex items-center gap-1.5 transition-opacity hover:opacity-90 cursor-pointer border-none font-bold"
+                                style={{ padding: '8px 16px', backgroundColor: C.warningBg, color: C.warning, borderRadius: '8px', fontSize: T.size.sm }}>
+                            <MdBlock style={{ width: 16, height: 16 }} /> Block
+                        </button>
+                        <button onClick={() => handleBulkBlock(false)}
+                                className="flex items-center gap-1.5 transition-opacity hover:opacity-90 cursor-pointer border-none font-bold"
+                                style={{ padding: '8px 16px', backgroundColor: C.successBg, color: C.success, borderRadius: '8px', fontSize: T.size.sm }}>
+                            <MdCheckCircle style={{ width: 16, height: 16 }} /> Unblock
+                        </button>
+                        <button onClick={handleBulkDelete}
+                                className="flex items-center gap-1.5 transition-opacity hover:opacity-90 cursor-pointer border-none font-bold"
+                                style={{ padding: '8px 16px', backgroundColor: C.dangerBg, color: C.danger, borderRadius: '8px', fontSize: T.size.sm }}>
+                            <MdDelete style={{ width: 16, height: 16 }} /> Delete
+                        </button>
+                        <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255,255,255,0.1)' }} />
+                        <button onClick={() => setSelectedIds([])}
+                                className="transition-colors hover:text-white cursor-pointer border-none bg-transparent font-bold"
+                                style={{ color: 'rgba(255,255,255,0.5)', fontSize: T.size.sm }}>
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

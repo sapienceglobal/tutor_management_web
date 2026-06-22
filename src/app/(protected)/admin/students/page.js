@@ -50,12 +50,60 @@ export default function AdminStudentsPage() {
     const [recentActivities, setRecentActivities] = useState([]);
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [statusFilter, setStatusFilter] = useState('All');
+    const [gradeFilter, setGradeFilter] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
     const { confirmDialog } = useConfirm();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [isImporting, setIsImporting] = useState(false);
     const fileInputRef = useRef(null);
+    const [selectedIds, setSelectedIds] = useState([]);
+
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedIds(filteredStudents.map(s => s._id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectRow = (id) => {
+        setSelectedIds(prev => 
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
+
+    const handleBulkDelete = async () => {
+        const isConfirmed = await confirmDialog("Bulk Delete Students", `Are you sure you want to delete the ${selectedIds.length} selected students? This action is permanent.`, { variant: 'destructive' });
+        if (!isConfirmed) return;
+        
+        try {
+            await Promise.all(selectedIds.map(id => api.delete(`/admin/users/${id}`)));
+            toast.success('Selected students deleted successfully');
+            setStudents(prev => prev.filter(s => !selectedIds.includes(s._id)));
+            setSelectedIds([]);
+        } catch (error) {
+            toast.error('Failed to delete some students');
+            fetchStudents();
+        }
+    };
+
+    const handleBulkBlock = async (shouldBlock) => {
+        const action = shouldBlock ? "Block" : "Unblock";
+        const isConfirmed = await confirmDialog(`Bulk ${action} Students`, `Are you sure you want to ${action.toLowerCase()} the ${selectedIds.length} selected students?`, { variant: shouldBlock ? 'destructive' : 'default' });
+        if (!isConfirmed) return;
+
+        try {
+            await Promise.all(selectedIds.map(id => api.put(`/admin/users/${id}/status`, { isBlocked: shouldBlock })));
+            toast.success(`Selected students ${action.toLowerCase()}ed successfully`);
+            setStudents(prev => prev.map(s => selectedIds.includes(s._id) ? { ...s, isBlocked: shouldBlock } : s));
+            setSelectedIds([]);
+        } catch (error) {
+            toast.error(`Failed to update some students' status`);
+            fetchStudents();
+        }
+    };
 
     useEffect(() => { fetchStudents(); }, []);
 
@@ -127,7 +175,7 @@ export default function AdminStudentsPage() {
                 const rows = text.split('\n').map(row => row.trim()).filter(row => row);
                 if (rows.length < 2) throw new Error("CSV file must contain a header row and at least one student data row.");
 
-                const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
+                const headers = rows[0].split(',').map(h => h.trim().toLowerCase().replace(/^"|"$/g, '').replace(/""/g, '"'));
                 const nameIdx = headers.findIndex(h => h.includes('name'));
                 const emailIdx = headers.findIndex(h => h.includes('email'));
                 const phoneIdx = headers.findIndex(h => h.includes('phone') || h.includes('mobile'));
@@ -138,18 +186,30 @@ export default function AdminStudentsPage() {
 
                 let successCount = 0;
                 let failCount = 0;
+                let skipCount = 0;
 
                 for (let i = 1; i < rows.length; i++) {
-                    const columns = rows[i].split(',').map(c => c.trim());
+                    const columns = rows[i].split(',').map(c => c.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+                    const name = columns[nameIdx];
+                    const email = columns[emailIdx];
+                    const phone = phoneIdx !== -1 ? columns[phoneIdx] : '';
+
+                    if (!name || !email) continue;
+
+                    // Duplicate check
+                    const emailExists = students.some(s => s.email?.toLowerCase() === email.toLowerCase());
+                    if (emailExists) {
+                        skipCount++;
+                        continue;
+                    }
+
                     const payload = {
-                        name: columns[nameIdx],
-                        email: columns[emailIdx],
-                        phone: phoneIdx !== -1 ? columns[phoneIdx] : '',
+                        name,
+                        email,
+                        phone,
                         password: 'Password@123',
                         role: 'student'
                     };
-
-                    if (!payload.name || !payload.email) continue;
 
                     try {
                         await api.post('/admin/users', payload);
@@ -159,7 +219,7 @@ export default function AdminStudentsPage() {
                     }
                 }
 
-                toast.success(`Bulk import completed: ${successCount} successful, ${failCount} failed.`);
+                toast.success(`Bulk import completed: ${successCount} successful, ${skipCount} skipped (already exists), ${failCount} failed.`);
                 fetchStudents();
             } catch (err) {
                 toast.error(err.message || "Failed to process CSV file.");
@@ -169,6 +229,46 @@ export default function AdminStudentsPage() {
             }
         };
         reader.readAsText(file);
+    };
+
+    const handleDownloadReport = () => {
+        if (filteredStudents.length === 0) {
+            toast.error("No student data available to export");
+            return;
+        }
+
+        const headers = ["ID", "Name", "Email", "Phone", "Grade", "Status", "Blocked", "Verified"];
+        const csvRows = [headers.join(",")];
+
+        for (const student of filteredStudents) {
+            const status = student.isBlocked ? "Inactive" : student.isVerified === false ? "Pending" : "Active";
+            const rowData = [
+                student._id,
+                student.name,
+                student.email,
+                student.phone || "N/A",
+                student.grade || "Class 9",
+                status,
+                student.isBlocked ? "Yes" : "No",
+                student.isVerified !== false ? "Yes" : "No"
+            ];
+            
+            const escapedRow = rowData.map(val => {
+                const escapedStr = String(val).replace(/"/g, '""');
+                return `"${escapedStr}"`;
+            });
+            csvRows.push(escapedRow.join(","));
+        }
+
+        const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `students_report_${Date.now()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Student report downloaded successfully!");
     };
 
     const handleBlock = async (id, currentStatus) => {
@@ -204,10 +304,33 @@ export default function AdminStudentsPage() {
         }
     };
 
-    const filteredStudents = students.filter(student =>
-        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredStudents = students.filter(student => {
+        // Search Term filter
+        const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              student.email.toLowerCase().includes(searchTerm.toLowerCase());
+        if (!matchesSearch) return false;
+
+        // Status Filter
+        if (statusFilter !== 'All') {
+            if (statusFilter === 'Active') {
+                const isActive = !student.isBlocked && student.isVerified !== false;
+                if (!isActive) return false;
+            } else if (statusFilter === 'Inactive') {
+                if (!student.isBlocked) return false;
+            } else if (statusFilter === 'Pending') {
+                const isPending = !student.isBlocked && student.isVerified === false;
+                if (!isPending) return false;
+            }
+        }
+
+        // Grade Filter
+        if (gradeFilter !== 'All') {
+            const studentGrade = student.grade || 'Class 9';
+            if (studentGrade !== gradeFilter) return false;
+        }
+
+        return true;
+    });
 
     if (loading) {
         return (
@@ -232,28 +355,28 @@ export default function AdminStudentsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 <StatCard 
                     icon={MdPeople}
-                    value={stats?.total || 120}
+                    value={stats?.total ?? 0}
                     label="Total Students"
                     iconBg={C.btnViewAllBg}
                     iconColor={C.btnPrimary}
                 />
                 <StatCard 
                     icon={MdCheckCircle}
-                    value={stats?.active || 94}
+                    value={stats?.active ?? 0}
                     label="Active Students"
                     iconBg={C.successBg}
                     iconColor={C.success}
                 />
                 <StatCard 
                     icon={MdWarning}
-                    value={stats?.inactive || 18}
+                    value={stats?.inactive ?? 0}
                     label="Inactive/In Review"
                     iconBg={C.warningBg}
                     iconColor={C.warning}
                 />
                 <StatCard 
                     icon={MdHourglassEmpty}
-                    value={stats?.pending || 7}
+                    value={stats?.pending ?? 0}
                     label="Pending Requests"
                     iconBg={C.dangerBg}
                     iconColor={C.danger}
@@ -276,16 +399,25 @@ export default function AdminStudentsPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                    <select style={{ ...baseInputStyle, width: 'auto', minWidth: '120px' }}>
-                        <option>All Status</option>
-                        <option>Active</option>
-                        <option>Inactive</option>
+                    <select 
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        style={{ ...baseInputStyle, width: 'auto', minWidth: '120px' }}
+                    >
+                        <option value="All">All Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Pending">Pending</option>
                     </select>
-                    <select style={{ ...baseInputStyle, width: 'auto', minWidth: '120px' }}>
-                        <option>All Grades</option>
-                        <option>Class 8</option>
-                        <option>Class 9</option>
-                        <option>Class 10</option>
+                    <select 
+                        value={gradeFilter}
+                        onChange={(e) => setGradeFilter(e.target.value)}
+                        style={{ ...baseInputStyle, width: 'auto', minWidth: '120px' }}
+                    >
+                        <option value="All">All Grades</option>
+                        <option value="Class 8">Class 8</option>
+                        <option value="Class 9">Class 9</option>
+                        <option value="Class 10">Class 10</option>
                     </select>
                     <button className="flex items-center justify-center transition-colors cursor-pointer border-none"
                         style={{ width: 44, height: 44, backgroundColor: C.btnViewAllBg, color: C.btnPrimary, borderRadius: '10px' }}
@@ -310,7 +442,10 @@ export default function AdminStudentsPage() {
                         <thead style={{ backgroundColor: C.innerBg }}>
                             <tr>
                                 <th style={{ padding: '16px 20px', width: '48px', borderBottom: `1px solid ${C.cardBorder}` }}>
-                                    <input type="checkbox" style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }} />
+                                    <input type="checkbox" 
+                                           checked={filteredStudents.length > 0 && selectedIds.length === filteredStudents.length}
+                                           onChange={handleSelectAll}
+                                           style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }} />
                                 </th>
                                 <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Student Name</th>
                                 <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Email</th>
@@ -327,7 +462,10 @@ export default function AdminStudentsPage() {
                                         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }}
                                         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.cardBg; }}>
                                         <td style={{ padding: '16px 20px' }}>
-                                            <input type="checkbox" style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }} />
+                                            <input type="checkbox" 
+                                                   checked={selectedIds.includes(student._id)}
+                                                   onChange={() => handleSelectRow(student._id)}
+                                                   style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }} />
                                         </td>
                                         <td style={{ padding: '16px 16px' }}>
                                             <div className="flex items-center gap-3">
@@ -355,13 +493,17 @@ export default function AdminStudentsPage() {
                                         </td>
                                         <td style={{ padding: '16px 16px' }}>
                                             <span style={{ padding: '4px 10px', backgroundColor: C.btnViewAllBg, color: C.btnPrimary, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, borderRadius: '10px', width: 'fit-content' }}>
-                                                Class 9
+                                                {student.grade || 'Class 9'}
                                             </span>
                                         </td>
                                         <td style={{ padding: '16px 16px' }}>
                                             {student.isBlocked ? (
                                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', backgroundColor: C.warningBg, color: C.warning, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, borderRadius: '10px', border: `1px solid ${C.warningBorder}` }}>
                                                     <div style={{ width: 6, height: 6, borderRadius: R.full, backgroundColor: C.warning }}></div> Inactive
+                                                </span>
+                                            ) : student.isVerified === false ? (
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', backgroundColor: C.dangerBg, color: C.danger, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, borderRadius: '10px', border: `1px solid ${C.dangerBorder}` }}>
+                                                    <div style={{ width: 6, height: 6, borderRadius: R.full, backgroundColor: C.danger }}></div> Pending
                                                 </span>
                                             ) : (
                                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', backgroundColor: C.successBg, color: C.success, fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, borderRadius: '10px', border: `1px solid ${C.successBorder}` }}>
@@ -475,7 +617,7 @@ export default function AdminStudentsPage() {
                             {isImporting ? <MdHourglassEmpty style={{ width: 18, height: 18, color: C.warning }} className="animate-spin" /> : <MdCloudUpload style={{ width: 18, height: 18, color: C.warning }} />} 
                             <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.warning }}>{isImporting ? 'Importing...' : 'Bulk Import'}</span>
                         </button>
-                        <button className="flex-1 flex items-center justify-center gap-2 transition-opacity border-none cursor-pointer" style={{ padding: '12px 16px', backgroundColor: C.successBg, borderRadius: '10px' }}
+                        <button onClick={handleDownloadReport} className="flex-1 flex items-center justify-center gap-2 transition-opacity border-none cursor-pointer" style={{ padding: '12px 16px', backgroundColor: C.successBg, borderRadius: '10px' }}
                             onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
                             onMouseLeave={e => e.currentTarget.style.opacity = 1}>
                             <MdDownload style={{ width: 18, height: 18, color: C.success }} />
@@ -540,6 +682,53 @@ export default function AdminStudentsPage() {
                 onSubmit={handleSaveUser}
                 user={editingUser}
             />
+
+            {/* Floating Bulk Actions Bar */}
+            {selectedIds.length > 0 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between gap-6 px-6 py-4 rounded-2xl shadow-2xl border transition-all duration-300 animate-in slide-in-from-bottom-5"
+                     style={{
+                         backgroundColor: 'rgba(39, 34, 91, 0.95)',
+                         backdropFilter: 'blur(10px)',
+                         borderColor: 'rgba(255, 255, 255, 0.1)',
+                         boxShadow: '0 20px 40px -15px rgba(0,0,0,0.5)',
+                         minWidth: '320px',
+                         maxWidth: '90%',
+                         width: 'max-content'
+                     }}>
+                    <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold" style={{ backgroundColor: C.btnPrimary, color: '#ffffff', fontSize: T.size.sm }}>
+                            {selectedIds.length}
+                        </div>
+                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: '#ffffff' }}>
+                            Students Selected
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                        <button onClick={() => handleBulkBlock(true)}
+                                className="flex items-center gap-1.5 transition-opacity hover:opacity-90 cursor-pointer border-none font-bold"
+                                style={{ padding: '8px 16px', backgroundColor: C.warningBg, color: C.warning, borderRadius: '8px', fontSize: T.size.sm }}>
+                            <MdWarning style={{ width: 16, height: 16 }} /> Block
+                        </button>
+                        <button onClick={() => handleBulkBlock(false)}
+                                className="flex items-center gap-1.5 transition-opacity hover:opacity-90 cursor-pointer border-none font-bold"
+                                style={{ padding: '8px 16px', backgroundColor: C.successBg, color: C.success, borderRadius: '8px', fontSize: T.size.sm }}>
+                            <MdCheckCircle style={{ width: 16, height: 16 }} /> Unblock
+                        </button>
+                        <button onClick={handleBulkDelete}
+                                className="flex items-center gap-1.5 transition-opacity hover:opacity-90 cursor-pointer border-none font-bold"
+                                style={{ padding: '8px 16px', backgroundColor: C.dangerBg, color: C.danger, borderRadius: '8px', fontSize: T.size.sm }}>
+                            <MdDelete style={{ width: 16, height: 16 }} /> Delete
+                        </button>
+                        <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255,255,255,0.1)' }} />
+                        <button onClick={() => setSelectedIds([])}
+                                className="transition-colors hover:text-white cursor-pointer border-none bg-transparent font-bold"
+                                style={{ color: 'rgba(255,255,255,0.5)', fontSize: T.size.sm }}>
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

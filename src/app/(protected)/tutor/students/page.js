@@ -56,7 +56,7 @@ function ScoreBar({ score }) {
 // ─── Image Resolver ────────────────────────────────────────────────────────────
 const resolveImageUrl = (path) => {
     if (!path) return null;
-    if (path.startsWith("http")) return path;
+    if (path.startsWith("http") || path.startsWith("data:")) return path;
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
     const baseUrl = apiUrl.replace(/\/api\/?$/, "");
     return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;

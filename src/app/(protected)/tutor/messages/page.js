@@ -118,6 +118,11 @@ export default function TutorMessagesPage() {
                     setSelectedStudentId(String(preferredStudentId));
                     return;
                 }
+                const hasInStudents = studentList.some((item) => String(item._id) === String(preferredStudentId));
+                if (hasInStudents) {
+                    setSelectedStudentId(String(preferredStudentId));
+                    return;
+                }
             }
 
             if (convoList.length > 0) {
@@ -264,11 +269,32 @@ export default function TutorMessagesPage() {
 
     const filteredConversations = useMemo(() => {
         const q = searchTerm.trim().toLowerCase();
-        if (!q) return conversations;
-        return conversations.filter((c) =>
+        let list = [...conversations];
+
+        if (selectedStudentId) {
+            const hasInConversations = list.some((c) => String(c.counterpartId) === String(selectedStudentId));
+            if (!hasInConversations) {
+                const student = students.find((s) => String(s._id) === String(selectedStudentId));
+                if (student) {
+                    list.unshift({
+                        counterpartId: String(student._id),
+                        counterpart: {
+                            name: student.name,
+                            email: student.email,
+                            profileImage: student.profileImage || null
+                        },
+                        lastMessage: null,
+                        unreadCount: 0
+                    });
+                }
+            }
+        }
+
+        if (!q) return list;
+        return list.filter((c) =>
             String(c.counterpart?.name || '').toLowerCase().includes(q)
         );
-    }, [conversations, searchTerm]);
+    }, [conversations, selectedStudentId, students, searchTerm]);
 
     if (loading) {
         return (

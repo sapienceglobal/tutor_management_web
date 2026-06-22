@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import {
     MdCalendarMonth,
@@ -49,6 +50,7 @@ function StatusBadge({ status }) {
 const TABS = ['pending', 'confirmed', 'history'];
 
 export default function ManageAppointmentsPage() {
+    const router = useRouter();
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('pending');
@@ -229,7 +231,7 @@ export default function ManageAppointmentsPage() {
 
                                 {apt.status === 'confirmed' && (
                                     <div className="flex gap-2">
-                                        <button className="flex-1 flex items-center justify-center gap-2 h-10 cursor-pointer border-none transition-opacity hover:opacity-80"
+                                        <button onClick={() => router.push(`/tutor/messages?studentId=${apt.studentId?._id}`)} className="flex-1 flex items-center justify-center gap-2 h-10 cursor-pointer border-none transition-opacity hover:opacity-80"
                                             style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, borderRadius: '10px', fontSize: T.size.base, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}>
                                             <MdMessage style={{ width: 18, height: 18 }} /> Message
                                         </button>

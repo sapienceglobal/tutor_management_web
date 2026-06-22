@@ -379,7 +379,7 @@ export default function StudentDashboard() {
   // ─── Image Resolver for VPS Bug ──────────────────────────────────────────────
   const resolveImageUrl = (path) => {
     if (!path) return "/default-avatar.png";
-    if (path.startsWith("http")) return path;
+    if (path.startsWith("http") || path.startsWith("data:")) return path;
 
     // Yahan tumhara backend API URL aayega .env se
     const apiUrl =

@@ -16,11 +16,14 @@ import {
     MdChevronRight,
     MdFilterList,
     MdOutlineAccountBalanceWallet,
-    MdCancel
+    MdCancel,
+    MdDelete
 } from 'react-icons/md';
 import { format } from 'date-fns';
 import StatCard from '@/components/StatCard';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { C, T, S, R, pageStyle } from '@/constants/studentTokens';
+
 
 const baseInputStyle = {
     backgroundColor: C.surfaceWhite,
@@ -51,11 +54,58 @@ const modalInputStyle = {
 };
 
 export default function AdminFeesPage() {
+    const { confirmDialog } = useConfirm();
     const [fees, setFees] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isIssuing, setIsIssuing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [selectedIds, setSelectedIds] = useState([]);
+
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedIds(filteredFees.map(f => f._id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectRow = (id) => {
+        setSelectedIds(prev => 
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
+
+    const handleBulkDelete = async () => {
+        const isConfirmed = await confirmDialog("Bulk Delete Fees", `Are you sure you want to delete the ${selectedIds.length} selected fee records? This action is permanent.`, { variant: 'destructive' });
+        if (!isConfirmed) return;
+        
+        try {
+            await Promise.all(selectedIds.map(id => api.delete(`/admin/fees/${id}`)));
+            toast.success('Selected fee records deleted successfully');
+            setFees(prev => prev.filter(f => !selectedIds.includes(f._id)));
+            setSelectedIds([]);
+        } catch (error) {
+            toast.error('Failed to delete some fee records');
+            fetchFees();
+        }
+    };
+
+    const handleBulkStatusChange = async (newStatus) => {
+        const isConfirmed = await confirmDialog(`Bulk Mark ${newStatus === 'paid' ? 'Paid' : 'Pending'}`, `Are you sure you want to change status to ${newStatus} for the ${selectedIds.length} selected fee records?`, { variant: newStatus === 'failed' ? 'destructive' : 'default' });
+        if (!isConfirmed) return;
+
+        try {
+            await Promise.all(selectedIds.map(id => api.put(`/admin/fees/${id}/status`, { status: newStatus })));
+            toast.success(`Selected fee records status updated successfully`);
+            setFees(prev => prev.map(f => selectedIds.includes(f._id) ? { ...f, status: newStatus } : f));
+            setSelectedIds([]);
+        } catch (error) {
+            toast.error(`Failed to update some fee records' status`);
+            fetchFees();
+        }
+    };
+
     
     // Form Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -230,6 +280,14 @@ export default function AdminFeesPage() {
                     <table className="w-full text-left border-collapse min-w-[900px]">
                         <thead style={{ backgroundColor: C.innerBg }}>
                             <tr>
+                                <th style={{ width: '48px', padding: '16px 0 16px 24px', borderBottom: `1px solid ${C.cardBorder}` }}>
+                                    <input 
+                                        type="checkbox"
+                                        checked={filteredFees.length > 0 && selectedIds.length === filteredFees.length}
+                                        onChange={handleSelectAll}
+                                        style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }}
+                                    />
+                                </th>
                                 <th style={{ padding: '16px 24px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Student</th>
                                 <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Fee Details</th>
                                 <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Amount</th>
@@ -240,7 +298,7 @@ export default function AdminFeesPage() {
                         <tbody>
                             {filteredFees.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" className="px-6 py-16">
+                                    <td colSpan="6" className="px-6 py-16">
                                         <div className="p-14 text-center border border-dashed"
                                              style={{ backgroundColor: C.surfaceWhite, borderColor: C.cardBorder, borderRadius: R['2xl'] }}>
                                             <div className="flex items-center justify-center mx-auto mb-4"
@@ -259,7 +317,16 @@ export default function AdminFeesPage() {
                                     <tr key={fee._id} className="transition-colors group" style={{ backgroundColor: C.cardBg, borderBottom: `1px solid ${C.cardBorder}` }}
                                         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }}
                                         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.cardBg; }}>
+                                        <td style={{ padding: '16px 0 16px 24px' }}>
+                                            <input 
+                                                type="checkbox"
+                                                checked={selectedIds.includes(fee._id)}
+                                                onChange={() => handleSelectRow(fee._id)}
+                                                style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }}
+                                            />
+                                        </td>
                                         <td style={{ padding: '16px 24px' }}>
+
                                             <div className="flex items-center gap-3">
                                                 <div style={{ width: 40, height: 40, borderRadius: '10px', backgroundColor: C.iconBg, color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.fontFamily, fontWeight: T.weight.bold, fontSize: T.size.base, overflow: 'hidden' }}>
                                                     {fee.studentId?.profileImage ? (
@@ -431,6 +498,52 @@ export default function AdminFeesPage() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+            {/* Floating Bulk Actions Bar */}
+            {selectedIds.length > 0 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between gap-6 px-6 py-4 rounded-2xl shadow-2xl border transition-all duration-300 animate-in slide-in-from-bottom-5"
+                     style={{
+                         backgroundColor: 'rgba(39, 34, 91, 0.95)',
+                         backdropFilter: 'blur(10px)',
+                         borderColor: 'rgba(255, 255, 255, 0.1)',
+                         boxShadow: '0 20px 40px -15px rgba(0,0,0,0.5)',
+                         minWidth: '320px',
+                         maxWidth: '90%',
+                         width: 'max-content'
+                     }}>
+                    <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold" style={{ backgroundColor: C.btnPrimary, color: '#ffffff', fontSize: T.size.sm }}>
+                            {selectedIds.length}
+                        </div>
+                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: '#ffffff' }}>
+                            Fee Records Selected
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                        <button onClick={() => handleBulkStatusChange('paid')}
+                                className="flex items-center gap-1.5 transition-opacity hover:opacity-90 cursor-pointer border-none font-bold"
+                                style={{ padding: '8px 16px', backgroundColor: C.successBg, color: C.success, borderRadius: '8px', fontSize: T.size.sm }}>
+                            <MdCheckCircle style={{ width: 16, height: 16 }} /> Mark Paid
+                        </button>
+                        <button onClick={() => handleBulkStatusChange('created')}
+                                className="flex items-center gap-1.5 transition-opacity hover:opacity-90 cursor-pointer border-none font-bold"
+                                style={{ padding: '8px 16px', backgroundColor: C.warningBg, color: C.warning, borderRadius: '8px', fontSize: T.size.sm }}>
+                            <MdAccessTime style={{ width: 16, height: 16 }} /> Mark Pending
+                        </button>
+                        <button onClick={handleBulkDelete}
+                                className="flex items-center gap-1.5 transition-opacity hover:opacity-90 cursor-pointer border-none font-bold"
+                                style={{ padding: '8px 16px', backgroundColor: C.dangerBg, color: C.danger, borderRadius: '8px', fontSize: T.size.sm }}>
+                            <MdDelete style={{ width: 16, height: 16 }} /> Delete
+                        </button>
+                        <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255,255,255,0.1)' }} />
+                        <button onClick={() => setSelectedIds([])}
+                                className="transition-colors hover:text-white cursor-pointer border-none bg-transparent font-bold"
+                                style={{ color: 'rgba(255,255,255,0.5)', fontSize: T.size.sm }}>
+                            Clear
+                        </button>
                     </div>
                 </div>
             )}

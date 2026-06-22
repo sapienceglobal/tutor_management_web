@@ -22,6 +22,8 @@ export default function AddStudentWizardModal({ isOpen, onClose, onSubmit, user 
         lastName: '',
         email: '',
         gender: '',
+        grade: 'Class 9',
+        isVerified: true,
         dob: '',
         profileImage: '',
         address: '',
@@ -62,6 +64,8 @@ export default function AddStudentWizardModal({ isOpen, onClose, onSubmit, user 
                     lastName: names.slice(1).join(' ') || '',
                     email: user.email || '',
                     gender: user.gender || '',
+                    grade: user.grade || 'Class 9',
+                    isVerified: user.isVerified !== false,
                     dob: user.dob ? new Date(user.dob).toISOString().split('T')[0] : '',
                     profileImage: user.profileImage || '',
                     address: user.address?.street || '',
@@ -76,7 +80,7 @@ export default function AddStudentWizardModal({ isOpen, onClose, onSubmit, user 
             } else {
                 // Reset
                 setFormData({
-                    firstName: '', lastName: '', email: '', gender: '', dob: '', profileImage: '',
+                    firstName: '', lastName: '', email: '', gender: '', grade: 'Class 9', isVerified: true, dob: '', profileImage: '',
                     address: '', city: '', pinCode: '', state: '', alternatePhone: '', studentSmartphoneNo: '',
                     assignedBranch: '', parentDetails: [{ firstName: '', lastName: '', email: '', phone: '' }]
                 });
@@ -144,6 +148,8 @@ export default function AddStudentWizardModal({ isOpen, onClose, onSubmit, user 
             role: 'student',
             dob: formData.dob || null,
             gender: formData.gender,
+            grade: formData.grade,
+            isVerified: formData.isVerified,
             alternatePhone: formData.alternatePhone,
             studentSmartphoneNo: formData.studentSmartphoneNo,
             assignedBranch: formData.assignedBranch || null,
@@ -257,7 +263,7 @@ export default function AddStudentWizardModal({ isOpen, onClose, onSubmit, user 
                                 <div><CustomLabel required>Last Name</CustomLabel><input type="text" className={inputClass} value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} placeholder="Gupta"/></div>
                             </div>
                             <div><CustomLabel required>Email Address</CustomLabel><input type="email" className={inputClass} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="rahul.gupta@example.com"/></div>
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-3 gap-5">
                                 <div>
                                     <CustomLabel>Gender</CustomLabel>
                                     <select className={inputClass} value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}>
@@ -267,7 +273,24 @@ export default function AddStudentWizardModal({ isOpen, onClose, onSubmit, user 
                                         <option value="Other">Other</option>
                                     </select>
                                 </div>
+                                <div>
+                                    <CustomLabel>Grade</CustomLabel>
+                                    <select className={inputClass} value={formData.grade} onChange={e => setFormData({...formData, grade: e.target.value})}>
+                                        <option value="Class 8">Class 8</option>
+                                        <option value="Class 9">Class 9</option>
+                                        <option value="Class 10">Class 10</option>
+                                        <option value="Class 11">Class 11</option>
+                                        <option value="Class 12">Class 12</option>
+                                    </select>
+                                </div>
                                 <div><CustomLabel required>Date of Birth</CustomLabel><input type="date" className={inputClass} value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})}/></div>
+                            </div>
+                            <div>
+                                <CustomLabel>Verification Status</CustomLabel>
+                                <select className={inputClass} value={formData.isVerified ? 'true' : 'false'} onChange={e => setFormData({...formData, isVerified: e.target.value === 'true'})}>
+                                    <option value="true">Verified / Approved</option>
+                                    <option value="false">Pending Verification</option>
+                                </select>
                             </div>
                             
                             <div>
@@ -389,11 +412,13 @@ export default function AddStudentWizardModal({ isOpen, onClose, onSubmit, user 
                                     <div className="w-20 h-20 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-[#E9DFFC] shadow-sm flex items-center justify-center">
                                         {formData.profileImage ? <img src={formData.profileImage} className="w-full h-full object-cover" alt="Profile" /> : <ImageIcon className="text-[#A0ABC0]" size={28} />}
                                     </div>
-                                    <div className="flex-1 grid grid-cols-2 gap-y-4 gap-x-6">
+                                    <div className="flex-1 grid grid-cols-3 gap-y-4 gap-x-6">
                                         <div><p className="text-[11px] font-bold text-[#A0ABC0] uppercase tracking-wider m-0 mb-1">First Name</p><p className="text-[14px] font-bold text-[#27225B] m-0">{formData.firstName || '—'}</p></div>
                                         <div><p className="text-[11px] font-bold text-[#A0ABC0] uppercase tracking-wider m-0 mb-1">Last Name</p><p className="text-[14px] font-bold text-[#27225B] m-0">{formData.lastName || '—'}</p></div>
                                         <div><p className="text-[11px] font-bold text-[#A0ABC0] uppercase tracking-wider m-0 mb-1">Email Address</p><p className="text-[14px] font-bold text-[#27225B] m-0">{formData.email || '—'}</p></div>
                                         <div><p className="text-[11px] font-bold text-[#A0ABC0] uppercase tracking-wider m-0 mb-1">Gender</p><p className="text-[14px] font-bold text-[#27225B] m-0">{formData.gender || '—'}</p></div>
+                                        <div><p className="text-[11px] font-bold text-[#A0ABC0] uppercase tracking-wider m-0 mb-1">Grade</p><p className="text-[14px] font-bold text-[#27225B] m-0">{formData.grade || '—'}</p></div>
+                                        <div><p className="text-[11px] font-bold text-[#A0ABC0] uppercase tracking-wider m-0 mb-1">Status</p><p className="text-[14px] font-bold text-[#27225B] m-0">{formData.isVerified ? 'Verified' : 'Pending'}</p></div>
                                     </div>
                                 </div>
                                 <hr className="border-t border-[#F4F0FD] mb-6"/>

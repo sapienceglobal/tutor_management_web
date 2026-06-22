@@ -197,11 +197,29 @@ export default function TutorDetailPage({ params }) {
     const [bookingNote, setBookingNote]       = useState('');
     const [bookingLoading, setBookingLoading] = useState(false);
     const [datesWithSlots, setDatesWithSlots] = useState([]);
+    const [existingBookings, setExistingBookings] = useState([]);
+
+    const fetchExistingBookings = async () => {
+        try {
+            const res = await api.get('/appointments');
+            if (res.data?.success) {
+                const filtered = (res.data.appointments || []).filter(apt => {
+                    const tutorIdObj = apt.tutorId?._id || apt.tutorId;
+                    return String(tutorIdObj) === String(id);
+                });
+                filtered.sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
+                setExistingBookings(filtered);
+            }
+        } catch (err) {
+            console.error("Failed to fetch existing bookings:", err);
+        }
+    };
 
     useEffect(() => {
         (async () => {
             const tutorData = await fetchTutorProfile();
             fetchTutorFullSchedule();
+            fetchExistingBookings();
             if (tutorData?._id) fetchTutorCourses(tutorData._id);
             fetchTutorReviews();
         })();
@@ -287,6 +305,7 @@ export default function TutorDetailPage({ params }) {
             if (res.data?.success) {
                 toast.success('Live class requested successfully! 🎉');
                 setBookingNote(''); setSelectedSlot(null); fetchSlotsForDate();
+                fetchExistingBookings();
             }
         } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to book appointment');
@@ -1191,15 +1210,16 @@ export default function TutorDetailPage({ params }) {
 
                 {/* ── RIGHT: Booking Widget ───────────────────────────────── */}
                 <div className="lg:col-span-1">
-                    <div
-                        className="overflow-hidden sticky top-6"
-                        style={{
-                            backgroundColor: C.cardBg,
-                            border:          `1px solid ${C.cardBorder}`,
-                            boxShadow:       S.card,
-                            borderRadius:    R['2xl'],
-                        }}
-                    >
+                    <div className="sticky top-6 space-y-5">
+                        <div
+                            className="overflow-hidden"
+                            style={{
+                                backgroundColor: C.cardBg,
+                                border:          `1px solid ${C.cardBorder}`,
+                                boxShadow:       S.card,
+                                borderRadius:    R['2xl'],
+                            }}
+                        >
                         {/* Rate Header */}
                         <div
                             className="px-6 py-8 text-center relative overflow-hidden"
@@ -1372,6 +1392,67 @@ export default function TutorDetailPage({ params }) {
                                 Free cancellation up to 24 hours before.
                             </p>
                         </div>
+                    </div>
+
+                    {/* Existing Bookings List */}
+                    {existingBookings.length > 0 && (
+                        <div
+                            className="p-5 space-y-4 mt-5"
+                            style={{
+                                backgroundColor: C.cardBg,
+                                border:          `1px solid ${C.cardBorder}`,
+                                boxShadow:       S.card,
+                                borderRadius:    R['2xl'],
+                            }}
+                        >
+                            <div className="flex items-center gap-2">
+                                <MdCalendarMonth style={{ width: 20, height: 20, color: C.btnPrimary }} />
+                                <h4
+                                    style={{
+                                        fontFamily:  T.fontFamily,
+                                        fontSize:    T.size.base,
+                                        fontWeight:  T.weight.bold,
+                                        color:       C.heading,
+                                        margin:      0,
+                                    }}
+                                >
+                                    Your Bookings
+                                </h4>
+                            </div>
+
+                            <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                                {existingBookings.map(apt => {
+                                    const isFuture = new Date(apt.dateTime) > new Date();
+                                    return (
+                                        <div key={apt._id} className="p-3 rounded-xl flex items-center justify-between gap-3"
+                                            style={{ backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}` }}>
+                                            <div className="min-w-0">
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>
+                                                    {format(new Date(apt.dateTime), 'MMM d, yyyy')}
+                                                </p>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.textMuted, margin: '2px 0 0 0' }}>
+                                                    {format(new Date(apt.dateTime), 'h:mm a')} ({apt.duration} mins)
+                                                </p>
+                                            </div>
+                                            <div className="text-right shrink-0">
+                                                <span className="px-2 py-0.5 rounded-lg text-[10px] font-black capitalize"
+                                                    style={{
+                                                        backgroundColor: apt.status === 'confirmed' ? C.successBg : apt.status === 'pending' ? C.warningBg : apt.status === 'completed' ? `${C.btnPrimary}15` : C.dangerBg,
+                                                        color: apt.status === 'confirmed' ? C.success : apt.status === 'pending' ? C.warning : apt.status === 'completed' ? C.btnPrimary : C.danger,
+                                                        border: `1px solid ${apt.status === 'confirmed' ? C.successBorder : apt.status === 'pending' ? C.warningBorder : apt.status === 'completed' ? `${C.btnPrimary}30` : C.dangerBorder}`
+                                                    }}>
+                                                    {apt.status}
+                                                </span>
+                                                <p style={{ fontFamily: T.fontFamily, fontSize: '9px', color: isFuture ? C.success : C.textMuted, fontWeight: T.weight.bold, margin: '4px 0 0 0' }}>
+                                                    {isFuture ? 'Upcoming' : 'Past'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                     </div>
                 </div>
             </div>

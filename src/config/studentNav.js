@@ -12,7 +12,8 @@ import {
     MdCreditCard, 
     MdWorkspacePremium, 
     MdPerson, 
-    MdSettings 
+    MdSettings,
+    MdCalendarMonth
 } from 'react-icons/md';
 
 export const studentNavItems = [
@@ -81,6 +82,12 @@ export const studentNavItems = [
         title: "SCHEDULE",
         type: "section",
         children: [
+            {
+                title: "Appointments",
+                icon: MdCalendarMonth,
+                href: "/student/appointments",
+                type: "link"
+            },
             {
                 title: "Batches",
                 icon: MdPeople,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     MdHourglassEmpty,
     MdAdd,
@@ -54,10 +54,202 @@ export default function AdminBranchesPage() {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
 
     const [showModal, setShowModal] = useState(false);
     const [editingBranch, setEditingBranch] = useState(null);
+    const [isImporting, setIsImporting] = useState(false);
+    const fileInputRef = useRef(null);
+    const [selectedIds, setSelectedIds] = useState([]);
+
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedIds(paginated.map(b => b._id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectRow = (id) => {
+        setSelectedIds(prev => 
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
+
+    const handleBulkDelete = async () => {
+        const isConfirmed = await confirmDialog("Bulk Delete Branches", `Are you sure you want to delete the ${selectedIds.length} selected branches? This action is permanent.`, { variant: 'destructive' });
+        if (!isConfirmed) return;
+        
+        try {
+            await Promise.all(selectedIds.map(id => api.delete(`/facilities/${id}`)));
+            toast.success('Selected branches deleted successfully');
+            setBranches(prev => prev.filter(b => !selectedIds.includes(b._id)));
+            setSelectedIds([]);
+        } catch (error) {
+            toast.error('Failed to delete some branches');
+            fetchBranches();
+        }
+    };
+
+    const handleBulkStatusChange = async (newStatus) => {
+        const action = newStatus === 'active' ? "Activate" : "Deactivate";
+        const isConfirmed = await confirmDialog(`Bulk ${action} Branches`, `Are you sure you want to ${action.toLowerCase()} the ${selectedIds.length} selected branches?`, { variant: newStatus === 'inactive' ? 'destructive' : 'default' });
+        if (!isConfirmed) return;
+
+        try {
+            await Promise.all(selectedIds.map(id => api.put(`/facilities/${id}`, { status: newStatus })));
+            toast.success(`Selected branches updated successfully`);
+            setBranches(prev => prev.map(b => selectedIds.includes(b._id) ? { ...b, status: newStatus } : b));
+            setSelectedIds([]);
+        } catch (error) {
+            toast.error(`Failed to update branches' status`);
+            fetchBranches();
+        }
+    };
+
+    const handleBulkImport = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const isConfirmed = await confirmDialog("Bulk Import", `Are you sure you want to import branches from ${file.name}?`);
+        if (!isConfirmed) {
+            e.target.value = ''; // Reset input
+            return;
+        }
+
+        setIsImporting(true);
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const text = event.target.result;
+                const rows = text.split('\n').map(row => row.trim()).filter(row => row);
+                if (rows.length < 2) throw new Error("CSV file must contain a header row and at least one branch data row.");
+
+                const headers = rows[0].split(',').map(h => h.trim().toLowerCase().replace(/^"|"$/g, '').replace(/""/g, '"'));
+                const nameIdx = headers.findIndex(h => h.includes('name') || h.includes('campus'));
+                const codeIdx = headers.findIndex(h => h.includes('code'));
+                const streetIdx = headers.findIndex(h => h.includes('street'));
+                const cityIdx = headers.findIndex(h => h.includes('city'));
+                const stateIdx = headers.findIndex(h => h.includes('state'));
+                const zipIdx = headers.findIndex(h => h.includes('zip') || h.includes('postal'));
+                const countryIdx = headers.findIndex(h => h.includes('country'));
+                const contactPersonIdx = headers.findIndex(h => h.includes('person') || h.includes('contactperson'));
+                const emailIdx = headers.findIndex(h => h.includes('email'));
+                const phoneIdx = headers.findIndex(h => h.includes('phone') || h.includes('mobile'));
+                const categoryIdx = headers.findIndex(h => h.includes('category') || h.includes('categories'));
+                const statusIdx = headers.findIndex(h => h.includes('status'));
+
+                if (nameIdx === -1) {
+                    throw new Error("CSV must contain a 'Branch Name' or 'Campus Name' column.");
+                }
+
+                let successCount = 0;
+                let failCount = 0;
+                let skipCount = 0;
+
+                for (let i = 1; i < rows.length; i++) {
+                    const columns = rows[i].split(',').map(c => c.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+                    const campusName = columns[nameIdx];
+                    if (!campusName) continue;
+
+                    const branchCode = codeIdx !== -1 ? columns[codeIdx] : '';
+
+                    // Duplicate check
+                    const branchExists = branches.some(b => 
+                        b.campusName?.toLowerCase() === campusName.toLowerCase() ||
+                        (branchCode && b.branchCode?.toLowerCase() === branchCode.toLowerCase())
+                    );
+                    if (branchExists) {
+                        skipCount++;
+                        continue;
+                    }
+
+                    const payload = {
+                        campusName,
+                        branchCode,
+                        address: {
+                            street: streetIdx !== -1 ? columns[streetIdx] : '',
+                            city: cityIdx !== -1 ? columns[cityIdx] : '',
+                            state: stateIdx !== -1 ? columns[stateIdx] : '',
+                            zipCode: zipIdx !== -1 ? columns[zipIdx] : '',
+                            country: countryIdx !== -1 ? columns[countryIdx] : 'India'
+                        },
+                        contactPerson: contactPersonIdx !== -1 ? columns[contactPersonIdx] : '',
+                        contactEmail: emailIdx !== -1 ? columns[emailIdx] : '',
+                        contactPhone: phoneIdx !== -1 ? columns[phoneIdx] : '',
+                        categories: categoryIdx !== -1 && columns[categoryIdx] ? columns[categoryIdx].split(';').map(c => c.trim()) : [],
+                        status: statusIdx !== -1 && columns[statusIdx] ? columns[statusIdx].toLowerCase() : 'active'
+                    };
+
+                    try {
+                        await api.post('/facilities', payload);
+                        successCount++;
+                    } catch (err) {
+                        failCount++;
+                    }
+                }
+
+                toast.success(`Bulk import completed: ${successCount} successful, ${skipCount} skipped (already exists), ${failCount} failed.`);
+                fetchBranches();
+            } catch (err) {
+                toast.error(err.message || "Failed to process CSV file.");
+            } finally {
+                setIsImporting(false);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    const handleDownloadReport = () => {
+        if (filtered.length === 0) {
+            toast.error("No branch data available to export");
+            return;
+        }
+
+        const headers = [
+            "ID", "Branch Name", "Branch Code", "Category", 
+            "Street", "City", "State", "Zip Code", "Country", 
+            "Contact Person", "Contact Email", "Contact Phone", "Status"
+        ];
+        const csvRows = [headers.join(",")];
+
+        for (const branch of filtered) {
+            const category = branch.features?.[0]?.name || (branch.categories && branch.categories[0]) || "Engineering";
+            const rowData = [
+                branch._id,
+                branch.campusName,
+                branch.branchCode || "N/A",
+                category,
+                branch.address?.street || "N/A",
+                branch.address?.city || "N/A",
+                branch.address?.state || "N/A",
+                branch.address?.zipCode || "N/A",
+                branch.address?.country || "India",
+                branch.contactPerson || "N/A",
+                branch.contactEmail || "N/A",
+                branch.contactPhone || "N/A",
+                branch.status || "active"
+            ];
+            
+            const escapedRow = rowData.map(val => {
+                const escapedStr = String(val).replace(/"/g, '""');
+                return `"${escapedStr}"`;
+            });
+            csvRows.push(escapedRow.join(","));
+        }
+
+        const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `branches_report_${Date.now()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Branch report downloaded successfully!");
+    };
 
     const fetchBranches = async () => {
         setLoading(true);
@@ -95,7 +287,14 @@ export default function AdminBranchesPage() {
         const matchSearch = !searchTerm || b.campusName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             b.address?.city?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchStatus = !statusFilter || b.status === statusFilter;
-        return matchSearch && matchStatus;
+        
+        // Category Filter
+        const branchCats = b.categories || [];
+        const matchCategory = !categoryFilter || 
+            branchCats.some(cat => cat.toLowerCase() === categoryFilter.toLowerCase()) || 
+            (b.features?.[0]?.name && b.features[0].name.toLowerCase() === categoryFilter.toLowerCase());
+            
+        return matchSearch && matchStatus && matchCategory;
     });
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
@@ -164,8 +363,17 @@ export default function AdminBranchesPage() {
                             <option value="active">Active</option>
                             <option value="inactive">Inactive</option>
                         </select>
-                        <select style={{ ...baseInputStyle, width: 'auto', minWidth: '140px', padding: '10px 16px', cursor: 'pointer' }}>
-                            <option>All Categories</option>
+                        <select 
+                            value={categoryFilter} 
+                            onChange={(e) => setCategoryFilter(e.target.value)} 
+                            style={{ ...baseInputStyle, width: 'auto', minWidth: '140px', padding: '10px 16px', cursor: 'pointer' }}
+                        >
+                            <option value="">All Categories</option>
+                            <option value="Engineering">Engineering</option>
+                            <option value="Management">Management</option>
+                            <option value="Arts & Science">Arts & Science</option>
+                            <option value="Medical">Medical</option>
+                            <option value="Others">Others</option>
                         </select>
                         <button className="flex items-center justify-center transition-colors cursor-pointer border-none"
                             style={{ width: 44, height: 44, backgroundColor: C.surfaceWhite, border: `1px solid ${C.cardBorder}`, borderRadius: '10px', color: C.textMuted }}
@@ -184,6 +392,12 @@ export default function AdminBranchesPage() {
                     <table className="w-full text-left border-collapse min-w-[900px]">
                         <thead style={{ backgroundColor: C.innerBg }}>
                             <tr>
+                                <th style={{ padding: '16px 20px', width: '48px', borderBottom: `1px solid ${C.cardBorder}` }}>
+                                    <input type="checkbox" 
+                                           checked={paginated.length > 0 && selectedIds.length === paginated.length}
+                                           onChange={handleSelectAll}
+                                           style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }} />
+                                </th>
                                 <th style={{ padding: '16px 24px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Branch Name ▾</th>
                                 <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Address</th>
                                 <th style={{ padding: '16px 16px', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.statLabel, textTransform: 'uppercase', letterSpacing: T.tracking.wider, borderBottom: `1px solid ${C.cardBorder}` }}>Category</th>
@@ -198,6 +412,12 @@ export default function AdminBranchesPage() {
                                     <tr key={branch._id || i} className="transition-colors group" style={{ backgroundColor: C.cardBg, borderBottom: `1px solid ${C.cardBorder}` }}
                                         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }}
                                         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.cardBg; }}>
+                                        <td style={{ padding: '16px 20px' }}>
+                                            <input type="checkbox" 
+                                                   checked={selectedIds.includes(branch._id)}
+                                                   onChange={() => handleSelectRow(branch._id)}
+                                                   style={{ width: 16, height: 16, accentColor: C.btnPrimary, cursor: 'pointer' }} />
+                                        </td>
                                         <td style={{ padding: '16px 24px' }}>
                                             <div className="flex items-center gap-3">
                                                 <div className="flex items-center justify-center shrink-0" style={{ width: 40, height: 40, backgroundColor: C.iconBg, borderRadius: '10px' }}>
@@ -243,9 +463,8 @@ export default function AdminBranchesPage() {
                                         </td>
                                         <td style={{ padding: '16px 24px', textAlign: 'center' }}>
                                             <div className="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button className="transition-colors border-none cursor-pointer" style={{ backgroundColor: 'transparent', color: C.btnPrimary }}><MdVisibility style={{ width: 20, height: 20 }} /></button>
-                                                <button className="transition-colors border-none cursor-pointer" style={{ backgroundColor: 'transparent', color: C.success }}><MdEdit style={{ width: 18, height: 18 }} /></button>
-                                                <button onClick={() => handleDelete(branch._id)} className="transition-colors border-none cursor-pointer" style={{ backgroundColor: 'transparent', color: C.textMuted }} onMouseEnter={e => e.currentTarget.style.color = C.danger} onMouseLeave={e => e.currentTarget.style.color = C.textMuted}><MdMoreHoriz style={{ width: 18, height: 18 }} /></button>
+                                                <button onClick={() => { setEditingBranch(branch); setShowModal(true); }} className="transition-colors border-none cursor-pointer" title="Edit Branch" style={{ backgroundColor: 'transparent', color: C.success }}><MdEdit style={{ width: 18, height: 18 }} /></button>
+                                                <button onClick={() => handleDelete(branch._id)} className="transition-colors border-none cursor-pointer" title="Delete Branch" style={{ backgroundColor: 'transparent', color: C.textMuted }} onMouseEnter={e => e.currentTarget.style.color = C.danger} onMouseLeave={e => e.currentTarget.style.color = C.textMuted}><MdDelete style={{ width: 18, height: 18 }} /></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -374,15 +593,15 @@ export default function AdminBranchesPage() {
                                 </div>
                                 <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.btnPrimary }}>Add New Branch</span>
                             </button>
-                            <button className="w-full flex items-center gap-3 px-4 py-3 transition-colors border-none cursor-pointer" style={{ backgroundColor: C.warningBg, borderRadius: '12px' }}
+                            <button disabled={isImporting} onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-3 transition-colors border-none cursor-pointer disabled:opacity-50" style={{ backgroundColor: C.warningBg, borderRadius: '12px' }}
                                 onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
                                 onMouseLeave={e => e.currentTarget.style.opacity = 1}>
                                 <div className="w-8 h-8 rounded-full bg-[#ffffff] flex items-center justify-center shadow-sm">
-                                    <MdCloudUpload style={{ width: 16, height: 16, color: C.warning }} />
+                                    {isImporting ? <MdHourglassEmpty style={{ width: 16, height: 16, color: C.warning }} className="animate-spin" /> : <MdCloudUpload style={{ width: 16, height: 16, color: C.warning }} />}
                                 </div>
-                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.warning }}>Import Branches</span>
+                                <span style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.warning }}>{isImporting ? 'Importing...' : 'Import Branches'}</span>
                             </button>
-                            <button className="w-full flex items-center gap-3 px-4 py-3 transition-colors border-none cursor-pointer" style={{ backgroundColor: C.successBg, borderRadius: '12px' }}
+                            <button onClick={handleDownloadReport} className="w-full flex items-center gap-3 px-4 py-3 transition-colors border-none cursor-pointer" style={{ backgroundColor: C.successBg, borderRadius: '12px' }}
                                 onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
                                 onMouseLeave={e => e.currentTarget.style.opacity = 1}>
                                 <div className="w-8 h-8 rounded-full bg-[#ffffff] flex items-center justify-center shadow-sm">
@@ -442,6 +661,54 @@ export default function AdminBranchesPage() {
                     onClose={() => { setShowModal(false); setEditingBranch(null); }}
                     onSuccess={fetchBranches}
                 />
+            )}
+            <input type="file" accept=".csv" ref={fileInputRef} onChange={handleBulkImport} className="hidden" />
+
+            {/* Floating Bulk Actions Bar */}
+            {selectedIds.length > 0 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between gap-6 px-6 py-4 rounded-2xl shadow-2xl border transition-all duration-300 animate-in slide-in-from-bottom-5"
+                     style={{
+                         backgroundColor: 'rgba(39, 34, 91, 0.95)',
+                         backdropFilter: 'blur(10px)',
+                         borderColor: 'rgba(255, 255, 255, 0.1)',
+                         boxShadow: '0 20px 40px -15px rgba(0,0,0,0.5)',
+                         minWidth: '320px',
+                         maxWidth: '90%',
+                         width: 'max-content'
+                     }}>
+                    <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold" style={{ backgroundColor: C.btnPrimary, color: '#ffffff', fontSize: T.size.sm }}>
+                            {selectedIds.length}
+                        </div>
+                        <span style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: '#ffffff' }}>
+                            Branches Selected
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                        <button onClick={() => handleBulkStatusChange('active')}
+                                className="flex items-center gap-1.5 transition-opacity hover:opacity-90 cursor-pointer border-none font-bold"
+                                style={{ padding: '8px 16px', backgroundColor: C.successBg, color: C.success, borderRadius: '8px', fontSize: T.size.sm }}>
+                            <MdCheckCircle style={{ width: 16, height: 16 }} /> Activate
+                        </button>
+                        <button onClick={() => handleBulkStatusChange('inactive')}
+                                className="flex items-center gap-1.5 transition-opacity hover:opacity-90 cursor-pointer border-none font-bold"
+                                style={{ padding: '8px 16px', backgroundColor: C.warningBg, color: C.warning, borderRadius: '8px', fontSize: T.size.sm }}>
+                            <MdHourglassEmpty style={{ width: 16, height: 16 }} /> Deactivate
+                        </button>
+                        <button onClick={handleBulkDelete}
+                                className="flex items-center gap-1.5 transition-opacity hover:opacity-90 cursor-pointer border-none font-bold"
+                                style={{ padding: '8px 16px', backgroundColor: C.dangerBg, color: C.danger, borderRadius: '8px', fontSize: T.size.sm }}>
+                            <MdDelete style={{ width: 16, height: 16 }} /> Delete
+                        </button>
+                        <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255,255,255,0.1)' }} />
+                        <button onClick={() => setSelectedIds([])}
+                                className="transition-colors hover:text-white cursor-pointer border-none bg-transparent font-bold"
+                                style={{ color: 'rgba(255,255,255,0.5)', fontSize: T.size.sm }}>
+                            Clear
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );
