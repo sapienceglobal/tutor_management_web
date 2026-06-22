@@ -99,9 +99,9 @@ const CustomSwitch = ({ checked, onChange }) => (
       cursor: "pointer",
       alignItems: "center",
       borderRadius: R.full,
-      border: "2px solid transparent",
-      transition: "background-color 300ms ease-in-out",
-      backgroundColor: checked ? C.btnPrimary : C.btnViewAllBg,
+      border: checked ? `2px solid ${C.btnPrimary}` : `2px solid #cbd5e1`,
+      transition: "all 300ms ease-in-out",
+      backgroundColor: checked ? C.btnPrimary : "#cbd5e1",
     }}
   >
     <span
@@ -113,7 +113,7 @@ const CustomSwitch = ({ checked, onChange }) => (
         backgroundColor: "#ffffff",
         transition: "transform 300ms ease-in-out",
         transform: checked ? "translateX(20px)" : "translateX(0px)",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
       }}
     />
   </button>
@@ -470,7 +470,8 @@ function CreateExamPageClient() {
   });
   const [aiParams, setAiParams] = useState({
     topic: "",
-    count: 5,
+    mcqCount: 5,
+    subjectiveCount: 0,
     difficulty: "medium",
   });
   const [aiLoading, setAiLoading] = useState(false);
@@ -573,29 +574,67 @@ function CreateExamPageClient() {
       toast.error("Topic is required");
       return;
     }
+    if (aiParams.mcqCount === 0 && aiParams.subjectiveCount === 0) {
+      toast.error("Please select at least one question to generate");
+      return;
+    }
     setAiLoading(true);
     try {
-      const res = await api.post("/ai/generate-questions", aiParams);
-      if (res?.data?.success) {
-        const newQs = res.data.questions.map((q) => ({
-          question: q.question,
-          options: q.options.map((opt) => ({
-            text: opt,
-            isCorrect: opt === q.correctAnswer,
-          })),
-          explanation: q.explanation,
-          points: 1,
-          difficulty: q.difficulty.toLowerCase(),
-        }));
+      const requests = [];
+      if (aiParams.mcqCount > 0) {
+        requests.push(api.post("/ai/generate-questions", { topic: aiParams.topic, count: aiParams.mcqCount, difficulty: aiParams.difficulty, type: "mcq" }));
+      }
+      if (aiParams.subjectiveCount > 0) {
+        requests.push(api.post("/ai/generate-questions", { topic: aiParams.topic, count: aiParams.subjectiveCount, difficulty: aiParams.difficulty, type: "subjective" }));
+      }
+
+      const responses = await Promise.all(requests);
+      let newQs = [];
+      responses.forEach(res => {
+        if (res?.data?.success) {
+          const mappedQs = res.data.questions.map(q => {
+            if (q.type === "subjective") {
+              return {
+                question: q.question,
+                idealAnswer: q.idealAnswer,
+                explanation: q.explanation,
+                points: 1,
+                difficulty: q.difficulty?.toLowerCase(),
+                type: "subjective"
+              };
+            } else {
+              return {
+                question: q.question,
+                options: q.options.map(opt => ({
+                  text: opt,
+                  isCorrect: opt === q.correctAnswer
+                })),
+                explanation: q.explanation,
+                points: 1,
+                difficulty: q.difficulty?.toLowerCase(),
+                type: "mcq"
+              };
+            }
+          });
+          newQs = [...newQs, ...mappedQs];
+        }
+      });
+
+      if (newQs.length > 0) {
         setExamData((prev) => ({
           ...prev,
           questions: [...prev.questions, ...newQs],
         }));
         setIsAIOpen(false);
         toast.success(`Generated ${newQs.length} questions!`);
+      } else {
+        toast.error("No questions were generated.");
       }
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to generate questions. Please try again.");
+      toast.error(
+        error?.response?.data?.message ||
+          "Failed to generate questions. Please try again.",
+      );
     } finally {
       setAiLoading(false);
     }
@@ -1898,6 +1937,7 @@ function CreateExamPageClient() {
                     </FeatureGate>
                   </div>
                 ) : (
+                  <>
                   <div className="space-y-4">
                     {examData.questions.map((q, idx) => (
                       <div
@@ -2018,7 +2058,7 @@ function CreateExamPageClient() {
                               }}
                             />
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {q.options.map((opt, i) => (
+                              {q.options && q.options.map((opt, i) => (
                                 <div
                                   key={i}
                                   className="flex items-center gap-3"
@@ -2072,11 +2112,29 @@ function CreateExamPageClient() {
                                 </div>
                               ))}
                             </div>
+                            {(!q.options || q.options.length === 0) && (
+                              <div style={{ padding: 16, backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}`, marginTop: 12 }}>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: C.text, margin: '0 0 8px 0' }}>Ideal Answer:</p>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, color: C.heading, margin: 0 }}>{q.idealAnswer || 'No ideal answer provided'}</p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
+
+                  <div className="flex justify-center gap-3 mt-6 pt-6 border-t border-dashed" style={{ borderColor: C.cardBorder }}>
+                    <FeatureGate featureName="aiAssessment" mode="lock">
+                      <button onClick={() => setIsAIOpen(true)} className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-80 border-2 border-dashed" style={{ backgroundColor: C.cardBg, color: C.btnPrimary, borderColor: C.cardBorder, borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}>
+                        <MdAutoAwesome style={{ width: 16, height: 16 }} /> AI Generate
+                      </button>
+                    </FeatureGate>
+                    <button onClick={() => { resetQuestionForm(); setIsAddOpen(true); }} className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-80 border-2 border-dashed" style={{ backgroundColor: C.innerBg, color: C.btnPrimary, borderColor: C.btnPrimary, borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}>
+                      <MdAdd style={{ width: 16, height: 16 }} /> Add Question
+                    </button>
+                  </div>
+                  </>
                 )}
 
                 <div
@@ -2487,17 +2545,17 @@ function CreateExamPageClient() {
                     display: "block",
                   }}
                 >
-                  Number of Questions
+                  MCQ Count
                 </label>
                 <input
                   type="number"
-                  min="1"
+                  min="0"
                   max="20"
-                  value={aiParams.count}
+                  value={aiParams.mcqCount}
                   onChange={(e) =>
                     setAiParams({
                       ...aiParams,
-                      count: parseInt(e.target.value) || 5,
+                      mcqCount: parseInt(e.target.value) || 0,
                     })
                   }
                   style={baseInputStyle}
@@ -2515,9 +2573,38 @@ function CreateExamPageClient() {
                     display: "block",
                   }}
                 >
-                  Difficulty
+                  Subjective Count
                 </label>
-                <select
+                <input
+                  type="number"
+                  min="0"
+                  max="20"
+                  value={aiParams.subjectiveCount}
+                  onChange={(e) =>
+                    setAiParams({
+                      ...aiParams,
+                      subjectiveCount: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  style={baseInputStyle}
+                  onFocus={onFocusHandler}
+                  onBlur={onBlurHandler}
+                />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <label
+                style={{
+                  fontFamily: T.fontFamily,
+                  fontSize: T.size.base,
+                  fontWeight: T.weight.bold,
+                  color: C.heading,
+                  display: "block",
+                }}
+              >
+                Difficulty
+              </label>
+              <select
                   value={aiParams.difficulty}
                   onChange={(e) =>
                     setAiParams({ ...aiParams, difficulty: e.target.value })
@@ -2531,7 +2618,6 @@ function CreateExamPageClient() {
                   <option value="hard">Hard</option>
                 </select>
               </div>
-            </div>
             <button
               onClick={handleAIGenerate}
               disabled={aiLoading}

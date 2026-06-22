@@ -124,9 +124,9 @@ function CustomSwitch({ checked, onChange }) {
                 cursor:          'pointer',
                 alignItems:      'center',
                 borderRadius:    R.full,
-                border:          '2px solid transparent',
-                transition:      'background-color 300ms ease-in-out',
-                backgroundColor: checked ? C.btnPrimary : C.btnViewAllBg,
+                border:          checked ? `2px solid ${C.btnPrimary}` : `2px solid #cbd5e1`,
+                transition:      'all 300ms ease-in-out',
+                backgroundColor: checked ? C.btnPrimary : '#cbd5e1',
             }}
         >
             <span
@@ -191,7 +191,7 @@ export default function EditExamPage({ params }) {
     const [availableStudents, setAvailableStudents] = useState([]);
 
     const [isAIOpen, setIsAIOpen] = useState(false);
-    const [aiParams, setAiParams] = useState({ topic: '', count: 5, difficulty: 'medium' });
+    const [aiParams, setAiParams] = useState({ topic: '', mcqCount: 5, subjectiveCount: 0, difficulty: 'medium' });
     const [aiLoading, setAiLoading] = useState(false);
 
     const [examData, setExamData] = useState({
@@ -298,27 +298,61 @@ export default function EditExamPage({ params }) {
             toast.error('Topic is required');
             return;
         }
+        if (aiParams.mcqCount === 0 && aiParams.subjectiveCount === 0) {
+            toast.error('Please select at least one question to generate');
+            return;
+        }
         setAiLoading(true);
         try {
-            const res = await api.post('/ai/generate-questions', aiParams);
-            if (res?.data?.success) {
-                const newQs = res.data.questions.map(q => ({
-                    question: q.question,
-                    options: q.options.map(opt => ({
-                        text: opt,
-                        isCorrect: opt === q.correctAnswer
-                    })),
-                    explanation: q.explanation,
-                    points: 1,
-                    difficulty: q.difficulty.toLowerCase(),
-                    type: 'mcq'
-                }));
+            const requests = [];
+            if (aiParams.mcqCount > 0) {
+                requests.push(api.post('/ai/generate-questions', { topic: aiParams.topic, count: aiParams.mcqCount, difficulty: aiParams.difficulty, type: 'mcq' }));
+            }
+            if (aiParams.subjectiveCount > 0) {
+                requests.push(api.post('/ai/generate-questions', { topic: aiParams.topic, count: aiParams.subjectiveCount, difficulty: aiParams.difficulty, type: 'subjective' }));
+            }
+
+            const responses = await Promise.all(requests);
+            let newQs = [];
+            responses.forEach(res => {
+                if (res?.data?.success) {
+                    const mappedQs = res.data.questions.map(q => {
+                        if (q.type === 'subjective') {
+                            return {
+                                question: q.question,
+                                idealAnswer: q.idealAnswer,
+                                explanation: q.explanation,
+                                points: 1,
+                                difficulty: q.difficulty?.toLowerCase(),
+                                type: 'subjective'
+                            };
+                        } else {
+                            return {
+                                question: q.question,
+                                options: q.options.map(opt => ({
+                                    text: opt,
+                                    isCorrect: opt === q.correctAnswer
+                                })),
+                                explanation: q.explanation,
+                                points: 1,
+                                difficulty: q.difficulty?.toLowerCase(),
+                                type: 'mcq'
+                            };
+                        }
+                    });
+                    newQs = [...newQs, ...mappedQs];
+                }
+            });
+
+            if (newQs.length > 0) {
                 setExamData(prev => ({
                     ...prev,
                     questions: [...prev.questions, ...newQs]
                 }));
                 setIsAIOpen(false);
                 toast.success(`Generated ${newQs.length} questions!`);
+            } else {
+                toast.error('No questions were generated.');
             }
         } catch (error) {
             toast.error(error?.response?.data?.message || 'Failed to generate questions. Please try again.');
@@ -862,6 +896,34 @@ export default function EditExamPage({ params }) {
                             );
                         })}
 
+                        {examData.questions.length > 0 && (
+                            <div className="flex justify-center gap-3 mt-6 pt-6 border-t border-dashed" style={{ borderColor: C.cardBorder }}>
+                                <FeatureGate featureName="aiAssessment" mode="lock">
+                                    <button
+                                        onClick={() => setIsAIOpen(true)}
+                                        className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-80 border-2 border-dashed"
+                                        style={{ backgroundColor: C.cardBg, color: C.btnPrimary, borderColor: C.cardBorder, borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}
+                                    >
+                                        <MdAutoAwesome style={{ width: 16, height: 16 }} /> AI Generate
+                                    </button>
+                                </FeatureGate>
+                                <button
+                                    onClick={() => handleAddQuestion('mcq')}
+                                    className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-80 border-2 border-dashed"
+                                    style={{ backgroundColor: C.innerBg, color: C.btnPrimary, borderColor: C.btnPrimary, borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}
+                                >
+                                    <MdAdd style={{ width: 16, height: 16 }} /> Add MCQ
+                                </button>
+                                <button
+                                    onClick={() => handleAddQuestion('subjective')}
+                                    className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-80 border-2 border-dashed"
+                                    style={{ backgroundColor: C.warningBg, color: C.warning, borderColor: C.warning, borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}
+                                >
+                                    <MdMessage style={{ width: 16, height: 16 }} /> Add Subjective
+                                </button>
+                            </div>
+                        )}
+
                         {/* Empty state */}
                         {examData.questions.length === 0 && (
                             <div
@@ -983,18 +1045,29 @@ export default function EditExamPage({ params }) {
                         </div>
                         <div className="grid grid-cols-2 gap-5">
                             <div className="space-y-3">
-                                <label style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, display: 'block' }}>Number of Questions</label>
+                                <label style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, display: 'block' }}>MCQ Count</label>
                                 <input
-                                    type="number" min="1" max="20"
-                                    value={aiParams.count}
-                                    onChange={e => setAiParams({ ...aiParams, count: parseInt(e.target.value) || 5 })}
+                                    type="number" min="0" max="20"
+                                    value={aiParams.mcqCount}
+                                    onChange={e => setAiParams({ ...aiParams, mcqCount: parseInt(e.target.value) || 0 })}
                                     style={baseInputStyle}
                                     onFocus={onFocusHandler} onBlur={onBlurHandler}
                                 />
                             </div>
                             <div className="space-y-3">
-                                <label style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, display: 'block' }}>Difficulty</label>
-                                <select
+                                <label style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, display: 'block' }}>Subjective Count</label>
+                                <input
+                                    type="number" min="0" max="20"
+                                    value={aiParams.subjectiveCount}
+                                    onChange={e => setAiParams({ ...aiParams, subjectiveCount: parseInt(e.target.value) || 0 })}
+                                    style={baseInputStyle}
+                                    onFocus={onFocusHandler} onBlur={onBlurHandler}
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                            <label style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.heading, display: 'block' }}>Difficulty</label>
+                            <select
                                     value={aiParams.difficulty}
                                     onChange={e => setAiParams({ ...aiParams, difficulty: e.target.value })}
                                     style={baseInputStyle}
@@ -1005,7 +1078,6 @@ export default function EditExamPage({ params }) {
                                     <option value="hard">Hard</option>
                                 </select>
                             </div>
-                        </div>
                         <button
                             onClick={handleAIGenerate} disabled={aiLoading}
                             className="w-full flex items-center justify-center gap-2 cursor-pointer transition-all hover:opacity-90"
