@@ -53,7 +53,10 @@ export default function NotificationPanel({ onClose }) {
     
     const resolveNotificationLink = (item) => {
         if (item?.link) return item.link;
-        if (item?.type === 'direct_message') return '/student/messages';
+        if (item?.type === 'direct_message') {
+            const tutorId = item?.data?.extras?.tutorId;
+            return tutorId ? `/student/messages?tutorId=${tutorId}` : '/student/messages';
+        }
 
         const courseId = item?.data?.courseId?._id || item?.data?.courseId;
         const lessonId = item?.data?.lessonId?._id || item?.data?.lessonId;
@@ -63,6 +66,15 @@ export default function NotificationPanel({ onClose }) {
         }
         if (item?.type === 'assignment_created' || item?.type === 'assignment_graded') {
             return '/student/assignments';
+        }
+        if (item?.type === 'study_plan_generated') {
+            return '/student/ai-buddy/study-plans';
+        }
+        if (item?.type === 'reminder') {
+            const tutorId = item?.data?.extras?.tutorId;
+            if (tutorId) {
+                return `/student/messages?tutorId=${tutorId}`;
+            }
         }
         return null;
     };

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef, Suspense } from 'react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { 
@@ -9,6 +9,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { C, T, S, R } from '@/constants/studentTokens';
 import { useSocket } from '@/contexts/SocketContext';
+import { useSearchParams } from 'next/navigation';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const timeLabel = (value) => {
@@ -73,7 +74,10 @@ const baseInputStyle = {
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function StudentMessagesPage() {
+function StudentMessagesPageContent() {
+    const searchParams = useSearchParams();
+    const queryTutorId = searchParams?.get('tutorId');
+
     const [loading, setLoading] = useState(true);
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [sending, setSending] = useState(false);
@@ -100,6 +104,12 @@ export default function StudentMessagesPage() {
     useEffect(() => {
         fetchInitialData();
     }, []);
+
+    useEffect(() => {
+        if (queryTutorId) {
+            setSelectedTutorId(queryTutorId);
+        }
+    }, [queryTutorId]);
 
     useEffect(() => {
         if (!selectedTutorId) {
@@ -162,7 +172,9 @@ export default function StudentMessagesPage() {
             );
             setTutors(tutorList);
 
-            if (convoList.length > 0) {
+            if (queryTutorId) {
+                setSelectedTutorId(queryTutorId);
+            } else if (convoList.length > 0) {
                 setSelectedTutorId(String(convoList[0].counterpartId));
             } else if (tutorList.length > 0) {
                 setSelectedTutorId(tutorList[0]._id);
@@ -595,5 +607,25 @@ export default function StudentMessagesPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function StudentMessagesPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: C.pageBg }}>
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-12 h-12">
+                        <div className="w-12 h-12 rounded-full border-[3px] animate-spin"
+                            style={{ borderColor: `${C.btnPrimary}30`, borderTopColor: C.btnPrimary }} />
+                    </div>
+                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.medium, color: C.text }}>
+                        Loading...
+                    </p>
+                </div>
+            </div>
+        }>
+            <StudentMessagesPageContent />
+        </Suspense>
     );
 }

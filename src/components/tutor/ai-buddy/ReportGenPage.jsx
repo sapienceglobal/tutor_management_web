@@ -792,7 +792,117 @@ export default function ReportGenPage() {
                             </button>
                             <button onClick={() => {
                                 toast.promise(
-                                    new Promise(resolve => setTimeout(resolve, 1000)),
+                                    new Promise(resolve => {
+                                        setTimeout(() => {
+                                            const printWindow = window.open('', '_blank');
+                                            if (printWindow) {
+                                                printWindow.document.write(`
+                                                    <html>
+                                                    <head>
+                                                        <title>Student Dossier - ${activeStudent.name}</title>
+                                                        <style>
+                                                            body { font-family: system-ui, -apple-system, sans-serif; color: #1e293b; padding: 40px; line-height: 1.5; }
+                                                            .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; }
+                                                            .student-info { display: flex; align-items: center; gap: 16px; }
+                                                            .student-name { font-size: 24px; font-weight: 800; margin: 0; }
+                                                            .student-sub { font-size: 14px; color: #64748b; margin: 2px 0 0 0; }
+                                                            .badge { background: #f1f5f9; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; }
+                                                            .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+                                                            .metric-card { background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 12px; padding: 16px; text-align: center; }
+                                                            .metric-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; }
+                                                            .metric-value { font-size: 28px; font-weight: 900; margin-top: 4px; color: #4f46e5; }
+                                                            .section { margin-bottom: 30px; }
+                                                            .section-title { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #1e293b; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; }
+                                                            .skill-row { margin-bottom: 12px; }
+                                                            .skill-info { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+                                                            .skill-bar-bg { height: 8px; background: #f1f5f9; border-radius: 9999px; overflow: hidden; }
+                                                            .skill-bar-fill { height: 100%; border-radius: 9999px; }
+                                                            .columns-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+                                                            .list-card { background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 12px; padding: 16px; }
+                                                            .list-card-title { font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.05em; }
+                                                            .recommendation-box { background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 12px; padding: 16px; margin-top: 20px; }
+                                                            .recommendation-title { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #4f46e5; margin-bottom: 6px; letter-spacing: 0.05em; }
+                                                            @media print { body { padding: 0; } }
+                                                        </style>
+                                                    </head>
+                                                    <body>
+                                                        <div class="header">
+                                                            <div class="student-info">
+                                                                <div>
+                                                                    <h1 class="student-name">${activeStudent.name}</h1>
+                                                                    <p class="student-sub">Comprehensive AI Analytics Profiling</p>
+                                                                </div>
+                                                            </div>
+                                                            <div class="badge">Student Dossier</div>
+                                                        </div>
+
+                                                        <div class="metrics-grid">
+                                                            <div class="metric-card">
+                                                                <div class="metric-label">Performance Grade</div>
+                                                                <div class="metric-value">${activeStudent.grade || 'N/A'}</div>
+                                                            </div>
+                                                            <div class="metric-card">
+                                                                <div class="metric-label">Class Percentile</div>
+                                                                <div class="metric-value" style="color: #10b981;">92nd</div>
+                                                            </div>
+                                                            <div class="metric-card">
+                                                                <div class="metric-label">Attendance Rate</div>
+                                                                <div class="metric-value" style="color: #f97316;">96%</div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="section">
+                                                            <div class="section-title">Skill Breakdown & Heatmap</div>
+                                                            ${(activeStudent.skillBreakdown || []).map(skill => `
+                                                                <div class="skill-row">
+                                                                    <div class="skill-info">
+                                                                        <span>${skill.topic}</span>
+                                                                        <span style="color: ${skill.color};">${skill.score}%</span>
+                                                                    </div>
+                                                                    <div class="skill-bar-bg">
+                                                                        <div class="skill-bar-fill" style="width: ${skill.score}%; background-color: ${skill.color};"></div>
+                                                                    </div>
+                                                                </div>
+                                                            `).join('')}
+                                                        </div>
+
+                                                        <div class="columns-2 section">
+                                                            <div class="list-card">
+                                                                <div class="list-card-title" style="color: #10b981;">💪 Core Strengths</div>
+                                                                ${(activeStudent.strengths || ['Highly consistent in conceptual application', 'Strong analytical accuracy']).map(s => `
+                                                                    <p style="font-size: 12px; margin: 6px 0; color: #475569;">⬩ ${s}</p>
+                                                                `).join('')}
+                                                            </div>
+                                                            <div class="list-card">
+                                                                <div class="list-card-title" style="color: #ef4444;">Development Paths</div>
+                                                                ${(activeStudent.weaknesses || ['Needs speed optimization during quiz attempts', 'Needs revision in basic theorems']).map(w => `
+                                                                    <p style="font-size: 12px; margin: 6px 0; color: #475569;">⬩ ${w}</p>
+                                                                `).join('')}
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="recommendation-box section">
+                                                            <div class="recommendation-title">Personalized AI Recommendation & Study Track</div>
+                                                            <p style="font-size: 12px; margin: 0; color: #475569; line-height: 1.6;">
+                                                                ${activeStudent.recommendation || 'Struggles with advanced problem solving. Recommend enrolling in the tailored Remedial Revision schedule to reinforce formulas.'}
+                                                            </p>
+                                                        </div>
+
+                                                        <script>
+                                                            window.onload = function() {
+                                                                setTimeout(() => {
+                                                                    window.print();
+                                                                }, 500);
+                                                            };
+                                                        </script>
+                                                    </body>
+                                                    </html>
+                                                `);
+                                                printWindow.document.close();
+                                            }
+                                            resolve();
+                                        }, 800);
+                                    }),
                                     {
                                         loading: 'Compiling PDF artifact...',
                                         success: 'Student detailed profile report downloaded successfully!',

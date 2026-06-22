@@ -7,7 +7,7 @@ import {
     BookOpen, Clock, Target, BarChart2, Bell,
     ChevronRight, Star, Shield, Brain, Zap,
     FileText, Share2, Calendar, ArrowUpRight,
-    CheckSquare, Send, ClipboardList
+    CheckSquare, Send, ClipboardList, Square, Check
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
@@ -278,6 +278,8 @@ export default function RiskPredictorPage() {
     const [selectedCourse, setSelectedCourse] = useState('');
     const [sortBy, setSortBy]               = useState('riskScore');
     const [insightStudent, setInsightStudent] = useState(null);
+    const [completedRecs, setCompletedRecs] = useState({});
+    const router = useRouter();
     
       
     const fetchData = useCallback(async (cId = '') => {
@@ -301,41 +303,79 @@ export default function RiskPredictorPage() {
     };
 
     const handleActionClick = (actionLabel) => {
-        const promise = new Promise((resolve) => setTimeout(resolve, 1500));
+        let actionKey = 'analyze';
         let loadingMsg = 'Processing action...';
         let successMsg = 'Action completed successfully!';
         
         if (actionLabel === 'Alert Parents of High-Risk Students' || actionLabel === 'Alert') {
-            loadingMsg = 'Analyzing risk indicators and draft WhatsApp notifications...';
-            successMsg = 'High-risk alerts successfully sent to parent contacts via WhatsApp & Email!';
+            actionKey = 'alert_parents';
+            loadingMsg = 'Analyzing risk indicators and drafting notifications...';
+            successMsg = 'High-risk alerts successfully sent to parent contacts via Email!';
         } else if (actionLabel === 'Schedule Remedial Classes' || actionLabel === 'Schedule') {
-            loadingMsg = 'Calculating common calendar gaps for remedial sessions...';
+            actionKey = 'schedule_remedial';
+            loadingMsg = 'Scheduling remedial sessions...';
             successMsg = 'Remedial tutoring sessions successfully booked and invited!';
         } else if (actionLabel === 'Generate Academic Progress Report' || actionLabel === 'Report') {
-            loadingMsg = 'Compiling multi-course academic statistics...';
-            successMsg = 'Progress reports successfully compiled as PDF and saved to resources!';
+            actionKey = 'progress_report';
+            loadingMsg = 'Compiling academic statistics...';
+            successMsg = 'Progress reports successfully compiled and saved!';
         } else if (actionLabel === 'Assign Study Plans to Improve' || actionLabel === 'Plan') {
-            loadingMsg = 'Customizing corrective study plans based on weak topics...';
+            actionKey = 'assign_study_plans';
+            loadingMsg = 'Customizing corrective study plans...';
             successMsg = 'Personalized corrective study plans successfully assigned to at-risk students!';
-        } else if (actionLabel === 'High Risk Action Plans' || actionLabel === 'Identified Action Plans' || actionLabel === 'Action') {
+        } else if (actionLabel === 'High Risk Action Plans') {
+            actionKey = 'high_risk_action_plans';
             loadingMsg = 'Drafting customized high-risk intervention protocols...';
-            successMsg = 'High-risk intervention plans successfully created and assigned to tutors!';
+            successMsg = 'High-risk intervention plans successfully created and assigned!';
+        } else if (actionLabel === 'Identified Action Plans' || actionLabel === 'Action') {
+            actionKey = 'identified_action_plans';
+            loadingMsg = 'Drafting customized risk intervention protocols...';
+            successMsg = 'Risk intervention plans successfully created!';
         } else if (actionLabel === 'Share') {
+            actionKey = 'share';
             loadingMsg = 'Generating sharing link for dashboard...';
             successMsg = 'Dashboard link copied to clipboard successfully!';
         } else if (actionLabel === 'Notify') {
-            loadingMsg = 'Sending push notifications to student app...';
+            actionKey = 'notify';
+            loadingMsg = 'Sending notifications to students...';
             successMsg = 'Alert notifications successfully dispatched to students!';
         } else if (actionLabel === 'Analyze') {
-            loadingMsg = 'Running predictive regression algorithms...';
+            actionKey = 'analyze';
+            loadingMsg = 'Running predictive risk analysis...';
             successMsg = 'Detailed correlation analysis reports successfully generated!';
         }
 
-        toast.promise(promise, {
+        const apiCall = async () => {
+            const res = await api.post('/ai/risk-predictor/action', {
+                action: actionKey,
+                courseId: selectedCourse || undefined
+            });
+            if (!res.data?.success) {
+                throw new Error(res.data?.message || 'Failed to perform action');
+            }
+            if (actionKey === 'share' && res.data.result?.shareUrl) {
+                navigator.clipboard.writeText(res.data.result.shareUrl);
+            }
+            return res.data;
+        };
+
+        toast.promise(apiCall(), {
             loading: loadingMsg,
-            success: successMsg,
-            error: 'Failed to process academic action.',
-        });
+            success: (data) => data.message || successMsg,
+            error: (err) => err.message || 'Failed to process academic action.',
+        }).then((data) => {
+            if (!data) return;
+            const resData = data.result || {};
+            setTimeout(() => {
+                if (actionKey === 'progress_report' && resData.reportId) {
+                    router.push(`/tutor/reports`);
+                } else if (actionKey === 'assign_study_plans' || actionKey === 'high_risk_action_plans' || actionKey === 'identified_action_plans' || actionKey === 'plan') {
+                    router.push('/tutor/ai-buddy/study-plan');
+                } else if (actionKey === 'schedule_remedial' || actionKey === 'schedule') {
+                    router.push('/tutor/appointments');
+                }
+            }, 1500);
+        }).catch(() => {});
     };
 
     // Sort students
@@ -437,10 +477,10 @@ export default function RiskPredictorPage() {
                         </button>
                     </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr style={{ borderBottom: `1px solid ${P.border}`, backgroundColor: 'rgba(124,58,237,0.03)' }}>
+                    <div className="overflow-x-auto max-h-[400px] overflow-y-auto custom-scrollbar">
+                        <table className="w-full relative">
+                            <thead className="sticky top-0 z-10 backdrop-blur-md" style={{ backgroundColor: 'rgba(245,243,255,0.95)' }}>
+                                <tr style={{ borderBottom: `1px solid ${P.border}` }}>
                                     {['AT-RISK STUDENT', 'RISK SCORE', 'DROPOUT RISK', 'KEY RISK FACTORS', 'ACTION'].map(h => (
                                         <th key={h} className="text-left px-4 py-2.5"
                                             style={{ fontFamily: T.fontFamily, fontSize: '9px', fontWeight: T.weight.bold, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -503,17 +543,24 @@ export default function RiskPredictorPage() {
                         </p>
                     ) : (
                         <div className="grid grid-cols-2 gap-3 mb-4">
-                            {recs.map((rec, i) => (
-                                <div key={i} className="flex items-start gap-2.5">
-                                    <CheckSquare className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: P.primary }} />
+                            {recs.map((rec, i) => {
+                                const isDone = !!completedRecs[i];
+                                return (
+                                <div key={i} className="flex items-start gap-2.5 cursor-pointer transition-all hover:opacity-80 p-2 rounded-xl"
+                                    style={{ backgroundColor: isDone ? P.greenSoft : 'transparent', border: isDone ? `1px solid ${P.green}30` : '1px solid transparent' }}
+                                    onClick={() => setCompletedRecs(prev => ({...prev, [i]: !prev[i]}))}>
+                                    <div className="mt-0.5 flex-shrink-0 flex items-center justify-center w-4 h-4 rounded-md border transition-colors"
+                                        style={{ backgroundColor: isDone ? P.green : 'transparent', borderColor: isDone ? P.green : P.primary }}>
+                                        {isDone && <Check className="w-3 h-3 text-white" />}
+                                    </div>
                                     <div>
-                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: '#334155' }}>{rec.action}</p>
+                                        <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: isDone ? P.green : '#334155', textDecoration: isDone ? 'line-through' : 'none' }}>{rec.action}</p>
                                         {rec.detail && (
-                                            <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: '#94A3B8', lineHeight: 1.4, marginTop: 1 }}>{rec.detail}</p>
+                                            <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: '#94A3B8', lineHeight: 1.4, marginTop: 1, textDecoration: isDone ? 'line-through' : 'none' }}>{rec.detail}</p>
                                         )}
                                     </div>
                                 </div>
-                            ))}
+                            )})}
                         </div>
                     )}
 

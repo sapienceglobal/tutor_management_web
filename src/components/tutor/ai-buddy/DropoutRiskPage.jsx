@@ -201,6 +201,46 @@ export default function DropoutRiskPage() {
         finally { setLoadingDetail(false); }
     };
 
+    const handleActionClick = (actionLabel) => {
+        let actionKey = 'analyze';
+        let loadingMsg = 'Processing action...';
+        let successMsg = 'Action completed successfully!';
+
+        if (actionLabel.includes('Alert Parents')) {
+            actionKey = 'alert_parents';
+            loadingMsg = 'Analyzing risk indicators and drafting notifications...';
+            successMsg = 'High-risk alerts successfully sent to parent contacts via Email!';
+        } else if (actionLabel.includes('Schedule Remedial')) {
+            actionKey = 'schedule_remedial';
+            loadingMsg = 'Scheduling remedial sessions...';
+            successMsg = 'Remedial tutoring sessions successfully booked and invited!';
+        } else if (actionLabel.includes('Assign Study Plans')) {
+            actionKey = 'assign_study_plans';
+            loadingMsg = 'Customizing corrective study plans...';
+            successMsg = 'Personalized corrective study plans successfully assigned to at-risk students!';
+        } else if (actionLabel.includes('Counseling') || actionLabel.includes('Offer Counseling')) {
+            actionKey = 'notify';
+            loadingMsg = 'Sending notifications to students...';
+            successMsg = 'Counseling check-in notifications successfully dispatched to students!';
+        }
+
+        const apiCall = async () => {
+            const res = await api.post('/ai/risk-predictor/action', {
+                action: actionKey,
+            });
+            if (!res.data?.success) {
+                throw new Error(res.data?.message || 'Failed to perform action');
+            }
+            return res.data;
+        };
+
+        toast.promise(apiCall(), {
+            loading: loadingMsg,
+            success: (data) => data.message || successMsg,
+            error: (err) => err.message || 'Failed to process academic action.',
+        });
+    };
+
     // ── Filtered students ──────────────────────────────────────────
     const filtered = (data?.students || []).filter(s =>
         filterRisk === 'All' || s.riskLevel === filterRisk
@@ -414,8 +454,12 @@ export default function DropoutRiskPage() {
                                 const icons = [Bell, BookOpen, Target, Users];
                                 const Icon = icons[i % icons.length];
                                 return (
-                                    <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl"
-                                        style={{ backgroundColor: `${colors[i]}08`, border: `1px solid ${colors[i]}20` }}>
+                                    <div key={i}
+                                        onClick={() => handleActionClick(plan.action)}
+                                        className="flex items-start gap-2.5 p-3 rounded-xl cursor-pointer transition-all hover:scale-[1.01]"
+                                        style={{ backgroundColor: `${colors[i]}08`, border: `1px solid ${colors[i]}20` }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = `${colors[i]}12`}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = `${colors[i]}08`}>
                                         <Icon className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: colors[i] }} />
                                         <div className="flex-1 min-w-0">
                                             <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.semibold, color: '#334155', lineHeight: 1.4 }}>

@@ -259,7 +259,6 @@ export default function StudyPlanPage() {
     // ── Generate plan ─────────────────────────────────────────────────
     const handleGenerate = async () => {
         if (!selectedStudent) return toast.error('Student selection is required');
-        if (!selectedTopics.length) return toast.error('Select at least one weak topic');
 
         setGenerating(true);
         setPlan(null);
@@ -605,7 +604,7 @@ export default function StudyPlanPage() {
                             {/* Generate button */}
                             <div className="col-span-2">
                                 <button onClick={handleGenerate}
-                                    disabled={generating || !selectedTopics.length}
+                                    disabled={generating}
                                     className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl transition-all disabled:opacity-50 hover:opacity-90"
                                     style={{ background: G.gradient, boxShadow: `0 4px 16px ${G.primary}40` }}>
                                     {generating

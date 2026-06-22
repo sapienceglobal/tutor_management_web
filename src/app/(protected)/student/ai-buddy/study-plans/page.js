@@ -795,7 +795,14 @@ export default function StudentStudyPlansPage() {
                                       {(Array.isArray(week.topics)
                                         ? week.topics
                                         : [week.topics]
-                                      ).map((topic, ti) => (
+                                      ).map((topic, ti) => {
+                                        let parsedTopic = topic;
+                                        if (typeof topic === "string") {
+                                          try {
+                                            parsedTopic = JSON.parse(topic);
+                                          } catch(e) {}
+                                        }
+                                        return (
                                         <div
                                           key={ti}
                                           className="flex items-start gap-2"
@@ -804,19 +811,27 @@ export default function StudentStudyPlansPage() {
                                             className="w-3 h-3 mt-0.5 flex-shrink-0"
                                             style={{ color: P.primary }}
                                           />
-                                          <p
-                                            style={{
-                                              fontSize: T.size.xs,
-                                              color: P.textSecondary,
-                                            }}
-                                          >
-                                            {typeof topic === "string"
-                                              ? topic
-                                              : topic.name ||
-                                                JSON.stringify(topic)}
-                                          </p>
+                                          <div className="flex-1">
+                                            <p
+                                              style={{
+                                                fontSize: T.size.xs,
+                                                color: P.textSecondary,
+                                                fontWeight: typeof parsedTopic !== "string" ? T.weight.bold : "normal"
+                                              }}
+                                            >
+                                              {typeof parsedTopic === "string"
+                                                ? parsedTopic
+                                                : parsedTopic.title || parsedTopic.name || "Study Session"}
+                                            </p>
+                                            {typeof parsedTopic !== "string" && parsedTopic.duration && (
+                                              <p style={{ fontSize: "10px", color: P.textMuted, marginTop: "2px" }}>
+                                                {parsedTopic.duration}
+                                              </p>
+                                            )}
+                                          </div>
                                         </div>
-                                      ))}
+                                      );
+                                      })}
                                     </div>
                                   ) : null}
                                 </div>
