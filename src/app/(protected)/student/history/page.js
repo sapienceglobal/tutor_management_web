@@ -37,8 +37,16 @@ export default function StudentTestsPage() {
                     api.get('/exams/student/history-all'),
                     api.get('/exams/student/all'),
                 ]);
-                if (historyRes.data?.success) setAttempts(historyRes.data.attempts || []);
-                if (examsRes.data?.success)   setAllExams(examsRes.data.exams || []);
+                if (historyRes.data?.success) {
+                    // Filter out practice set attempts from the history log
+                    const attemptsOnly = (historyRes.data.attempts || []).filter(a => a.examType !== 'practice');
+                    setAttempts(attemptsOnly);
+                }
+                if (examsRes.data?.success) {
+                    // Filter out practice sets from general exams list
+                    const examsOnly = (examsRes.data.exams || []).filter(e => e.type !== 'practice');
+                    setAllExams(examsOnly);
+                }
             } catch (err) {
                 console.error('Error fetching tests data:', err);
             } finally {

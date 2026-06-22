@@ -59,7 +59,10 @@ export default function StudentExamsPage() {
     const fetchExams = async () => {
       try {
         const res = await api.get("/exams/student/all");
-        if (res.data.success) setExams(res.data.exams);
+        if (res.data.success) {
+          // Filter out practice sets from main exams list
+          setExams(res.data.exams.filter(e => e.type !== "practice"));
+        }
       } catch (error) {
         console.error("Failed to load exams", error);
       } finally {
