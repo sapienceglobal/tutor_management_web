@@ -41,6 +41,52 @@ const getGradeInfo = (pct) => {
     return { grade: 'F', color: '#dc2626', bg: '#fee2e2', label: 'Needs Work' };
 };
 
+const formatTimeSpent = (seconds) => {
+    if (!seconds && seconds !== 0) return '—';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+};
+
+const isQuestionUnderReval = (qNum, reasonStr) => {
+    if (!reasonStr) return false;
+    const regex = new RegExp(`(?:Regarding\\s+Q|Question\\s+|Q)(${qNum})(?:\\b|:)`, 'i');
+    return regex.test(reasonStr);
+};
+
+function RankBadge({ rank }) {
+    const getRankStyle = () => {
+        switch (rank) {
+            case 1:
+                return { bg: 'linear-gradient(135deg, #F59E0B, #D97706)', border: '#F59E0B', text: '#FFFFFF', label: '1st' };
+            case 2:
+                return { bg: 'linear-gradient(135deg, #94A3B8, #64748B)', border: '#94A3B8', text: '#FFFFFF', label: '2nd' };
+            case 3:
+                return { bg: 'linear-gradient(135deg, #B45309, #78350F)', border: '#B45309', text: '#FFFFFF', label: '3rd' };
+            default:
+                return { bg: '#F1F5F9', border: 'rgba(98,103,233,0.12)', text: '#151656', label: `#${rank}` };
+        }
+    };
+
+    const style = getRankStyle();
+    
+    return (
+        <span className="flex items-center justify-center w-7 h-7 rounded-full text-xs font-black shadow-sm shrink-0 border"
+            style={{ 
+                background: style.bg, 
+                borderColor: style.border, 
+                color: style.text,
+                fontSize: rank <= 3 ? '10px' : '11px',
+            }}
+        >
+            {style.label}
+        </span>
+    );
+}
+
 // ─── Sub-components ──────────────────────────────────────────────────────────
 function MetaChip({ label, value }) {
     return (
@@ -198,7 +244,7 @@ const renderHighlightedText = (text, highlights) => {
                 {interval.phrase}
                 
                 {/* Tooltip */}
-                <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 scale-0 rounded-lg p-2.5 text-xs text-white opacity-0 transition-all duration-200 ease-out group-hover:scale-100 group-hover:opacity-100 shadow-lg text-left"
+                <span className="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-64 -translate-x-2 scale-0 rounded-lg p-2.5 text-xs text-white opacity-0 transition-all duration-200 ease-out group-hover:scale-100 group-hover:opacity-100 shadow-lg text-left"
                     style={{
                         backgroundColor: '#1E293B',
                         lineHeight: '1.4',
@@ -211,7 +257,7 @@ const renderHighlightedText = (text, highlights) => {
                         <span className="uppercase tracking-wider" style={{ fontSize: '9px' }}>{interval.type.replace('_', ' ')}</span>
                     </span>
                     <span>{interval.comment}</span>
-                    <span className="absolute top-full left-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-[3px] rotate-45" style={{ backgroundColor: '#1E293B' }} />
+                    <span className="absolute top-full left-6 h-1.5 w-1.5 -translate-x-1/2 -translate-y-[3px] rotate-45" style={{ backgroundColor: '#1E293B' }} />
                 </span>
             </span>
         );
@@ -245,11 +291,19 @@ function ExamResultPageClient() {
     const [expandedRow, setExpandedRow] = useState(null);
     const [qFilter, setQFilter] = useState('all');
 
+    // Leaderboard state
+    const [leaderboard, setLeaderboard] = useState([]);
+    const [currentStudentRank, setCurrentStudentRank] = useState(null);
+    const [totalParticipants, setTotalParticipants] = useState(0);
+    const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+
     // Re-evaluation state
     const [isRevalOpen, setIsRevalOpen] = useState(false);
     const [revalReason, setRevalReason] = useState('');
     const [revalLoading, setRevalLoading] = useState(false);
     const [hasRevalReq, setHasRevalReq] = useState(false);
+    const [revalRequest, setRevalRequest] = useState(null);
+    const [allAttempts, setAllAttempts] = useState([]);
 
     useEffect(() => {
         const fetchResult = async () => {
@@ -257,6 +311,9 @@ function ExamResultPageClient() {
                 router.push('/student/exams');
                 return;
             }
+            setHasRevalReq(false);
+            setRevalRequest(null);
+            setAllAttempts([]);
             try {
                 const res = await api.get(`/student/exams/attempt/${attemptId}`);
                 if (res.data?.success) {
@@ -266,15 +323,51 @@ function ExamResultPageClient() {
                     setExamTitle(attempt.examTitle || '');
                     setExamData({ duration: attempt.duration || null, totalMarks: attempt.totalMarks });
                     if (attempt.isPassed) triggerConfetti();
-                }
 
-                try {
-                    const revalRes = await api.get(`/student/exams/re-evaluation-requests?attemptId=${attemptId}`);
-                    if (revalRes.data?.success && revalRes.data.requests.length > 0) {
-                        setHasRevalReq(true);
+                    // Fetch all attempts for the exam
+                    try {
+                        const historyRes = await api.get('/student/exams/history-all');
+                        if (historyRes.data?.success) {
+                            const examAttempts = historyRes.data.attempts
+                                .filter(a => String(a.examId?._id || a.examId) === String(attempt.examId))
+                                .reverse(); // Oldest first (chronological order)
+                            setAllAttempts(examAttempts);
+                        }
+                    } catch (historyErr) {
+                        console.error('Failed to load exam history:', historyErr);
                     }
-                } catch (e) {
-                    // Ignore
+
+                    // Fetch exam leaderboard using the attempt's examId
+                    try {
+                        const lbRes = await api.get(`/student/exams/${attempt.examId}/leaderboard`);
+                        if (lbRes.data?.success) {
+                            setLeaderboard(lbRes.data.leaderboard || []);
+                            setCurrentStudentRank(lbRes.data.currentStudentRank);
+                            setTotalParticipants(lbRes.data.totalParticipants);
+                        }
+                    } catch (lbErr) {
+                        console.error('Failed to load exam leaderboard:', lbErr);
+                    } finally {
+                        setLeaderboardLoading(false);
+                    }
+
+                    // Fetch re-evaluation requests
+                    try {
+                        const revalRes = await api.get('/student/exams/re-evaluation-requests');
+                        if (revalRes.data?.success) {
+                            const reqForThisExam = revalRes.data.requests.find(r => 
+                                String(r.examId?._id || r.examId) === String(attempt.examId)
+                            );
+                            if (reqForThisExam) {
+                                setRevalRequest(reqForThisExam);
+                                if (String(reqForThisExam.attemptId) === String(attemptId)) {
+                                    setHasRevalReq(true);
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Failed to load re-evaluation requests:', e);
+                    }
                 }
             } catch {
                 toast.error('Failed to load result details');
@@ -307,6 +400,7 @@ function ExamResultPageClient() {
                 toast.success('Re-evaluation request submitted successfully!');
                 setIsRevalOpen(false);
                 setHasRevalReq(true);
+                setRevalRequest(res.data.request || null);
             }
         } catch (error) {
             toast.error(error?.response?.data?.message || 'Failed to submit request');
@@ -399,9 +493,21 @@ function ExamResultPageClient() {
                                 <MdWarning className="w-4 h-4" /> Request Re-evaluation
                             </button>
                         ) : (
-                            <div className="flex items-center gap-2 px-4 py-2 text-amber-600 bg-amber-50 border border-amber-200 shadow-sm"
-                                style={{ borderRadius: '10px', fontSize: T.size.base, fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>
-                                <MdWarning className="w-4 h-4" /> Re-evaluation Pending
+                            <div className="flex items-center gap-2 px-4 py-2 shadow-sm border"
+                                style={{
+                                    backgroundColor: revalRequest?.status === 'approved' ? C.successBg : revalRequest?.status === 'rejected' ? C.dangerBg : C.warningBg,
+                                    color: revalRequest?.status === 'approved' ? C.success : revalRequest?.status === 'rejected' ? C.danger : C.warning,
+                                    borderColor: revalRequest?.status === 'approved' ? C.successBorder : revalRequest?.status === 'rejected' ? C.dangerBorder : C.warningBorder,
+                                    borderRadius: '10px',
+                                    fontSize: T.size.base,
+                                    fontWeight: T.weight.bold,
+                                    fontFamily: T.fontFamily
+                                }}>
+                                <MdWarning className="w-4 h-4" /> {
+                                    revalRequest?.status === 'approved' ? 'Re-evaluation Approved' :
+                                    revalRequest?.status === 'rejected' ? 'Re-evaluation Rejected' :
+                                    'Re-evaluation Pending'
+                                }
                             </div>
                         )}
                     </div>
@@ -421,7 +527,45 @@ function ExamResultPageClient() {
                                     <MetaChip label="Date" value={new Date(result.submittedAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })} />
                                     <MetaChip label="Duration" value={`${examData?.duration || '-'} mins`} />
                                     <MetaChip label="Total Marks" value={result.totalMarks} />
-                                    <MetaChip label="Attempt" value={`#${result.attemptNumber || 1}`} />
+                                    {allAttempts.length > 1 ? (
+                                        <div className="flex items-center gap-1.5 px-3 py-1 border" 
+                                            style={{ backgroundColor: C.innerBg, borderColor: C.cardBorder, borderRadius: '8px' }}>
+                                            <span className="uppercase tracking-wider" style={{ fontFamily: T.fontFamily, fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted }}>Attempt:</span>
+                                            <select
+                                                value={attemptId || ""}
+                                                onChange={(e) => {
+                                                    window.location.href = `/student/exams/${result.examId}/result?attemptId=${e.target.value}`;
+                                                }}
+                                                style={{
+                                                    border: 'none',
+                                                    background: 'transparent',
+                                                    fontFamily: T.fontFamily,
+                                                    fontSize: T.size.base,
+                                                    fontWeight: T.weight.bold,
+                                                    color: C.heading,
+                                                    outline: 'none',
+                                                    cursor: 'pointer',
+                                                    paddingRight: '4px'
+                                                }}
+                                            >
+                                                {allAttempts.map((att, idx) => {
+                                                    const isThisAttemptUnderReval = revalRequest && String(revalRequest.attemptId) === String(att._id);
+                                                    const revalIndicator = isThisAttemptUnderReval
+                                                        ? (revalRequest.status === 'approved' ? ' (✅ Re-eval Approved)'
+                                                            : revalRequest.status === 'rejected' ? ' (❌ Re-eval Rejected)'
+                                                            : ' (⌛ Re-eval Pending)')
+                                                        : '';
+                                                    return (
+                                                        <option key={att._id} value={att._id}>
+                                                            #{idx + 1} ({att.score}/{result.totalMarks}){revalIndicator}
+                                                        </option>
+                                                    );
+                                                })}
+                                            </select>
+                                        </div>
+                                    ) : (
+                                        <MetaChip label="Attempt" value={`#${result.attemptNumber || 1}`} />
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -560,6 +704,7 @@ function ExamResultPageClient() {
                                             ? (item.correctAnswerText || getOptionText(item.options?.[item.correctIndex]) || '—')
                                             : 'Hidden by Instructor';
                                         const isExpanded = expandedRow === item._id || expandedRow === idx;
+                                        const isUnderReval = revalRequest && String(revalRequest.attemptId) === String(attemptId) && isQuestionUnderReval(item.questionNumber || idx + 1, revalRequest.reason);
 
                                         // Left border color for quick visual
                                         const rowBorderColor = status === 'correct' ? '#10b981' : status === 'incorrect' ? '#ef4444' : C.cardBorder;
@@ -574,9 +719,29 @@ function ExamResultPageClient() {
                                                     
                                                     {/* Q Info */}
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-3 mb-2">
+                                                        <div className="flex items-center gap-3 mb-2 flex-wrap">
                                                             <span className="text-xs uppercase tracking-wider" style={{ color: C.btnPrimary, fontWeight: T.weight.bold }}>Q{item.questionNumber || idx + 1}</span>
                                                             <StatusPill status={status} />
+                                                            {item.timeTaken !== undefined && (
+                                                                <span className="text-[10px] text-slate-500 font-semibold bg-slate-100 px-2 py-0.5 rounded flex items-center gap-1" style={{ fontFamily: T.fontFamily }}>
+                                                                    ⏱️ {Math.floor(item.timeTaken / 60) > 0 ? `${Math.floor(item.timeTaken / 60)}m ` : ''}${item.timeTaken % 60}s
+                                                                </span>
+                                                            )}
+                                                            {isUnderReval && (
+                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 border text-[10px]"
+                                                                    style={{
+                                                                        background: revalRequest.status === 'approved' ? C.successBg : revalRequest.status === 'rejected' ? C.dangerBg : C.warningBg,
+                                                                        color: revalRequest.status === 'approved' ? C.success : revalRequest.status === 'rejected' ? C.danger : C.warning,
+                                                                        borderColor: revalRequest.status === 'approved' ? C.successBorder : revalRequest.status === 'rejected' ? C.dangerBorder : C.warningBorder,
+                                                                        fontFamily: T.fontFamily,
+                                                                        fontWeight: T.weight.bold,
+                                                                        textTransform: 'uppercase',
+                                                                        letterSpacing: '0.5px',
+                                                                        borderRadius: '6px'
+                                                                    }}>
+                                                                    {revalRequest.status === 'approved' ? '✅ Re-evaluation Approved' : revalRequest.status === 'rejected' ? '❌ Re-evaluation Rejected' : '⌛ Re-evaluation Pending'}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                         <p className="leading-snug" style={{ fontSize: T.size.base, color: C.heading, fontWeight: T.weight.bold }}>
                                                             {item.question}
@@ -648,6 +813,47 @@ function ExamResultPageClient() {
                                                                         </div>
                                                                     </div>
                                                                 )}
+
+                                                                {/* Re-evaluation Details */}
+                                                                {isUnderReval && (
+                                                                    <div className="mt-4 p-4 border text-left"
+                                                                        style={{
+                                                                            backgroundColor: revalRequest.status === 'approved' ? C.successBg : revalRequest.status === 'rejected' ? C.dangerBg : C.warningBg,
+                                                                            borderColor: revalRequest.status === 'approved' ? C.successBorder : revalRequest.status === 'rejected' ? C.dangerBorder : C.warningBorder,
+                                                                            borderRadius: '10px'
+                                                                        }}>
+                                                                        <div className="flex items-center gap-2 mb-3">
+                                                                            <MdWarning className="w-4 h-4" style={{ color: revalRequest.status === 'approved' ? C.success : revalRequest.status === 'rejected' ? C.danger : C.warning }} />
+                                                                            <span style={{ fontSize: T.size.md, fontWeight: T.weight.black, color: C.heading }}>Re-evaluation Details</span>
+                                                                        </div>
+                                                                        <div className="space-y-3">
+                                                                            <div>
+                                                                                <span style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '1px' }}>Student Reason</span>
+                                                                                <p className="mt-1" style={{ fontSize: T.size.base, color: C.heading, fontWeight: T.weight.bold, whiteSpace: 'pre-wrap', margin: 0 }}>
+                                                                                    {revalRequest.reason}
+                                                                                </p>
+                                                                            </div>
+                                                                            {revalRequest.tutorRemarks && (
+                                                                                <div className="pt-2 border-t border-dashed border-black/10">
+                                                                                    <span style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '1px' }}>Tutor Remarks</span>
+                                                                                    <p className="mt-1" style={{ fontSize: T.size.base, color: C.heading, fontWeight: T.weight.bold, whiteSpace: 'pre-wrap', margin: 0 }}>
+                                                                                        {revalRequest.tutorRemarks}
+                                                                                    </p>
+                                                                                </div>
+                                                                            )}
+                                                                            {revalRequest.status === 'approved' && revalRequest.revisedScore !== undefined && (
+                                                                                <div className="pt-2 flex gap-4 text-xs font-semibold border-t border-dashed border-black/10">
+                                                                                    <div>
+                                                                                        <span className="text-slate-500">Original Score:</span> {revalRequest.originalScore} / {result.totalMarks}
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <span className="text-slate-500">Revised Score:</span> <span className="text-emerald-600 font-bold">{revalRequest.revisedScore} / {result.totalMarks}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                                 
                                                                 {/* Report Issue Button for Question */}
                                                                 {!hasRevalReq && (
@@ -677,6 +883,96 @@ function ExamResultPageClient() {
                     {/* Right 1/3 - Recommendations & Actions */}
                     <div className="space-y-6">
                         
+                        {/* Leaderboard Card */}
+                        <div className="p-6 shadow-sm border space-y-4" style={{ backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: '10px' }}>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 flex items-center justify-center border" style={{ backgroundColor: C.innerBg, borderColor: C.cardBorder, borderRadius: '10px' }}>
+                                        <MdEmojiEvents className="w-5 h-5 text-amber-500" />
+                                    </div>
+                                    <div>
+                                        <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.bold, color: C.heading, margin: 0 }}>Leaderboard</h3>
+                                        <p style={{ fontSize: '11px', color: C.textMuted, margin: 0 }}>Based on best attempt</p>
+                                    </div>
+                                </div>
+                                {currentStudentRank && (
+                                    <div className="px-2.5 py-1 text-[11px] font-black rounded-lg border bg-amber-50 text-amber-700 border-amber-200 uppercase tracking-wider">
+                                        Your Rank: #{currentStudentRank}
+                                    </div>
+                                )}
+                            </div>
+
+                            {leaderboardLoading ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <Loader2 className="w-6 h-6 animate-spin" style={{ color: C.btnPrimary }} />
+                                </div>
+                            ) : leaderboard.length === 0 ? (
+                                <p className="text-center py-6" style={{ fontSize: T.size.base, color: C.textMuted }}>No attempts recorded yet.</p>
+                            ) : (
+                                <div className="space-y-2.5 max-h-[350px] overflow-y-auto px-1.5 py-1">
+                                    {leaderboard.map((entry) => {
+                                        const isCurrent = entry.isCurrentUser;
+                                        return (
+                                            <div
+                                                key={entry.student._id}
+                                                className={`flex items-center justify-between p-3 border transition-all duration-200 hover:scale-[1.01]`}
+                                                style={{
+                                                    backgroundColor: isCurrent ? 'rgba(117, 115, 232, 0.08)' : C.innerBg,
+                                                    borderColor: isCurrent ? C.btnPrimary : C.cardBorder,
+                                                    borderRadius: '10px',
+                                                }}
+                                            >
+                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                    <RankBadge rank={entry.rank} />
+                                                    
+                                                    {/* Avatar */}
+                                                    <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 border border-slate-200 bg-slate-100 flex items-center justify-center">
+                                                        {entry.student.profileImage && entry.student.profileImage !== 'https://via.placeholder.com/150' ? (
+                                                            <img
+                                                                src={entry.student.profileImage}
+                                                                alt={entry.student.name}
+                                                                className="absolute inset-0 w-full h-full object-cover"
+                                                                onError={(e) => {
+                                                                    e.target.style.display = 'none';
+                                                                }}
+                                                            />
+                                                        ) : null}
+                                                        <span className="text-xs font-bold text-slate-600 uppercase">
+                                                            {entry.student.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?'}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Name */}
+                                                    <div className="min-w-0">
+                                                        <p className="truncate m-0" style={{ fontSize: T.size.base, fontWeight: isCurrent ? T.weight.black : T.weight.bold, color: C.heading }}>
+                                                            {entry.student.name}
+                                                            {isCurrent && <span className="ml-1 text-[10px] text-indigo-600 font-semibold">(You)</span>}
+                                                        </p>
+                                                        <p className="m-0 text-[10px] text-slate-500 font-medium">
+                                                            ⏱️ {formatTimeSpent(entry.timeSpent)}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Score */}
+                                                <div className="text-right shrink-0">
+                                                    <span style={{ fontSize: T.size.base, fontWeight: T.weight.black, color: C.heading }}>
+                                                        {entry.score}
+                                                    </span>
+                                                    <span style={{ fontSize: '10px', color: C.textMuted, fontWeight: T.weight.bold }}>
+                                                        /{result.totalMarks}
+                                                    </span>
+                                                    <p className="m-0 text-[10px] font-bold text-slate-500">
+                                                        {Math.round(entry.percentage)}%
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
                         {/* Perfect Score Celebration */}
                         {allResults.length > 0 && incorrectCount === 0 && unansweredCount === 0 && (
                             <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
@@ -737,7 +1033,7 @@ function ExamResultPageClient() {
                         <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-3">
                             <MdWarning className="text-amber-600 w-5 h-5 shrink-0 mt-0.5" />
                             <p className="text-sm text-amber-800 m-0 leading-relaxed font-medium">
-                                If you feel there was an error in grading, please provide a clear reason. Note that re-evaluation can take up to 48 hours and the tutor's decision will be final.
+                                If you feel there was an error in grading, please provide a clear reason. Note that re-evaluation can take up to 48 hours and the {"tutor's"} decision will be final.
                             </p>
                         </div>
                         

@@ -54,23 +54,50 @@ export default function StudentExamsPage() {
   const [scopeFilter, setScopeFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [todayCarouselIdx, setTodayCarouselIdx] = useState(0);
+  const [revalRequests, setRevalRequests] = useState([]);
+  const [revalLoading, setRevalLoading] = useState(false);
 
   useEffect(() => {
-    const fetchExams = async () => {
+    const fetchExamsAndRevals = async () => {
       try {
-        const res = await api.get("/exams/student/all");
-        if (res.data.success) {
+        const [examsRes, revalsRes] = await Promise.all([
+          api.get("/exams/student/all"),
+          api.get("/student/exams/re-evaluation-requests"),
+        ]);
+        if (examsRes.data.success) {
           // Filter out practice sets from main exams list
-          setExams(res.data.exams.filter(e => e.type !== "practice"));
+          setExams(examsRes.data.exams.filter(e => e.type !== "practice"));
+        }
+        if (revalsRes.data?.success) {
+          setRevalRequests(revalsRes.data.requests || []);
         }
       } catch (error) {
-        console.error("Failed to load exams", error);
+        console.error("Failed to load exams and re-evaluations", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchExams();
+    fetchExamsAndRevals();
   }, []);
+
+  useEffect(() => {
+    if (filter === "revaluation") {
+      const fetchRevals = async () => {
+        setRevalLoading(true);
+        try {
+          const res = await api.get("/student/exams/re-evaluation-requests");
+          if (res.data?.success) {
+            setRevalRequests(res.data.requests || []);
+          }
+        } catch (error) {
+          console.error("Failed to load re-evaluation requests", error);
+        } finally {
+          setRevalLoading(false);
+        }
+      };
+      fetchRevals();
+    }
+  }, [filter]);
 
   const getStatus = (exam) => {
     if (exam.isCompleted) return "completed";
@@ -180,6 +207,7 @@ export default function StudentExamsPage() {
     { key: "available", label: `Available (${stats.available})` },
     { key: "upcoming", label: `Upcoming (${stats.upcoming})` },
     { key: "completed", label: `Completed (${stats.completed})` },
+    { key: "revaluation", label: `Re-evaluations (${revalRequests.length})` },
   ];
 
   return (
@@ -341,7 +369,7 @@ export default function StudentExamsPage() {
                       margin: 0,
                     }}
                   >
-                    Today's Exams
+                    Today&apos;s Exams
                   </h2>
                   <p
                     style={{
@@ -634,23 +662,23 @@ export default function StudentExamsPage() {
           <div className="min-w-[900px]">
             {/* Header Row */}
             <div
-              className="grid grid-cols-[40px_2.5fr_1fr_1fr_1fr_120px] gap-4 px-6 py-4"
+              className={`grid gap-4 px-6 py-4 ${
+                filter === "revaluation"
+                  ? "grid-cols-[40px_2.5fr_1fr_1.5fr_1fr_120px]"
+                  : "grid-cols-[40px_2.5fr_1fr_1fr_1fr_120px]"
+              }`}
               style={{ borderBottom: `1px solid ${C.cardBorder}` }}
             >
-              {[
-                "#",
-                "Exam Details",
-                "Duration",
-                "Questions",
-                "Status",
-                "Action",
-              ].map((h, i) => (
+              {(filter === "revaluation"
+                ? ["#", "Exam Title", "Submitted On", "Request Details", "Status", "Action"]
+                : ["#", "Exam Details", "Duration", "Questions", "Status", "Action"]
+              ).map((h, i) => (
                 <span
                   key={i}
                   className={i === 5 ? "text-right" : ""}
                   style={{
                     fontSize: "10px",
-                    fontWeight: T.weight.bold, // Updated from black to bold
+                    fontWeight: T.weight.bold,
                     color: C.textMuted,
                     textTransform: "uppercase",
                     letterSpacing: "0.5px",
@@ -662,7 +690,213 @@ export default function StudentExamsPage() {
             </div>
 
             {/* List */}
-            {filteredExams.length > 0 ? (
+            {filter === "revaluation" ? (
+              revalLoading ? (
+                <div className="flex items-center justify-center py-20">
+                  <div
+                    className="w-10 h-10 rounded-full border-[3px] animate-spin"
+                    style={{
+                      borderColor: `${C.btnPrimary}30`,
+                      borderTopColor: C.btnPrimary,
+                    }}
+                  />
+                </div>
+              ) : revalRequests.length > 0 ? (
+                <div className="flex flex-col">
+                  {revalRequests.map((request, idx) => {
+                    const examTitle = request.examId?.title || "Unknown Exam";
+                    const examId = request.examId?._id || request.examId;
+                    const attemptId = request.attemptId;
+                    const revalCfg = {
+                      pending: {
+                        label: "Pending",
+                        bg: C.warningBg,
+                        text: C.warning,
+                        border: C.warningBorder,
+                      },
+                      approved: {
+                        label: "Approved",
+                        bg: C.successBg,
+                        text: C.success,
+                        border: C.successBorder,
+                      },
+                      rejected: {
+                        label: "Rejected",
+                        bg: C.dangerBg,
+                        text: C.danger,
+                        border: C.dangerBorder,
+                      },
+                    }[request.status] || {
+                      label: request.status,
+                      bg: C.innerBg,
+                      text: C.textMuted,
+                      border: C.cardBorder,
+                    };
+
+                    return (
+                      <div
+                        key={request._id}
+                        className="grid grid-cols-[40px_2.5fr_1fr_1.5fr_1fr_120px] gap-4 px-6 py-4 items-center transition-colors hover:bg-white/40"
+                        style={{
+                          borderBottom:
+                            idx !== revalRequests.length - 1
+                              ? `1px solid ${C.cardBorder}`
+                              : "none",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: T.size.base,
+                            fontWeight: T.weight.bold,
+                            color: C.textMuted,
+                          }}
+                        >
+                          {idx + 1}
+                        </span>
+
+                        <div className="min-w-0 pr-4">
+                          <p
+                            className="truncate"
+                            style={{
+                              fontSize: T.size.md,
+                              fontWeight: T.weight.bold,
+                              color: C.heading,
+                              margin: 0,
+                            }}
+                          >
+                            {examTitle}
+                          </p>
+                        </div>
+
+                        <div
+                          style={{
+                            fontSize: T.size.base,
+                            fontWeight: T.weight.bold,
+                            color: C.heading,
+                          }}
+                        >
+                          {new Date(request.createdAt).toLocaleDateString("en-IN", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </div>
+
+                        <div className="min-w-0 pr-4 text-left">
+                          <p
+                            className="truncate"
+                            title={request.reason}
+                            style={{
+                              fontSize: T.size.base,
+                              fontWeight: T.weight.semibold,
+                              color: C.text,
+                              margin: 0,
+                            }}
+                          >
+                            <strong>Reason:</strong> {request.reason}
+                          </p>
+                          {request.tutorRemarks && (
+                            <p
+                              className="truncate"
+                              title={request.tutorRemarks}
+                              style={{
+                                fontSize: T.size.xs,
+                                color: C.textMuted,
+                                margin: "2px 0 0 0",
+                              }}
+                            >
+                              <strong>Tutor:</strong> {request.tutorRemarks}
+                            </p>
+                          )}
+                          {request.status === "approved" && request.revisedScore !== undefined && (
+                            <p
+                              style={{
+                                fontSize: "11px",
+                                color: C.success,
+                                fontWeight: T.weight.bold,
+                                margin: "2px 0 0 0",
+                              }}
+                            >
+                              Revised Score: {request.revisedScore} / {request.examId?.totalMarks || ""}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <span
+                            style={{
+                              fontSize: "10px",
+                              fontWeight: T.weight.bold,
+                              padding: "4px 10px",
+                              borderRadius: R.full,
+                              textTransform: "uppercase",
+                              backgroundColor: revalCfg.bg,
+                              color: revalCfg.text,
+                              border: `1px solid ${revalCfg.border}`,
+                            }}
+                          >
+                            {revalCfg.label}
+                          </span>
+                        </div>
+
+                        <div className="text-right">
+                          <Link
+                            href={`/student/exams/${examId}/result?attemptId=${attemptId}`}
+                            className="text-decoration-none"
+                          >
+                            <button
+                              className="h-9 w-full cursor-pointer transition-colors hover:bg-slate-50 shadow-sm border"
+                              style={{
+                                backgroundColor: C.surfaceWhite,
+                                borderColor: C.cardBorder,
+                                color: C.btnPrimary,
+                                fontSize: T.size.xs,
+                                fontWeight: T.weight.bold,
+                                fontFamily: T.fontFamily,
+                                borderRadius: "10px",
+                              }}
+                            >
+                              Scorecard
+                            </button>
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div
+                  className="text-center py-20 flex flex-col items-center"
+                  style={{ backgroundColor: C.outerCard }}
+                >
+                  <MdArticle
+                    size={48}
+                    color={C.textMuted}
+                    style={{ opacity: 0.3, marginBottom: "16px" }}
+                  />
+                  <p
+                    style={{
+                      fontSize: T.size.md,
+                      fontWeight: T.weight.bold,
+                      color: C.heading,
+                      margin: "0 0 4px 0",
+                    }}
+                  >
+                    No re-evaluations found
+                  </p>
+                  <p
+                    style={{
+                      fontSize: T.size.base,
+                      fontWeight: T.weight.semibold,
+                      color: C.textMuted,
+                      margin: 0,
+                    }}
+                  >
+                    You haven&apos;t requested re-evaluation for any exam.
+                  </p>
+                </div>
+              )
+            ) : filteredExams.length > 0 ? (
               <div className="flex flex-col">
                 {filteredExams.map((exam, idx) => {
                   const status = getStatus(exam);

@@ -13,13 +13,15 @@ import {
     MdPerson,
     MdArticle,
     MdCheck,
-    MdHourglassEmpty
+    MdHourglassEmpty,
+    MdVisibility
 } from 'react-icons/md';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { C, T, S, R } from '@/constants/studentTokens';
 import StatCard from '@/components/StatCard'; // Global StatCard component
+import AttemptDetailsModal from '@/components/tutor/AttemptDetailsModal';
 
 // Focus Handlers
 const onFocusHandler = e => {
@@ -62,6 +64,9 @@ export default function TutorReevaluationRequestsPage() {
     const [searchInput, setSearchInput] = useState('');
     const [search, setSearch] = useState('');
     const [examIdFilter, setExamIdFilter] = useState('');
+    const [exams, setExams] = useState([]);
+    const [selectedAttemptId, setSelectedAttemptId] = useState(null);
+    const [selectedExamTitle, setSelectedExamTitle] = useState('');
     const [page, setPage] = useState(1);
     const [drafts, setDrafts] = useState({});
     const [processingId, setProcessingId] = useState(null);
@@ -76,6 +81,18 @@ export default function TutorReevaluationRequestsPage() {
         const params = new URLSearchParams(window.location.search);
         const examId = params.get('examId');
         if (examId) setExamIdFilter(examId);
+
+        const fetchExams = async () => {
+            try {
+                const res = await api.get('/exams/tutor/all');
+                if (res?.data?.success) {
+                    setExams(res.data.exams || []);
+                }
+            } catch (error) {
+                console.error('Error fetching tutor exams:', error);
+            }
+        };
+        fetchExams();
     }, []);
 
     useEffect(() => {
@@ -85,7 +102,7 @@ export default function TutorReevaluationRequestsPage() {
     useEffect(() => {
         fetchRequests(loading);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [statusFilter, search, page]);
+    }, [statusFilter, search, examIdFilter, page]);
 
     const queryParams = useMemo(() => ({
         status: statusFilter !== 'all' ? statusFilter : undefined,
@@ -219,7 +236,18 @@ export default function TutorReevaluationRequestsPage() {
                         onFocus={onFocusHandler} onBlur={onBlurHandler}
                     />
                 </div>
-                <div className="w-full md:w-auto shrink-0">
+                <div className="w-full md:w-auto shrink-0 flex flex-col sm:flex-row gap-3">
+                    <select
+                        value={examIdFilter}
+                        onChange={(e) => setExamIdFilter(e.target.value)}
+                        style={{ ...baseInputStyle, backgroundColor: C.surfaceWhite, width: '100%', minWidth: '200px', cursor: 'pointer' }}
+                        onFocus={onFocusHandler} onBlur={onBlurHandler}
+                    >
+                        <option value="">All Exams</option>
+                        {exams.filter(e => e?.type !== 'practice').map((exam) => (
+                            <option key={exam._id} value={exam._id}>{exam.title}</option>
+                        ))}
+                    </select>
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
@@ -247,9 +275,10 @@ export default function TutorReevaluationRequestsPage() {
                         const currentScore = item.originalScore ?? item.revisedScore ?? 0;
                         const revisedScore = item.revisedScore ?? currentScore;
                         const draft = drafts[item._id] || {};
+                        const attemptNo = item.attemptId?.attemptNumber;
 
                         return (
-                            <div key={item._id} className="p-6 transition-all" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
+                            <div key={item._id} className="p-6 transition-all duration-200 hover:shadow-md" style={{ backgroundColor: C.cardBg, borderRadius: R['2xl'], border: `1px solid ${C.cardBorder}`, boxShadow: S.card }}>
                                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
                                     <div>
                                         <h3 style={{ fontSize: T.size.lg, fontWeight: T.weight.black, color: C.heading, margin: '0 0 6px 0' }}>{examTitle}</h3>
@@ -260,9 +289,16 @@ export default function TutorReevaluationRequestsPage() {
                                             <span style={{ fontSize: T.size.xs, fontWeight: T.weight.medium, color: C.textMuted }}>{studentEmail}</span>
                                         </div>
                                     </div>
-                                    <span className="inline-flex items-center gap-1.5 shrink-0" style={{ fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wider, padding: '4px 10px', borderRadius: '8px', backgroundColor: status.bg, color: status.color, border: `1px solid ${status.border}` }}>
-                                        <StatusIcon size={14} /> {status.label}
-                                    </span>
+                                    <div className="flex items-center gap-2.5 shrink-0">
+                                        {attemptNo !== undefined && (
+                                            <span className="inline-flex items-center" style={{ fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wider, padding: '4px 10px', borderRadius: '8px', backgroundColor: `${C.btnPrimary}12`, color: C.btnPrimary, border: `1px solid ${C.btnPrimary}25` }}>
+                                                Attempt #{attemptNo}
+                                            </span>
+                                        )}
+                                        <span className="inline-flex items-center gap-1.5 shrink-0" style={{ fontSize: '10px', fontWeight: T.weight.black, textTransform: 'uppercase', letterSpacing: T.tracking.wider, padding: '4px 10px', borderRadius: '8px', backgroundColor: status.bg, color: status.color, border: `1px solid ${status.border}` }}>
+                                            <StatusIcon size={14} /> {status.label}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -281,7 +317,29 @@ export default function TutorReevaluationRequestsPage() {
                                 </div>
 
                                 <div className="p-4 mb-6" style={{ backgroundColor: C.surfaceWhite, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}>
-                                    <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wider, margin: '0 0 6px 0' }}>Student Reason</p>
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-2">
+                                        <p style={{ fontSize: '10px', fontWeight: T.weight.bold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: T.tracking.wider, margin: 0 }}>Student Reason</p>
+                                        <button
+                                            onClick={() => {
+                                                setSelectedAttemptId(item.attemptId?._id || item.attemptId);
+                                                setSelectedExamTitle(examTitle);
+                                            }}
+                                            className="flex items-center gap-1.5 px-3 py-1 cursor-pointer transition-colors border shadow-sm"
+                                            style={{
+                                                backgroundColor: C.innerBg,
+                                                borderColor: C.cardBorder,
+                                                color: C.btnPrimary,
+                                                borderRadius: '6px',
+                                                fontSize: '11px',
+                                                fontWeight: T.weight.bold,
+                                                fontFamily: T.fontFamily
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.backgroundColor = C.btnViewAllBg}
+                                            onMouseLeave={e => e.currentTarget.style.backgroundColor = C.innerBg}
+                                        >
+                                            <MdVisibility size={14} /> Review Scorecard
+                                        </button>
+                                    </div>
                                     <p style={{ fontSize: T.size.sm, fontWeight: T.weight.semibold, color: C.text, margin: 0, lineHeight: 1.5 }}>{item.reason}</p>
                                 </div>
 
@@ -356,6 +414,18 @@ export default function TutorReevaluationRequestsPage() {
                         </button>
                     </div>
                 </div>
+            )}
+
+            {/* Re-usable Attempt Scorecard Modal */}
+            {selectedAttemptId && (
+                <AttemptDetailsModal
+                    attemptId={selectedAttemptId}
+                    examTitle={selectedExamTitle}
+                    onClose={() => {
+                        setSelectedAttemptId(null);
+                        setSelectedExamTitle('');
+                    }}
+                />
             )}
         </div>
     );

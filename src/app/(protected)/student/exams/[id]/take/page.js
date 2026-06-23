@@ -93,6 +93,7 @@ export default function TakeExamPage({ params }) {
   const [showQuestionList, setShowQuestionList] = useState(false);
 
   const attemptIdRef = useRef(null);
+  const questionTimesRef = useRef({});
   const isExamRunning = step === "exam";
 
   // ── Focus Mode Effect (Scroll Lock) ──────────────────────────────────
@@ -613,6 +614,9 @@ export default function TakeExamPage({ params }) {
                 setSelections(parsed.selections || {});
                 setCurrentQuestionIndex(parsed.currentQuestionIndex || 0);
                 setVisitedQuestions(new Set(parsed.visitedQuestions || [0]));
+                if (parsed.questionTimes) {
+                  questionTimesRef.current = parsed.questionTimes;
+                }
 
                 // 🔥 YAHAN CHANGE HUA HAI: examEndTime check
                 const savedEndTime = parsed.examEndTime;
@@ -776,6 +780,7 @@ export default function TakeExamPage({ params }) {
             visitedQuestions: [...visitedQuestions],
             examEndTime: Date.now() + timeLeftRef.current * 1000,
             timeLeft: timeLeftRef.current,
+            questionTimes: questionTimesRef.current,
             savedAt: Date.now(),
           }),
         );
@@ -822,6 +827,16 @@ export default function TakeExamPage({ params }) {
     }, 1000);
     return () => clearInterval(timer);
   }, [loading, exam, isAdaptive, step]);
+
+  // ── Question Time Tracker ──
+  useEffect(() => {
+    if (loading || !exam || step !== "exam") return;
+    const timer = setInterval(() => {
+      const currentKey = isAdaptive ? (adaptiveQuestion?._id || 'adaptive') : currentQuestionIndex;
+      questionTimesRef.current[currentKey] = (questionTimesRef.current[currentKey] || 0) + 1;
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [loading, exam, step, isAdaptive, currentQuestionIndex, adaptiveQuestion]);
 
   // ── Visited questions ────────────────────────────────────────────────
   useEffect(() => {
@@ -926,19 +941,25 @@ export default function TakeExamPage({ params }) {
     setSubmitting(true);
     try {
       const answersToSubmit = isAdaptive
-        ? adaptiveAnswered
-        : Object.entries(selections).map(([qIdx, data]) => ({
-            questionId: exam.questions[Number(qIdx)]._id,
-            selectedOption: data.optionIndex ?? -1,
-            selectedOptionText:
-              data.optionIndex !== undefined && data.optionIndex !== null
-                ? exam.questions[Number(qIdx)]?.options?.[data.optionIndex]
-                    ?.text || null
-                : null,
-            numericAnswer: data.numericAnswer || null,
-            matchAnswers: data.matchAnswers || null,
-            textAnswer: data.textAnswer || "",
-          }));
+        ? adaptiveAnswered.map((ans) => ({
+            ...ans,
+            timeTaken: questionTimesRef.current[ans.questionId] || 0,
+          }))
+        : exam.questions.map((q, qIdx) => {
+            const data = selections[qIdx] || {};
+            return {
+              questionId: q._id,
+              selectedOption: data.optionIndex ?? -1,
+              selectedOptionText:
+                data.optionIndex !== undefined && data.optionIndex !== null
+                  ? q.options?.[data.optionIndex]?.text || null
+                  : null,
+              numericAnswer: data.numericAnswer || null,
+              matchAnswers: data.matchAnswers || null,
+              textAnswer: data.textAnswer || "",
+              timeTaken: questionTimesRef.current[qIdx] || 0,
+            };
+          });
 
       const timeSpent = exam.duration * 60 - timeLeft;
       const res = await api.post(`/student/exams/${id}/submit`, {
@@ -1293,7 +1314,7 @@ export default function TakeExamPage({ params }) {
                   style={{ accentColor: "var(--theme-primary)" }}
                 />
                 <span className="text-sm text-slate-700 font-medium">
-                  I've read all instructions carefully and have understood them
+                  {"I've read all instructions carefully and have understood them"}
                 </span>
               </label>
               <div className="flex items-center justify-end gap-3 pt-1">
