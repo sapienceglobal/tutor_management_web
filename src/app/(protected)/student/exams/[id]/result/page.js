@@ -369,8 +369,9 @@ function ExamResultPageClient() {
                         console.error('Failed to load re-evaluation requests:', e);
                     }
                 }
-            } catch {
-                toast.error('Failed to load result details');
+            } catch (error) {
+                const msg = error.response?.data?.message || 'Failed to load result details';
+                toast.error(msg);
                 router.push('/student/exams');
             } finally {
                 setLoading(false);

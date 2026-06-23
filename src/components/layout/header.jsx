@@ -392,26 +392,6 @@ export function Header({ onMenuClick, onSidebarCollapse, isSidebarCollapsed, ins
                         <MdFullscreen style={{ width: 20, height: 20 }} />
                     </button>
 
-                    <button className="hidden lg:flex items-center gap-1.5 px-2.5 h-9 transition-colors border-none cursor-pointer"
-                        style={{ backgroundColor: 'transparent', color: C.textMuted, borderRadius: '10px' }}
-                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
-                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
-                        <img src="https://flagcdn.com/w20/us.png" alt="English" className="w-4 h-3 object-cover rounded-sm" />
-                        <span style={{ fontFamily: T.fontFamily, fontSize: '13px', fontWeight: T.weight.medium }}>EN</span>
-                    </button>
-
-                    {/* Mail */}
-                    <div className="relative hidden sm:block">
-                        <button className="flex items-center justify-center p-2 transition-colors border-none cursor-pointer"
-                            style={{ backgroundColor: 'transparent', color: C.textMuted, borderRadius: '10px' }}
-                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
-                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
-                            <MdMail style={{ width: 20, height: 20 }} />
-                            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-[1.5px] border-white"
-                                style={{ backgroundColor: C.btnPrimary }} />
-                        </button>
-                    </div>
-
                     {/* Bell */}
                     <div className="relative">
                         <button className="flex items-center justify-center p-2 transition-colors border-none cursor-pointer"
@@ -423,13 +403,6 @@ export function Header({ onMenuClick, onSidebarCollapse, isSidebarCollapsed, ins
                                 style={{ backgroundColor: C.btnPrimary }} />
                         </button>
                     </div>
-
-                    <button className="hidden lg:flex items-center justify-center p-2 transition-colors border-none cursor-pointer"
-                        style={{ backgroundColor: 'transparent', color: C.textMuted, borderRadius: '10px' }}
-                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
-                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
-                        <MdGridView style={{ width: 20, height: 20 }} />
-                    </button>
 
                     <div className="w-px h-6 mx-1 hidden sm:block" style={{ backgroundColor: C.cardBorder }} />
 

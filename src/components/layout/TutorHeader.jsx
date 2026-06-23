@@ -312,16 +312,10 @@ export function TutorHeader({ onMenuClick, onSidebarCollapse, isSidebarCollapsed
                     <MdFullscreen style={{ width: 20, height: 20 }} />
                 </button>
 
-                <button className="hidden lg:flex items-center justify-center gap-1.5 px-2.5 h-9 transition-colors border-none cursor-pointer"
-                    style={{ backgroundColor: 'transparent', color: C.textMuted, borderRadius: '10px' }}
-                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
-                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
-                    <img src="https://flagcdn.com/w20/us.png" alt="English" className="w-4 h-3 object-cover rounded-sm" />
-                    <span style={{ fontSize: '13px', fontWeight: T.weight.bold, fontFamily: T.fontFamily }}>EN</span>
-                </button>
-
                 <div className="relative hidden sm:block">
-                    <button className="flex items-center justify-center w-9 h-9 transition-colors border-none cursor-pointer"
+                    <button 
+                        onClick={() => router.push('/tutor/messages')}
+                        className="flex items-center justify-center w-9 h-9 transition-colors border-none cursor-pointer"
                         style={{ backgroundColor: 'transparent', color: C.textMuted, borderRadius: '10px' }}
                         onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
                         onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
@@ -349,13 +343,6 @@ export function TutorHeader({ onMenuClick, onSidebarCollapse, isSidebarCollapsed
                         )}
                     </button>
                 </div>
-
-                <button className="hidden lg:flex items-center justify-center w-9 h-9 transition-colors border-none cursor-pointer"
-                    style={{ backgroundColor: 'transparent', color: C.textMuted, borderRadius: '10px' }}
-                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
-                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
-                    <MdGridView style={{ width: 18, height: 18 }} />
-                </button>
 
                 <div className="w-px h-6 mx-1 hidden sm:block" style={{ backgroundColor: C.cardBorder }} />
 

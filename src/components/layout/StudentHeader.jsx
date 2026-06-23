@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
     MdNotifications, MdSearch, MdMenu, MdKeyboardArrowDown, MdLogout, MdPerson,
-    MdSettings, MdChevronLeft, MdChevronRight, MdClose
+    MdSettings, MdChevronLeft, MdChevronRight, MdClose, MdMail
 } from 'react-icons/md';
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -458,6 +458,19 @@ export function StudentHeader({ user, institute, onLogout, onMenuClick, onSideba
                     </div>
 
                     <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {/* Messages */}
+                        <div className="relative hidden sm:block">
+                            <button onClick={() => router.push('/student/messages')}
+                                className="flex items-center justify-center p-2 transition-colors border-none cursor-pointer"
+                                style={{ backgroundColor: 'transparent', color: C.textMuted, borderRadius: '10px' }}
+                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.innerBg; e.currentTarget.style.color = C.heading; }}
+                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>
+                                <MdMail style={{ width: 20, height: 20 }} />
+                                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-[1.5px] border-white"
+                                    style={{ backgroundColor: C.btnPrimary }} />
+                            </button>
+                        </div>
+
                         {/* Notifications */}
                         <button onClick={() => setShowNotifs(!showNotifs)}
                             className="relative p-2 transition-colors border-none cursor-pointer"

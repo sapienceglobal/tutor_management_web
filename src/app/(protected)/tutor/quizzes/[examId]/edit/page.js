@@ -539,7 +539,7 @@ export default function EditExamPage({ params }) {
                         </div>
 
                         {/* Duration + Pass % */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className={examData.type === 'practice' ? "grid grid-cols-1 gap-4" : "grid grid-cols-1 md:grid-cols-2 gap-4"}>
                             <div className="space-y-2">
                                 <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
                                     Duration (min)
@@ -555,38 +555,42 @@ export default function EditExamPage({ params }) {
                                     <MdAccessTime className="absolute right-3 top-1/2 -translate-y-1/2" style={{ width: 16, height: 16, color: C.text }} />
                                 </div>
                             </div>
-                            <div className="space-y-2">
-                                <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
-                                    Pass Percentage
-                                </label>
-                                <div className="relative">
-                                    <input
-                                        type="number" min="0" max="100"
-                                        value={examData.passingPercentage}
-                                        onChange={e => setExamData({ ...examData, passingPercentage: Number(e.target.value) || 0 })}
-                                        style={{ ...baseInputStyle, paddingRight: '36px' }}
-                                        onFocus={onFocusHandler} onBlur={onBlurHandler}
-                                    />
-                                    <span className="absolute right-3 top-1/2 -translate-y-1/2" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.text }}>%</span>
+                            {examData.type !== 'practice' && (
+                                <div className="space-y-2">
+                                    <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
+                                        Pass Percentage
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type="number" min="0" max="100"
+                                            value={examData.passingPercentage}
+                                            onChange={e => setExamData({ ...examData, passingPercentage: Number(e.target.value) || 0 })}
+                                            style={{ ...baseInputStyle, paddingRight: '36px' }}
+                                            onFocus={onFocusHandler} onBlur={onBlurHandler}
+                                        />
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2" style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold, color: C.text }}>%</span>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* Derived Passing Marks */}
-                        <div className="space-y-2">
-                            <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
-                                Passing Marks (Auto)
-                            </label>
-                            <div
-                                className="flex items-center justify-between"
-                                style={{ ...baseInputStyle, backgroundColor: C.innerBg, opacity: 0.8 }}
-                            >
-                                <span style={{ fontFamily: T.fontFamily, fontWeight: T.weight.bold, color: C.heading }}>{derivedPassingMarks}</span>
+                        {examData.type !== 'practice' && (
+                            <div className="space-y-2">
+                                <label style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
+                                    Passing Marks (Auto)
+                                </label>
+                                <div
+                                    className="flex items-center justify-between"
+                                    style={{ ...baseInputStyle, backgroundColor: C.innerBg, opacity: 0.8 }}
+                                >
+                                    <span style={{ fontFamily: T.fontFamily, fontWeight: T.weight.bold, color: C.heading }}>{derivedPassingMarks}</span>
+                                </div>
+                                <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, fontWeight: T.weight.medium, margin: 0 }}>
+                                    Derived from pass % and {totalQuestionMarks} total marks.
+                                </p>
                             </div>
-                            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: C.text, fontWeight: T.weight.medium, margin: 0 }}>
-                                Derived from pass % and {totalQuestionMarks} total marks.
-                            </p>
-                        </div>
+                        )}
                     </div>
 
                     {/* Audience */}
@@ -612,81 +616,156 @@ export default function EditExamPage({ params }) {
                     </div>
 
                     {/* Advanced Settings */}
-                    <div className="p-6" style={sectionCard}>
-                        <CardSectionHeader title="Advanced Settings" />
+                    {examData.type !== 'practice' ? (
+                        <>
+                            <div className="p-6" style={sectionCard}>
+                                <CardSectionHeader title="Advanced Settings" />
 
-                        <SettingRow label="Show Result Immediately"   desc="Show score after submission"        checked={examData.showResultImmediately} onChange={v => setExamData({ ...examData, showResultImmediately: v })} />
-                        <SettingRow label="Show Correct Answers"      desc="Display answer key in results"      checked={examData.showCorrectAnswers}    onChange={v => setExamData({ ...examData, showCorrectAnswers: v })} />
-                        <SettingRow label="Hide Detailed Solutions"   desc="Do not show explanations to students" checked={examData.hideSolutions}       onChange={v => setExamData({ ...examData, hideSolutions: v })} />
-                        <SettingRow label="Negative Marking"          desc="Deduct 25% points for incorrect answers" checked={examData.negativeMarking}       onChange={v => setExamData({ ...examData, negativeMarking: v })} />
-                        <SettingRow label="Shuffle Questions"          desc="Randomize question order"           checked={examData.shuffleQuestions}      onChange={v => setExamData({ ...examData, shuffleQuestions: v })} />
-                        <SettingRow label="Shuffle Options"            desc="Randomize answer choices"           checked={examData.shuffleOptions}        onChange={v => setExamData({ ...examData, shuffleOptions: v })} />
-                        <SettingRow label="Allow Retakes"              desc="Enable multiple attempts"           checked={examData.allowRetake}           onChange={v => setExamData({ ...examData, allowRetake: v })} />
-                        <SettingRow label="Free Exam"                  desc="Students can attempt without enrollment/payment" checked={examData.isFree}  onChange={v => setExamData({ ...examData, isFree: v })} />
+                                <SettingRow label="Show Result Immediately"   desc="Show score after submission"        checked={examData.showResultImmediately} onChange={v => setExamData({ ...examData, showResultImmediately: v })} />
+                                <SettingRow label="Show Correct Answers"      desc="Display answer key in results"      checked={examData.showCorrectAnswers}    onChange={v => setExamData({ ...examData, showCorrectAnswers: v })} />
+                                <SettingRow label="Hide Detailed Solutions"   desc="Do not show explanations to students" checked={examData.hideSolutions}       onChange={v => setExamData({ ...examData, hideSolutions: v })} />
+                                <SettingRow label="Negative Marking"          desc="Deduct 25% points for incorrect answers" checked={examData.negativeMarking}       onChange={v => setExamData({ ...examData, negativeMarking: v })} />
+                                <SettingRow label="Shuffle Questions"          desc="Randomize question order"           checked={examData.shuffleQuestions}      onChange={v => setExamData({ ...examData, shuffleQuestions: v })} />
+                                <SettingRow label="Shuffle Options"            desc="Randomize answer choices"           checked={examData.shuffleOptions}        onChange={v => setExamData({ ...examData, shuffleOptions: v })} />
+                                <SettingRow label="Allow Retakes"              desc="Enable multiple attempts"           checked={examData.allowRetake}           onChange={v => setExamData({ ...examData, allowRetake: v })} />
+                                <SettingRow label="Free Exam"                  desc="Students can attempt without enrollment/payment" checked={examData.isFree}  onChange={v => setExamData({ ...examData, isFree: v })} />
 
-                        {examData.allowRetake && (
-                            <div
-                                className="mb-3 p-4 flex items-center justify-between"
-                                style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}
-                            >
-                                <label style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}>Max Attempts</label>
-                                <input
-                                    type="number" min="1"
-                                    value={examData.maxAttempts}
-                                    onChange={e => setExamData({ ...examData, maxAttempts: Number(e.target.value) })}
-                                    style={{ ...baseInputStyle, width: '100px', textAlign: 'center', fontWeight: T.weight.bold, color: C.btnPrimary }}
-                                    onFocus={onFocusHandler} onBlur={onBlurHandler}
-                                />
-                            </div>
-                        )}
+                                {examData.allowRetake && (
+                                    <div
+                                        className="mb-3 p-4 flex items-center justify-between"
+                                        style={{ backgroundColor: C.innerBg, borderRadius: '10px', border: `1px solid ${C.cardBorder}` }}
+                                    >
+                                        <label style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}>Max Attempts</label>
+                                        <input
+                                            type="number" min="1"
+                                            value={examData.maxAttempts}
+                                            onChange={e => setExamData({ ...examData, maxAttempts: Number(e.target.value) })}
+                                            style={{ ...baseInputStyle, width: '100px', textAlign: 'center', fontWeight: T.weight.bold, color: C.btnPrimary }}
+                                            onFocus={onFocusHandler} onBlur={onBlurHandler}
+                                        />
+                                    </div>
+                                )}
 
-                        {/* Schedule */}
-                        <div className="mt-5 pt-4" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
-                            <label
-                                className="flex items-center gap-2 mb-4"
-                                style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}
-                            >
-                                <MdCalendarMonth style={{ width: 16, height: 16, color: C.btnPrimary }} />
-                                Schedule (Optional)
-                            </label>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <span style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
-                                        Start Date & Time
-                                    </span>
-                                    <input
-                                        type="datetime-local"
-                                        value={examData.startDate}
-                                        onChange={e => setExamData({ ...examData, startDate: e.target.value })}
-                                        style={baseInputStyle}
-                                        onFocus={onFocusHandler} onBlur={onBlurHandler}
-                                    />
+                                {/* Schedule */}
+                                <div className="mt-5 pt-4" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+                                    <label
+                                        className="flex items-center gap-2 mb-4"
+                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.semibold, color: C.heading }}
+                                    >
+                                        <MdCalendarMonth style={{ width: 16, height: 16, color: C.btnPrimary }} />
+                                        Schedule (Optional)
+                                    </label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <span style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
+                                                Start Date & Time
+                                            </span>
+                                            <input
+                                                type="datetime-local"
+                                                value={examData.startDate}
+                                                onChange={e => setExamData({ ...examData, startDate: e.target.value })}
+                                                style={baseInputStyle}
+                                                onFocus={onFocusHandler} onBlur={onBlurHandler}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <span style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
+                                                End Date & Time
+                                            </span>
+                                            <input
+                                                type="datetime-local"
+                                                value={examData.endDate}
+                                                onChange={e => setExamData({ ...examData, endDate: e.target.value })}
+                                                style={baseInputStyle}
+                                                onFocus={onFocusHandler} onBlur={onBlurHandler}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <span style={{ display: 'block', fontFamily: T.fontFamily, fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.text, textTransform: 'uppercase', letterSpacing: T.tracking.wider }}>
-                                        End Date & Time
-                                    </span>
-                                    <input
-                                        type="datetime-local"
-                                        value={examData.endDate}
-                                        onChange={e => setExamData({ ...examData, endDate: e.target.value })}
-                                        style={baseInputStyle}
-                                        onFocus={onFocusHandler} onBlur={onBlurHandler}
-                                    />
+                            </div>
+
+                            {/* Security */}
+                            <FeatureGate featureName="aiAssessment" mode="lock">
+                                <div className="p-6" style={sectionCard}>
+                                    <CardSectionHeader title="Security & Integrity" icon={MdShield} iconColor={C.danger} />
+                                    <SettingRow label="Visual AI Proctoring" desc="Requires webcam. Flags absence & multiple faces."    checked={examData.isProctoringEnabled ?? false} onChange={v => setExamData({ ...examData, isProctoringEnabled: v })} />
+                                    <SettingRow label="Audio & Gaze Proctoring" desc="Requires mic. Flags noise & looking away/down." checked={examData.isAudioProctoringEnabled ?? false} onChange={v => setExamData({ ...examData, isAudioProctoringEnabled: v })} />
+                                    <SettingRow label="Strict Environment Lock"             desc="Aggressively tracks and flags tab switching."      checked={examData.strictTabSwitching  ?? false} onChange={v => setExamData({ ...examData, strictTabSwitching: v })} />
+                                </div>
+                            </FeatureGate>
+                        </>
+                    ) : (
+                        <>
+                            {/* Practice Set Info Card */}
+                            <div className="p-6" style={sectionCard}>
+                                <div
+                                  style={{
+                                    backgroundColor: C.innerBg,
+                                    borderRadius: R['2xl'],
+                                    padding: 24,
+                                    border: `1px dashed ${C.btnPrimary}40`,
+                                    textAlign: 'center',
+                                  }}
+                                  className="space-y-3"
+                                >
+                                  <div
+                                    className="mx-auto flex items-center justify-center"
+                                    style={{
+                                      width: 48,
+                                      height: 48,
+                                      backgroundColor: `${C.btnPrimary}15`,
+                                      borderRadius: R.full,
+                                    }}
+                                  >
+                                    <MdAutoAwesome style={{ width: 24, height: 24, color: C.btnPrimary }} />
+                                  </div>
+                                  <h3
+                                    style={{
+                                      fontFamily: T.fontFamily,
+                                      fontSize: T.size.lg,
+                                      fontWeight: T.weight.bold,
+                                      color: C.heading,
+                                      margin: 0,
+                                    }}
+                                  >
+                                    Practice Set Auto-Configuration
+                                  </h3>
+                                  <p
+                                    style={{
+                                      fontFamily: T.fontFamily,
+                                      fontSize: T.size.sm,
+                                      color: C.text,
+                                      maxWidth: '500px',
+                                      margin: '0 auto',
+                                    }}
+                                  >
+                                    Practice Sets are designed for self-paced learning and revision. All security and grading restrictions are automatically optimized:
+                                  </p>
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 text-left max-w-lg mx-auto">
+                                    <div className="p-3 rounded-lg" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}` }}>
+                                      <span style={{ display: 'block', fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>🔓 No Proctoring</span>
+                                      <span style={{ fontSize: T.size.xs, color: C.text }}>No webcam, audio, or environment lock restrictions.</span>
+                                    </div>
+                                    <div className="p-3 rounded-lg" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}` }}>
+                                      <span style={{ display: 'block', fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>🔄 Infinite Attempts</span>
+                                      <span style={{ fontSize: T.size.xs, color: C.text }}>Students can retake the practice questions limitlessly.</span>
+                                    </div>
+                                    <div className="p-3 rounded-lg" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}` }}>
+                                      <span style={{ display: 'block', fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>⚡ Instant Solutions</span>
+                                      <span style={{ fontSize: T.size.xs, color: C.text }}>Correct answers and detailed explanations shown immediately.</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="mt-6 space-y-4 pt-4" style={{ borderTop: `1px solid ${C.cardBorder}` }}>
+                                    <CardSectionHeader title="Practice Experience Settings" />
+                                    <SettingRow label="Shuffle Questions" desc="Randomize question order" checked={examData.shuffleQuestions} onChange={v => setExamData({ ...examData, shuffleQuestions: v })} />
+                                    <SettingRow label="Shuffle Options"   desc="Randomize answer choices" checked={examData.shuffleOptions}   onChange={v => setExamData({ ...examData, shuffleOptions: v })} />
+                                    <SettingRow label="Free Exam"         desc="Students can attempt without enrollment/payment" checked={examData.isFree}  onChange={v => setExamData({ ...examData, isFree: v })} />
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Security */}
-                    <FeatureGate featureName="aiAssessment" mode="lock">
-                        <div className="p-6" style={sectionCard}>
-                            <CardSectionHeader title="Security & Integrity" icon={MdShield} iconColor={C.danger} />
-                            <SettingRow label="Visual AI Proctoring" desc="Requires webcam. Flags absence & multiple faces."    checked={examData.isProctoringEnabled ?? false} onChange={v => setExamData({ ...examData, isProctoringEnabled: v })} />
-                            <SettingRow label="Audio & Gaze Proctoring" desc="Requires mic. Flags noise & looking away/down." checked={examData.isAudioProctoringEnabled ?? false} onChange={v => setExamData({ ...examData, isAudioProctoringEnabled: v })} />
-                            <SettingRow label="Strict Environment Lock"             desc="Aggressively tracks and flags tab switching."      checked={examData.strictTabSwitching  ?? false} onChange={v => setExamData({ ...examData, strictTabSwitching: v })} />
-                        </div>
-                    </FeatureGate>
+                        </>
+                    )}
 
                     {/* Next */}
                     <div className="flex justify-end">

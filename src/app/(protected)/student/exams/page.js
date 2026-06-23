@@ -22,6 +22,7 @@ import api from "@/lib/axios";
 import { getAudienceDisplay, getAudienceScope } from "@/lib/audienceDisplay";
 import { C, T, S, R, FX } from "@/constants/studentTokens";
 import StatCard from "@/components/StatCard";
+import { toast } from "react-hot-toast";
 
 // Focus Handlers
 const onFocusHandler = (e) => {
@@ -1036,25 +1037,134 @@ export default function StudentExamsPage() {
                             </button>
                           </Link>
                         ) : status === "completed" ? (
-                          <Link
-                            href={`/student/exams/${exam._id}/result${exam.lastAttemptId ? `?attemptId=${exam.lastAttemptId}` : ""}`}
-                            className="text-decoration-none"
-                          >
-                            <button
-                              className="h-9 w-full cursor-pointer transition-colors hover:bg-slate-50 shadow-sm border"
-                              style={{
-                                backgroundColor: C.surfaceWhite,
-                                borderColor: C.cardBorder,
-                                color: C.btnPrimary,
-                                fontSize: T.size.xs,
-                                fontWeight: T.weight.bold,
-                                fontFamily: T.fontFamily,
-                                borderRadius: "10px",
-                              }}
-                            >
-                              View Result
-                            </button>
-                          </Link>
+                          (() => {
+                            const maxAttempts = exam.maxAttempts || 1;
+                            const canRetake = exam.allowRetake && (exam.myAttemptCount || 0) < maxAttempts;
+
+                            if (canRetake) {
+                              return (
+                                <div className="flex flex-col gap-1.5 items-center w-full">
+                                  <Link
+                                    href={`/student/exams/${exam._id}/take`}
+                                    className="w-full text-decoration-none"
+                                  >
+                                    <button
+                                      className="h-8 w-full cursor-pointer border-none transition-opacity hover:opacity-90 shadow-sm"
+                                      style={{
+                                        background: C.gradientBtn,
+                                        color: "#fff",
+                                        fontSize: "11px",
+                                        fontWeight: T.weight.bold,
+                                        fontFamily: T.fontFamily,
+                                        borderRadius: "8px",
+                                      }}
+                                    >
+                                      Retake Exam
+                                    </button>
+                                  </Link>
+                                  {exam.showResultImmediately === false ? (
+                                    <span
+                                      onClick={() => {
+                                        toast("Results are hidden by the instructor and will be published later.", {
+                                          icon: "🔒",
+                                          style: {
+                                            borderRadius: "10px",
+                                            background: "#1e293b",
+                                            color: "#fff",
+                                            fontFamily: T.fontFamily,
+                                            fontSize: T.size.sm,
+                                          }
+                                        });
+                                      }}
+                                      className="cursor-pointer hover:opacity-85 text-center"
+                                      style={{
+                                        color: C.textMuted,
+                                        fontSize: "10px",
+                                        fontWeight: T.weight.semibold,
+                                        fontFamily: T.fontFamily,
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "2px",
+                                      }}
+                                    >
+                                      🔒 Result Hidden
+                                    </span>
+                                  ) : (
+                                    <Link
+                                      href={`/student/exams/${exam._id}/result${exam.lastAttemptId ? `?attemptId=${exam.lastAttemptId}` : ""}`}
+                                      className="text-decoration-none text-center"
+                                    >
+                                      <span
+                                        className="hover:underline cursor-pointer"
+                                        style={{
+                                          color: C.btnPrimary,
+                                          fontSize: "11px",
+                                          fontWeight: T.weight.bold,
+                                          fontFamily: T.fontFamily,
+                                        }}
+                                      >
+                                        View Result
+                                      </span>
+                                    </Link>
+                                  )}
+                                </div>
+                              );
+                            }
+
+                            // If cannot retake (normal behavior)
+                            return exam.showResultImmediately === false ? (
+                              <button
+                                onClick={() => {
+                                  toast("Results are hidden by the instructor and will be published later.", {
+                                    icon: "🔒",
+                                    style: {
+                                      borderRadius: "10px",
+                                      background: "#1e293b",
+                                      color: "#fff",
+                                      fontFamily: T.fontFamily,
+                                      fontSize: T.size.sm,
+                                    }
+                                  });
+                                }}
+                                className="h-9 w-full cursor-pointer transition-colors hover:bg-slate-100 shadow-sm border"
+                                style={{
+                                  backgroundColor: C.innerBg,
+                                  borderColor: C.cardBorder,
+                                  color: C.textMuted,
+                                  fontSize: T.size.xs,
+                                  fontWeight: T.weight.bold,
+                                  fontFamily: T.fontFamily,
+                                  borderRadius: "10px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: "4px"
+                                }}
+                              >
+                                🔒 Result Hidden
+                              </button>
+                            ) : (
+                              <Link
+                                href={`/student/exams/${exam._id}/result${exam.lastAttemptId ? `?attemptId=${exam.lastAttemptId}` : ""}`}
+                                className="text-decoration-none"
+                              >
+                                <button
+                                  className="h-9 w-full cursor-pointer transition-colors hover:bg-slate-50 shadow-sm border"
+                                  style={{
+                                    backgroundColor: C.surfaceWhite,
+                                    borderColor: C.cardBorder,
+                                    color: C.btnPrimary,
+                                    fontSize: T.size.xs,
+                                    fontWeight: T.weight.bold,
+                                    fontFamily: T.fontFamily,
+                                    borderRadius: "10px",
+                                  }}
+                                >
+                                  View Result
+                                </button>
+                              </Link>
+                            );
+                          })()
                         ) : status === "upcoming" ? (
                           <span
                             style={{

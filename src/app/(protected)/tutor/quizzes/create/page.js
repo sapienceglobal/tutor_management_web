@@ -1117,9 +1117,26 @@ function CreateExamPageClient() {
                       </label>
                       <select
                         value={examData.type}
-                        onChange={(e) =>
-                          setExamData({ ...examData, type: e.target.value })
-                        }
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === 'practice') {
+                            setExamData({
+                              ...examData,
+                              type: val,
+                              isProctoringEnabled: false,
+                              isAudioProctoringEnabled: false,
+                              strictTabSwitching: false,
+                              showResultImmediately: true,
+                              showCorrectAnswers: true,
+                              hideSolutions: false,
+                              allowRetake: true,
+                              maxAttempts: 9999,
+                              negativeMarking: false,
+                            });
+                          } else {
+                            setExamData({ ...examData, type: val });
+                          }
+                        }}
                         style={baseInputStyle}
                         onFocus={onFocusHandler}
                         onBlur={onBlurHandler}
@@ -1363,342 +1380,459 @@ function CreateExamPageClient() {
                     </p>
                   </div>
 
-                  {/* AI Proctoring */}
-                  <FeatureGate featureName="aiAssessment" mode="lock">
-                    <div
-                      style={{
-                        backgroundColor: C.innerBg,
-                        borderRadius: R["2xl"],
-                        padding: 24,
-                      }}
-                    >
-                      <div className="flex items-center gap-3 mb-6">
+                  {examData.type !== 'practice' ? (
+                    <>
+                      {/* AI Proctoring */}
+                      <FeatureGate featureName="aiAssessment" mode="lock">
                         <div
-                          className="flex items-center justify-center shrink-0"
                           style={{
-                            width: 40,
-                            height: 40,
-                            backgroundColor: C.cardBg,
-                            borderRadius: "10px",
+                            backgroundColor: C.innerBg,
+                            borderRadius: R["2xl"],
+                            padding: 24,
                           }}
                         >
-                          <MdShield
-                            style={{
-                              width: 20,
-                              height: 20,
-                              color: C.btnPrimary,
-                            }}
-                          />
+                          <div className="flex items-center gap-3 mb-6">
+                            <div
+                              className="flex items-center justify-center shrink-0"
+                              style={{
+                                width: 40,
+                                height: 40,
+                                backgroundColor: C.cardBg,
+                                borderRadius: "10px",
+                              }}
+                            >
+                              <MdShield
+                                style={{
+                                  width: 20,
+                                  height: 20,
+                                  color: C.btnPrimary,
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <h2
+                                style={{
+                                  fontFamily: T.fontFamily,
+                                  fontSize: T.size.lg,
+                                  fontWeight: T.weight.bold,
+                                  color: C.heading,
+                                  margin: 0,
+                                }}
+                              >
+                                Advanced Security & Integrity
+                              </h2>
+                              <p
+                                style={{
+                                  fontFamily: T.fontFamily,
+                                  fontSize: T.size.xs,
+                                  fontWeight: T.weight.bold,
+                                  color: C.text,
+                                  textTransform: "uppercase",
+                                  margin: 0,
+                                }}
+                              >
+                                Industry-level Proctoring
+                              </p>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <TR
+                              icon={MdVisibility}
+                              label="Visual AI Proctoring"
+                              desc="Requires webcam. Flags absence & multiple faces."
+                              keyName="isProctoringEnabled"
+                            />
+                            <TR
+                              icon={MdMic}
+                              label="Audio & Gaze Proctoring"
+                              desc="Requires mic. Flags noise & looking away/down."
+                              keyName="isAudioProctoringEnabled"
+                            />
+                            <div className="lg:col-span-2">
+                              <TR
+                                icon={MdGridView}
+                                label="Strict Environment Lock"
+                                desc="Aggressively tracks and flags tab switching."
+                                keyName="strictTabSwitching"
+                              />
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <h2
-                            style={{
-                              fontFamily: T.fontFamily,
-                              fontSize: T.size.lg,
-                              fontWeight: T.weight.bold,
-                              color: C.heading,
-                              margin: 0,
-                            }}
-                          >
-                            Advanced Security & Integrity
-                          </h2>
-                          <p
-                            style={{
-                              fontFamily: T.fontFamily,
-                              fontSize: T.size.xs,
-                              fontWeight: T.weight.bold,
-                              color: C.text,
-                              textTransform: "uppercase",
-                              margin: 0,
-                            }}
-                          >
-                            Industry-level Proctoring
-                          </p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <TR
-                          icon={MdVisibility}
-                          label="Visual AI Proctoring"
-                          desc="Requires webcam. Flags absence & multiple faces."
-                          keyName="isProctoringEnabled"
-                        />
-                        <TR
-                          icon={MdMic}
-                          label="Audio & Gaze Proctoring"
-                          desc="Requires mic. Flags noise & looking away/down."
-                          keyName="isAudioProctoringEnabled"
-                        />
-                        <div className="lg:col-span-2">
-                          <TR
-                            icon={MdGridView}
-                            label="Strict Environment Lock"
-                            desc="Aggressively tracks and flags tab switching."
-                            keyName="strictTabSwitching"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </FeatureGate>
+                      </FeatureGate>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Scoring Rules */}
-                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Scoring Rules */}
+                        <div className="space-y-6">
+                          <div
+                            className="flex items-center gap-3 pb-3"
+                            style={{ borderBottom: `1px solid ${C.cardBorder}` }}
+                          >
+                            <div
+                              className="flex items-center justify-center"
+                              style={{
+                                width: 32,
+                                height: 32,
+                                backgroundColor: C.innerBg,
+                                borderRadius: "10px",
+                              }}
+                            >
+                              <MdAccessTime
+                                style={{
+                                  width: 16,
+                                  height: 16,
+                                  color: C.btnPrimary,
+                                }}
+                              />
+                            </div>
+                            <h3
+                              style={{
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.md,
+                                fontWeight: T.weight.bold,
+                                color: C.heading,
+                                margin: 0,
+                              }}
+                            >
+                              Scoring Rules
+                            </h3>
+                          </div>
+                          <div className="space-y-3">
+                            <div
+                              className="flex items-center justify-between"
+                              style={{
+                                backgroundColor: C.innerBg,
+                                borderRadius: "10px",
+                                padding: 16,
+                              }}
+                            >
+                              <label
+                                style={{
+                                  fontFamily: T.fontFamily,
+                                  fontSize: T.size.md,
+                                  fontWeight: T.weight.bold,
+                                  color: C.heading,
+                                }}
+                              >
+                                Required Pass Percentage
+                              </label>
+                              <div className="relative w-28">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={examData.passingPercentage}
+                                  onChange={(e) =>
+                                    setExamData({
+                                      ...examData,
+                                      passingPercentage:
+                                        parseInt(e.target.value) || 0,
+                                    })
+                                  }
+                                  style={{
+                                    ...baseInputStyle,
+                                    textAlign: "center",
+                                    paddingRight: 32,
+                                  }}
+                                  onFocus={onFocusHandler}
+                                  onBlur={onBlurHandler}
+                                />
+                                <span
+                                  className="absolute right-3 top-2.5 font-bold"
+                                  style={{
+                                    fontFamily: T.fontFamily,
+                                    color: C.text,
+                                  }}
+                                >
+                                  %
+                                </span>
+                              </div>
+                            </div>
+                            <TR
+                              icon={MdWarning}
+                              label="Negative Marking"
+                              desc="Deduct points for incorrect answers"
+                              keyName="negativeMarking"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Exam Experience */}
+                        <div className="space-y-6">
+                          <div
+                            className="flex items-center gap-3 pb-3"
+                            style={{ borderBottom: `1px solid ${C.cardBorder}` }}
+                          >
+                            <div
+                              className="flex items-center justify-center"
+                              style={{
+                                width: 32,
+                                height: 32,
+                                backgroundColor: C.innerBg,
+                                borderRadius: "10px",
+                              }}
+                            >
+                              <MdPsychology
+                                style={{
+                                  width: 16,
+                                  height: 16,
+                                  color: C.btnPrimary,
+                                }}
+                              />
+                            </div>
+                            <h3
+                              style={{
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.md,
+                                fontWeight: T.weight.bold,
+                                color: C.heading,
+                                margin: 0,
+                              }}
+                            >
+                              Exam Experience
+                            </h3>
+                          </div>
+                          <div className="space-y-3">
+                            <TR
+                              icon={MdFormatListBulleted}
+                              label="Shuffle Questions"
+                              desc="Randomize question sequence"
+                              keyName="shuffleQuestions"
+                            />
+                            <TR
+                              icon={MdFormatListNumbered}
+                              label="Shuffle Options"
+                              desc="Randomize A, B, C, D choices"
+                              keyName="shuffleOptions"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Post-Exam Review */}
+                        <div className="space-y-6 md:col-span-2">
+                          <div
+                            className="flex items-center gap-3 pb-3"
+                            style={{ borderBottom: `1px solid ${C.cardBorder}` }}
+                          >
+                            <div
+                              className="flex items-center justify-center"
+                              style={{
+                                width: 32,
+                                height: 32,
+                                backgroundColor: C.innerBg,
+                                borderRadius: "10px",
+                              }}
+                            >
+                              <MdGridView
+                                style={{
+                                  width: 16,
+                                  height: 16,
+                                  color: C.btnPrimary,
+                                }}
+                              />
+                            </div>
+                            <h3
+                              style={{
+                                fontFamily: T.fontFamily,
+                                fontSize: T.size.md,
+                                fontWeight: T.weight.bold,
+                                color: C.heading,
+                                margin: 0,
+                              }}
+                            >
+                              Post-Exam Review
+                            </h3>
+                          </div>
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <TR
+                              label="Show Results Instantly"
+                              desc="Display score immediately after submit"
+                              keyName="showResultImmediately"
+                            />
+                            <TR
+                              label="Show Correct Answers"
+                              desc="Reveal correct options during review"
+                              keyName="showCorrectAnswers"
+                            />
+                            <TR
+                              label="Hide Detailed Solutions"
+                              desc="Do not show explanations to students"
+                              keyName="hideSolutions"
+                            />
+                            <div className="space-y-3">
+                              <TR
+                                label="Allow Multiple Attempts"
+                                desc="Let students retake the exam"
+                                keyName="allowRetake"
+                              />
+                              <AnimatePresence>
+                                {examData.allowRetake && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <div
+                                      className="flex items-center justify-between mt-2"
+                                      style={{
+                                        backgroundColor: C.innerBg,
+                                        borderRadius: "10px",
+                                        padding: 16,
+                                      }}
+                                    >
+                                      <label
+                                        style={{
+                                          fontFamily: T.fontFamily,
+                                          fontSize: T.size.base,
+                                          fontWeight: T.weight.bold,
+                                          color: C.heading,
+                                        }}
+                                      >
+                                        Maximum Allowed Attempts
+                                      </label>
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        value={examData.maxAttempts}
+                                        onChange={(e) =>
+                                          setExamData({
+                                            ...examData,
+                                            maxAttempts:
+                                              parseInt(e.target.value) || 1,
+                                          })
+                                        }
+                                        style={{
+                                          ...baseInputStyle,
+                                          textAlign: "center",
+                                          width: 80,
+                                          padding: 8,
+                                        }}
+                                        onFocus={onFocusHandler}
+                                        onBlur={onBlurHandler}
+                                      />
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Practice Set Auto-Configuration Card */}
                       <div
-                        className="flex items-center gap-3 pb-3"
-                        style={{ borderBottom: `1px solid ${C.cardBorder}` }}
+                        style={{
+                          backgroundColor: C.innerBg,
+                          borderRadius: R["2xl"],
+                          padding: 24,
+                          border: `1px dashed ${C.btnPrimary}40`,
+                          textAlign: "center",
+                        }}
+                        className="space-y-3"
                       >
                         <div
-                          className="flex items-center justify-center"
+                          className="mx-auto flex items-center justify-center"
                           style={{
-                            width: 32,
-                            height: 32,
-                            backgroundColor: C.innerBg,
-                            borderRadius: "10px",
+                            width: 48,
+                            height: 48,
+                            backgroundColor: `${C.btnPrimary}15`,
+                            borderRadius: R.full,
                           }}
                         >
-                          <MdAccessTime
-                            style={{
-                              width: 16,
-                              height: 16,
-                              color: C.btnPrimary,
-                            }}
-                          />
+                          <MdAutoAwesome style={{ width: 24, height: 24, color: C.btnPrimary }} />
                         </div>
                         <h3
                           style={{
                             fontFamily: T.fontFamily,
-                            fontSize: T.size.md,
+                            fontSize: T.size.lg,
                             fontWeight: T.weight.bold,
                             color: C.heading,
                             margin: 0,
                           }}
                         >
-                          Scoring Rules
+                          Practice Set Auto-Configuration
                         </h3>
-                      </div>
-                      <div className="space-y-3">
-                        <div
-                          className="flex items-center justify-between"
+                        <p
                           style={{
-                            backgroundColor: C.innerBg,
-                            borderRadius: "10px",
-                            padding: 16,
+                            fontFamily: T.fontFamily,
+                            fontSize: T.size.sm,
+                            color: C.text,
+                            maxWidth: "500px",
+                            margin: "0 auto",
                           }}
                         >
-                          <label
+                          Practice Sets are designed for self-paced learning and revision. All security and grading restrictions are automatically optimized:
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 text-left max-w-lg mx-auto">
+                          <div className="p-3 rounded-lg" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}` }}>
+                            <span style={{ display: "block", fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>🔓 No Proctoring</span>
+                            <span style={{ fontSize: T.size.xs, color: C.text }}>No webcam, audio, or environment lock restrictions.</span>
+                          </div>
+                          <div className="p-3 rounded-lg" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}` }}>
+                            <span style={{ display: "block", fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>🔄 Infinite Attempts</span>
+                            <span style={{ fontSize: T.size.xs, color: C.text }}>Students can retake the practice questions limitlessly.</span>
+                          </div>
+                          <div className="p-3 rounded-lg" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}` }}>
+                            <span style={{ display: "block", fontSize: T.size.xs, fontWeight: T.weight.bold, color: C.heading }}>⚡ Instant Solutions</span>
+                            <span style={{ fontSize: T.size.xs, color: C.text }}>Correct answers and detailed explanations shown immediately.</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Practice Experience Settings */}
+                      <div className="space-y-6 max-w-md mx-auto pt-6">
+                        <div
+                          className="flex items-center gap-3 pb-3"
+                          style={{ borderBottom: `1px solid ${C.cardBorder}` }}
+                        >
+                          <div
+                            className="flex items-center justify-center"
+                            style={{
+                              width: 32,
+                              height: 32,
+                              backgroundColor: C.innerBg,
+                              borderRadius: "10px",
+                            }}
+                          >
+                            <MdPsychology
+                              style={{
+                                width: 16,
+                                height: 16,
+                                color: C.btnPrimary,
+                              }}
+                            />
+                          </div>
+                          <h3
                             style={{
                               fontFamily: T.fontFamily,
                               fontSize: T.size.md,
                               fontWeight: T.weight.bold,
                               color: C.heading,
+                              margin: 0,
                             }}
                           >
-                            Required Pass Percentage
-                          </label>
-                          <div className="relative w-28">
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={examData.passingPercentage}
-                              onChange={(e) =>
-                                setExamData({
-                                  ...examData,
-                                  passingPercentage:
-                                    parseInt(e.target.value) || 0,
-                                })
-                              }
-                              style={{
-                                ...baseInputStyle,
-                                textAlign: "center",
-                                paddingRight: 32,
-                              }}
-                              onFocus={onFocusHandler}
-                              onBlur={onBlurHandler}
-                            />
-                            <span
-                              className="absolute right-3 top-2.5 font-bold"
-                              style={{
-                                fontFamily: T.fontFamily,
-                                color: C.text,
-                              }}
-                            >
-                              %
-                            </span>
-                          </div>
+                            Practice Experience Settings
+                          </h3>
                         </div>
-                        <TR
-                          icon={MdWarning}
-                          label="Negative Marking"
-                          desc="Deduct points for incorrect answers"
-                          keyName="negativeMarking"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Exam Experience */}
-                    <div className="space-y-6">
-                      <div
-                        className="flex items-center gap-3 pb-3"
-                        style={{ borderBottom: `1px solid ${C.cardBorder}` }}
-                      >
-                        <div
-                          className="flex items-center justify-center"
-                          style={{
-                            width: 32,
-                            height: 32,
-                            backgroundColor: C.innerBg,
-                            borderRadius: "10px",
-                          }}
-                        >
-                          <MdPsychology
-                            style={{
-                              width: 16,
-                              height: 16,
-                              color: C.btnPrimary,
-                            }}
-                          />
-                        </div>
-                        <h3
-                          style={{
-                            fontFamily: T.fontFamily,
-                            fontSize: T.size.md,
-                            fontWeight: T.weight.bold,
-                            color: C.heading,
-                            margin: 0,
-                          }}
-                        >
-                          Exam Experience
-                        </h3>
-                      </div>
-                      <div className="space-y-3">
-                        <TR
-                          icon={MdFormatListBulleted}
-                          label="Shuffle Questions"
-                          desc="Randomize question sequence"
-                          keyName="shuffleQuestions"
-                        />
-                        <TR
-                          icon={MdFormatListNumbered}
-                          label="Shuffle Options"
-                          desc="Randomize A, B, C, D choices"
-                          keyName="shuffleOptions"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Post-Exam Review */}
-                    <div className="space-y-6 md:col-span-2">
-                      <div
-                        className="flex items-center gap-3 pb-3"
-                        style={{ borderBottom: `1px solid ${C.cardBorder}` }}
-                      >
-                        <div
-                          className="flex items-center justify-center"
-                          style={{
-                            width: 32,
-                            height: 32,
-                            backgroundColor: C.innerBg,
-                            borderRadius: "10px",
-                          }}
-                        >
-                          <MdGridView
-                            style={{
-                              width: 16,
-                              height: 16,
-                              color: C.btnPrimary,
-                            }}
-                          />
-                        </div>
-                        <h3
-                          style={{
-                            fontFamily: T.fontFamily,
-                            fontSize: T.size.md,
-                            fontWeight: T.weight.bold,
-                            color: C.heading,
-                            margin: 0,
-                          }}
-                        >
-                          Post-Exam Review
-                        </h3>
-                      </div>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <TR
-                          label="Show Results Instantly"
-                          desc="Display score immediately after submit"
-                          keyName="showResultImmediately"
-                        />
-                        <TR
-                          label="Show Correct Answers"
-                          desc="Reveal correct options during review"
-                          keyName="showCorrectAnswers"
-                        />
-                        <TR
-                          label="Hide Detailed Solutions"
-                          desc="Do not show explanations to students"
-                          keyName="hideSolutions"
-                        />
                         <div className="space-y-3">
                           <TR
-                            label="Allow Multiple Attempts"
-                            desc="Let students retake the exam"
-                            keyName="allowRetake"
+                            icon={MdFormatListBulleted}
+                            label="Shuffle Questions"
+                            desc="Randomize question sequence"
+                            keyName="shuffleQuestions"
                           />
-                          <AnimatePresence>
-                            {examData.allowRetake && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="overflow-hidden"
-                              >
-                                <div
-                                  className="flex items-center justify-between mt-2"
-                                  style={{
-                                    backgroundColor: C.innerBg,
-                                    borderRadius: "10px",
-                                    padding: 16,
-                                  }}
-                                >
-                                  <label
-                                    style={{
-                                      fontFamily: T.fontFamily,
-                                      fontSize: T.size.base,
-                                      fontWeight: T.weight.bold,
-                                      color: C.heading,
-                                    }}
-                                  >
-                                    Maximum Allowed Attempts
-                                  </label>
-                                  <input
-                                    type="number"
-                                    min="1"
-                                    value={examData.maxAttempts}
-                                    onChange={(e) =>
-                                      setExamData({
-                                        ...examData,
-                                        maxAttempts:
-                                          parseInt(e.target.value) || 1,
-                                      })
-                                    }
-                                    style={{
-                                      ...baseInputStyle,
-                                      textAlign: "center",
-                                      width: 80,
-                                      padding: 8,
-                                    }}
-                                    onFocus={onFocusHandler}
-                                    onBlur={onBlurHandler}
-                                  />
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
+                          <TR
+                            icon={MdFormatListNumbered}
+                            label="Shuffle Options"
+                            desc="Randomize A, B, C, D choices"
+                            keyName="shuffleOptions"
+                          />
                         </div>
                       </div>
-                    </div>
-                  </div>
+                    </>
+                  )}
 
                   <div
                     className="flex justify-between pt-8"

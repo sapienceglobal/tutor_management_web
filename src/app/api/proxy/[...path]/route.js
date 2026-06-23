@@ -2,6 +2,7 @@
  * Server-side API proxy: forwards requests to the backend with x-api-key.
  * Keeps API key out of the browser (security).
  */
+export const dynamic = 'force-dynamic';
 function normalizeBackendBase(rawBase) {
     let base = (rawBase || 'http://127.0.0.1:4000').trim();
 
@@ -74,7 +75,7 @@ async function proxy(request, params, method) {
     }
 
     try {
-        const res = await fetch(url, opts);
+        const res = await fetch(url, { ...opts, cache: 'no-store' });
         
         const contentType = res.headers.get('Content-Type') || '';
         const isJson = contentType.includes('application/json');

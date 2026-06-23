@@ -669,7 +669,8 @@ export default function TakeExamPage({ params }) {
           if (fetchedExam.isAdaptive) fetchNextAdaptiveQuestion([], null);
         }
       } catch (error) {
-        toast.error("Failed to load exam. Please try again.");
+        const msg = error.response?.data?.message || "Failed to load exam. Please try again.";
+        toast.error(msg);
         router.push("/student/exams");
       } finally {
         setLoading(false);
