@@ -78,12 +78,12 @@ export default function ManageAppointmentsPage() {
         }
     };
 
-    const handleJoin = (link) => {
-        if (!link) {
+    const handleJoin = (apt) => {
+        if (!apt.meetingLink) {
             toast.error('Meeting link is not available yet');
             return;
         }
-        window.open(link, '_blank');
+        router.push(`/tutor/appointments/${apt._id}/join`);
     };
 
     const filtered = appointments.filter(apt =>
@@ -235,7 +235,7 @@ export default function ManageAppointmentsPage() {
                                             style={{ backgroundColor: C.btnViewAllBg, color: C.btnViewAllText, borderRadius: '10px', fontSize: T.size.base, fontWeight: T.weight.bold, fontFamily: T.fontFamily, border: `1px solid ${C.cardBorder}` }}>
                                             <MdMessage style={{ width: 18, height: 18 }} /> Message
                                         </button>
-                                        <button onClick={() => handleJoin(apt.meetingLink)} className="flex-1 flex items-center justify-center gap-2 h-10 cursor-pointer border-none transition-opacity hover:opacity-90"
+                                        <button onClick={() => handleJoin(apt)} className="flex-1 flex items-center justify-center gap-2 h-10 cursor-pointer border-none transition-opacity hover:opacity-90"
                                             style={{ background: C.gradientBtn, color: '#ffffff', borderRadius: '10px', fontSize: T.size.base, fontWeight: T.weight.bold, fontFamily: T.fontFamily, boxShadow: S.btn }}>
                                             <MdVideocam style={{ width: 18, height: 18 }} /> Join Live
                                         </button>

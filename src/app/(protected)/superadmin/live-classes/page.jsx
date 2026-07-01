@@ -212,7 +212,9 @@ export default function SuperAdminLiveRadar() {
                                 </div>
 
                                 <div className="flex gap-2">
-                                    <button className="flex items-center justify-center transition-colors cursor-pointer" 
+                                    <button 
+                                        onClick={() => window.open(`/tutor/live-classes/${session._id}/join`, '_blank')}
+                                        className="flex items-center justify-center transition-colors cursor-pointer" 
                                         style={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: C.innerBg, border: `1px solid ${C.cardBorder}`, color: C.btnPrimary, boxShadow: S.cardHover }}
                                         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.surfaceWhite; }}
                                         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.innerBg; }}

@@ -76,7 +76,8 @@ export default function TutorLiveClassesPage() {
     meetingId: "",
     passcode: "",
     recordingLink: "",
-    platform: "jitsi",
+    materialLink: "",
+    platform: "zoom",
     autoCreate: true,
     audience: {
       scope: "institute",
@@ -712,14 +713,13 @@ export default function TutorLiveClassesPage() {
                   <div className="flex items-center gap-2 shrink-0 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 mt-2 md:mt-0">
                     {!isCompleted && (
                       <button
-                        onClick={() =>
-                          window.open(
-                            cls.meetingId
-                              ? `https://meet.jit.si/${cls.meetingId}`
-                              : cls.meetingLink,
-                            "_blank",
-                          )
-                        }
+                        onClick={() => {
+                          if (cls.platform === "zoom" || cls.platform === "jitsi") {
+                            router.push(`/tutor/live-classes/${cls._id}/join`);
+                          } else {
+                            window.open(cls.meetingLink, "_blank");
+                          }
+                        }}
                         className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-90 shadow-sm shrink-0"
                         style={{
                           backgroundColor: C.success,
@@ -756,7 +756,7 @@ export default function TutorLiveClassesPage() {
                         e.currentTarget.style.color = C.btnPrimary;
                       }}
                     >
-                      <MdPeople size={16} /> Join
+                      <MdPeople size={16} /> Attendance
                     </button>
                     <button
                       onClick={() => handleEditClick(cls)}
@@ -995,32 +995,32 @@ export default function TutorLiveClassesPage() {
                 >
                   Video Platform *
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <button
                     type="button"
                     onClick={() =>
                       setFormData({
                         ...formData,
                         autoCreate: true,
-                        platform: "jitsi",
+                        platform: "zoom",
                       })
                     }
                     className="h-12 border-none cursor-pointer flex items-center justify-center gap-2 transition-all"
                     style={{
-                      backgroundColor: formData.autoCreate
+                      backgroundColor: formData.autoCreate && formData.platform === "zoom"
                         ? C.surfaceWhite
                         : C.innerBg,
                       borderRadius: "10px",
-                      border: formData.autoCreate
+                      border: formData.autoCreate && formData.platform === "zoom"
                         ? `2px solid ${C.btnPrimary}`
                         : `1px solid ${C.cardBorder}`,
-                      color: formData.autoCreate ? C.btnPrimary : C.textMuted,
+                      color: formData.autoCreate && formData.platform === "zoom" ? C.btnPrimary : C.textMuted,
                       fontSize: T.size.sm,
                       fontWeight: T.weight.bold,
                       fontFamily: T.fontFamily,
                     }}
                   >
-                    <MdVideocam size={18} /> Auto Jitsi
+                    <MdVideocam size={18} /> Auto Zoom
                   </button>
                   <button
                     type="button"
@@ -1051,7 +1051,7 @@ export default function TutorLiveClassesPage() {
                       fontFamily: T.fontFamily,
                     }}
                   >
-                    Zoom
+                    Manual Zoom
                   </button>
                   <button
                     type="button"
@@ -1083,6 +1083,37 @@ export default function TutorLiveClassesPage() {
                     }}
                   >
                     G-Meet
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        autoCreate: true,
+                        platform: "jitsi",
+                      })
+                    }
+                    className="h-12 border-none cursor-pointer flex items-center justify-center gap-2 transition-all"
+                    style={{
+                      backgroundColor:
+                        formData.autoCreate && formData.platform === "jitsi"
+                          ? C.surfaceWhite
+                          : C.innerBg,
+                      borderRadius: "10px",
+                      border:
+                        formData.autoCreate && formData.platform === "jitsi"
+                          ? `2px solid ${C.btnPrimary}`
+                          : `1px solid ${C.cardBorder}`,
+                      color:
+                        formData.autoCreate && formData.platform === "jitsi"
+                          ? C.btnPrimary
+                          : C.textMuted,
+                      fontSize: T.size.sm,
+                      fontWeight: T.weight.bold,
+                      fontFamily: T.fontFamily,
+                    }}
+                  >
+                    Auto Jitsi
                   </button>
                 </div>
               </div>

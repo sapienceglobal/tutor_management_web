@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   MdCalendarToday,
@@ -26,6 +27,7 @@ import { C, T, S, R } from "@/constants/studentTokens";
 const SCHEDULE_PAGE_SIZE = 4;
 
 export default function LiveClassesPage() {
+  const router = useRouter();
   const [liveClasses, setLiveClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [visibilityFilter, setVisibilityFilter] = useState("all");
@@ -107,11 +109,14 @@ export default function LiveClassesPage() {
   const joinClass = async (c) => {
     try {
       await api.post(`/live-classes/${c._id}/attendance`).catch(() => {});
-      if (c.meetingId)
-        window.open(`https://meet.jit.si/${c.meetingId}`, "_blank");
-      else if (c.meetingLink) window.open(c.meetingLink, "_blank");
     } catch (e) {
-      if (c.meetingLink) window.open(c.meetingLink, "_blank");
+      console.error("Attendance submission failed:", e);
+    }
+
+    if (c.platform === "zoom" || c.platform === "jitsi" || (!c.platform && c.meetingId)) {
+      router.push(`/student/live-classes/${c._id}/join`);
+    } else if (c.meetingLink) {
+      window.open(c.meetingLink, "_blank");
     }
   };
 

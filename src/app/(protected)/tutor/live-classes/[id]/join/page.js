@@ -15,7 +15,7 @@ const ZoomMeetingEmbed = dynamic(
     { ssr: false }
 );
 
-export default function JoinLiveClassPage({ params }) {
+export default function TutorJoinLiveClassPage({ params }) {
     const { id } = use(params);
     const router  = useRouter();
     const { socket } = useSocket();
@@ -34,7 +34,7 @@ export default function JoinLiveClassPage({ params }) {
         const handleForceKill = (data) => {
             if (data.liveClassId === id) {
                 toast.error('This live class has been terminated by the SuperAdmin.');
-                router.push('/student/live-classes');
+                router.push('/tutor/live-classes');
             }
         };
 
@@ -52,7 +52,7 @@ export default function JoinLiveClassPage({ params }) {
                 const res = await api.post(`/live-classes/${id}/join-config`);
                 if (res.data?.success) setClassData(res.data.config);
             } catch (err) {
-                console.error('Failed to join:', err);
+                console.error('Failed to load class configuration:', err);
                 setError(err.response?.data?.message || 'Failed to load class');
             } finally { setLoading(false); }
         };
@@ -62,7 +62,7 @@ export default function JoinLiveClassPage({ params }) {
     if (loading) return (
         <div className="h-screen w-full flex flex-col items-center justify-center gap-4" style={{ backgroundColor: '#111827' }}>
             <div className="w-12 h-12 rounded-full border-[3px] border-[#4F46E5]/30 border-t-[#4F46E5] animate-spin" />
-            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: '#9CA3AF' }}>Preparing Virtual Classroom...</p>
+            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold, color: '#9CA3AF' }}>Preparing Tutor Virtual Classroom...</p>
         </div>
     );
 
@@ -71,32 +71,30 @@ export default function JoinLiveClassPage({ params }) {
             <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-2">
                 <VideoOff className="w-8 h-8 text-red-500" />
             </div>
-            <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.black, color: '#F87171' }}>Class Unavailable</h2>
-            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#9CA3AF', maxWidth: '300px', textAlign: 'center' }}>{error || 'Class data not found or session has ended.'}</p>
-            <button onClick={() => router.back()}
+            <h2 style={{ fontFamily: T.fontFamily, fontSize: T.size.xl, fontWeight: T.weight.black, color: '#F87171' }}>Class Session Error</h2>
+            <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: '#9CA3AF', maxWidth: '350px', textAlign: 'center' }}>{error || 'Class details not found.'}</p>
+            <button onClick={() => router.push('/tutor/live-classes')}
                 className="mt-6 px-6 h-11 border border-white/20 rounded-xl text-white transition-colors hover:bg-white/10 cursor-pointer"
                 style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.bold }}>
-                Go Back to Dashboard
+                Back to Scheduling Page
             </button>
         </div>
     );
 
-    // ZoomMeetingEmbed already provides its own "Menu" control to bring
-    // the LMS sidebar/header back, and Zoom's own native toolbar has the
-    // Leave/End button — adding a second page-level back button here
-    // would duplicate that and risk colliding with Zoom's own corner UI,
-    // exactly like the bug that was reported. Only Jitsi needs it, since
-    // it doesn't render anything in that screen area itself.
+    // For Zoom, ZoomMeetingEmbed already renders its own "Leave class" /
+    // "Menu" floating controls (positioned to clear Zoom's own toolbar),
+    // so this page-level back button is only needed for the Jitsi path.
     const isZoom = classData.platform === 'zoom';
 
     return (
         <div className="h-screen w-full flex flex-col relative" style={{ backgroundColor: '#000' }}>
 
             {!isZoom && (
-                /* Cinematic Glass Header — Jitsi only */
+                /* Cinematic Glass Header — only for Jitsi, which doesn't
+                   have its own corner toolbar in the same spot Zoom does. */
                 <div className="absolute top-6 left-6 z-50 pointer-events-auto">
                     <button
-                        onClick={() => router.push('/student/live-classes')}
+                        onClick={() => router.push('/tutor/live-classes')}
                         className="flex items-center gap-2 px-5 h-11 rounded-2xl text-white transition-all cursor-pointer shadow-lg"
                         style={{
                             backgroundColor: 'rgba(0,0,0,0.6)',
@@ -108,7 +106,7 @@ export default function JoinLiveClassPage({ params }) {
                         }}
                         onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.8)'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)'; }}
                         onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.6)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}>
-                        <ArrowLeft size={16} /> Leave Class
+                        <ArrowLeft size={16} /> End & Exit Session
                     </button>
                 </div>
             )}
@@ -117,7 +115,7 @@ export default function JoinLiveClassPage({ params }) {
                 {isZoom ? (
                     <ZoomMeetingEmbed
                         config={classData}
-                        onLeave={() => router.push('/student/live-classes')}
+                        onLeave={() => router.push('/tutor/live-classes')}
                         sessionLabel="Live Class"
                     />
                 ) : (
@@ -125,7 +123,7 @@ export default function JoinLiveClassPage({ params }) {
                         domain="meet.jit.si"
                         roomName={classData.meetingNumber}
                         configOverwrite={{
-                            startWithAudioMuted:       true,
+                            startWithAudioMuted:       false,
                             disableThirdPartyRequests: true,
                             prejoinPageEnabled:        false,
                         }}
@@ -140,7 +138,7 @@ export default function JoinLiveClassPage({ params }) {
                             ],
                         }}
                         userInfo={{
-                            displayName: classData.userName || 'Student',
+                            displayName: classData.userName || 'Tutor',
                             email:       classData.userEmail,
                         }}
                         onApiReady={() => {}}

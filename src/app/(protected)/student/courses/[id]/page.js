@@ -663,15 +663,14 @@ export default function CourseDetailPage({ params }) {
     try {
       // Attendance mark karo silently
       await api.post(`/live-classes/${cls._id}/attendance`).catch(() => {});
-
-      // Jitsi ya custom link naye tab mein open karo
-      if (cls.meetingId) {
-        window.open(`https://meet.jit.si/${cls.meetingId}`, "_blank");
-      } else if (cls.meetingLink) {
-        window.open(cls.meetingLink, "_blank");
-      }
     } catch (e) {
-      if (cls.meetingLink) window.open(cls.meetingLink, "_blank");
+      console.error("Attendance submission failed:", e);
+    }
+
+    if (cls.platform === "zoom" || cls.platform === "jitsi" || (!cls.platform && cls.meetingId)) {
+      router.push(`/student/live-classes/${cls._id}/join`);
+    } else if (cls.meetingLink) {
+      window.open(cls.meetingLink, "_blank");
     }
   };
   // ── Derived ───────────────────────────────────────────────────────────────

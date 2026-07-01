@@ -39,25 +39,31 @@ export async function proxy(request) {
             return NextResponse.next();
         }
 
+        const isLiveClassJoin = pathname.startsWith('/tutor/live-classes/') && pathname.endsWith('/join');
+
         if (role === 'superadmin') {
             if (pathname === '/login' || pathname === '/register') {
                 return NextResponse.redirect(new URL('/superadmin', request.url));
             }
-            // Block superadmin from navigating into other role panels by URL
-            const crossPanel = pathname.startsWith('/admin')
+            // Block superadmin from navigating into other role panels by URL (except live class joins)
+            const crossPanel = (pathname.startsWith('/admin')
                 || pathname.startsWith('/tutor')
-                || pathname.startsWith('/student');
+                || pathname.startsWith('/student')) && !isLiveClassJoin;
             if (crossPanel) {
-                return NextResponse.redirect(new URL('/superadmin/dashboard', request.url));
+                return NextResponse.redirect(new URL('/superadmin', request.url));
             }
             return NextResponse.next();
         }
 
         if (role === 'admin') {
-            if (pathname.startsWith('/superadmin') || pathname.startsWith('/tutor') || pathname.startsWith('/student')) {
+            if (pathname === '/login' || pathname === '/register') {
                 return NextResponse.redirect(new URL('/admin/dashboard', request.url));
             }
-            if (pathname === '/login' || pathname === '/register') {
+            // Block admin from navigating into other role panels by URL (except live class joins)
+            const crossPanel = (pathname.startsWith('/superadmin')
+                || pathname.startsWith('/tutor')
+                || pathname.startsWith('/student')) && !isLiveClassJoin;
+            if (crossPanel) {
                 return NextResponse.redirect(new URL('/admin/dashboard', request.url));
             }
             return NextResponse.next();

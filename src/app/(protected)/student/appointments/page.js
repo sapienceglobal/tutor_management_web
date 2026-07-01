@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import { Calendar, Clock, Video, AlertCircle } from 'lucide-react';
 import { 
@@ -16,6 +17,7 @@ import StatCard from '@/components/StatCard';
 import { C, T, S, R, cx, pageStyle } from '@/constants/studentTokens';
 
 export default function StudentAppointmentsPage() {
+    const router = useRouter();
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading]           = useState(true);
     const [activeTab, setActiveTab]       = useState('upcoming');
@@ -34,9 +36,9 @@ export default function StudentAppointmentsPage() {
         }
     };
 
-    const handleJoin = (link) => {
-        if (!link) { toast.error('Meeting link is not available yet.'); return; }
-        window.open(link, '_blank');
+    const handleJoin = (apt) => {
+        if (!apt.meetingLink) { toast.error('Meeting link is not available yet.'); return; }
+        router.push(`/student/appointments/${apt._id}/join`);
     };
 
     const handleCancel = async (id) => {
@@ -273,7 +275,7 @@ export default function StudentAppointmentsPage() {
                                     {apt.status === 'confirmed' && (
                                         apt.meetingLink ? (
                                             <button
-                                                onClick={() => handleJoin(apt.meetingLink)}
+                                                onClick={() => handleJoin(apt)}
                                                 className="flex items-center gap-2 px-4 py-2 text-white text-xs rounded-xl font-bold transition-all hover:opacity-90"
                                                 style={{ backgroundColor: C.btnPrimary, fontFamily: T.fontFamily, boxShadow: S.btn }}>
                                                 <Video className="w-3.5 h-3.5" /> Join Class
@@ -309,7 +311,7 @@ export default function StudentAppointmentsPage() {
                             No appointments found
                         </h3>
                         <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.textMuted, marginTop: 6, maxWidth: 320, textAlign: 'center' }}>
-                            You don't have any {activeTab} appointments scheduled at the moment.
+                            You don&apos;t have any {activeTab} appointments scheduled at the moment.
                         </p>
                     </div>
                 )}

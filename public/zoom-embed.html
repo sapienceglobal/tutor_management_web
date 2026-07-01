@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zoom Meeting</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+
+    #zmmtg-root {
+      width: 100%;
+      height: 100%;
+      max-width: 100vw;
+      max-height: 100vh;
+      overflow: hidden;
+    }
+
+    /*
+      The Zoom Embedded SDK renders several nested wrapper divs inside
+      #zmmtg-root (its own internal layout engine). By default it can size
+      itself larger than its actual parent if it mis-measures on first
+      paint, and since #zmmtg-root has no overflow control on its own
+      children by id, the controls bar can end up pushed off-screen (see
+      the reported bug — meeting grew taller than the viewport and the
+      bottom toolbar scrolled out of view). Forcing every direct/nested
+      wrapper to respect 100% of this fixed-size root prevents that,
+      regardless of what Zoom's internal JS calculates.
+    */
+    /*
+      The Zoom Embedded SDK renders several nested wrapper divs inside
+      #zmmtg-root (its own internal layout engine), AND it lets the user
+      drag-resize the meeting window by writing inline pixel styles
+      (style="height: ...px") directly onto these wrappers. An inline
+      style always wins over a plain CSS rule of equal/lower specificity,
+      so the earlier max-width/max-height rule here was silently losing
+      to Zoom's own inline height once the user dragged past the bottom
+      edge — that's why the toolbar could scroll off-screen and never
+      come back. !important forces our bound to win regardless of what
+      inline style Zoom writes.
+    */
+    #zmmtg-root,
+    #zmmtg-root iframe {
+      max-width: 100% !important;
+      max-height: 100% !important;
+      width: 100% !important;
+      height: 100% !important;
+      top: 0 !important;
+      left: 0 !important;
+    }
+
+    /* Error display (shown only if SDK fails before join) */
+    #error-display {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #0f0c29;
+      color: #F87171;
+      font-family: sans-serif;
+      font-size: 14px;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+
+    #error-display.show {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Zoom SDK root — must exist before SDK initializes -->
+  <div id="zmmtg-root"></div>
+
+  <!-- Error fallback (hidden by default) -->
+  <div id="error-display">
+    <strong id="error-title">Zoom SDK Error</strong>
+    <span id="error-body"></span>
+  </div>
+
+  <!--
+    Load React 18 FIRST as window globals.
+    Zoom SDK UMD bundle checks for window.React & window.ReactDOM before module.exports.
+    This gives it React 18 (compatible) instead of the parent page's React 19.
+  -->
+  <script src="https://source.zoom.us/3.9.0/lib/vendor/react.min.js"></script>
+  <script src="https://source.zoom.us/3.9.0/lib/vendor/react-dom.min.js"></script>
+  <script src="https://source.zoom.us/3.9.0/lib/vendor/redux.min.js"></script>
+
+  <script src="https://source.zoom.us/3.9.0/zoom-meeting-embedded-3.9.0.min.js"></script>
+  <script>
+    'use strict';
+
+    // The parent page (ZoomMeetingEmbed.jsx) only trusts our own origin,
+    // so we reply on the same origin instead of '*'. This iframe is always
+    // same-origin with the parent (it's served from /public on the same
+    // Next.js app), so window.location.origin is correct here.
+    var PARENT_ORIGIN = window.location.origin;
+
+    function notifyParent(message) {
+      window.parent.postMessage(message, PARENT_ORIGIN);
+    }
+
+    // ── Safety check ──────────────────────────────────────────────────────
+    function showError(title, body, code) {
+      document.getElementById('error-display').classList.add('show');
+      document.getElementById('error-title').textContent = title;
+      document.getElementById('error-body').textContent = body || '';
+      notifyParent({
+        type: 'ZOOM_ERROR',
+        message: body || title,
+        code: code || 'UNKNOWN',
+      });
+    }
+
+    // ── Main SDK logic ────────────────────────────────────────────────────
+    var zoomClient = null;
+    var readySent = false;
+    var resizeObserver = null;
+
+    function triggerResize() {
+      window.dispatchEvent(new Event('resize'));
+    }
+
+    // Watches #zmmtg-root's actual rendered size and re-fires a resize
+    // event every time it changes — e.g. when the parent flips this
+    // iframe from visibility:hidden to visible (which changes the
+    // *effective* rendered size even though the CSS width/height never
+    // changed), or when the parent toggles its own overlay chrome.
+    // This is more reliable than fixed setTimeout delays because it
+    // reacts to the actual DOM, not a guess about timing.
+    function startResizeObserver(rootEl) {
+      if (typeof ResizeObserver === 'undefined' || resizeObserver) return;
+      resizeObserver = new ResizeObserver(function () {
+        triggerResize();
+      });
+      resizeObserver.observe(rootEl);
+    }
+
+    // JS-level safety net on top of the !important CSS rules above.
+    // Zoom occasionally writes inline pixel sizes AND/OR shifts elements
+    // out of view via transform/margin/top/left. This watches for ANY
+    // element — anywhere in the document, not just inside #zmmtg-root —
+    // that ends up rendering outside the viewport, and snaps it back.
+    var mutationObserver = null;
+    var boundsPollId = null;
+
+    function isElementOutOfBounds(rect, vw, vh) {
+      return rect.width > vw + 1 ||
+        rect.height > vh + 1 ||
+        rect.left < -1 ||
+        rect.top < -1 ||
+        rect.right > vw + 1 ||
+        rect.bottom > vh + 1;
+    }
+
+    function resetToFullBounds(el) {
+      el.style.setProperty('max-width', '100%', 'important');
+      el.style.setProperty('max-height', '100%', 'important');
+      el.style.setProperty('width', '100%', 'important');
+      el.style.setProperty('height', '100%', 'important');
+      el.style.setProperty('top', '0px', 'important');
+      el.style.setProperty('left', '0px', 'important');
+      el.style.setProperty('right', 'auto', 'important');
+      el.style.setProperty('bottom', 'auto', 'important');
+      el.style.setProperty('margin', '0', 'important');
+      el.style.setProperty('transform', 'none', 'important');
+    }
+
+    function clamp(el) {
+      if (!el || el === document.documentElement || el === document.body) return;
+      if (el.id === 'error-display') return;
+      var rect = el.getBoundingClientRect();
+      if (rect.width < 1 || rect.height < 1) return; // not laid out yet
+      if (isElementOutOfBounds(rect, window.innerWidth, window.innerHeight)) {
+        resetToFullBounds(el);
+      }
+    }
+
+    function clampAll() {
+      var root = document.getElementById('zmmtg-root');
+      if (!root) return;
+      clamp(root);
+      var styled = root.querySelectorAll('[style]');
+      for (var i = 0; i < styled.length; i++) clamp(styled[i]);
+    }
+
+    function startBoundsEnforcer() {
+      if (typeof MutationObserver !== 'undefined' && !mutationObserver) {
+        mutationObserver = new MutationObserver(function (mutations) {
+          for (var i = 0; i < mutations.length; i++) {
+            var target = mutations[i].target;
+            if (target && target.nodeType === 1) clamp(target);
+          }
+        });
+        mutationObserver.observe(document.body, {
+          attributes: true,
+          attributeFilter: ['style'],
+          subtree: true,
+        });
+      }
+
+      window.addEventListener('mouseup', function () { setTimeout(clampAll, 0); });
+      window.addEventListener('touchend', function () { setTimeout(clampAll, 0); });
+
+      // Belt-and-braces: a cheap periodic sweep independent of mutation
+      // events, in case a drag ends without a final style mutation firing
+      // on the exact element we're watching. 500ms is imperceptible but
+      // guarantees self-healing within half a second even in the worst case.
+      if (!boundsPollId) {
+        boundsPollId = setInterval(function () {
+          clampAll();
+          triggerResize();
+
+          // Debugging log to see layout dimensions
+          var root = document.getElementById('zmmtg-root');
+          if (root) {
+            console.log(`[ZOOM DIAGNOSTIC] window: ${window.innerWidth}x${window.innerHeight}, body: ${document.body.clientWidth}x${document.body.clientHeight}, root: ${root.clientWidth}x${root.clientHeight}`);
+            var child = root.firstElementChild;
+            var depth = 1;
+            while (child && depth <= 6) {
+              console.log(`[ZOOM DIAGNOSTIC] L${depth} - Tag: ${child.tagName}, classes: ${child.className}, style: "${child.getAttribute('style') || ''}", rect: ${child.clientWidth}x${child.clientHeight}`);
+              child = child.firstElementChild;
+              depth++;
+            }
+          }
+        }, 3000);
+      }
+    }
+
+    // PRIMARY FIX: Zoom's embedded video tiles ship with a drag-to-resize
+    // handle (corner/edge elements with a "resize" cursor). Dragging it
+    // past the bottom of the viewport was the actual root cause of the
+    // reported bug — it grows the tile taller than the window, pushes the
+    // toolbar below the fold, AND drags the handle itself out of reach so
+    // the user can never grab it again to shrink back. This LMS embed has
+    // no need for manual tile resizing, so the cleanest fix is to block
+    // the drag from ever starting, rather than only cleaning up after it.
+    function disableResizeHandles() {
+      function hasResizeCursor(el) {
+        try {
+          return /resize/.test(window.getComputedStyle(el).cursor || '');
+        } catch (e) {
+          return false;
+        }
+      }
+      function blockIfResizeHandle(e) {
+        var el = e.target;
+        var depth = 0;
+        while (el && depth < 6) {
+          if (hasResizeCursor(el)) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+          el = el.parentElement;
+          depth++;
+        }
+      }
+      document.addEventListener('mousedown', blockIfResizeHandle, true);
+      document.addEventListener('touchstart', blockIfResizeHandle, true);
+    }
+
+    async function initAndJoin(config) {
+      try {
+        if (typeof ZoomMtgEmbedded === 'undefined') {
+          throw Object.assign(
+            new Error('Could not load Zoom Meeting SDK from CDN. Check your internet connection.'),
+            { code: 'SDK_LOAD_FAIL' }
+          );
+        }
+
+        // Validate config
+        if (!config.sdkKey) throw Object.assign(new Error('SDK Key missing'), { code: 'MISSING_SDK_KEY' });
+        if (!config.signature) throw Object.assign(new Error('Signature missing'), { code: 'MISSING_SIG' });
+        if (!config.meetingNumber) throw Object.assign(new Error('Meeting number missing'), { code: 'MISSING_MTG' });
+
+        notifyParent({ type: 'ZOOM_JOINING' });
+
+        zoomClient = ZoomMtgEmbedded.createClient();
+
+        var rootEl = document.getElementById('zmmtg-root');
+
+        await zoomClient.init({
+          zoomAppRoot: rootEl,
+          language: 'en-US',
+          patchJsMedia: true,
+          leaveOnPageUnload: true
+        });
+
+        startResizeObserver(rootEl);
+        startBoundsEnforcer();
+
+        // Nudge Zoom to fill available space as early as possible, not
+        // just once on 'connected' — its first layout pass can measure a
+        // smaller size than what's actually available.
+        [100, 300, 600, 1200].forEach(function (delay) {
+          setTimeout(triggerResize, delay);
+        });
+
+        zoomClient.on('connection-change', function (payload) {
+          var state = String(payload.state || '').toLowerCase();
+          if (state === 'closed' || state === 'fail') {
+            if (boundsPollId) {
+              clearInterval(boundsPollId);
+              boundsPollId = null;
+            }
+            notifyParent({ type: 'ZOOM_ENDED' });
+          } else if (state === 'reconnecting') {
+            notifyParent({ type: 'ZOOM_RECONNECTING' });
+          } else if (state === 'connected') {
+            notifyParent({ type: 'ZOOM_CONNECTED' });
+            requestAnimationFrame(triggerResize);
+          }
+        });
+
+        // Build the join payload without empty-string tk/zak — some SDK
+        // versions treat an empty string as "provided but invalid" rather
+        // than "not provided", which can cause silent auth issues.
+        var joinPayload = {
+          sdkKey: config.sdkKey,
+          signature: config.signature,
+          meetingNumber: String(config.meetingNumber),
+          userName: config.userName || 'User',
+          password: config.passcode || '',
+        };
+        if (config.userEmail) joinPayload.userEmail = config.userEmail;
+        if (config.tk) joinPayload.tk = config.tk;
+        if (config.zak) joinPayload.zak = config.zak;
+
+        await zoomClient.join(joinPayload);
+
+        notifyParent({ type: 'ZOOM_JOINED' });
+
+        // Safety net: nudge a resize shortly after join resolves too, in
+        // case 'connection-change' -> 'connected' never fires (varies by
+        // SDK version) or fires before the parent has actually swapped
+        // this iframe to visible. The ResizeObserver above handles the
+        // ongoing case; these just cover the very first paint.
+        setTimeout(triggerResize, 300);
+        setTimeout(triggerResize, 1000);
+
+      } catch (err) {
+        var msg = err.message || String(err);
+        var code = err.code || err.errorCode || 'UNKNOWN';
+        console.error('[zoom-embed] Error:', err);
+        showError('Connection Failed', msg, code);
+      }
+    }
+
+    // ── Receive config from parent ────────────────────────────────────────
+    window.addEventListener('message', function (event) {
+      if (event.origin !== PARENT_ORIGIN) return;
+      if (!event.data) return;
+      if (event.data.type === 'ZOOM_INIT') {
+        initAndJoin(event.data.config);
+      } else if (event.data.type === 'ZOOM_FORCE_RESIZE') {
+        // Parent asks us to re-measure — e.g. after it toggled its own
+        // overlay chrome on/off, which can change available space even
+        // though our iframe itself stays the same size.
+        triggerResize();
+      }
+    });
+
+    // ── Tell the parent we're ready to receive ZOOM_INIT ──────────────────
+    // This must fire only after the message listener above is registered,
+    // and only once the SDK script has actually finished loading (or
+    // definitively failed to load). This closes the race condition where
+    // the parent could send ZOOM_INIT before we were listening, or before
+    // ZoomMtgEmbedded existed yet.
+    function announceReady() {
+      if (readySent) return;
+      readySent = true;
+      notifyParent({ type: 'ZOOM_READY' });
+    }
+
+    if (typeof ZoomMtgEmbedded !== 'undefined') {
+      announceReady();
+    } else {
+      // SDK script tag failed or hasn't finished evaluating synchronously
+      // (e.g. blocked by an ad-blocker / network hiccup). Tell the parent
+      // we're "ready" anyway so it can attempt init, which will then fail
+      // fast with a clear SDK_LOAD_FAIL error instead of hanging forever.
+      showError('SDK Load Failed', 'Could not load Zoom Meeting SDK from CDN. Check your internet connection.', 'SDK_LOAD_FAIL');
+      announceReady();
+    }
+  </script>
+</body>
+
+</html>
