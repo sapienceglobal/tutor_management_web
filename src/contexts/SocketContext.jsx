@@ -25,9 +25,27 @@ export const SocketProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Get backend base URL and strip trailing /api
-    let backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
-    backendUrl = backendUrl.replace(/\/api\/?$/, '').trim();
+    // Get backend base URL dynamically to avoid Mixed Content blocks in production (HTTPS)
+    let backendUrl = '';
+    
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+        // On production VPS, use the secure NEXT_PUBLIC_API_URL or the current origin directly.
+        // This ensures the browser connects via wss:// (WebSocket Secure) instead of blocked non-secure ws://.
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        if (apiUrl) {
+          backendUrl = apiUrl.replace(/\/api\/?$/, '').trim();
+        } else {
+          backendUrl = window.location.origin;
+        }
+      }
+    }
+
+    if (!backendUrl) {
+      backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+      backendUrl = backendUrl.replace(/\/api\/?$/, '').trim();
+    }
 
     const token = localStorage.getItem('token') || Cookies.get('token');
     const userStr = localStorage.getItem('user');
