@@ -582,10 +582,22 @@ function CreateExamPageClient() {
     try {
       const requests = [];
       if (aiParams.mcqCount > 0) {
-        requests.push(api.post("/ai/generate-questions", { topic: aiParams.topic, count: aiParams.mcqCount, difficulty: aiParams.difficulty, type: "mcq" }));
+        requests.push(api.post("/ai/generate-questions", { 
+          topic: aiParams.topic, 
+          count: aiParams.mcqCount, 
+          difficulty: aiParams.difficulty, 
+          type: "mcq",
+          isPersonal: examData.audience?.scope === 'global'
+        }));
       }
       if (aiParams.subjectiveCount > 0) {
-        requests.push(api.post("/ai/generate-questions", { topic: aiParams.topic, count: aiParams.subjectiveCount, difficulty: aiParams.difficulty, type: "subjective" }));
+        requests.push(api.post("/ai/generate-questions", { 
+          topic: aiParams.topic, 
+          count: aiParams.subjectiveCount, 
+          difficulty: aiParams.difficulty, 
+          type: "subjective",
+          isPersonal: examData.audience?.scope === 'global'
+        }));
       }
 
       const responses = await Promise.all(requests);
@@ -1383,7 +1395,7 @@ function CreateExamPageClient() {
                   {examData.type !== 'practice' ? (
                     <>
                       {/* AI Proctoring */}
-                      <FeatureGate featureName="aiAssessment" mode="lock">
+                      <FeatureGate featureName="aiAssessment" mode="lock" isPersonal={examData.audience?.scope === 'global'}>
                         <div
                           style={{
                             backgroundColor: C.innerBg,
@@ -1933,7 +1945,7 @@ function CreateExamPageClient() {
                     </p>
                   </div>
                   <div className="flex gap-3 w-full md:w-auto flex-wrap">
-                    <FeatureGate featureName="aiAssessment" mode="lock">
+                    <FeatureGate featureName="aiAssessment" mode="lock" isPersonal={examData.audience?.scope === 'global'}>
                       <button
                         onClick={() => setIsAIOpen(true)}
                         className="flex items-center gap-2 cursor-pointer transition-all hover:opacity-80"
@@ -2048,7 +2060,7 @@ function CreateExamPageClient() {
                       Build your assessment by adding questions manually,
                       pulling from the bank, or let AI do the heavy lifting.
                     </p>
-                    <FeatureGate featureName="aiAssessment" mode="lock">
+                    <FeatureGate featureName="aiAssessment" mode="lock" isPersonal={examData.audience?.scope === 'global'}>
                       <button
                         onClick={() => setIsAIOpen(true)}
                         className="flex items-center justify-center gap-2 cursor-pointer transition-all hover:opacity-90"
@@ -2259,7 +2271,7 @@ function CreateExamPageClient() {
                   </div>
 
                   <div className="flex justify-center gap-3 mt-6 pt-6 border-t border-dashed" style={{ borderColor: C.cardBorder }}>
-                    <FeatureGate featureName="aiAssessment" mode="lock">
+                    <FeatureGate featureName="aiAssessment" mode="lock" isPersonal={examData.audience?.scope === 'global'}>
                       <button onClick={() => setIsAIOpen(true)} className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-80 border-2 border-dashed" style={{ backgroundColor: C.cardBg, color: C.btnPrimary, borderColor: C.cardBorder, borderRadius: '10px', fontFamily: T.fontFamily, fontSize: T.size.base, fontWeight: T.weight.bold }}>
                         <MdAutoAwesome style={{ width: 16, height: 16 }} /> AI Generate
                       </button>

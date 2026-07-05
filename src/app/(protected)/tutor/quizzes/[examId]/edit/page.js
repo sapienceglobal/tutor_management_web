@@ -306,10 +306,22 @@ export default function EditExamPage({ params }) {
         try {
             const requests = [];
             if (aiParams.mcqCount > 0) {
-                requests.push(api.post('/ai/generate-questions', { topic: aiParams.topic, count: aiParams.mcqCount, difficulty: aiParams.difficulty, type: 'mcq' }));
+                requests.push(api.post('/ai/generate-questions', { 
+                    topic: aiParams.topic, 
+                    count: aiParams.mcqCount, 
+                    difficulty: aiParams.difficulty, 
+                    type: 'mcq',
+                    isPersonal: examData.audience?.scope === 'global'
+                }));
             }
             if (aiParams.subjectiveCount > 0) {
-                requests.push(api.post('/ai/generate-questions', { topic: aiParams.topic, count: aiParams.subjectiveCount, difficulty: aiParams.difficulty, type: 'subjective' }));
+                requests.push(api.post('/ai/generate-questions', { 
+                    topic: aiParams.topic, 
+                    count: aiParams.subjectiveCount, 
+                    difficulty: aiParams.difficulty, 
+                    type: 'subjective',
+                    isPersonal: examData.audience?.scope === 'global'
+                }));
             }
 
             const responses = await Promise.all(requests);
@@ -685,7 +697,7 @@ export default function EditExamPage({ params }) {
                             </div>
 
                             {/* Security */}
-                            <FeatureGate featureName="aiAssessment" mode="lock">
+                            <FeatureGate featureName="aiAssessment" mode="lock" isPersonal={examData.audience?.scope === 'global'}>
                                 <div className="p-6" style={sectionCard}>
                                     <CardSectionHeader title="Security & Integrity" icon={MdShield} iconColor={C.danger} />
                                     <SettingRow label="Visual AI Proctoring" desc="Requires webcam. Flags absence & multiple faces."    checked={examData.isProctoringEnabled ?? false} onChange={v => setExamData({ ...examData, isProctoringEnabled: v })} />
@@ -818,7 +830,7 @@ export default function EditExamPage({ params }) {
 
                         {/* Add Question Buttons */}
                         <div className="flex flex-wrap gap-3 w-full sm:w-auto">
-                            <FeatureGate featureName="aiAssessment" mode="lock">
+                            <FeatureGate featureName="aiAssessment" mode="lock" isPersonal={examData.audience?.scope === 'global'}>
                                 <button
                                     onClick={() => setIsAIOpen(true)}
                                     className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-80 border-2 border-dashed"
@@ -977,7 +989,7 @@ export default function EditExamPage({ params }) {
 
                         {examData.questions.length > 0 && (
                             <div className="flex justify-center gap-3 mt-6 pt-6 border-t border-dashed" style={{ borderColor: C.cardBorder }}>
-                                <FeatureGate featureName="aiAssessment" mode="lock">
+                                <FeatureGate featureName="aiAssessment" mode="lock" isPersonal={examData.audience?.scope === 'global'}>
                                     <button
                                         onClick={() => setIsAIOpen(true)}
                                         className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-80 border-2 border-dashed"
@@ -1019,7 +1031,7 @@ export default function EditExamPage({ params }) {
                                     No questions yet. Add some!
                                 </p>
                                 <div className="flex gap-3">
-                                    <FeatureGate featureName="aiAssessment" mode="lock">
+                                    <FeatureGate featureName="aiAssessment" mode="lock" isPersonal={examData.audience?.scope === 'global'}>
                                         <button
                                             onClick={() => setIsAIOpen(true)}
                                             className="flex items-center justify-center gap-2 h-10 px-5 cursor-pointer border-none transition-opacity hover:opacity-80 border-2 border-dashed"
