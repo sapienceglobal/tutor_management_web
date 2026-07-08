@@ -58,6 +58,25 @@ const baseInput = {
 function SubmissionDrawer({ row, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const handleDownload = async (e, url, filename) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename || "download";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      window.open(url, "_blank");
+    }
+  };
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -671,9 +690,8 @@ function SubmissionDrawer({ row, onClose }) {
                       <a
                         key={i}
                         href={resolveMediaUrl(file.url)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between p-3.5 border transition-all group no-underline"
+                        onClick={(e) => handleDownload(e, resolveMediaUrl(file.url), file.name)}
+                        className="flex items-center justify-between p-3.5 border transition-all group no-underline cursor-pointer"
                         style={{
                           backgroundColor: C.outerCard,
                           borderColor: C.cardBorder,

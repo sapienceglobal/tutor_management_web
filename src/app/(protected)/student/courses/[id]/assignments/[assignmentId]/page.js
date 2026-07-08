@@ -97,6 +97,10 @@ export default function StudentAssignmentDetailsPage({ params }) {
     const isGraded    = assignment?.mySubmission?.status === 'graded';
     const submission  = assignment?.mySubmission;
 
+    const hasChanges = submission 
+        ? (content !== (submission.content || '') || JSON.stringify(attachments) !== JSON.stringify(submission.attachments || []))
+        : (content.trim() !== '' || attachments.length > 0);
+
     useEffect(() => { loadData(); }, [assignmentId]);
 
     const loadData = async () => {
@@ -139,12 +143,13 @@ export default function StudentAssignmentDetailsPage({ params }) {
     const removeAttachment = (index) => setAttachments(prev => prev.filter((_, i) => i !== index));
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        if (e && e.preventDefault) e.preventDefault();
+        if (isSubmitted && !hasChanges) return toast.info('No changes made to update.');
         if (!content.trim() && attachments.length === 0) return toast.error('Text response or file attachment is required.');
         setSubmitting(true);
         try {
             const res = await assignmentService.submitAssignment(assignmentId, { content, attachments });
-            if (res.success) { toast.success('Assignment submitted successfully!'); loadData(); }
+            if (res.success) { toast.success(isSubmitted ? 'Assignment updated successfully!' : 'Assignment submitted successfully!'); loadData(); }
         } catch (error) {
             console.error(error);
             toast.error(error.response?.data?.message || 'Failed to submit assignment');
@@ -563,25 +568,6 @@ export default function StudentAssignmentDetailsPage({ params }) {
                             <CardHeader
                                 icon={MdAssignment}
                                 title="Your Work"
-                                right={
-                                    isSubmitted && !isGraded ? (
-                                        <button
-                                            onClick={() => assignmentService.submitAssignment(assignmentId, { content, attachments }).then(() => toast.success('Updated!'))}
-                                            className="px-3 py-1.5 transition-all cursor-pointer border hover:opacity-80"
-                                            style={{
-                                                backgroundColor: C.cardBg,
-                                                color:           C.btnPrimary,
-                                                borderColor:     C.cardBorder,
-                                                fontFamily:      T.fontFamily,
-                                                fontSize:        T.size.xs,
-                                                fontWeight:      T.weight.bold,
-                                                borderRadius:    '10px',
-                                            }}
-                                        >
-                                            Update Submission
-                                        </button>
-                                    ) : null
-                                }
                             />
 
                             <div className="p-5">
@@ -738,7 +724,7 @@ export default function StudentAssignmentDetailsPage({ params }) {
                                     {!isGraded && (
                                         <button
                                             type="submit"
-                                            disabled={submitting}
+                                            disabled={submitting || (isSubmitted && !hasChanges)}
                                             className="w-full py-3.5 text-white flex items-center justify-center gap-2 transition-all hover:opacity-90 disabled:opacity-50 cursor-pointer border-none"
                                             style={{
                                                 background:   C.gradientBtn,
@@ -752,7 +738,7 @@ export default function StudentAssignmentDetailsPage({ params }) {
                                             {submitting ? (
                                                 <MdHourglassEmpty style={{ width: 20, height: 20 }} className="animate-spin" />
                                             ) : isSubmitted ? (
-                                                <><MdCheckCircle style={{ width: 20, height: 20 }} /> Saved & Submitted</>
+                                                <><MdSend style={{ width: 20, height: 20 }} /> Update Submission</>
                                             ) : (
                                                 <><MdSend style={{ width: 20, height: 20 }} /> Submit Assignment</>
                                             )}

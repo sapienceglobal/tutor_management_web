@@ -63,9 +63,6 @@ export function CourseCard({ course, viewMode = 'grid', isWishlisted = false, on
                                 ))}
                                 <span className="text-sm text-slate-500 ml-1">({rating || '0.0'})</span>
                             </div>
-                            <Button className="rounded text-xs font-bold px-4 h-8 uppercase tracking-wide">
-                                Read More
-                            </Button>
                         </div>
                     </div>
                 </div>
@@ -156,9 +153,6 @@ export function CourseCard({ course, viewMode = 'grid', isWishlisted = false, on
                                 </button>
                             )}
 
-                            <Button variant="default" className="rounded text-[10px] font-bold px-3 h-7 uppercase tracking-wide shadow-sm hover:shadow-md transition-all">
-                                Read More
-                            </Button>
                         </div>
                     </div>
                 </div>

@@ -2103,9 +2103,11 @@ export default function TakeExamPage({ params }) {
                 className="ml-auto flex items-center gap-2 px-6 py-2.5 text-white text-[15px] font-medium rounded-md transition-all bg-[#1E1B4B] hover:bg-slate-800 border-[1px] border-[#1E1B4B] shadow-sm"
               >
                 {currentQuestionIndex === exam.questions.length - 1
-                  ? "Save & Finish"
+                  ? "Submit"
                   : "Save & Next"}
-                <ArrowRight className="w-[18px] h-[18px]" />
+                {currentQuestionIndex !== exam.questions.length - 1 && (
+                  <ArrowRight className="w-[18px] h-[18px]" />
+                )}
               </button>
             </div>
           </main>

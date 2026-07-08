@@ -29,7 +29,7 @@ import api from "@/lib/axios";
 import { getAudienceDisplay } from "@/lib/audienceDisplay";
 import { C, T, S, R } from "@/constants/studentTokens";
 import StatCard from "@/components/StatCard";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const COURSES_PER_PAGE = 8;
 const progressColors = ["#5E9D9D", "#7573E8", "#6267E9", "#4748AA"]; // Dashboard colors
@@ -360,6 +360,7 @@ function MyCoursesPageContent() {
   const [wishlistIds, setWishlistIds] = useState([]);
 
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const currentTab = searchParams.get("tab");
   // Tabs state
@@ -582,11 +583,18 @@ function MyCoursesPageContent() {
         >
           {[
             { id: "enrollments", label: "My Enrollments", icon: MdMenuBook },
-            { id: "discover", label: "Discover Courses", icon: MdAutoAwesome },
+            { id: "discover", label: "Explore Courses", icon: MdAutoAwesome },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setMainTab(tab.id)}
+              onClick={() => {
+                setMainTab(tab.id);
+                if (tab.id === "enrollments") {
+                  router.push("/student/courses");
+                } else {
+                  router.push("?tab=" + tab.id);
+                }
+              }}
               className="flex items-center gap-2 px-5 py-2 transition-colors duration-200 border-none cursor-pointer"
               style={
                 mainTab === tab.id
@@ -809,7 +817,10 @@ function MyCoursesPageContent() {
                   </p>
                   {!searchQuery && (
                     <button
-                      onClick={() => setMainTab("discover")}
+                      onClick={() => {
+                        setMainTab("discover");
+                        router.push("?tab=discover");
+                      }}
                       className="px-5 py-2 text-white transition-colors border-none cursor-pointer"
                       style={{
                         background: C.gradientBtn,
@@ -820,7 +831,7 @@ function MyCoursesPageContent() {
                         boxShadow: S.btn,
                       }}
                     >
-                      Discover Courses
+                      Explore Courses
                     </button>
                   )}
                 </div>
