@@ -6,7 +6,7 @@ import {
     MdErrorOutline, MdSchool, MdHourglassEmpty, MdOpenInNew, MdAccessTime, MdMessage
 } from 'react-icons/md';
 import api from '@/lib/axios';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { C, T, S, R } from '@/constants/studentTokens';
 
 const CATEGORY_META = {
@@ -31,6 +31,7 @@ function NotifIcon({ type }) {
 
 export default function NotificationPanel({ onClose }) {
     const router = useRouter();
+    const pathname = usePathname();
     const panelRef = useRef(null);
 
     const [notifications, setNotifications] = useState([]);
@@ -278,7 +279,11 @@ export default function NotificationPanel({ onClose }) {
 
                 {/* Footer */}
                 <div className="px-4 py-3 shrink-0" style={{ backgroundColor: C.innerBg, borderTop: `1px solid ${C.cardBorder}` }}>
-                    <button onClick={() => { router.push('/student/profile/notifications'); onClose?.(); }}
+                    <button onClick={() => { 
+                            const targetPath = pathname.startsWith('/tutor') ? '/tutor/settings?tab=notifications' : '/student/profile/notifications';
+                            router.push(targetPath); 
+                            onClose?.(); 
+                        }}
                         className="w-full py-2 cursor-pointer transition-colors border-none"
                         style={{
                             backgroundColor: 'transparent',
@@ -290,7 +295,7 @@ export default function NotificationPanel({ onClose }) {
                         }}
                         onMouseEnter={e => e.currentTarget.style.backgroundColor = C.btnViewAllBg}
                         onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                        View all notifications →
+                        Notification Settings →
                     </button>
                 </div>
             </div>

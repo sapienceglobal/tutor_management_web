@@ -10,6 +10,7 @@ import {
   AlertCircle,
   ArrowRight,
 } from "lucide-react";
+import { z } from "zod";
 import api from "@/lib/axios";
 import Cookies from "js-cookie";
 import { Button } from "@/components/ui/button";
@@ -20,11 +21,17 @@ import { cn } from "@/lib/utils";
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api";
 
+const loginSchema = z.object({
+  email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
 const LoginPageClient = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [oauthResetEmail, setOauthResetEmail] = useState("");
   const [isClient, setIsClient] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -61,6 +68,7 @@ const LoginPageClient = () => {
     if (inviteEmail && name === "email") return;
     setFormData({ ...formData, [name]: value });
     setError("");
+    setFieldErrors(prev => ({ ...prev, [name]: "" }));
     setOauthResetEmail("");
   };
 
@@ -68,7 +76,21 @@ const LoginPageClient = () => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+    setFieldErrors({});
     setOauthResetEmail("");
+
+    const validation = loginSchema.safeParse(formData);
+    if (!validation.success) {
+      const errors = {};
+      validation.error.issues.forEach(issue => {
+        if (!errors[issue.path[0]]) {
+          errors[issue.path[0]] = issue.message;
+        }
+      });
+      setFieldErrors(errors);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const response = await api.post("/auth/login", formData);
@@ -302,7 +324,7 @@ const LoginPageClient = () => {
                     </div>
                   )}
 
-                  <form onSubmit={handle2faSubmit} className="space-y-5">
+                  <form onSubmit={handle2faSubmit} className="space-y-5" noValidate>
                     <div className="space-y-2">
                       <Label
                         htmlFor="totpCode"
@@ -388,7 +410,7 @@ const LoginPageClient = () => {
                     </div>
                   )}
 
-                  <form onSubmit={handleSubmit} className="space-y-5">
+                  <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                     <div className="space-y-2">
                       <Label
                         htmlFor="email"
@@ -406,6 +428,7 @@ const LoginPageClient = () => {
                           placeholder="name@example.com"
                           className={cn(
                             "pl-12 h-12 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl",
+                            fieldErrors.email && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
                             isClient && sessionStorage.getItem("inviteEmail")
                               ? "bg-gray-100 cursor-not-allowed"
                               : "",
@@ -419,6 +442,11 @@ const LoginPageClient = () => {
                             isClient && !!sessionStorage.getItem("inviteEmail")
                           }
                         />
+                        {fieldErrors.email && (
+                          <p className="text-xs text-red-500 mt-1.5 font-medium ml-1">
+                            {fieldErrors.email}
+                          </p>
+                        )}
                         {isClient && sessionStorage.getItem("inviteEmail") && (
                           <p className="text-xs text-gray-500 mt-1">
                             Email is locked for invite-based login
@@ -448,14 +476,23 @@ const LoginPageClient = () => {
                           id="password"
                           name="password"
                           type="password"
+                          required
                           placeholder="••••••••"
-                          className="pl-12 h-12 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl"
+                          className={cn(
+                            "pl-12 h-12 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl",
+                            fieldErrors.password && "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                          )}
                           style={{
                             boxShadow: "rgba(149,157,165,0.18) 0px 8px 24px",
                           }}
                           value={formData.password}
                           onChange={handleChange}
                         />
+                        {fieldErrors.password && (
+                          <p className="text-xs text-red-500 mt-1.5 font-medium ml-1">
+                            {fieldErrors.password}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 pt-2 pb-1">

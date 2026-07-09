@@ -234,8 +234,8 @@ export default function TutorReportsPage() {
                     value={report?.students?.atRiskCount ?? 0}
                     label="At-Risk Students"
                     subtext={`${report?.students?.highRiskCount ?? 0} high risk`}
-                    iconBg={(report?.students?.highRiskCount ?? 0) > 0 ? C.dangerBg : C.successBg}
-                    iconColor={(report?.students?.highRiskCount ?? 0) > 0 ? C.danger  : C.success}
+                    iconBg={C.dangerBg}
+                    iconColor={C.danger}
                 />
             </div>
 

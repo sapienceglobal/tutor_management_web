@@ -15,6 +15,7 @@ import {
   Building2,
   Briefcase
 } from "lucide-react";
+import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/axios";
 import Cookies from "js-cookie";
@@ -23,10 +24,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
+const registerSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name is too long"),
+  email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
+  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Please enter a valid phone number (e.g. +1234567890)").optional().or(z.literal('')),
+  password: z.string().min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number"),
+  confirmPassword: z.string(),
+  role: z.string(),
+  inviteToken: z.string().optional(),
+  registrationType: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
 export default function RegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otp, setOtp] = useState("");
   const [otpSending, setOtpSending] = useState(false);
@@ -69,6 +88,7 @@ export default function RegisterPage() {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError("");
+    setFieldErrors(prev => ({ ...prev, [e.target.name]: "" }));
   };
 
   const handleRoleSelect = (role) => {
@@ -81,9 +101,18 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFieldErrors({});
+    setError("");
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+    const validation = registerSchema.safeParse(formData);
+    if (!validation.success) {
+      const errors = {};
+      validation.error.issues.forEach(issue => {
+        if (!errors[issue.path[0]]) {
+          errors[issue.path[0]] = issue.message;
+        }
+      });
+      setFieldErrors(errors);
       return;
     }
 
@@ -276,7 +305,7 @@ export default function RegisterPage() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-3.5">
+              <form onSubmit={handleSubmit} className="space-y-3.5" noValidate>
                 
                 {/* Custom Toggles */}
                 <div className="grid grid-cols-2 gap-4">
@@ -310,15 +339,17 @@ export default function RegisterPage() {
                     <Label htmlFor="name" className="text-slate-700 font-bold ml-1">Full Name</Label>
                     <div className="relative group">
                       <User className="absolute left-4 top-3.5 h-4 w-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                      <Input id="name" name="name" placeholder="John Doe" required className="pl-11 h-11 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl text-sm" style={{ boxShadow: "rgba(149,157,165,0.08) 0px 4px 12px" }} value={formData.name} onChange={handleChange} />
+                      <Input id="name" name="name" placeholder="John Doe" required className={cn("pl-11 h-11 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl text-sm", fieldErrors.name && "border-red-500 focus:border-red-500 focus:ring-red-500/20")} style={{ boxShadow: "rgba(149,157,165,0.08) 0px 4px 12px" }} value={formData.name} onChange={handleChange} />
                     </div>
+                    {fieldErrors.name && <p className="text-xs text-red-500 font-medium ml-1">{fieldErrors.name}</p>}
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="phone" className="text-slate-700 font-bold ml-1">Phone</Label>
                     <div className="relative group">
                       <Phone className="absolute left-4 top-3.5 h-4 w-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                      <Input id="phone" name="phone" placeholder="+1 234..." type="tel" required className="pl-11 h-11 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl text-sm" style={{ boxShadow: "rgba(149,157,165,0.08) 0px 4px 12px" }} value={formData.phone} onChange={handleChange} />
+                      <Input id="phone" name="phone" placeholder="+1 234..." type="tel" required className={cn("pl-11 h-11 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl text-sm", fieldErrors.phone && "border-red-500 focus:border-red-500 focus:ring-red-500/20")} style={{ boxShadow: "rgba(149,157,165,0.08) 0px 4px 12px" }} value={formData.phone} onChange={handleChange} />
                     </div>
+                    {fieldErrors.phone && <p className="text-xs text-red-500 font-medium ml-1">{fieldErrors.phone}</p>}
                   </div>
                 </div>
 
@@ -327,10 +358,11 @@ export default function RegisterPage() {
                   <div className="relative group">
                     <Mail className="absolute left-4 top-3.5 h-4 w-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
                     <Input id="email" name="email" placeholder="name@example.com" type="email" required 
-                      className={cn("pl-11 h-11 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl text-sm", formData.registrationType === 'invite' && formData.email ? "bg-gray-100 cursor-not-allowed text-gray-500" : "")} 
+                      className={cn("pl-11 h-11 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl text-sm", formData.registrationType === 'invite' && formData.email ? "bg-gray-100 cursor-not-allowed text-gray-500" : "", fieldErrors.email && "border-red-500 focus:border-red-500 focus:ring-red-500/20")} 
                       style={{ boxShadow: "rgba(149,157,165,0.08) 0px 4px 12px" }} 
                       value={formData.email} onChange={handleChange} disabled={formData.registrationType === 'invite' && !!formData.email} />
                   </div>
+                  {fieldErrors.email && <p className="text-xs text-red-500 font-medium ml-1">{fieldErrors.email}</p>}
                 </div>
 
                 {/* Animated Invite Token Field */}
@@ -348,10 +380,11 @@ export default function RegisterPage() {
                         <div className="relative group">
                           <Lock className="absolute left-4 top-3.5 h-4 w-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
                           <Input id="inviteToken" name="inviteToken" placeholder="Paste your token here..." required 
-                            className="pl-11 h-11 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl text-sm" 
+                            className={cn("pl-11 h-11 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl text-sm", fieldErrors.inviteToken && "border-red-500 focus:border-red-500 focus:ring-red-500/20")} 
                             style={{ boxShadow: "rgba(149,157,165,0.08) 0px 4px 12px" }} 
                             value={formData.inviteToken} onChange={handleChange} />
                         </div>
+                        {fieldErrors.inviteToken && <p className="text-xs text-red-500 font-medium ml-1">{fieldErrors.inviteToken}</p>}
                       </div>
                     </motion.div>
                   )}
@@ -362,15 +395,17 @@ export default function RegisterPage() {
                     <Label htmlFor="password" className="text-slate-700 font-bold ml-1">Password</Label>
                     <div className="relative group">
                       <Lock className="absolute left-4 top-3.5 h-4 w-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                      <Input id="password" name="password" placeholder="••••••••" type="password" required className="pl-11 h-11 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl text-sm" style={{ boxShadow: "rgba(149,157,165,0.08) 0px 4px 12px" }} value={formData.password} onChange={handleChange} />
+                      <Input id="password" name="password" placeholder="••••••••" type="password" required className={cn("pl-11 h-11 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl text-sm", fieldErrors.password && "border-red-500 focus:border-red-500 focus:ring-red-500/20")} style={{ boxShadow: "rgba(149,157,165,0.08) 0px 4px 12px" }} value={formData.password} onChange={handleChange} />
                     </div>
+                    {fieldErrors.password && <p className="text-xs text-red-500 font-medium ml-1 leading-tight">{fieldErrors.password}</p>}
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="confirmPassword" className="text-slate-700 font-bold ml-1">Confirm</Label>
                     <div className="relative group">
                       <Lock className="absolute left-4 top-3.5 h-4 w-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                      <Input id="confirmPassword" name="confirmPassword" placeholder="••••••••" type="password" required className="pl-11 h-11 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl text-sm" style={{ boxShadow: "rgba(149,157,165,0.08) 0px 4px 12px" }} value={formData.confirmPassword} onChange={handleChange} />
+                      <Input id="confirmPassword" name="confirmPassword" placeholder="••••••••" type="password" required className={cn("pl-11 h-11 bg-white/50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all rounded-xl text-sm", fieldErrors.confirmPassword && "border-red-500 focus:border-red-500 focus:ring-red-500/20")} style={{ boxShadow: "rgba(149,157,165,0.08) 0px 4px 12px" }} value={formData.confirmPassword} onChange={handleChange} />
                     </div>
+                    {fieldErrors.confirmPassword && <p className="text-xs text-red-500 font-medium ml-1 leading-tight">{fieldErrors.confirmPassword}</p>}
                   </div>
                 </div>
 

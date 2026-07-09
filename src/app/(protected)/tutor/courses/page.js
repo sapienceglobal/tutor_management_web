@@ -8,6 +8,7 @@ import {
     MdEdit,
     MdDelete,
     MdVisibility,
+    MdVisibilityOff,
     MdTrendingUp,
     MdPeople,
     MdPlayCircle,
@@ -73,8 +74,9 @@ function StarRating({ rating = 0 }) {
 }
 
 // ─── Course Grid Card ──────────────────────────────────────────────────────────
-function CourseGridCard({ course, onDelete }) {
+function CourseGridCard({ course, onDelete, onToggleVisibility }) {
     const isDraft = !['published', 'pending', 'rejected', 'suspended'].includes(course.status);
+    const [showMenu, setShowMenu] = useState(false);
 
     return (
         <div
@@ -220,7 +222,7 @@ function CourseGridCard({ course, onDelete }) {
             {/* ── Actions ── */}
             <div className="p-4 pt-0 border-t" style={{ borderColor: C.cardBorder }}>
                 <div className="flex items-center gap-2 mt-4">
-                    <Link href={`/student/courses/${course._id}`} className="flex-1">
+                    <Link href={`/student/courses/${course._id}`} className="flex-1" title="See how students view this course">
                         <button
                             className="w-full flex items-center justify-center gap-1.5 transition-all hover:opacity-80"
                             style={{
@@ -276,19 +278,40 @@ function CourseGridCard({ course, onDelete }) {
                         </button>
                     )}
 
-                    <button
-                        className="flex items-center justify-center transition-all hover:opacity-80"
-                        style={{
-                            width: 36,
-                            height: 36,
-                            backgroundColor: C.btnViewAllBg,
-                            color: C.btnViewAllText,
-                            border: `1px solid ${C.cardBorder}`,
-                            borderRadius: '10px',
-                            cursor: 'pointer',
-                        }}>
-                        <MdMoreHoriz style={{ width: 14, height: 14 }} />
-                    </button>
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowMenu(!showMenu)}
+                            onBlur={() => setTimeout(() => setShowMenu(false), 200)}
+                            className="flex items-center justify-center transition-all hover:opacity-80"
+                            style={{
+                                width: 36,
+                                height: 36,
+                                backgroundColor: C.btnViewAllBg,
+                                color: C.btnViewAllText,
+                                border: `1px solid ${C.cardBorder}`,
+                                borderRadius: '10px',
+                                cursor: 'pointer',
+                            }}>
+                            <MdMoreHoriz style={{ width: 14, height: 14 }} />
+                        </button>
+                        
+                        {showMenu && (
+                            <div 
+                                className="absolute right-0 bottom-full mb-2 bg-white rounded-xl py-1 shadow-lg border z-50 flex flex-col" 
+                                style={{ borderColor: C.cardBorder, minWidth: '150px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
+                            >
+                                <button 
+                                    onClick={() => onToggleVisibility(course)}
+                                    disabled={course.status === 'pending' || course.status === 'suspended'}
+                                    className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, border: 'none', background: 'transparent', cursor: 'pointer' }}
+                                >
+                                    {course.status === 'published' ? <MdVisibilityOff style={{ width: 14, height: 14 }} /> : <MdVisibility style={{ width: 14, height: 14 }} />}
+                                    {course.status === 'published' ? 'Unpublish' : 'Publish'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
@@ -296,8 +319,9 @@ function CourseGridCard({ course, onDelete }) {
 }
 
 // ─── Course List Row ───────────────────────────────────────────────────────────
-function CourseListRow({ course, onDelete }) {
+function CourseListRow({ course, onDelete, onToggleVisibility }) {
     const isDraft = !['published', 'pending', 'rejected', 'suspended'].includes(course.status);
+    const [showMenu, setShowMenu] = useState(false);
     return (
         <div
             className="flex gap-4 hover:shadow-md transition-all group"
@@ -392,7 +416,7 @@ function CourseListRow({ course, onDelete }) {
 
             {/* Actions */}
             <div className="flex items-center gap-2 flex-shrink-0 self-center">
-                <Link href={`/student/courses/${course._id}`}>
+                <Link href={`/student/courses/${course._id}`} title="See how students view this course">
                     <button
                         className="flex items-center gap-1.5 transition-all hover:opacity-80"
                         style={{
@@ -407,7 +431,7 @@ function CourseListRow({ course, onDelete }) {
                             borderRadius: '10px',
                             cursor: 'pointer',
                         }}>
-                        <MdVisibility style={{ width: 14, height: 14 }} /> View
+                        <MdVisibility style={{ width: 14, height: 14 }} /> Preview
                     </button>
                 </Link>
                 <Link href={`/tutor/courses/${course._id}`}>
@@ -443,19 +467,40 @@ function CourseListRow({ course, onDelete }) {
                     }}>
                     <MdDelete style={{ width: 14, height: 14 }} />
                 </button>
-                <button
-                    className="flex items-center justify-center transition-all hover:opacity-80"
-                    style={{
-                        height: 36,
-                        width: 36,
-                        borderRadius: '10px',
-                        border: `1px solid ${C.cardBorder}`,
-                        color: C.text,
-                        backgroundColor: C.innerBg,
-                        cursor: 'pointer',
-                    }}>
-                    <MdMoreHoriz style={{ width: 14, height: 14 }} />
-                </button>
+                <div className="relative">
+                    <button
+                        onClick={() => setShowMenu(!showMenu)}
+                        onBlur={() => setTimeout(() => setShowMenu(false), 200)}
+                        className="flex items-center justify-center transition-all hover:opacity-80"
+                        style={{
+                            height: 36,
+                            width: 36,
+                            borderRadius: '10px',
+                            border: `1px solid ${C.cardBorder}`,
+                            color: C.text,
+                            backgroundColor: C.innerBg,
+                            cursor: 'pointer',
+                        }}>
+                        <MdMoreHoriz style={{ width: 14, height: 14 }} />
+                    </button>
+
+                    {showMenu && (
+                        <div 
+                            className="absolute right-0 bottom-full mb-2 bg-white rounded-xl py-1 shadow-lg border z-50 flex flex-col" 
+                            style={{ borderColor: C.cardBorder, minWidth: '150px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
+                        >
+                            <button 
+                                onClick={() => onToggleVisibility(course)}
+                                disabled={course.status === 'pending' || course.status === 'suspended'}
+                                className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, color: C.text, border: 'none', background: 'transparent', cursor: 'pointer' }}
+                            >
+                                {course.status === 'published' ? <MdVisibilityOff style={{ width: 14, height: 14 }} /> : <MdVisibility style={{ width: 14, height: 14 }} />}
+                                {course.status === 'published' ? 'Unpublish' : 'Publish'}
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -494,6 +539,27 @@ export default function MyCoursesPage() {
             setCourses(prev => prev.filter(c => c._id !== courseId));
             toast.success('Course deleted successfully');
         } catch { toast.error('Failed to delete course'); }
+    };
+
+    const handleToggleVisibility = async (course) => {
+        const isPublished = course.status === 'published';
+        const newStatus = isPublished ? 'draft' : 'published';
+        const actionText = isPublished ? 'Unpublish' : 'Publish';
+        
+        const ok = await confirmDialog(
+            `${actionText} Course`,
+            `Are you sure you want to ${actionText.toLowerCase()} this course?`
+        );
+        if (!ok) return;
+
+        try {
+            const res = await api.patch(`/courses/${course._id}`, { status: newStatus });
+            const updatedStatus = res.data.course.status;
+            setCourses(prev => prev.map(c => c._id === course._id ? { ...c, status: updatedStatus } : c));
+            toast.success(`Course ${isPublished ? 'unpublished' : 'published'} successfully`);
+        } catch { 
+            toast.error(`Failed to ${actionText.toLowerCase()} course`); 
+        }
     };
 
     const stats = {
@@ -922,13 +988,13 @@ export default function MyCoursesPage() {
             ) : viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     {paginatedCourses.map(course => (
-                        <CourseGridCard key={course._id} course={course} onDelete={handleDeleteCourse} />
+                        <CourseGridCard key={course._id} course={course} onDelete={handleDeleteCourse} onToggleVisibility={handleToggleVisibility} />
                     ))}
                 </div>
             ) : (
                 <div className="space-y-2.5">
                     {paginatedCourses.map(course => (
-                        <CourseListRow key={course._id} course={course} onDelete={handleDeleteCourse} />
+                        <CourseListRow key={course._id} course={course} onDelete={handleDeleteCourse} onToggleVisibility={handleToggleVisibility} />
                     ))}
                 </div>
             )}

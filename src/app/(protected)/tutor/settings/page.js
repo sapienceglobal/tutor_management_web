@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
     MdAutoAwesome, MdSettings, MdNotifications, MdLock,
     MdHourglassEmpty, MdLogout, MdPhotoCamera, MdEmojiEvents,
@@ -45,7 +45,10 @@ const baseInputStyle = {
 
 export default function TutorSettingsPage() {
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState('profile');
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get('tab');
+    
+    const [activeTab, setActiveTab] = useState(tabParam || 'profile');
     const [user, setUser]           = useState(null);
     const [loading, setLoading]     = useState(true);
     const [saving, setSaving]       = useState(false);
@@ -59,6 +62,12 @@ export default function TutorSettingsPage() {
     const [notifications, setNotifications] = useState({
         enrollment: true, reviews: true, summary: false, promotions: false
     });
+
+    useEffect(() => {
+        if (tabParam && TABS.some(t => t.id === tabParam)) {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam]);
 
     useEffect(() => { fetchProfile(); }, []);
 

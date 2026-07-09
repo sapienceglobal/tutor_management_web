@@ -12,6 +12,7 @@ import {
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
 import { C, T, S, R } from '@/constants/tutorTokens';
+import AudienceSelector from "@/components/shared/AudienceSelector";
 
 // ─── Purple palette ───────────────────────────────────────────────────────────
 const P = {
@@ -195,6 +196,9 @@ export default function CourseBuilderPage() {
 
     const [categories, setCategories] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('');
+    const [audience, setAudience] = useState({ scope: "institute", instituteId: null });
+    const [language, setLanguage] = useState('English');
+    const [price, setPrice] = useState(0);
 
     // ── Fetch recent ─────────────────────────────────────────────────
     const fetchRecent = useCallback(async () => {
@@ -230,7 +234,7 @@ export default function CourseBuilderPage() {
 
         try {
             const res = await api.post('/ai/course-builder/generate', {
-                topic, subject, gradeLevel, difficulty, sections, categoryId: selectedCategory, price: 0
+                topic, subject, gradeLevel, difficulty, sections, categoryId: selectedCategory, price: Number(price), language, audience
             });
 
             if (res.data?.success) {
@@ -448,6 +452,58 @@ export default function CourseBuilderPage() {
                                         icon={opt.icon}
                                         color={P.primary} />
                                 ))}
+                            </div>
+
+                            {/* Additional Settings */}
+                            <div className="mt-4 p-4 rounded-2xl space-y-4" style={{ backgroundColor: '#fff', border: `1px solid ${P.border}` }}>
+                                {/* Language */}
+                                <div>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: '#1E293B', marginBottom: 8 }}>
+                                        Course Language
+                                    </p>
+                                    <div className="relative">
+                                        <select value={language} onChange={e => setLanguage(e.target.value)}
+                                            className="w-full appearance-none px-4 py-2.5 rounded-xl pr-8 outline-none"
+                                            style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#334155', border: `1px solid ${P.border}`, backgroundColor: P.soft }}>
+                                            <option value="English">English</option>
+                                            <option value="Hindi">Hindi</option>
+                                            <option value="Spanish">Spanish</option>
+                                            <option value="French">French</option>
+                                            <option value="German">German</option>
+                                        </select>
+                                        <ChevronDown className="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#94A3B8' }} />
+                                    </div>
+                                </div>
+
+                                {/* Price */}
+                                <div>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: '#1E293B', marginBottom: 8 }}>
+                                        Course Price (₹)
+                                    </p>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={price}
+                                        onChange={e => setPrice(e.target.value)}
+                                        className="w-full px-4 py-2.5 rounded-xl outline-none"
+                                        style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#334155', border: `1px solid ${P.border}`, backgroundColor: P.soft }}
+                                    />
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: '10px', color: '#94A3B8', marginTop: 4 }}>
+                                        Set to 0 for a free course
+                                    </p>
+                                </div>
+
+                                {/* Visibility & Access */}
+                                <div>
+                                    <p style={{ fontFamily: T.fontFamily, fontSize: T.size.sm, fontWeight: T.weight.black, color: '#1E293B', marginBottom: 8 }}>
+                                        Course Visibility & Access <span style={{ color: '#EF4444' }}>*</span>
+                                    </p>
+                                    <AudienceSelector
+                                        value={audience}
+                                        onChange={(newAudience) => setAudience(newAudience)}
+                                        hideBatchOption={true}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

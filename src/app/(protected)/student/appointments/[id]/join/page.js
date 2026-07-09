@@ -64,13 +64,16 @@ export default function JoinAppointmentPage({ params }) {
         </div>
     );
 
+    const isZoom = meetingData.platform === 'zoom';
+
     return (
         <div className="h-screen w-full flex flex-col relative" style={{ backgroundColor: '#000' }}>
             
-            {/* Cinematic Glass Header */}
-            <div className="absolute top-6 left-6 z-50 pointer-events-auto">
-                <button
-                    onClick={() => router.push('/student/appointments')}
+            {!isZoom && (
+                /* Cinematic Glass Header */
+                <div className="absolute top-6 left-6 z-50 pointer-events-auto">
+                    <button
+                        onClick={() => router.push('/student/appointments')}
                     className="flex items-center gap-2 px-5 h-11 rounded-2xl text-white transition-all cursor-pointer shadow-lg"
                     style={{ 
                         backgroundColor: 'rgba(0,0,0,0.6)', 
@@ -85,9 +88,10 @@ export default function JoinAppointmentPage({ params }) {
                     <ArrowLeft size={16} /> Leave Session
                 </button>
             </div>
+            )}
 
             <div className="flex-1 w-full relative z-10">
-                {meetingData.platform === 'zoom' ? (
+                {isZoom ? (
                     <ZoomMeetingEmbed
                         config={meetingData}
                         onLeave={() => router.push('/student/appointments')}

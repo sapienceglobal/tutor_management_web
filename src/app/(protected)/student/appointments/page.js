@@ -273,20 +273,34 @@ export default function StudentAppointmentsPage() {
                                 {/* Actions */}
                                 <div className="flex gap-3 pt-1">
                                     {apt.status === 'confirmed' && (
-                                        apt.meetingLink ? (
-                                            <button
-                                                onClick={() => handleJoin(apt)}
-                                                className="flex items-center gap-2 px-4 py-2 text-white text-xs rounded-xl font-bold transition-all hover:opacity-90"
-                                                style={{ backgroundColor: C.btnPrimary, fontFamily: T.fontFamily, boxShadow: S.btn }}>
-                                                <Video className="w-3.5 h-3.5" /> Join Class
-                                            </button>
-                                        ) : (
-                                            <button disabled
-                                                className="flex items-center gap-2 px-4 py-2 text-xs rounded-xl font-bold opacity-50 cursor-not-allowed"
-                                                style={{ ...cx.btnSecondary(), fontFamily: T.fontFamily }}>
-                                                <Clock className="w-3.5 h-3.5" /> Waiting for Link
-                                            </button>
-                                        )
+                                        (() => {
+                                            const endTime = new Date(apt.dateTime);
+                                            endTime.setMinutes(endTime.getMinutes() + (apt.duration || 60));
+                                            const isEnded = new Date() > endTime;
+
+                                            if (isEnded) return (
+                                                <button disabled
+                                                    className="flex items-center gap-2 px-4 py-2 text-xs rounded-xl font-bold opacity-50 cursor-not-allowed"
+                                                    style={{ ...cx.btnSecondary(), fontFamily: T.fontFamily }}>
+                                                    <Clock className="w-3.5 h-3.5" /> Session Ended
+                                                </button>
+                                            );
+
+                                            return apt.meetingLink ? (
+                                                <button
+                                                    onClick={() => handleJoin(apt)}
+                                                    className="flex items-center gap-2 px-4 py-2 text-white text-xs rounded-xl font-bold transition-all hover:opacity-90"
+                                                    style={{ backgroundColor: C.btnPrimary, fontFamily: T.fontFamily, boxShadow: S.btn }}>
+                                                    <Video className="w-3.5 h-3.5" /> Join Class
+                                                </button>
+                                            ) : (
+                                                <button disabled
+                                                    className="flex items-center gap-2 px-4 py-2 text-xs rounded-xl font-bold opacity-50 cursor-not-allowed"
+                                                    style={{ ...cx.btnSecondary(), fontFamily: T.fontFamily }}>
+                                                    <Clock className="w-3.5 h-3.5" /> Waiting for Link
+                                                </button>
+                                            );
+                                        })()
                                     )}
                                     {['pending', 'confirmed'].includes(apt.status) && (
                                         <button
