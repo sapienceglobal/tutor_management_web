@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
     MdAutoAwesome, MdSettings, MdNotifications, MdLock,
@@ -43,7 +43,7 @@ const baseInputStyle = {
     transition: 'all 0.2s ease',
 };
 
-export default function TutorSettingsPage() {
+function TutorSettingsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const tabParam = searchParams.get('tab');
@@ -653,5 +653,17 @@ function TutorTwoFactorSettings({ user, setUser }) {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function TutorSettingsPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-64 items-center justify-center">
+                <div className="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-600 rounded-full animate-spin" />
+            </div>
+        }>
+            <TutorSettingsContent />
+        </Suspense>
     );
 }
