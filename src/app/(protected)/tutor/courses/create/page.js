@@ -719,46 +719,35 @@ export default function CreateCoursePage() {
     
     setUploadType("hls");
     setUploadProgress(0);
-    const isPersonal = courseData.audience?.scope === "global" || !courseData.audience?.instituteId;
     
     try {
-      // Get Cloudinary upload signature from backend for HLS type
-      const sigRes = await api.post('/upload/cloudinary-signature', {
-        type: 'hls',
-        isPersonal
-      });
-      if (!sigRes.data.success) {
-        throw new Error('Failed to obtain HLS upload signature');
-      }
-      const { signature, timestamp, cloudName, apiKey, folder, eager, eager_async } = sigRes.data;
-
       const fd = new FormData();
-      fd.append('file', file);
-      fd.append('api_key', apiKey);
-      fd.append('timestamp', timestamp);
-      fd.append('signature', signature);
-      fd.append('folder', folder);
-      fd.append('eager', eager);
-      fd.append('eager_async', eager_async ? 'true' : 'false');
+      fd.append('video', file);
+      fd.append('duration', String(durSecs));
+      if (courseData?.audience?.instituteId) {
+        fd.append('instituteId', courseData.audience.instituteId);
+      }
 
-      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
-      
-      const res = await axios.post(uploadUrl, fd, {
+      const res = await api.post('/upload/video-hls', fd, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
-          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setUploadProgress(percent);
+          if (progressEvent.total) {
+            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percent);
+          }
         }
       });
 
-      if (res.data?.public_id) {
-        const playlistUrl = `https://res.cloudinary.com/${cloudName}/video/upload/sp_auto/${res.data.public_id}.m3u8`;
+      const playlistUrl = res.data?.playlistUrl || res.data?.estimatedPlaylistUrl || res.data?.videoUrl || res.data?.url;
+      if (playlistUrl) {
         setLessonForm((prev) => ({
           ...prev,
           videoUrl: resolveUrl(playlistUrl),
           duration: durMins.toString(),
         }));
-        toast.success("Video uploaded directly to Cloudinary and is processing for HLS! 🚀");
+        toast.success("Video uploaded to VPS and converted to HLS stream! 🚀");
+      } else {
+        throw new Error(res.data?.message || "Failed to process video");
       }
     } catch (error) {
       const msg = error.response?.data?.message || error.message || "";
@@ -781,37 +770,30 @@ export default function CreateCoursePage() {
     setUploadType("standard");
     setUploadProgress(0);
     try {
-      // Get Cloudinary upload signature from our backend
-      const sigRes = await api.post('/upload/cloudinary-signature');
-      if (!sigRes.data.success) {
-        throw new Error('Failed to obtain upload signature');
-      }
-      const { signature, timestamp, cloudName, apiKey, folder } = sigRes.data;
-
       const fd = new FormData();
-      fd.append('file', file);
-      fd.append('api_key', apiKey);
-      fd.append('timestamp', timestamp);
-      fd.append('signature', signature);
-      fd.append('folder', folder);
+      fd.append('video', file);
+      fd.append('duration', String(durSecs));
 
-      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
-      const res = await axios.post(uploadUrl, fd, {
+      const res = await api.post('/upload/video', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
-          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setUploadProgress(percent);
+          if (progressEvent.total) {
+            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percent);
+          }
         }
       });
 
-      if (res.data?.secure_url || res.data?.url) {
-        const fileUrl = res.data.secure_url || res.data.url;
+      const videoUrl = res.data?.videoUrl || res.data?.url;
+      if (videoUrl) {
         setLessonForm((prev) => ({
           ...prev,
-          videoUrl: fileUrl,
+          videoUrl: videoUrl,
           duration: durMins.toString(),
         }));
-        toast.success("Video uploaded (standard mode).");
+        toast.success("Video uploaded to VPS (standard mode).");
+      } else {
+        throw new Error(res.data?.message || "Failed to upload video");
       }
     } catch (error) {
       const msg = error.response?.data?.message || error.message || "";

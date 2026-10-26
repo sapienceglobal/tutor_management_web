@@ -353,7 +353,7 @@ export default function RiskPredictorPage() {
             if (!res.data?.success) {
                 throw new Error(res.data?.message || 'Failed to perform action');
             }
-            if (actionKey === 'share' && res.data.result?.shareUrl) {
+            if (actionKey === 'share' && res.data.result?.shareUrl && typeof navigator !== 'undefined' && navigator.clipboard) {
                 navigator.clipboard.writeText(res.data.result.shareUrl);
             }
             return res.data;
@@ -366,6 +366,7 @@ export default function RiskPredictorPage() {
         }).then((data) => {
             if (!data) return;
             const resData = data.result || {};
+            fetchData(selectedCourse);
             setTimeout(() => {
                 if (actionKey === 'progress_report' && resData.reportId) {
                     router.push(`/tutor/reports`);

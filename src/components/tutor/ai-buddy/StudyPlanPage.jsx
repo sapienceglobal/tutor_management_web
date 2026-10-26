@@ -244,7 +244,12 @@ export default function StudyPlanPage() {
     // ── Select student → pre-fill weak topics ─────────────────────────
     const handleSelectStudent = (student) => {
         setSelectedStudent(student);
-        setSelectedTopics(student.weakTopics || []);
+        const fallbackTopics = [
+            ...(student.weakTopics || []),
+            ...(student.keyFactors || []),
+            student.course ? `${student.course} revision` : null,
+        ].filter(Boolean);
+        setSelectedTopics([...new Set(fallbackTopics)].slice(0, 5));
         setPlan(null);
         setActiveDay(null);
     };
@@ -259,6 +264,9 @@ export default function StudyPlanPage() {
     // ── Generate plan ─────────────────────────────────────────────────
     const handleGenerate = async () => {
         if (!selectedStudent) return toast.error('Student selection is required');
+        const topicsForPlan = selectedTopics.length
+            ? selectedTopics
+            : [selectedStudent.course ? `${selectedStudent.course} revision` : 'Core concepts revision'];
 
         setGenerating(true);
         setPlan(null);
@@ -267,7 +275,7 @@ export default function StudyPlanPage() {
         try {
             const res = await api.post('/ai/study-plan/generate', {
                 studentId:    selectedStudent._id,
-                weakTopics:   selectedTopics,
+                weakTopics:   topicsForPlan,
                 durationWeeks,
                 hoursPerDay,
                 difficulty,
@@ -520,7 +528,7 @@ export default function StudyPlanPage() {
                                         ))
                                     ) : (
                                         <p style={{ fontFamily: T.fontFamily, fontSize: T.size.xs, color: '#94A3B8' }}>
-                                            No weak topics detected — student may not have taken quizzes yet.
+                                            No quiz weak topics detected — AI will use course revision and recovery basics.
                                         </p>
                                     )}
                                 </div>
